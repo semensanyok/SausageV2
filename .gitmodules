@@ -1,0 +1,21 @@
+[submodule "assimp"]
+	path = dependencies/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "bullet3"]
+	path = dependencies/bullet3
+	url = https://github.com/bulletphysics/bullet3.git
+[submodule "glad"]
+	path = dependencies/glad
+	url = https://github.com/Dav1dde/glad.git
+[submodule "assimp"]
+	path = dependencies/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "dependencies/glfw"]
+	path = dependencies/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "dependencies/glm"]
+	path = dependencies/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "dependencies/stb"]
+	path = dependencies/stb
+	url = https://github.com/nothings/stb.git
