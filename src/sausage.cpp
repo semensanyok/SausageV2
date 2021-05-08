@@ -8,8 +8,7 @@
 #include "Settings.h"
 #include "Shader.h"
 #include "AssetUtils.h"
-
-#define LOG(s) cout<<s<<endl;
+#include "TestUtils.h"
 
 using namespace std;
 using namespace glm;
@@ -22,6 +21,9 @@ SDL_GLContext context;
 // Game state
 Camera* camera;
 vector<Mesh*> meshes;
+Samplers* samplers;
+float delta_time = 0;
+float last_ticks = 0;
 
 struct Draw {
 	// 1) location or vector of locs
@@ -29,6 +31,7 @@ struct Draw {
 	// 3) instanced draw - same mesh same shader multiple draw different pos
 	Mesh* mesh;
 	Shader* shader;
+	vector<Texture*> textures;
 };
 
 vector<Draw> draws;
@@ -84,9 +87,12 @@ void InitContext() {
 	}
 
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 }
 
 void ClearContext() {
+	WriteShaderMsgsToLogFile();
 	SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
@@ -98,117 +104,6 @@ void LogShaderMessage(unsigned int id) {
 	char program_log[2048];
 	glGetProgramInfoLog(id, max_length, &actual_length, program_log);
 	printf("program info log for GL index %u:\n%s", id, program_log);
-}
-
-const char* GL_type_to_string(GLenum type) {
-	switch (type) {
-	case GL_BOOL: return "bool";
-	case GL_INT: return "int";
-	case GL_FLOAT: return "float";
-	case GL_FLOAT_VEC2: return "vec2";
-	case GL_FLOAT_VEC3: return "vec3";
-	case GL_FLOAT_VEC4: return "vec4";
-	case GL_FLOAT_MAT2: return "mat2";
-	case GL_FLOAT_MAT3: return "mat3";
-	case GL_FLOAT_MAT4: return "mat4";
-	case GL_SAMPLER_2D: return "sampler2D";
-	case GL_SAMPLER_3D: return "sampler3D";
-	case GL_SAMPLER_CUBE: return "samplerCube";
-	case GL_SAMPLER_2D_SHADOW: return "sampler2DShadow";
-	default: break;
-	}
-	return "other";
-}
-void print_all(GLuint programme) {
-	printf("--------------------\nshader programme %i info:\n", programme);
-	int params = -1;
-	glGetProgramiv(programme, GL_LINK_STATUS, &params);
-	printf("GL_LINK_STATUS = %i\n", params);
-
-	glGetProgramiv(programme, GL_ATTACHED_SHADERS, &params);
-	printf("GL_ATTACHED_SHADERS = %i\n", params);
-
-	glGetProgramiv(programme, GL_ACTIVE_ATTRIBUTES, &params);
-	printf("GL_ACTIVE_ATTRIBUTES = %i\n", params);
-	for (int i = 0; i < params; i++) {
-		char name[64];
-		int max_length = 64;
-		int actual_length = 0;
-		int size = 0;
-		GLenum type;
-		glGetActiveAttrib(
-			programme,
-			i,
-			max_length,
-			&actual_length,
-			&size,
-			&type,
-			name
-		);
-		if (size > 1) {
-			for (int j = 0; j < size; j++) {
-				char long_name[64];
-				sprintf(long_name, "%s[%i]", name, j);
-				int location = glGetAttribLocation(programme, long_name);
-				printf("  %i) type:%s name:%s location:%i\n",
-					i, GL_type_to_string(type), long_name, location);
-			}
-		}
-		else {
-			int location = glGetAttribLocation(programme, name);
-			printf("  %i) type:%s name:%s location:%i\n",
-				i, GL_type_to_string(type), name, location);
-		}
-	}
-
-	glGetProgramiv(programme, GL_ACTIVE_UNIFORMS, &params);
-	printf("GL_ACTIVE_UNIFORMS = %i\n", params);
-	for (int i = 0; i < params; i++) {
-		char name[64];
-		int max_length = 64;
-		int actual_length = 0;
-		int size = 0;
-		GLenum type;
-		glGetActiveUniform(
-			programme,
-			i,
-			max_length,
-			&actual_length,
-			&size,
-			&type,
-			name
-		);
-		if (size > 1) {
-			for (int j = 0; j < size; j++) {
-				char long_name[64];
-				sprintf(long_name, "%s[%i]", name, j);
-				int location = glGetUniformLocation(programme, long_name);
-				printf("  %i) type:%s name:%s location:%i\n",
-					i, GL_type_to_string(type), long_name, location);
-			}
-		}
-		else {
-			int location = glGetUniformLocation(programme, name);
-			printf("  %i) type:%s name:%s location:%i\n",
-				i, GL_type_to_string(type), name, location);
-		}
-	}
-
-	LogShaderMessage(programme);
-}
-
-void Render()
-{
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	for (Draw draw : draws) {
-		draw.shader->use();
-		int id = draw.shader->id;
-		BindBuffers(draw.mesh, glGetAttribLocation(id, "position"), glGetAttribLocation(id, "normals"), glGetAttribLocation(id, "uv"), glGetAttribLocation(id, "tangent"), -1);
-		glDrawElements(GL_TRIANGLES, draw.mesh->indices.size(), GL_UNSIGNED_INT, NULL);
-	}
-	// Draw
-	SDL_GL_SwapWindow(window);
 }
 
 void ProcessEvent(SDL_Event* e)
@@ -241,28 +136,10 @@ void ProcessEvent(SDL_Event* e)
 		mod = SDL_GetModState();
 		if (k == SDLK_ESCAPE)
 			quit = 1;
-
-		//if (s == SDL_SCANCODE_D)   active_control_set(0);
-		//if (s == SDL_SCANCODE_A)   active_control_set(1);
-		//if (s == SDL_SCANCODE_W)   active_control_set(2);
-		//if (s == SDL_SCANCODE_S)   active_control_set(3);
-		//if (k == SDLK_SPACE)       active_control_set(4);
-		//if (s == SDL_SCANCODE_LCTRL)   active_control_set(5);
-		//if (s == SDL_SCANCODE_S)   active_control_set(6);
-		//if (s == SDL_SCANCODE_D)   active_control_set(7);
-		//if (k == '1') global_hack = !global_hack;
-		//if (k == '2') global_hack = -1;
+		camera->KeyCallback(s, delta_time);
 		break;
 	}
 	case SDL_KEYUP: {
-		//    if (s == SDL_SCANCODE_D)   active_control_clear(0);
-		//    if (s == SDL_SCANCODE_A)   active_control_clear(1);
-		//    if (s == SDL_SCANCODE_W)   active_control_clear(2);
-		//    if (s == SDL_SCANCODE_S)   active_control_clear(3);
-		//    if (k == SDLK_SPACE)       active_control_clear(4);
-		//    if (s == SDL_SCANCODE_LCTRL)   active_control_clear(5);
-		//    if (s == SDL_SCANCODE_S)   active_control_clear(6);
-		//    if (s == SDL_SCANCODE_D)   active_control_clear(7);
 		break;
 	}
 	}
@@ -283,12 +160,77 @@ Mesh* GetPlane() {
 	return mesh;
 }
 
-void InitGame() {
-	camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0, 0, -1), 0.0f, 0.0f);
-	// meshes.push_back(GetPlane());
+vector<Texture*> _LoadTextures() {
+	vector<Texture*> textures;
+	Texture* texture_diffuse = LoadTexture(GetTexturePath<const char*>("Image0000.png").c_str(), "texture_diffuse", TextureType::Diffuse);
+	Texture* texture_normal = LoadTexture(GetTexturePath<const char*>("Image0000_normal.png").c_str(), "texture_normal", TextureType::Normal);
+	Texture* texture_specular = LoadTexture(GetTexturePath<const char*>("Image0000_specular.png").c_str(), "texture_specular", TextureType::Specular);
+	Texture* texture_height = LoadTexture(GetTexturePath<const char*>("Image0000_height.png").c_str(), "texture_height", TextureType::Height);
+	if (texture_diffuse != nullptr) {
+		textures.push_back(texture_diffuse);
+	}
+	if (texture_normal != nullptr) {
+		textures.push_back(texture_normal);
+	}
+	if (texture_specular != nullptr) {
+		textures.push_back(texture_specular);
+	}
+	if (texture_height != nullptr) {
+		textures.push_back(texture_height);
+	}
+	return textures;
+}
+
+void _ModelDraw() {
+	Shader* shader = new Shader{ GetShaderPath("model_vs.glsl"), GetShaderPath("model_fs.glsl") };
+	shader->setMat4("mvp", camera->view_matrix);
+	shader->setMat4("projection", camera->projection_matrix);
+
+	LoadMeshes(meshes, GetModelPath("cube.fbx"));
+	for_each(meshes.begin(), meshes.end(), [&](Mesh* mesh) {
+		InitBuffers(mesh);
+		draws.push_back(Draw{ mesh, shader, _LoadTextures() });
+		});
+}
+
+void _DebugDraw() {
 	Mesh* mesh = GetPlane();
 	InitBuffers(mesh);
 	draws.push_back(Draw{ mesh, new Shader{ GetShaderPath("debug_vs.glsl"), GetShaderPath("debug_fs.glsl") } });
+}
+
+void InitGame() {
+	camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0, 0, -5), 0.0f, 0.0f);
+	samplers = InitSamplers();
+	//_DebugDraw();
+	_ModelDraw();
+}
+
+
+void Render()
+{
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	for (Draw draw : draws) {
+		draw.shader->use();
+		draw.shader->setMat4("mvp", camera->projection_matrix * camera->view_matrix * mat4(1));
+		// shader->setMat4("model", draw->node.model_transform);
+		for (Texture* texture : draw.textures) {
+			BindTexture(texture, draw.shader->id);
+			glBindSampler((int)texture->type, samplers->basic_repeat);
+			auto asd1 = mat4(1);
+			// LogShaderFull(draw.shader->id);
+		}
+		glDrawElements(GL_TRIANGLES, draw.mesh->indices.size(), GL_UNSIGNED_INT, NULL);
+	}
+	// Draw
+	SDL_GL_SwapWindow(window);
+}
+
+void _UpdateDeltaTime() {
+	float this_ticks = SDL_GetTicks();
+	delta_time = this_ticks - last_ticks;
+	last_ticks = this_ticks;
 }
 
 int SDL_main(int argc, char** argv)
@@ -297,6 +239,7 @@ int SDL_main(int argc, char** argv)
 	InitGame();
 	while (!quit) {
 		SDL_Event e;
+		_UpdateDeltaTime();
 		while (SDL_PollEvent(&e)) {
 			ProcessEvent(&e);
 		}

@@ -1,18 +1,23 @@
 #pragma once
 
 #include "Texture.h"
+#include <string>
 
 class Shader
 {
 public:
 	unsigned int id;
-	vector<Texture> textures;
+
+	int texture_diffuse;
+	int texture_specular;
+	int texture_normal;
+	int texture_height;
 
 	bool operator==(Shader& other) {
 		return id == other.id;
 	}
 	Shader() {};
-	Shader(string vertexPath, string fragmentPath, vector<Texture> textures = {}) : textures{ textures }
+	Shader(string vertexPath, string fragmentPath)
 	{
 		// 1. retrieve the vertex/fragment source code from filePath
 		string vertexCode;
@@ -65,7 +70,10 @@ public:
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
 
-		BindTextures();
+		texture_diffuse = glGetUniformLocation(id, "texture_diffuse");
+		texture_specular = glGetUniformLocation(id, "texture_specular");
+		texture_normal	= glGetUniformLocation(id, "texture_normal");
+		texture_height = glGetUniformLocation(id, "texture_height");
 	}
 	// activate the shader
 	// ------------------------------------------------------------------------
@@ -133,17 +141,6 @@ public:
 	}
 
 private:
-	void BindTextures() {
-		for (unsigned int texture_num = 0; texture_num < textures.size(); texture_num++) {
-			// set name for texture
-			glActiveTexture(GL_TEXTURE0 + texture_num); // active proper texture unit before binding
-			// cout << GetTextureName(textures[texture_num], texture_num).c_str();
-			// now set the sampler to the correct texture unit
-			glUniform1i(glGetUniformLocation(id, GetTextureName(textures[texture_num], texture_num).c_str()), texture_num);
-			// and finally bind the texture
-			glBindTexture(GL_TEXTURE_2D, id);
-		}
-	}
 	// utility function for checking shader compilation/linking errors.
 	// ------------------------------------------------------------------------
 	void checkCompileErrors(GLuint shader, string type)

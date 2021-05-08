@@ -33,6 +33,7 @@ Mesh* CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
     Mesh* mesh = new Mesh{ vertices, indices, ++mesh_count, 0, 0, 0 };
     return mesh;
 };
+
 Mesh* CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
     vector<Vertex> positions;
     for (int i = 0; i < vertices.size(); i += 3) {
@@ -42,6 +43,7 @@ Mesh* CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
     }
     return CreateMesh(positions, indices);
 };
+
 void InitBuffers(Mesh* mesh) {
     // create buffers/arrays
     glGenVertexArrays(1, &mesh->VAO);
@@ -54,34 +56,28 @@ void InitBuffers(Mesh* mesh) {
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices.size() * sizeof(unsigned int), &mesh->indices[0], GL_STATIC_DRAW);
+
+    // pos
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+
+    // vertex normals
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+
+    // vertex texture coords
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+    // vertex tangent
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+
+    // vertex bitangent
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 }
-void BindBuffers(Mesh* mesh, int pos_ptr, int norm_ptr = -1, int uv_ptr = -1, int tangent_ptr = -1, int bitangent_ptr = -1) {
-    glBindVertexArray(mesh->VAO);
-    if (pos_ptr > -1) {
-        glEnableVertexAttribArray(pos_ptr);
-        glVertexAttribPointer(pos_ptr, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-    }
-    if (norm_ptr > -1) {
-        // vertex normals
-        glEnableVertexAttribArray(norm_ptr);
-        glVertexAttribPointer(norm_ptr, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-    }
-    if (uv_ptr > -1) {
-        // vertex texture coords
-        glEnableVertexAttribArray(uv_ptr);
-        glVertexAttribPointer(uv_ptr, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-    }
-    if (tangent_ptr > -1) {
-        // vertex tangent
-        glEnableVertexAttribArray(tangent_ptr);
-        glVertexAttribPointer(tangent_ptr, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-    }
-    if (bitangent_ptr > -1) {
-        // vertex bitangent
-        glEnableVertexAttribArray(bitangent_ptr);
-        glVertexAttribPointer(bitangent_ptr, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
-    }
-}
+
 void ClearBuffers(Mesh* mesh) {
     glDeleteBuffers(1, &mesh->VAO);
     glDeleteBuffers(1, &mesh->VBO);
@@ -90,7 +86,7 @@ void ClearBuffers(Mesh* mesh) {
 
 Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene);
 
-void LoadMeshes(vector<Mesh*> meshes, const string& file_name)
+void LoadMeshes(vector<Mesh*>& meshes, const string& file_name)
 {
     Assimp::Importer assimp_importer;
 

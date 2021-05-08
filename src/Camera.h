@@ -38,30 +38,16 @@ public:
 		this->right = normalize(cross(this->front, this->up));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
 		this->up = normalize(cross(this->right, this->world_up));
 	}
-	//void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	//	float velocity = delta_time * movement_speed;
-	//	InputEvent input_event = KeyMapping::GetInstance().GetInputKey(key);
-	//	switch (input_event)
-	//	{
-	//	case InputEvent::UP:
-	//		pos += front * velocity;
-	//		break;
-	//	case InputEvent::DOWN:
-	//		pos -= front * velocity;
-	//		break;
-	//	case InputEvent::LEFT:
-	//		pos -= right * velocity;
-	//		break;
-	//	case InputEvent::RIGHT:
-	//		pos += right * velocity;
-	//		break;
-	//	case InputEvent::NONE:
-	//		break;
-	//	default:
-	//		break;
-	//	}
-	//	this->view_matrix = lookAt(this->pos, this->pos + this->front, this->up);
-	//};
+	void KeyCallback(int scan_code, float delta_time) {
+		float velocity = delta_time * movement_speed;
+		if (scan_code == SDL_SCANCODE_W)   pos += front * velocity;
+		if (scan_code == SDL_SCANCODE_A)   pos -= right * velocity;
+		if (scan_code == SDL_SCANCODE_S)   pos -= front * velocity;
+		if (scan_code == SDL_SCANCODE_D)   pos += right * velocity;
+
+		UpdateCameraFrontUpRight();
+		this->view_matrix = lookAt(this->pos, this->pos + this->front, this->up);
+	};
 	void MouseCallback(SDL_Event* e)
 	{
 		float yaw_angle = (float)e->motion.xrel;
@@ -82,7 +68,7 @@ public:
 	float yaw_angle;
 	float pitch_angle;
 	float sensivity = 0.1f;
-	float movement_speed = 0.1f;
+	float movement_speed = 0.0f;
 
 	float FOV;
 	float width;

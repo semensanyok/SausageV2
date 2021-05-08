@@ -25,7 +25,7 @@ add_subdirectory("dependencies/glad")
 add_subdirectory("dependencies/glm")
 
 # ZLIB
-# add_subdirectory("dependencies/zlib")
+add_subdirectory("dependencies/zlib")
 
 
 # BULLET
@@ -37,16 +37,13 @@ option(BUILD_UNIT_TESTS OFF)
 add_subdirectory(dependencies/bullet3)
 
 set(SDL2_DIR "lib/SDL")
-# set(SDL2_IMAGE_DIR "lib/SDL_image")
-# set(SDL2_IMAGE_LIBRARIES "${SDL2_IMAGE_DIR}/SDL2_image.lib")
-# set(SDL2_IMAGE_INCLUDE_DIR ${SDL2_IMAGE_DIR}/include/)
 
 # Add SDL2 CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/SDL)
 set(SDL2_PATH ${SDL2_DIR})
 
 include_directories(dependencies/assimp/include/
-                    # dependencies/zlib/
+                    dependencies/zlib/
 					dependencies/assimp/include/
                     dependencies/bullet/src/
                     dependencies/glad/include/
@@ -56,7 +53,7 @@ include_directories(dependencies/assimp/include/
                     ${SDL2_DIR}/include/
 					)
 
-add_executable(${CMAKE_PROJECT_NAME} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Camera.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h")
+add_executable(${CMAKE_PROJECT_NAME} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Camera.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/TestUtils.h")
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
@@ -66,7 +63,6 @@ foreach(file ${files})
   file(RELATIVE_PATH filename "${CMAKE_CURRENT_LIST_DIR}/src/" ${file})
   message(${filename})
   FILE(COPY "${file}/" DESTINATION "${CMAKE_BINARY_DIR}/${filename}")
-  #add_test(validate_${i}, "validator", ${file})
 endforeach()
 
-target_link_libraries(${CMAKE_PROJECT_NAME} glfw assimp glad glm SDL2::Main ${SDL2_IMAGE_LIBRARIES})
+target_link_libraries(${CMAKE_PROJECT_NAME} glfw assimp glad glm SDL2::Main zlib ${SDL2_IMAGE_LIBRARIES})
