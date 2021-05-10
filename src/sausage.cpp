@@ -110,7 +110,7 @@ void ProcessEvent(SDL_Event* e)
 {
 	switch (e->type) {
 	case SDL_MOUSEMOTION:
-		//camera->MouseCallback(e);
+		camera->MouseCallback(e);
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
@@ -183,8 +183,6 @@ vector<Texture*> _LoadTextures() {
 
 void _ModelDraw() {
 	Shader* shader = new Shader{ GetShaderPath("model_vs.glsl"), GetShaderPath("model_fs.glsl") };
-	shader->setMat4("mvp", camera->view_matrix);
-	shader->setMat4("projection", camera->projection_matrix);
 
 	LoadMeshes(meshes, GetModelPath("cube.fbx"));
 	for_each(meshes.begin(), meshes.end(), [&](Mesh* mesh) {
@@ -200,12 +198,11 @@ void _DebugDraw() {
 }
 
 void InitGame() {
-	camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0, 0, -5), 0.0f, 0.0f);
+	camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 0.0f, -5.0f), 0.0f, 0.0f);
 	samplers = InitSamplers();
 	//_DebugDraw();
 	_ModelDraw();
 }
-
 
 void Render()
 {
@@ -213,7 +210,10 @@ void Render()
 	glClear(GL_COLOR_BUFFER_BIT);
 	for (Draw draw : draws) {
 		draw.shader->use();
-		draw.shader->setMat4("mvp", camera->projection_matrix * camera->view_matrix * mat4(1));
+		draw.shader->setMat4("mvp",
+			camera->projection_matrix * 
+			camera->view_matrix * 
+			mat4(1));
 		// shader->setMat4("model", draw->node.model_transform);
 		for (Texture* texture : draw.textures) {
 			BindTexture(texture, draw.shader->id);
@@ -238,8 +238,8 @@ int SDL_main(int argc, char** argv)
 	InitContext();
 	InitGame();
 	while (!quit) {
-		SDL_Event e;
 		_UpdateDeltaTime();
+		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
 			ProcessEvent(&e);
 		}

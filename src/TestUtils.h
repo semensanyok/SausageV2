@@ -6,7 +6,10 @@
 
 using namespace std;
 
-#define LOG(s) cout<<s<<endl;
+static ofstream logstream("LOG.log");
+
+#define LOG(s) cout<<s<<endl; \
+			   logstream<<s<<endl;
 
 void LogShaderMessage(GLuint id);
 

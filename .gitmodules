@@ -22,3 +22,9 @@
 [submodule "dependencies/zlib"]	
 	path = dependencies/zlib
 	url = https://github.com/madler/zlib.git
+[submodule "dependencies/freetype"]	
+	path = dependencies/freetype
+	url = https://github.com/freetype/freetype.git
+[submodule "dependencies/libRocket"]	
+	path = dependencies/libRocket
+	url = https://github.com/libRocket/libRocket.git
