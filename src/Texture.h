@@ -3,7 +3,7 @@
 #include "AssetUtils.h"
 #include <string>
 #include "SDL_image.h"
-#include "TestUtils.h"
+#include "Logging.h"
 
 using namespace std;
 
@@ -87,6 +87,7 @@ Samplers* InitSamplers() {
     glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    
     //glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST); bilinear
     //glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR); trilinear
     //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);

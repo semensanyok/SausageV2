@@ -8,7 +8,7 @@
 #include "Settings.h"
 #include "Shader.h"
 #include "AssetUtils.h"
-#include "TestUtils.h"
+#include "Logging.h"
 
 using namespace std;
 using namespace glm;
@@ -24,6 +24,11 @@ vector<Mesh*> meshes;
 Samplers* samplers;
 float delta_time = 0;
 float last_ticks = 0;
+bool quit = false;
+
+vector<Texture*> textures;
+
+//// GUI state
 
 struct Draw {
 	// 1) location or vector of locs
@@ -35,8 +40,6 @@ struct Draw {
 };
 
 vector<Draw> draws;
-
-int quit = 0;
 
 class SceneNode {
 	vec3 position;
@@ -61,7 +64,7 @@ void InitContext() {
 #endif
 
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
-
+	
 	window = SDL_CreateWindow("caveview", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		SCR_WIDTH, SCR_HEIGHT,
 		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE // SDL_WINDOW_VULKAN
@@ -87,6 +90,8 @@ void InitContext() {
 	}
 
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+	glEnable(GL_DEPTH_TEST);
+	// debug
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 }
@@ -98,14 +103,6 @@ void ClearContext() {
 	SDL_Quit();
 }
 
-void LogShaderMessage(unsigned int id) {
-	int max_length = 2048;
-	int actual_length = 0;
-	char program_log[2048];
-	glGetProgramInfoLog(id, max_length, &actual_length, program_log);
-	printf("program info log for GL index %u:\n%s", id, program_log);
-}
-
 void ProcessEvent(SDL_Event* e)
 {
 	switch (e->type) {
@@ -113,9 +110,11 @@ void ProcessEvent(SDL_Event* e)
 		camera->MouseCallback(e);
 		break;
 	case SDL_MOUSEBUTTONDOWN:
+		break;
 	case SDL_MOUSEBUTTONUP:
 		break;
-
+	case SDL_MOUSEWHEEL:
+		break;
 	case SDL_QUIT:
 		quit = 1;
 		break;
@@ -132,6 +131,15 @@ void ProcessEvent(SDL_Event* e)
 	case SDL_KEYDOWN: {
 		int k = e->key.keysym.sym;
 		int s = e->key.keysym.scancode;
+
+		// Intercept SHIFT + ~ key stroke to toggle libRocket's 
+					// visual debugger tool
+		if (e->key.keysym.sym == SDLK_BACKQUOTE &&
+			e->key.keysym.mod == KMOD_LSHIFT)
+		{
+			break;
+		}
+
 		SDL_Keymod mod;
 		mod = SDL_GetModState();
 		if (k == SDLK_ESCAPE)
@@ -166,6 +174,7 @@ vector<Texture*> _LoadTextures() {
 	Texture* texture_normal = LoadTexture(GetTexturePath<const char*>("Image0000_normal.png").c_str(), "texture_normal", TextureType::Normal);
 	Texture* texture_specular = LoadTexture(GetTexturePath<const char*>("Image0000_specular.png").c_str(), "texture_specular", TextureType::Specular);
 	Texture* texture_height = LoadTexture(GetTexturePath<const char*>("Image0000_height.png").c_str(), "texture_height", TextureType::Height);
+
 	if (texture_diffuse != nullptr) {
 		textures.push_back(texture_diffuse);
 	}
@@ -187,7 +196,7 @@ void _ModelDraw() {
 	LoadMeshes(meshes, GetModelPath("cube.fbx"));
 	for_each(meshes.begin(), meshes.end(), [&](Mesh* mesh) {
 		InitBuffers(mesh);
-		draws.push_back(Draw{ mesh, shader, _LoadTextures() });
+		draws.push_back(Draw{ mesh, shader, textures });
 		});
 }
 
@@ -198,8 +207,9 @@ void _DebugDraw() {
 }
 
 void InitGame() {
-	camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 0.0f, -5.0f), 0.0f, 0.0f);
+	camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 0.0f, 1.0f));
 	samplers = InitSamplers();
+	textures = _LoadTextures();
 	//_DebugDraw();
 	_ModelDraw();
 }
@@ -207,7 +217,7 @@ void InitGame() {
 void Render()
 {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	for (Draw draw : draws) {
 		draw.shader->use();
 		draw.shader->setMat4("mvp",
@@ -233,8 +243,10 @@ void _UpdateDeltaTime() {
 	last_ticks = this_ticks;
 }
 
+
 int SDL_main(int argc, char** argv)
 {
+	auto log_thread = LogIO(quit);
 	InitContext();
 	InitGame();
 	while (!quit) {
@@ -246,5 +258,6 @@ int SDL_main(int argc, char** argv)
 		Render();
 	}
 	ClearContext();
+	log_thread.join();
 	return 0;
 }

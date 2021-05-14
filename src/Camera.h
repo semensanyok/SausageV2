@@ -1,10 +1,11 @@
 #pragma once
 
-#include "TestUtils.h"
+#include "Logging.h"
 #include <string>
 #include "glm/gtx/string_cast.hpp"
 
 using namespace std;
+using namespace glm;
 
 class Camera
 {
@@ -16,7 +17,7 @@ public:
 		float near_plane,
 		float far_plane,
 		vec3 pos,
-		float yaw_angle = 0.0f,
+		float yaw_angle = -90.0f,
 		float pitch_angle = 0.0f,
 		vec3 up = vec3(0.0f, 1.0f, 0.0f),
 		vec3 world_up = vec3(0.0f, 1.0f, 0.0f)
@@ -31,35 +32,32 @@ public:
 		this->pitch_angle = pitch_angle;
 		this->world_up = world_up;
 		this->up = up;
-		UpdateCameraFrontUpRight();
-
 		this->projection_matrix = perspective(this->FOV, this->width / this->height, this->near_plane, this->far_plane);
 
-		this->view_matrix = lookAt(this->pos, this->pos + this->front, this->up);
+		UpdateCameraFrontUpRight();
+		this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
 	};
 	~Camera() {};
 	void UpdateCameraFrontUpRight() {
-		this->front.x = cos(radians(pitch_angle)) * sin(radians(yaw_angle));
-		this->front.y = sin(radians(pitch_angle));
-		this->front.z = sin(radians(pitch_angle)) * cos(radians(yaw_angle));
-		//this->front = normalize(this->front);
+		vec3 target = vec3(cos(radians(yaw_angle)) * cos(radians(pitch_angle)), sin(radians(pitch_angle)), sin(radians(yaw_angle)) * cos(radians(pitch_angle)));
+		direction = normalize(pos - target);
 		// also re-calculate the Right and Up vector
-		this->right = normalize(cross(this->front, this->up));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-		//this->up = normalize(cross(this->right, this->world_up));
+		right = normalize(cross(world_up, direction));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+		up = normalize(cross(direction, right));
 		_LogPos();
 	}
 	void KeyCallback(int scan_code, float delta_time) {
 		float velocity = delta_time * movement_speed;
 		vec3 new_pos = pos;
-		if (scan_code == SDL_SCANCODE_W)   new_pos += front * velocity;
+		if (scan_code == SDL_SCANCODE_W)   new_pos += direction * velocity;
 		if (scan_code == SDL_SCANCODE_A)   new_pos -= right * velocity;
-		if (scan_code == SDL_SCANCODE_S)   new_pos -= front * velocity;
-		if (scan_code == SDL_SCANCODE_D)   new_pos += right * velocity;
+		if (scan_code == SDL_SCANCODE_S)   new_pos -= direction * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
+		if (scan_code == SDL_SCANCODE_D)   new_pos += right * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
 
 		if (!glm::isnan(new_pos.x)) {
 			pos = new_pos;
 		}
-		this->view_matrix = lookAt(this->pos, this->pos + this->front, this->up);
+		this->view_matrix = lookAt(this->pos, pos + direction, this->up);
 
 		_LogPos();
 	};
@@ -67,20 +65,23 @@ public:
 	void MouseCallback(SDL_Event* e)
 	{
 		this->yaw_angle += ((float)e->motion.xrel * this->sensivity);
-		this->pitch_angle += ((float)e->motion.yrel * this->sensivity);
-		this->yaw_angle = std::clamp(this->yaw_angle, -90.0f, 90.0f);
+		this->pitch_angle -= ((float)e->motion.yrel * this->sensivity);
 		this->pitch_angle = std::clamp(this->pitch_angle, -90.0f, 90.0f);
-		
+		if (yaw_angle > 360.0f || yaw_angle < -360.0f) {
+			yaw_angle = 0.0f;
+		}
+
 		UpdateCameraFrontUpRight();
-		this->view_matrix = lookAt(this->pos, this->pos + this->front, this->up);
+		this->view_matrix = lookAt(this->pos, pos + direction, this->up);
+		_LogPos();
 	}
 
 	void _LogPos() {
 		LOG("POSITION:");
 		LOG(glm::to_string(pos));
 
-		LOG("FRONT:");
-		LOG(glm::to_string(front));
+		LOG("direction:");
+		LOG(glm::to_string(direction));
 
 		LOG("WORLD_UP:");
 		LOG(glm::to_string(world_up));
@@ -104,7 +105,7 @@ public:
 	vec3 up;
 	vec3 world_up;
 	vec3 right;
-	vec3 front;
+	vec3 direction;
 	float yaw_angle;
 	float pitch_angle;
 	float sensivity = 1.0f;

@@ -3,15 +3,38 @@
 #include "sausage.h"
 #include <string>
 #include <fstream>
+#include <queue>
+#include <string>
+#include <thread>
+#include <chrono>
 
 using namespace std;
 
 static ofstream logstream("LOG.log");
 
-#define LOG(s) cout<<s<<endl; \
-			   logstream<<s<<endl;
+static queue<string> log_queue;
 
-void LogShaderMessage(GLuint id);
+#define LOG(s) log_queue.push(s);
+
+thread LogIO(bool& quit) {
+	return thread([&] {while (!quit) {
+		this_thread::sleep_for(std::chrono::milliseconds(1000));
+		while (!log_queue.empty()) {
+			string& s = log_queue.front();
+			cout << s << endl;
+			logstream << s << endl;
+			log_queue.pop();
+		}
+	}});
+}
+
+void LogShaderMessage(unsigned int id) {
+	int max_length = 2048;
+	int actual_length = 0;
+	char program_log[2048];
+	glGetProgramInfoLog(id, max_length, &actual_length, program_log);
+	printf("program info log for GL index %u:\n%s", id, program_log);
+}
 
 string glGetErrorString(GLenum error)
 {

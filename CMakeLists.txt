@@ -62,6 +62,29 @@ find_library(Freetype
     HINTS "${CMAKE_SOURCE_DIR}/lib/freetype/lib/" # where to look
     NO_DEFAULT_PATH # do not search system default paths
     )
+
+find_library(Freetype
+    NAMES freetype.lib # what to look for
+    HINTS "${CMAKE_SOURCE_DIR}/lib/freetype/lib/" # where to look
+    NO_DEFAULT_PATH # do not search system default paths
+    )
+
+find_library(LibRocketControls2
+    NAMES RocketControls.lib # what to look for
+    HINTS "${CMAKE_SOURCE_DIR}/lib/libRocket/" # where to look
+    NO_DEFAULT_PATH # do not search system default paths
+    )
+find_library(LibRocketCore2
+    NAMES RocketCore.lib # what to look for
+    HINTS "${CMAKE_SOURCE_DIR}/lib/libRocket/" # where to look
+    NO_DEFAULT_PATH # do not search system default paths
+    )
+find_library(LibRocketDebugger2
+    NAMES RocketDebugger.lib # what to look for
+    HINTS "${CMAKE_SOURCE_DIR}/lib/libRocket/" # where to look
+    NO_DEFAULT_PATH # do not search system default paths
+    )
+
 # check if we found the library
 message(STATUS "HELLO_LIB: ${Freetype}")
 if (NOT Freetype)
@@ -72,8 +95,26 @@ set(FREETYPE_LIBRARY "${Freetype}")
 
 add_subdirectory("dependencies/libRocket/Build")
 
-#"src/main.cpp" 
-add_executable(${CMAKE_PROJECT_NAME} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Camera.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/TestUtils.h" "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp")
+set(sources
+    main.cpp
+    imgui/imconfig.h
+    imgui/imgui.cpp
+    imgui/imgui.h
+    imgui/imgui_demo.cpp
+    imgui/imgui_draw.cpp
+    imgui/imgui_internal.h
+    imgui/imgui_widgets.cpp
+    imgui/imstb_rectpack.h
+    imgui/imstb_textedit.h
+    imgui/imstb_truetype.h
+    imgui/imgui_impl_opengl3.cpp
+    imgui/imgui_impl_opengl3.h
+    imgui/imgui_impl_sdl.cpp
+    imgui/imgui_impl_sdl.h
+)
+
+#"src/main.cpp" "src/sausage.cpp"
+add_executable(${CMAKE_PROJECT_NAME} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Camera.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp"   )
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
@@ -86,4 +127,5 @@ foreach(file ${files})
   FILE(COPY "${file}/" DESTINATION "${CMAKE_BINARY_DIR}/${filename}")
 endforeach()
 
-target_link_libraries(${CMAKE_PROJECT_NAME} glfw assimp glad glm SDL2::Main zlib ${SDL2_IMAGE_LIBRARIES} RocketCore RocketDebugger RocketControls ${Freetype})
+# RocketCore RocketDebugger RocketControls
+target_link_libraries(${CMAKE_PROJECT_NAME} glfw assimp glad glm SDL2::Main zlib ${SDL2_IMAGE_LIBRARIES} ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2} ${Freetype})
