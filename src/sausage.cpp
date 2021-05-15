@@ -10,6 +10,10 @@
 #include "AssetUtils.h"
 #include "Logging.h"
 
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
+
 using namespace std;
 using namespace glm;
 
@@ -28,8 +32,6 @@ bool quit = false;
 
 vector<Texture*> textures;
 
-//// GUI state
-
 struct Draw {
 	// 1) location or vector of locs
 	// 2) 1 shader many meshes
@@ -44,16 +46,16 @@ vector<Draw> draws;
 class SceneNode {
 	vec3 position;
 	vector<SceneNode> children;
-	virtual void Draw() = 0;
+	void Draw();
 };
 
 void InitContext() {
 	SDL_Init(SDL_INIT_VIDEO);
 
-	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	//SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+	//SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+	//SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+	//SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -96,8 +98,15 @@ void InitContext() {
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 }
 
+void CleanupGui() {
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
+}
+
 void ClearContext() {
 	WriteShaderMsgsToLogFile();
+	CleanupGui();
 	SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
@@ -188,7 +197,7 @@ vector<Texture*> _LoadTextures() {
 		textures.push_back(texture_height);
 	}
 	return textures;
-}
+}																			
 
 void _ModelDraw() {
 	Shader* shader = new Shader{ GetShaderPath("model_vs.glsl"), GetShaderPath("model_fs.glsl") };
@@ -207,11 +216,73 @@ void _DebugDraw() {
 }
 
 void InitGame() {
-	camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 0.0f, 1.0f));
+	camera = new Camera(80.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 0.0f, -10.0f));
 	samplers = InitSamplers();
 	textures = _LoadTextures();
 	//_DebugDraw();
 	_ModelDraw();
+}
+
+void InitGui() {
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui::StyleColorsDark();
+	ImGui_ImplSDL2_InitForOpenGL(window, context);
+	const char* glsl_version = "#version 460";
+	ImGui_ImplOpenGL3_Init(glsl_version);
+}
+
+void RenderGui() {
+	static bool show_demo_window = true;
+	static bool show_another_window = true;
+	
+	
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL2_NewFrame(window);
+	ImGui::NewFrame();
+	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+	if (show_demo_window)
+		ImGui::ShowDemoWindow(&show_demo_window);
+
+	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+	{
+		static float f = 0.0f;
+		static int counter = 0;
+		static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+		ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+		ImGui::Checkbox("Another Window", &show_another_window);
+
+		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			counter++;
+		ImGui::SameLine();
+		ImGui::Text("counter = %d", counter);
+
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
+	}
+
+	// 3. Show another simple window.
+	if (show_another_window)
+	{
+		ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+		ImGui::Text("Hello from another window!");
+		if (ImGui::Button("Close Me"))
+			show_another_window = false;
+		ImGui::End();
+	}
+	ImGui::Render();
+	//glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+	//glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+	//glClear(GL_COLOR_BUFFER_BIT);
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void Render()
@@ -253,9 +324,11 @@ int SDL_main(int argc, char** argv)
 		_UpdateDeltaTime();
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
+			ImGui_ImplSDL2_ProcessEvent(&e);
 			ProcessEvent(&e);
 		}
 		Render();
+		RenderGui();
 	}
 	ClearContext();
 	log_thread.join();

@@ -17,7 +17,7 @@ public:
 		float near_plane,
 		float far_plane,
 		vec3 pos,
-		float yaw_angle = -90.0f,
+		float yaw_angle = -0.0f,
 		float pitch_angle = 0.0f,
 		vec3 up = vec3(0.0f, 1.0f, 0.0f),
 		vec3 world_up = vec3(0.0f, 1.0f, 0.0f)
@@ -40,24 +40,19 @@ public:
 	~Camera() {};
 	void UpdateCameraFrontUpRight() {
 		vec3 target = vec3(cos(radians(yaw_angle)) * cos(radians(pitch_angle)), sin(radians(pitch_angle)), sin(radians(yaw_angle)) * cos(radians(pitch_angle)));
-		direction = normalize(pos - target);
-		// also re-calculate the Right and Up vector
-		right = normalize(cross(world_up, direction));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-		up = normalize(cross(direction, right));
+		direction = normalize(pos + target);
+		right = normalize(cross(target, world_up));
+		up = normalize(cross(right, target));
 		_LogPos();
 	}
 	void KeyCallback(int scan_code, float delta_time) {
 		float velocity = delta_time * movement_speed;
-		vec3 new_pos = pos;
-		if (scan_code == SDL_SCANCODE_W)   new_pos += direction * velocity;
-		if (scan_code == SDL_SCANCODE_A)   new_pos -= right * velocity;
-		if (scan_code == SDL_SCANCODE_S)   new_pos -= direction * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
-		if (scan_code == SDL_SCANCODE_D)   new_pos += right * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
+		if (scan_code == SDL_SCANCODE_W)   pos += direction * velocity;
+		if (scan_code == SDL_SCANCODE_A)   pos -= right * velocity;
+		if (scan_code == SDL_SCANCODE_S)   pos -= direction * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
+		if (scan_code == SDL_SCANCODE_D)   pos += right * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
 
-		if (!glm::isnan(new_pos.x)) {
-			pos = new_pos;
-		}
-		this->view_matrix = lookAt(this->pos, pos + direction, this->up);
+		this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
 
 		_LogPos();
 	};
@@ -72,31 +67,36 @@ public:
 		}
 
 		UpdateCameraFrontUpRight();
-		this->view_matrix = lookAt(this->pos, pos + direction, this->up);
+		this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
 		_LogPos();
 	}
 
+	int last_seconds = 0;
 	void _LogPos() {
-		LOG("POSITION:");
-		LOG(glm::to_string(pos));
+		int seconds = SDL_GetTicks() / 500;
+		if (seconds > last_seconds) {
+			LOG("POSITION:");
+			LOG(glm::to_string(pos));
 
-		LOG("direction:");
-		LOG(glm::to_string(direction));
+			LOG("direction:");
+			LOG(glm::to_string(direction));
 
-		LOG("WORLD_UP:");
-		LOG(glm::to_string(world_up));
+			LOG("WORLD_UP:");
+			LOG(glm::to_string(world_up));
 
-		LOG("UP:");
-		LOG(glm::to_string(up));
+			LOG("UP:");
+			LOG(glm::to_string(up));
 
-		LOG("RIGHT:");
-		LOG(glm::to_string(right));
+			LOG("RIGHT:");
+			LOG(glm::to_string(right));
 
-		LOG("YAW:");
-		LOG(to_string(yaw_angle));
+			LOG("YAW:");
+			LOG(to_string(yaw_angle));
 
-		LOG("PITCH:");
-		LOG(to_string(pitch_angle));
+			LOG("PITCH:");
+			LOG(to_string(pitch_angle));
+		}
+		last_seconds = seconds;
 	}
 
 	mat4 view_matrix;
@@ -108,7 +108,7 @@ public:
 	vec3 direction;
 	float yaw_angle;
 	float pitch_angle;
-	float sensivity = 1.0f;
+	float sensivity = 0.1f;
 	float movement_speed = 0.1f;
 
 	float FOV;
