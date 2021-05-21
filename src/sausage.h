@@ -5,8 +5,11 @@
 // #define GLFW_INCLUDE_NONE
 // #include <GLFW/glfw3.h>
 
+
+#define GL_GLEXT_PROTOTYPES
 #include <SDL.h>
 #include <glad/glad.h>
+#include "glcorearb.h"
 
 #include <glm/glm.hpp>
 #include <glm/vec2.hpp>

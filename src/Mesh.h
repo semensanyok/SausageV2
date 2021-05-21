@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Texture.h"
+#include "Structures.h"
 #include <vector>
 #include <atomic>
 
@@ -8,19 +9,6 @@ using namespace std;
 using namespace glm;
 
 static atomic<unsigned int> mesh_count{ 0 };
-
-struct Vertex {
-    // position
-    vec3 Position;
-    // normal
-    vec3 Normal;
-    // texCoords
-    vec2 TexCoords;
-    // tangent
-    vec3 Tangent;
-    // bitangent
-    vec3 Bitangent;
-};
 
 struct Mesh {
     vector<Vertex> vertices;
@@ -44,6 +32,7 @@ Mesh* CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
     return CreateMesh(positions, indices);
 };
 
+// old way. switched to multidraw
 void InitBuffers(Mesh* mesh) {
     // create buffers/arrays
     glGenVertexArrays(1, &mesh->VAO);
@@ -146,10 +135,10 @@ Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene)
             vector.z = mesh->mTangents[i].z;
             vertex.Tangent = vector;
             // bitangent
-            vector.x = mesh->mBitangents[i].x;
-            vector.y = mesh->mBitangents[i].y;
-            vector.z = mesh->mBitangents[i].z;
-            vertex.Bitangent = vector;
+            //vector.x = mesh->mBitangents[i].x;
+            //vector.y = mesh->mBitangents[i].y;
+            //vector.z = mesh->mBitangents[i].z;
+            //vertex.Bitangent = vector;
         }
         else
             vertex.TexCoords = vec2(0.0f, 0.0f);

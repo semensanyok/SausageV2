@@ -75,12 +75,6 @@ public:
 		texture_normal	= glGetUniformLocation(id, "texture_normal");
 		texture_height = glGetUniformLocation(id, "texture_height");
 	}
-	// activate the shader
-	// ------------------------------------------------------------------------
-	void use() const
-	{
-		glUseProgram(id);
-	}
 	// utility uniform functions
 	// ------------------------------------------------------------------------
 	void setBool(const string& name, bool value) const

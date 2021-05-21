@@ -7,24 +7,6 @@
 
 using namespace std;
 
-enum class TextureType
-{
-    Diffuse,
-    Normal,
-    Specular,
-    Height,
-};
-
-struct Samplers {
-    unsigned int basic_repeat;
-};
-
-struct Texture {
-    unsigned int id;
-    const char* name;
-    TextureType type;
-};
-
 string GetTexturePath(const string& name, TextureType texture_type) {
     switch (texture_type)
     {

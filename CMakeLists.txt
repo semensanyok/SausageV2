@@ -97,11 +97,6 @@ set(FREETYPE_LIBRARY "${Freetype}")
 
 add_subdirectory("dependencies/libRocket/Build")
 
-set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Camera.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp"    "src/Logging.cpp" "src/ThreadSafeQueue.h" )
-
-#"src/main.cpp" "src/sausage.cpp"
-add_executable(${CMAKE_PROJECT_NAME} ${sources})
-
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(freetype REQUIRED)
@@ -121,6 +116,7 @@ set(IMGUI_SOURCES
     "dependencies/imgui/imgui_widgets.cpp"
     "dependencies/imgui/backends/imgui_impl_opengl3.cpp"
     "dependencies/imgui/backends/imgui_impl_sdl.cpp"
+    "dependencies/imgui/imgui_tables.cpp"
 )
 set(IMGUI_HEADERS
     "dependencies/imgui/imconfig.h"
@@ -132,17 +128,25 @@ set(IMGUI_HEADERS
     "dependencies/imgui/backends/imgui_impl_opengl3.h"
     "dependencies/imgui/backends/imgui_impl_sdl.h"
 )
-add_library(dearimgui
-    STATIC
-        ${IMGUI_SOURCES}
-        ${IMGUI_HEADERS}
-)
-target_link_libraries(dearimgui glad)
-target_compile_definitions(dearimgui
-    PRIVATE
-        IMGUI_IMPL_OPENGL_LOADER_GLAD=1
-)
+# add_library(dearimgui
+#     STATIC
+#         ${IMGUI_SOURCES}
+#         ${IMGUI_HEADERS}
+# )
+# target_link_libraries(dearimgui glad)
+# target_compile_definitions(dearimgui
+#     PRIVATE
+#         IMGUI_IMPL_OPENGL_LOADER_GLAD=1
+# )
 ####### IMGUI ##################
 
+set(sources ${sources} ${IMGUI_HEADERS} ${IMGUI_SOURCES})
+
+set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Camera.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp"    "src/Logging.cpp" "src/ThreadSafeQueue.h" "src/glcorearb.h" )
+
+#"src/main.cpp" "src/sausage.cpp"
+add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/thirdpartytests/main_imgui_test.cpp"  "src/thirdpartytests/sparse_bindless_texarray.h" "src/thirdpartytests/sparse_bindless_texarray.cpp" "src/Structures.h" "src/BufferManager.h")
+
 # RocketCore RocketDebugger RocketControls
-target_link_libraries(${CMAKE_PROJECT_NAME} glfw assimp glad glm SDL2::Main zlib dearimgui ${SDL2_IMAGE_LIBRARIES} ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2} ${Freetype})
+target_link_libraries(${CMAKE_PROJECT_NAME} glfw assimp glad glm SDL2::Main zlib ${SDL2_IMAGE_LIBRARIES} ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2} ${Freetype})
+

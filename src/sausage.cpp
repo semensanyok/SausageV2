@@ -1,6 +1,10 @@
 ﻿// sausage.cpp : Defines the entry point for the application.
 //
 
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
+
 #include "sausage.h"
 #include "Settings.h"
 #include "Mesh.h"
@@ -9,10 +13,6 @@
 #include "Shader.h"
 #include "AssetUtils.h"
 #include "Logging.h"
-
-#include "imgui.h"
-#include "imgui_impl_sdl.h"
-#include "imgui_impl_opengl3.h"
 
 using namespace std;
 using namespace glm;
@@ -45,21 +45,25 @@ vector<Draw> draws;
 
 class SceneNode {
 	vec3 position;
-	vector<SceneNode> children;
-	void Draw();
+	Mesh* mesh; // optional
+	// vector<SceneNode> children; bad for cache coherency. Make parrent contain references to children, update transform.
 };
 
 void InitContext() {
 	SDL_Init(SDL_INIT_VIDEO);
-
-	//SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-	//SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	//SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-	//SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+
+	//SDL_ShowCursor(SDL_ENABLE);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
 #ifdef GL_DEBUG
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
@@ -69,7 +73,7 @@ void InitContext() {
 	
 	window = SDL_CreateWindow("caveview", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		SCR_WIDTH, SCR_HEIGHT,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE // SDL_WINDOW_VULKAN
+		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI // SDL_WINDOW_VULKAN
 	);
 	if (!window) LOG("Couldn't create window");
 
@@ -77,8 +81,10 @@ void InitContext() {
 	if (!context) LOG("Couldn't create context");
 
 	SDL_GL_MakeCurrent(window, context); // is this true by default?
+	
+	// hide cursor, report only mouse motion events
+	// SDL_SetRelativeMouseMode(SDL_TRUE);
 
-	SDL_SetRelativeMouseMode(SDL_TRUE);
 	// enable VSync
 	SDL_GL_SetSwapInterval(1);
 
@@ -90,7 +96,7 @@ void InitContext() {
 	{
 		LOG("[INFO] glad initialized\n");
 	}
-
+	
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 	glEnable(GL_DEPTH_TEST);
 	// debug
@@ -116,7 +122,7 @@ void ProcessEvent(SDL_Event* e)
 {
 	switch (e->type) {
 	case SDL_MOUSEMOTION:
-		camera->MouseCallback(e);
+		// camera->MouseMotionCallback(e);
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 		break;
@@ -153,7 +159,7 @@ void ProcessEvent(SDL_Event* e)
 		mod = SDL_GetModState();
 		if (k == SDLK_ESCAPE)
 			quit = 1;
-		camera->KeyCallback(s, delta_time);
+		camera->KeyCallbackRTS(s, delta_time);
 		break;
 	}
 	case SDL_KEYUP: {
@@ -179,7 +185,7 @@ Mesh* GetPlane() {
 
 vector<Texture*> _LoadTextures() {
 	vector<Texture*> textures;
-	Texture* texture_diffuse = LoadTexture(GetTexturePath<const char*>("Image0000.png").c_str(), "texture_diffuse", TextureType::Diffuse);
+	Texture* texture_diffuse = LoadTexture(GetTexturePath<const char*>("Image0001.png").c_str(), "texture_diffuse", TextureType::Diffuse);
 	Texture* texture_normal = LoadTexture(GetTexturePath<const char*>("Image0000_normal.png").c_str(), "texture_normal", TextureType::Normal);
 	Texture* texture_specular = LoadTexture(GetTexturePath<const char*>("Image0000_specular.png").c_str(), "texture_specular", TextureType::Specular);
 	Texture* texture_height = LoadTexture(GetTexturePath<const char*>("Image0000_height.png").c_str(), "texture_height", TextureType::Height);
@@ -216,14 +222,14 @@ void _DebugDraw() {
 }
 
 void InitGame() {
-	camera = new Camera(80.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 0.0f, -10.0f));
+	camera = new Camera(80.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 0.0f, 3.0f), 0.0f, -45.0f);
 	samplers = InitSamplers();
 	textures = _LoadTextures();
 	//_DebugDraw();
 	_ModelDraw();
 }
 
-void InitGui() {
+void InitGuiContext() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
@@ -237,51 +243,22 @@ void RenderGui() {
 	static bool show_demo_window = true;
 	static bool show_another_window = true;
 	
-	
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL2_NewFrame(window);
 	ImGui::NewFrame();
-	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-	if (show_demo_window)
-		ImGui::ShowDemoWindow(&show_demo_window);
-
-	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+	
 	{
-		static float f = 0.0f;
-		static int counter = 0;
-		static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-		ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-		ImGui::Checkbox("Another Window", &show_another_window);
-
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-			counter++;
-		ImGui::SameLine();
-		ImGui::Text("counter = %d", counter);
-
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::SetNextWindowPos(ImVec2(0, 0));
+		ImGui::Begin("Camera");
+		ImGui::Text("POSITION: %.1f %.1f %.1f", camera->pos.x, camera->pos.y, camera->pos.z);
+		ImGui::Text("Yaw: %.1f Pitch: %.1f", camera->yaw_angle, camera->pitch_angle);
+		ImGui::Text("Right: %.1f %.1f %.1f", camera->right.x, camera->right.y, camera->right.z);
+		ImGui::Text("Up: %.1f %.1f %.1f", camera->up.x, camera->up.y, camera->up.z);
+		ImGui::Text("direction: %.1f %.1f %.1f", camera->direction.x, camera->direction.y, camera->direction.z);
 		ImGui::End();
 	}
 
-	// 3. Show another simple window.
-	if (show_another_window)
-	{
-		ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-		ImGui::Text("Hello from another window!");
-		if (ImGui::Button("Close Me"))
-			show_another_window = false;
-		ImGui::End();
-	}
 	ImGui::Render();
-	//glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-	//glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-	//glClear(GL_COLOR_BUFFER_BIT);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
@@ -290,7 +267,7 @@ void Render()
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	for (Draw draw : draws) {
-		draw.shader->use();
+		glUseProgram(draw.shader->id);
 		draw.shader->setMat4("mvp",
 			camera->projection_matrix * 
 			camera->view_matrix * 
@@ -299,13 +276,9 @@ void Render()
 		for (Texture* texture : draw.textures) {
 			BindTexture(texture, draw.shader->id);
 			glBindSampler((int)texture->type, samplers->basic_repeat);
-			auto asd1 = mat4(1);
-			// LogShaderFull(draw.shader->id);
 		}
 		glDrawElements(GL_TRIANGLES, draw.mesh->indices.size(), GL_UNSIGNED_INT, NULL);
 	}
-	// Draw
-	SDL_GL_SwapWindow(window);
 }
 
 void _UpdateDeltaTime() {
@@ -314,23 +287,42 @@ void _UpdateDeltaTime() {
 	last_ticks = this_ticks;
 }
 
+struct block {
+	vec3 a;
+	vec3 b;
+	mat4 q;
+};
 
 int SDL_main(int argc, char** argv)
 {
-	auto log_thread = LogIO(quit);
-	InitContext();
-	InitGame();
-	while (!quit) {
-		_UpdateDeltaTime();
-		SDL_Event e;
-		while (SDL_PollEvent(&e)) {
-			ImGui_ImplSDL2_ProcessEvent(&e);
-			ProcessEvent(&e);
-		}
-		Render();
-		RenderGui();
-	}
-	ClearContext();
-	log_thread.join();
+	cout << sizeof(mat4) << endl;
+	cout << sizeof(block) << endl;
+	//auto log_thread = LogIO(quit);
+	//InitContext();
+	//InitGuiContext();
+
+	//InitGame();
+
+	//if (SDL_GL_ExtensionSupported("GL_ARB_bindless_texture")) {
+	//	cout << "GL_ARB_bindless_texture" << endl;
+	//}
+	//else {
+	//	cout << "you suck" << endl;
+	//}
+
+	//while (!quit) {
+	//	_UpdateDeltaTime();
+	//	SDL_Event e;
+	//	while (SDL_PollEvent(&e)) {
+	//		ImGui_ImplSDL2_ProcessEvent(&e);
+	//		ProcessEvent(&e);
+	//	}
+	//	Render();
+	//	RenderGui();
+	//	// Draw
+	//	SDL_GL_SwapWindow(window);
+	//}
+	//ClearContext();
+	//log_thread.join();
 	return 0;
 }
