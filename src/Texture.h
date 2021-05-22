@@ -1,9 +1,11 @@
 #pragma once
 
+#include "sausage.h"
 #include "AssetUtils.h"
 #include <string>
 #include "SDL_image.h"
 #include "Logging.h"
+#include "Structures.h"
 
 using namespace std;
 
@@ -28,7 +30,17 @@ string GetTexturePath(const string& name, TextureType texture_type) {
     }
 }
 
-Texture* LoadTexture(const char* path, const char* name, TextureType texture_type) {
+/**
+* load texture array for mesh. diffuse + normal + height + specular.
+*/
+Texture LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name) {
+    int texture_size = (diffuse_name != nullptr) + (normal_name != nullptr)
+    GLuint texture_id;
+    glGenTextures(1, &texture_id)
+
+}
+
+SDL_Surface* LoadTexture(const char* path, const char* name, TextureType texture_type) {
     SDL_Surface* res_texture = IMG_Load(path);
     if (res_texture == NULL) {
         cerr << "IMG_Load: " << SDL_GetError() << endl;

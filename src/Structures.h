@@ -38,22 +38,21 @@ struct DrawElementsIndirectCommand
 // --------------------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------------------
 // Texture structures start
-enum class TextureType
-{
-    Diffuse,
-    Normal,
-    Specular,
-    Height,
-};
 
+enum TextureType
+{
+    Diffuse, // texture 2d array index 0
+    Normal,  //                        1
+    Specular,//                        2
+    Height,  //                        3
+};
 struct Samplers {
     GLuint basic_repeat;
 };
-
 struct Texture {
-    unsigned int id;
-    const char* name;
-    TextureType type;
+    unsigned int ref_count;
+    GLuint texture_id;
+    GLuint64 texture_handle_ARB;
 };
 // --------------------------------------------------------------------------------------------------------------------
 // Texture structures end
@@ -67,6 +66,7 @@ struct Texture {
 // };
 
 struct MeshData {
+    // after data loaded, contains gl_DrawIDARB
     unsigned int draw_id;
 };
 
@@ -74,12 +74,4 @@ struct MeshLoadData {
     vector<Vertex> vertices;
     vector<unsigned int> indices;
     unsigned int draw_id;
-};
-
-// indices in shader for texture sampler array
-struct MeshShaderIds {
-    unsigned int texture_diffuse_id;
-    unsigned int texture_normal_id;
-    unsigned int texture_specular_id;
-    unsigned int texture_height_id;
 };

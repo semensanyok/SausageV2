@@ -6,6 +6,8 @@
 #include "imgui_impl_opengl3.h"
 
 #include "sausage.h"
+#include "systems/Renderer.h"
+#include "systems/Gui.h"
 #include "Settings.h"
 #include "Mesh.h"
 #include "Camera.h"
@@ -17,11 +19,6 @@
 using namespace std;
 using namespace glm;
 
-// SDL state
-SDL_Window* window;
-SDL_Renderer* renderer;
-SDL_GLContext context;
-
 // Game state
 Camera* camera;
 vector<Mesh*> meshes;
@@ -29,94 +26,6 @@ Samplers* samplers;
 float delta_time = 0;
 float last_ticks = 0;
 bool quit = false;
-
-vector<Texture*> textures;
-
-struct Draw {
-	// 1) location or vector of locs
-	// 2) 1 shader many meshes
-	// 3) instanced draw - same mesh same shader multiple draw different pos
-	Mesh* mesh;
-	Shader* shader;
-	vector<Texture*> textures;
-};
-
-vector<Draw> draws;
-
-class SceneNode {
-	vec3 position;
-	Mesh* mesh; // optional
-	// vector<SceneNode> children; bad for cache coherency. Make parrent contain references to children, update transform.
-};
-
-void InitContext() {
-	SDL_Init(SDL_INIT_VIDEO);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
-
-	//SDL_ShowCursor(SDL_ENABLE);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-
-#ifdef GL_DEBUG
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-#endif
-
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
-	
-	window = SDL_CreateWindow("caveview", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		SCR_WIDTH, SCR_HEIGHT,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI // SDL_WINDOW_VULKAN
-	);
-	if (!window) LOG("Couldn't create window");
-
-	context = SDL_GL_CreateContext(window);
-	if (!context) LOG("Couldn't create context");
-
-	SDL_GL_MakeCurrent(window, context); // is this true by default?
-	
-	// hide cursor, report only mouse motion events
-	// SDL_SetRelativeMouseMode(SDL_TRUE);
-
-	// enable VSync
-	SDL_GL_SetSwapInterval(1);
-
-	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
-	{
-		LOG("[ERROR] Couldn't initialize glad");
-	}
-	else
-	{
-		LOG("[INFO] glad initialized\n");
-	}
-	
-	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-	glEnable(GL_DEPTH_TEST);
-	// debug
-	glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-}
-
-void CleanupGui() {
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
-	ImGui::DestroyContext();
-}
-
-void ClearContext() {
-	WriteShaderMsgsToLogFile();
-	CleanupGui();
-	SDL_GL_DeleteContext(context);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
-}
 
 void ProcessEvent(SDL_Event* e)
 {
@@ -168,21 +77,6 @@ void ProcessEvent(SDL_Event* e)
 	}
 }
 
-Mesh* GetPlane() {
-	static  std::vector<float> vertices = {
-		0.5f,  0.5f, 0.0f,  // top right
-		0.5f, -0.5f, 0.0f,  // bottom right
-		-0.5f, -0.5f, 0.0f,  // bottom left
-		-0.5f,  0.5f, 0.0f   // top left 
-	};
-	static  std::vector<unsigned int> indices = {
-		0, 1, 3,  // first Triangle
-		1, 2, 3   // second Triangle
-	};
-	Mesh* mesh = CreateMesh(vertices, indices);
-	return mesh;
-}
-
 vector<Texture*> _LoadTextures() {
 	vector<Texture*> textures;
 	Texture* texture_diffuse = LoadTexture(GetTexturePath<const char*>("Image0001.png").c_str(), "texture_diffuse", TextureType::Diffuse);
@@ -205,80 +99,9 @@ vector<Texture*> _LoadTextures() {
 	return textures;
 }																			
 
-void _ModelDraw() {
-	Shader* shader = new Shader{ GetShaderPath("model_vs.glsl"), GetShaderPath("model_fs.glsl") };
-
-	LoadMeshes(meshes, GetModelPath("cube.fbx"));
-	for_each(meshes.begin(), meshes.end(), [&](Mesh* mesh) {
-		InitBuffers(mesh);
-		draws.push_back(Draw{ mesh, shader, textures });
-		});
-}
-
-void _DebugDraw() {
-	Mesh* mesh = GetPlane();
-	InitBuffers(mesh);
-	draws.push_back(Draw{ mesh, new Shader{ GetShaderPath("debug_vs.glsl"), GetShaderPath("debug_fs.glsl") } });
-}
-
 void InitGame() {
 	camera = new Camera(80.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 0.0f, 3.0f), 0.0f, -45.0f);
 	samplers = InitSamplers();
-	textures = _LoadTextures();
-	//_DebugDraw();
-	_ModelDraw();
-}
-
-void InitGuiContext() {
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	ImGui::StyleColorsDark();
-	ImGui_ImplSDL2_InitForOpenGL(window, context);
-	const char* glsl_version = "#version 460";
-	ImGui_ImplOpenGL3_Init(glsl_version);
-}
-
-void RenderGui() {
-	static bool show_demo_window = true;
-	static bool show_another_window = true;
-	
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL2_NewFrame(window);
-	ImGui::NewFrame();
-	
-	{
-		ImGui::SetNextWindowPos(ImVec2(0, 0));
-		ImGui::Begin("Camera");
-		ImGui::Text("POSITION: %.1f %.1f %.1f", camera->pos.x, camera->pos.y, camera->pos.z);
-		ImGui::Text("Yaw: %.1f Pitch: %.1f", camera->yaw_angle, camera->pitch_angle);
-		ImGui::Text("Right: %.1f %.1f %.1f", camera->right.x, camera->right.y, camera->right.z);
-		ImGui::Text("Up: %.1f %.1f %.1f", camera->up.x, camera->up.y, camera->up.z);
-		ImGui::Text("direction: %.1f %.1f %.1f", camera->direction.x, camera->direction.y, camera->direction.z);
-		ImGui::End();
-	}
-
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-void Render()
-{
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	for (Draw draw : draws) {
-		glUseProgram(draw.shader->id);
-		draw.shader->setMat4("mvp",
-			camera->projection_matrix * 
-			camera->view_matrix * 
-			mat4(1));
-		// shader->setMat4("model", draw->node.model_transform);
-		for (Texture* texture : draw.textures) {
-			BindTexture(texture, draw.shader->id);
-			glBindSampler((int)texture->type, samplers->basic_repeat);
-		}
-		glDrawElements(GL_TRIANGLES, draw.mesh->indices.size(), GL_UNSIGNED_INT, NULL);
-	}
 }
 
 void _UpdateDeltaTime() {
@@ -287,16 +110,8 @@ void _UpdateDeltaTime() {
 	last_ticks = this_ticks;
 }
 
-struct block {
-	vec3 a;
-	vec3 b;
-	mat4 q;
-};
-
 int SDL_main(int argc, char** argv)
 {
-	cout << sizeof(mat4) << endl;
-	cout << sizeof(block) << endl;
 	//auto log_thread = LogIO(quit);
 	//InitContext();
 	//InitGuiContext();

@@ -142,10 +142,10 @@ set(IMGUI_HEADERS
 
 set(sources ${sources} ${IMGUI_HEADERS} ${IMGUI_SOURCES})
 
-set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Camera.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp"    "src/Logging.cpp" "src/ThreadSafeQueue.h" "src/glcorearb.h" )
+set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/systems/Camera.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp"    "src/Logging.cpp" "src/utils/ThreadSafeQueue.h" "src/glcorearb.h" )
 
 #"src/main.cpp" "src/sausage.cpp"
-add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/thirdpartytests/main_imgui_test.cpp"  "src/thirdpartytests/sparse_bindless_texarray.h" "src/thirdpartytests/sparse_bindless_texarray.cpp" "src/Structures.h" "src/BufferManager.h")
+add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/thirdpartytests/main_imgui_test.cpp"  "src/thirdpartytests/sparse_bindless_texarray.h" "src/thirdpartytests/sparse_bindless_texarray.cpp" "src/Structures.h" "src/systems/BufferManager.h" "src/systems/Renderer.h")
 
 # RocketCore RocketDebugger RocketControls
 target_link_libraries(${CMAKE_PROJECT_NAME} glfw assimp glad glm SDL2::Main zlib ${SDL2_IMAGE_LIBRARIES} ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2} ${Freetype})

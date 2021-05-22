@@ -28,26 +28,22 @@ public:
 
 	unsigned int mesh_VAO;
     
-    unsigned int vertex_buffer;
+    GLuint vertex_buffer;
     Vertex* vertex_ptr;
     unsigned int vertex_total = 0;
     
-    unsigned int index_buffer;
+    GLuint index_buffer;
     unsigned int* index_ptr;
     unsigned index_total = 0;
     
-    unsigned int command_buffer;
+    GLuint command_buffer;
     DrawElementsIndirectCommand* command_ptr;
     unsigned int comand_total = 0;
 
     // UNIFORMS ///////////////////////////////
-    unsigned int transform_buffer;
+    GLuint transform_buffer;
     mat4* transform_ptr;
     unsigned int transforms_total = 0;
-
-    unsigned int ids_buffer;
-    DrawElementsIndirectCommand* ids_ptr;
-    unsigned int ids_total = 0;
     ////////////////////////////////////////////
 	
     BufferStorage() {};
@@ -81,7 +77,6 @@ public:
         vector<vector<Vertex>>& vertices,
         vector<vector<unsigned int>>& indices,
         vector<unsigned int>& draw_ids,
-        vector<MeshShaderIds>& shader_ids,
         GLsync* fence_sync) {
         assert(vertices.size() == indices.size() && vertices.size() == draw_ids.size());
         if (fence_sync != nullptr) {
@@ -89,19 +84,15 @@ public:
         }
         for (int i = 0; i < vertices.size(); i++) {
             if (vertices[i].size() + vertex_total > MAX_VERTEX) {
-                LOG(std::format("ERROR BufferMeshData allocation. vertices total=%i asked=%i max=%i;", vertex_total, vertices.size(), MAX_VERTEX));
+                LOG(std::format("ERROR BufferMeshData allocation. vertices total={} asked={} max={};", vertex_total, vertices.size(), MAX_VERTEX));
                 return;
             }
             if (indices[i].size() + index_total > MAX_INDEX) {
-                LOG(std::format("ERROR BufferMeshData allocation. indices total=%i asked=%i max=%i;", index_total, vertices.size(), MAX_INDEX));
+                LOG(std::format("ERROR BufferMeshData allocation. indices total={} asked={} max={};", index_total, vertices.size(), MAX_INDEX));
                 return;
             }
             if (draw_ids[i].size() + command_total > MAX_COMMAND) {
-                LOG(std::format("ERROR BufferMeshData allocation. commands total=%i asked=%i max=%i", command_total, draw_ids.size(), MAX_COMMAND));
-                return;
-            }
-            if (shader_ids[i].size() + command_total > MAX_COMMAND) {
-                LOG(std::format("ERROR BufferMeshData allocation. commands total=%i asked=%i max=%i", command_total, shader_ids.size(), MAX_COMMAND));
+                LOG(std::format("ERROR BufferMeshData allocation. commands total={} asked={} max={}", command_total, draw_ids.size(), MAX_COMMAND));
                 return;
             }
             DrawElementsIndirectCommand command;
@@ -121,7 +112,6 @@ public:
             vertex_total += vertices[i].size();
             index_total += indices[i].size();
             command_total += draw_ids[i].size();
-            ids_total += shader_ids.size();
         }
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
         glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
@@ -132,12 +122,12 @@ public:
         }
         // TODO: remove from buffer transforms path. (updated frequently, avoid branching?)
         if (transforms.size() != comand_total) {
-            LOG(std::format("ERROR BufferTransforms allocation. transforms size=%i must be equal to draws size=%i", transforms.size(), comand_total));
+            LOG(std::format("ERROR BufferTransforms allocation. transforms size={} must be equal to draws size={}", transforms.size(), comand_total));
             return;
         }
         // TODO: remove from buffer transforms path. (updated frequently, avoid branching?)
         if (transforms.size() + command_total > MAX_TRANSFORM) {
-            LOG(std::format("ERROR BufferTransforms allocation. transforms total=%i asked=%i max=%i", transforms_total, transforms.size(), MAX_TRANSFORM));
+            LOG(std::format("ERROR BufferTransforms allocation. transforms total={} asked={} max={}", transforms_total, transforms.size(), MAX_TRANSFORM));
             return;
         }
         // call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
@@ -151,6 +141,7 @@ public:
         glGenBuffers(1, &index_buffer);
         glGenBuffers(1, &command_buffer);
         glGenBuffers(1, &transform_buffer);
+        glGenBuffers(1, &texture_storage_buffer);
 
         const GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
@@ -172,6 +163,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ids_buffer);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, IDS_STORAGE_SIZE, NULL, flags);
         ids_ptr = (mat4*)glMapBufferRange(GL_ARRAY_BUFFER, 0, IDS_STORAGE_SIZE, flags);
+
 
     }
     void InitMeshVAO() {
