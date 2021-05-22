@@ -10,19 +10,11 @@ using namespace glm;
 
 static atomic<unsigned int> mesh_count{ 0 };
 
-struct Mesh {
-    vector<Vertex> vertices;
-    vector<unsigned int> indices;
-    unsigned int id;
-    unsigned int VAO, VBO, EBO;
+MeshLoadData CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
+    return MeshLoadData{ vertices, indices, ++mesh_count };
 };
 
-Mesh* CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
-    Mesh* mesh = new Mesh{ vertices, indices, ++mesh_count, 0, 0, 0 };
-    return mesh;
-};
-
-Mesh* CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
+MeshLoadData CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
     vector<Vertex> positions;
     for (int i = 0; i < vertices.size(); i += 3) {
         Vertex vert;
@@ -32,71 +24,48 @@ Mesh* CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
     return CreateMesh(positions, indices);
 };
 
-// old way. switched to multidraw
-void InitBuffers(Mesh* mesh) {
-    // create buffers/arrays
-    glGenVertexArrays(1, &mesh->VAO);
-    glGenBuffers(1, &mesh->VBO);
-    glGenBuffers(1, &mesh->EBO);
+// OLD. switched to bindless multidraw /////////////////////////////////////////
+//void InitBuffers(Mesh* mesh) {
+//    // create buffers/arrays
+//    glGenVertexArrays(1, &mesh->VAO);
+//    glGenBuffers(1, &mesh->VBO);
+//    glGenBuffers(1, &mesh->EBO);
+//
+//    glBindVertexArray(mesh->VAO);
+//    glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
+//    glBufferData(GL_ARRAY_BUFFER, mesh->vertices.size() * sizeof(Vertex), &mesh->vertices[0], GL_STATIC_DRAW);
+//
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->EBO);
+//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices.size() * sizeof(unsigned int), &mesh->indices[0], GL_STATIC_DRAW);
+//
+//    // pos
+//    glEnableVertexAttribArray(0);
+//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+//
+//    // vertex normals
+//    glEnableVertexAttribArray(1);
+//    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+//
+//    // vertex texture coords
+//    glEnableVertexAttribArray(2);
+//    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+//
+//    // vertex tangent
+//    glEnableVertexAttribArray(3);
+//    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+//
+//    // vertex bitangent
+//    glEnableVertexAttribArray(4);
+//    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
+//}
+//
+//void ClearBuffers(Mesh* mesh) {
+//    glDeleteBuffers(1, &mesh->VAO);
+//    glDeleteBuffers(1, &mesh->VBO);
+//    glDeleteBuffers(1, &mesh->EBO);
+//}
 
-    glBindVertexArray(mesh->VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
-    glBufferData(GL_ARRAY_BUFFER, mesh->vertices.size() * sizeof(Vertex), &mesh->vertices[0], GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices.size() * sizeof(unsigned int), &mesh->indices[0], GL_STATIC_DRAW);
-
-    // pos
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-
-    // vertex normals
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-
-    // vertex texture coords
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-
-    // vertex tangent
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-
-    // vertex bitangent
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
-}
-
-void ClearBuffers(Mesh* mesh) {
-    glDeleteBuffers(1, &mesh->VAO);
-    glDeleteBuffers(1, &mesh->VBO);
-    glDeleteBuffers(1, &mesh->EBO);
-}
-
-Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene);
-
-void LoadMeshes(vector<Mesh*>& meshes, const string& file_name)
-{
-    Assimp::Importer assimp_importer;
-
-    const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
-    {
-        cout << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString() << endl;
-        throw runtime_error(string("ERROR::ASSIMP:: ") += assimp_importer.GetErrorString());
-    }
-    // process each mesh located at the current node
-    for (unsigned int i = 0; i < scene->mNumMeshes; i++)
-    {
-        // the node object only contains indices to index the actual objects in the scene. 
-        // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-        aiMesh* mesh = scene->mMeshes[i];
-        meshes.push_back(ProcessMesh(mesh, scene));
-    }
-}
-
-Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene)
+MeshLoadData ProcessMesh(aiMesh* mesh, const aiScene* scene)
 {
     // data to fill
     vector<Vertex> vertices;
@@ -156,3 +125,51 @@ Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene)
     // return a mesh object created from the extracted mesh data
     return CreateMesh(vertices, indices);
 }
+
+// Array of structures style.
+void LoadMeshes(vector<MeshLoadData>& meshes, const string& file_name)
+{
+    Assimp::Importer assimp_importer;
+
+    const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+    {
+        cout << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString() << endl;
+        throw runtime_error(string("ERROR::ASSIMP:: ") += assimp_importer.GetErrorString());
+    }
+    // process each mesh located at the current node
+    for (unsigned int i = 0; i < scene->mNumMeshes; i++)
+    {
+        // the node object only contains indices to index the actual objects in the scene. 
+        // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
+        aiMesh* mesh = scene->mMeshes[i];
+        meshes.push_back(ProcessMesh(mesh, scene));
+    }
+}
+
+// Structure of arrays style.
+void LoadMeshes(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices, vector<unsigned int>& draw_ids, const string& file_name)
+{
+    Assimp::Importer assimp_importer;
+
+    const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+    {
+        cout << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString() << endl;
+        throw runtime_error(string("ERROR::ASSIMP:: ") += assimp_importer.GetErrorString());
+    }
+    // process each mesh located at the current node
+    for (unsigned int i = 0; i < scene->mNumMeshes; i++)
+    {
+        // the node object only contains indices to index the actual objects in the scene. 
+        // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
+        aiMesh* mesh = scene->mMeshes[i];
+        MeshLoadData data = ProcessMesh(mesh, scene);
+        vertices.push_back(data.vertices);
+        indices.push_back(data.indices);
+        draw_ids.push_back(data.draw_id);
+    }
+}
+

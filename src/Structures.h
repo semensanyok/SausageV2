@@ -17,21 +17,6 @@ struct Vertex {
     vec3 Bitangent;
 };
 
-
-struct Mesh {
-    vector<Vertex> vertices;
-    vector<unsigned int> indices;
-    unsigned int id;
-    unsigned int VAO, VBO, EBO;
-};
-
-struct MeshUniforms
-{
-    mat4     view;
-    mat4     projection;
-    mat4     model[];
-};
-
 // --------------------------------------------------------------------------------------------------------------------
 // Indirect structures start
 struct DrawArraysIndirectCommand
@@ -49,13 +34,6 @@ struct DrawElementsIndirectCommand
     GLuint baseVertex;
     GLuint baseInstance;
 };
-
-struct MeshDrawIds {
-    unsigned int texture_diffuse_id;
-    unsigned int texture_normal_id;
-    unsigned int texture_specular_id;
-    unsigned int texture_height_id;
-};
 // Indirect structures end
 // --------------------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------------------
@@ -69,7 +47,7 @@ enum class TextureType
 };
 
 struct Samplers {
-    unsigned int basic_repeat;
+    GLuint basic_repeat;
 };
 
 struct Texture {
@@ -79,3 +57,29 @@ struct Texture {
 };
 // --------------------------------------------------------------------------------------------------------------------
 // Texture structures end
+
+// OLD. switched to bindless multidraw /////////////////////////////////////////
+// struct Mesh {
+//     vector<Vertex> vertices;
+//     vector<unsigned int> indices;
+//     unsigned int draw_id;
+//     unsigned int VAO, VBO, EBO;
+// };
+
+struct MeshData {
+    unsigned int draw_id;
+};
+
+struct MeshLoadData {
+    vector<Vertex> vertices;
+    vector<unsigned int> indices;
+    unsigned int draw_id;
+};
+
+// indices in shader for texture sampler array
+struct MeshShaderIds {
+    unsigned int texture_diffuse_id;
+    unsigned int texture_normal_id;
+    unsigned int texture_specular_id;
+    unsigned int texture_height_id;
+};
