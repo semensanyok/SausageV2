@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sausage.h"
+#include "systems/BufferStorage.h"
 #include "AssetUtils.h"
 #include "SDL_image.h"
 #include "Logging.h"
@@ -91,18 +92,18 @@ bool LoadLayer(const char* name, TextureType type) {
 /**
 * load texture array for mesh. diffuse + normal + height + specular.
 */
-Texture LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name, BufferStorage* buffer_storage) {
+Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name, BufferStorage* buffer_storage) {
     GLuint texture_id;
     if (diffuse_name == nullptr) {
         LOG(string("diffuse not found: ").append(diffuse_name));
-        return;
+        return nullptr;
     }
     
     // diffuse is a must. used to create storage. all textures must be same size and format.
     SDL_Surface* surface = IMG_Load(GetTexturePath(diffuse_name).c_str());
     if (surface == NULL) {
         cerr << "IMG_Load: " << SDL_GetError() << endl;
-        return;
+        return nullptr;
     }
     GLenum format;
     if (surface->format->BytesPerPixel == 3)
@@ -143,11 +144,13 @@ Texture LoadTextureArray(const char* diffuse_name, const char* normal_name, cons
     if (height_name != nullptr) {
         LoadLayer(height_name, TextureType::Height);
     }
-    return Texture(texture_id, buffer_storage->AllocateTextureHandle(texture_id));
+    GLuint64 tex_handle = buffer_storage->AllocateTextureHandle(texture_id);
+    Texture* texture = new Texture(texture_id, tex_handle);
+    return texture;
 }
 
-Samplers* InitSamplers() {
-    Samplers* samplers = new Samplers();
+Samplers InitSamplers() {
+    Samplers samplers = Samplers();
     unsigned int basic_repeat = 0;
     glCreateSamplers(1, &basic_repeat);
     glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -158,7 +161,7 @@ Samplers* InitSamplers() {
     //glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST); bilinear
     //glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR); trilinear
     //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    samplers->basic_repeat = basic_repeat;
+    samplers.basic_repeat = basic_repeat;
 
     return samplers;
 }

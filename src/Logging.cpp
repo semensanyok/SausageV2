@@ -1,5 +1,5 @@
 #include "Logging.h"
-#include "ThreadSafeQueue.h"
+#include "utils/ThreadSafeQueue.h"
 #include <mutex>
 
 static ofstream logstream("LOG.log");

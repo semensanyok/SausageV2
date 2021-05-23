@@ -25,30 +25,34 @@ private:
     const int MAX_TEXTURES = 100;
     const int TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
     ////////////////////////////////////////////
+
+    Vertex* vertex_ptr;
+    unsigned int* index_ptr;
+    DrawElementsIndirectCommand* command_ptr;
+    mat4* transform_ptr;
+    GLuint64* texture_ptr;
+    unsigned int* texture_id_ptr;
 public:
 
 	unsigned int mesh_VAO;
     
     GLuint vertex_buffer;
-    Vertex* vertex_ptr;
     unsigned int vertex_total = 0;
     
     GLuint index_buffer;
-    unsigned int* index_ptr;
     unsigned index_total = 0;
-    
-    GLuint command_buffer;
-    DrawElementsIndirectCommand* command_ptr;
-    unsigned int command_total = 0;
 
-    // UNIFORMS ///////////////////////////////
+    // UNIFORMS AND SSBO///////////////////////////////
+    GLuint command_buffer;
+    unsigned int command_total = 0;
+    
     GLuint transform_buffer;
-    mat4* transform_ptr;
     unsigned int transforms_total = 0;
 
     GLuint texture_buffer;
-    GLuint64* texture_ptr;
     unsigned int textures_total = 0;
+
+    GLuint texture_id_for_draw_id_buffer;
     ////////////////////////////////////////////
 	
     BufferStorage() {};
@@ -82,8 +86,9 @@ public:
         vector<vector<Vertex>>& vertices,
         vector<vector<unsigned int>>& indices,
         vector<unsigned int>& draw_ids,
+        vector<unsigned int>& texture_ids,
         GLsync* fence_sync) {
-        assert(vertices.size() == indices.size() && vertices.size() == draw_ids.size());
+        assert(vertices.size() == indices.size() && vertices.size() == draw_ids.size() && vertices.size() == texture_ids.size());
         if (fence_sync != nullptr) {
             WaitGPU(fence_sync);
         }
@@ -108,9 +113,10 @@ public:
             command.instanceCount = 1;
 
             // copy to GPU
-            memcpy(&vertex_ptr[vertex_total], &vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
-            memcpy(&index_ptr[index_total], &indices[i].begin(), indices[i].size() * sizeof(unsigned int));
+            memcpy(&vertex_ptr[vertex_total], &*vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
+            memcpy(&index_ptr[index_total], &*indices[i].begin(), indices[i].size() * sizeof(unsigned int));
             command_ptr[command_total] = command;
+            texture_id_ptr[command_total] = texture_ids[i];
 
             // update totals
             vertex_total += vertices[i].size();
@@ -129,14 +135,14 @@ public:
             LOG((ostringstream() << "ERROR BufferTransforms allocation. transforms size=" << transforms.size() <<"must be equal to draws size=" << command_total).str());
             return;
         }
-        memcpy(transform_ptr, &transforms.begin(), transforms.size() * sizeof(mat4));
+        memcpy(transform_ptr, &*transforms.begin(), transforms.size() * sizeof(mat4));
         // call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
         glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
     }
     GLuint64 AllocateTextureHandle(GLuint texture_id) {
         if (textures_total >= MAX_TEXTURES) {
             LOG((ostringstream() << "ERROR AllocateTextureHandle. textures_total=" << textures_total << "MAX_TEXTURES=" << MAX_TEXTURES).str());
-            return;
+            return (GLuint64)0;
         }
         GLuint64 texture_handle = glGetTextureHandleARB(texture_id);
         texture_ptr[textures_total] = texture_handle;
@@ -149,6 +155,7 @@ public:
         glGenBuffers(1, &command_buffer);
         glGenBuffers(1, &transform_buffer);
         glGenBuffers(1, &texture_buffer);
+        glGenBuffers(1, &texture_id_for_draw_id_buffer);
 
         const GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
@@ -170,6 +177,10 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, TEXTURE_STORAGE_SIZE, NULL, flags);
         texture_ptr = (GLuint64*)glMapBufferRange(GL_ARRAY_BUFFER, 0, TEXTURE_STORAGE_SIZE, flags);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_id_for_draw_id_buffer);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, COMMAND_STORAGE_SIZE, NULL, flags);
+        texture_id_ptr = (unsigned int*)glMapBufferRange(GL_ARRAY_BUFFER, 0, COMMAND_STORAGE_SIZE, flags);
     }
     void InitMeshVAO() {
         glGenVertexArrays(1, &mesh_VAO);

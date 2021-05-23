@@ -6,20 +6,13 @@ cmake_minimum_required (VERSION 3.8)
 project ("sausage")
 
 set (CMAKE_CXX_STANDARD 20)
-# GLFW
-option(GLFW_BUILD_DOCS OFF)
-option(GLFW_BUILD_EXAMPLES OFF)
-option(GLFW_BUILD_TESTS OFF)
-add_subdirectory("dependencies/glfw")
 
+add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD -D)
 # ASSIMP
 option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 option(ASSIMP_BUILD_SAMPLES OFF)
 option(ASSIMP_BUILD_TESTS OFF)
 add_subdirectory("dependencies/assimp")
-
-# GLAD
-add_subdirectory("dependencies/glad")
 
 # GLM
 add_subdirectory("dependencies/glm")
@@ -27,6 +20,7 @@ add_subdirectory("dependencies/glm")
 # ZLIB
 add_subdirectory("dependencies/zlib")
 
+add_subdirectory("lib/glad")
 
 # BULLET
 option(BUILD_BULLET2_DEMOS OFF)
@@ -49,10 +43,8 @@ include_directories(dependencies/assimp/include/
                     dependencies/zlib/
 					dependencies/assimp/include/
                     dependencies/bullet/src/
-                    dependencies/glad/include/
-                    dependencies/glfw/include/
                     dependencies/glm/
-                    # dependencies/stb/
+                    dependencies/glad/include/
                     ${SDL2_DIR}/include/
                     ${FREETYPE_INCLUDE_DIRS}/
                     ${LIBROCKET_INCLUDE_DIRS}/
@@ -128,25 +120,15 @@ set(IMGUI_HEADERS
     "dependencies/imgui/backends/imgui_impl_opengl3.h"
     "dependencies/imgui/backends/imgui_impl_sdl.h"
 )
-# add_library(dearimgui
-#     STATIC
-#         ${IMGUI_SOURCES}
-#         ${IMGUI_HEADERS}
-# )
-# target_link_libraries(dearimgui glad)
-# target_compile_definitions(dearimgui
-#     PRIVATE
-#         IMGUI_IMPL_OPENGL_LOADER_GLAD=1
-# )
 ####### IMGUI ##################
 
-set(sources ${sources} ${IMGUI_HEADERS} ${IMGUI_SOURCES})
+# libs
+set(sources ${sources} ${IMGUI_HEADERS} ${IMGUI_SOURCES} )
 
-set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/systems/Camera.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp"    "src/Logging.cpp" "src/utils/ThreadSafeQueue.h" "src/glcorearb.h" )
+set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h"  )
 
 #"src/main.cpp" "src/sausage.cpp"
-add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/thirdpartytests/main_imgui_test.cpp"  "src/thirdpartytests/sparse_bindless_texarray.h" "src/thirdpartytests/sparse_bindless_texarray.cpp" "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h")
+add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h")
 
 # RocketCore RocketDebugger RocketControls
-target_link_libraries(${CMAKE_PROJECT_NAME} glfw assimp glad glm SDL2::Main zlib ${SDL2_IMAGE_LIBRARIES} ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2} ${Freetype})
-
+target_link_libraries(${CMAKE_PROJECT_NAME} assimp glad glm SDL2::Main zlib ${SDL2_IMAGE_LIBRARIES} ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2} ${Freetype})

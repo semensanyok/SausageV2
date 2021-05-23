@@ -1,6 +1,8 @@
 #pragma once
+
 #include "sausage.h"
 #include "Camera.h"
+#include "Settings.h"
 
 class Renderer {
 public:
@@ -15,19 +17,7 @@ public:
 	{
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		for (Draw draw : draws) {
-			glUseProgram(draw.shader->id);
-			draw.shader->setMat4("mvp",
-				camera->projection_matrix *
-				camera->view_matrix *
-				mat4(1));
-			// shader->setMat4("model", draw->node.model_transform);
-			for (Texture* texture : draw.textures) {
-				BindTexture(texture, draw.shader->id);
-				glBindSampler((int)texture->type, samplers->basic_repeat);
-			}
-			glDrawElements(GL_TRIANGLES, draw.mesh->indices.size(), GL_UNSIGNED_INT, NULL);
-		}
+		
 	}
 
 	void InitContext() {

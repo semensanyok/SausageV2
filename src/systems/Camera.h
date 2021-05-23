@@ -1,7 +1,9 @@
 #pragma once
 
+#include "sausage.h"
 #include "Logging.h"
 #include <string>
+#include <algorithm>
 #include "glm/gtx/string_cast.hpp"
 
 using namespace std;
@@ -58,7 +60,13 @@ public:
 	{
 		this->yaw_angle += ((float)e->motion.xrel * this->sensivity);
 		this->pitch_angle -= ((float)e->motion.yrel * this->sensivity);
-		this->pitch_angle = std::clamp(this->pitch_angle, -90.0f, 90.0f);
+		if (this->pitch_angle < -90.0f) {
+			this->pitch_angle = -90.0f;
+		}
+		if (this->pitch_angle > 90.0f) {
+			this->pitch_angle = 90.0f;
+		}
+		// this->pitch_angle = std::clamp(this->pitch_angle, -90.0f, 90.0f);
 		if (yaw_angle > 360.0f || yaw_angle < -360.0f) {
 			yaw_angle = 0.0f;
 		}

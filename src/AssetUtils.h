@@ -1,14 +1,13 @@
 #pragma once
 
+#include "sausage.h"
 #include <string>
 #include <filesystem>
 #include "Texture.h"
 
-using namespace std;
-
 template <typename T>
 string GetModelPath(T name) {
-    filesystem::path spath(".");
+	std::filesystem::path spath(".");
     spath /= "assets";
     spath /= "models";
     spath /= name;
@@ -17,7 +16,7 @@ string GetModelPath(T name) {
 
 template <typename T>
 string GetShaderPath(T name) {
-	filesystem::path spath(".");
+	std::filesystem::path spath(".");
 	spath /= "assets";
 	spath /= "shaders";
 	spath /= name;
@@ -26,7 +25,7 @@ string GetShaderPath(T name) {
 
 template <typename T>
 string GetTexturePath(T name) {
-	filesystem::path spath(".");
+	std::filesystem::path spath(".");
 	spath /= "assets";
 	spath /= "textures";
 	spath /= name;

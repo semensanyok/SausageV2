@@ -85,29 +85,7 @@ MeshLoadData ProcessMesh(aiMesh* mesh, const aiScene* scene)
     return CreateMesh(vertices, indices);
 }
 
-// Array of structures style.
-void LoadMeshes(vector<MeshLoadData>& meshes, const string& file_name)
-{
-    Assimp::Importer assimp_importer;
-
-    const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
-    {
-        cout << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString() << endl;
-        throw runtime_error(string("ERROR::ASSIMP:: ") += assimp_importer.GetErrorString());
-    }
-    // process each mesh located at the current node
-    for (unsigned int i = 0; i < scene->mNumMeshes; i++)
-    {
-        // the node object only contains indices to index the actual objects in the scene. 
-        // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-        aiMesh* mesh = scene->mMeshes[i];
-        meshes.push_back(ProcessMesh(mesh, scene));
-    }
-}
-
-// Structure of arrays style.
+// Structure of arrays style for multidraw.
 void LoadMeshes(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices, vector<unsigned int>& draw_ids, const string& file_name)
 {
     Assimp::Importer assimp_importer;
