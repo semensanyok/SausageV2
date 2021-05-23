@@ -10,18 +10,23 @@
 #include "systems/Gui.h"
 #include "Settings.h"
 #include "Mesh.h"
-#include "Camera.h"
 #include "Settings.h"
 #include "Shader.h"
 #include "AssetUtils.h"
 #include "Logging.h"
+#include "systems/Camera.h"
+#include "systems/Gui.h"
+#include "systems/BufferStorage.h"
 
 using namespace std;
 using namespace glm;
 
+// Systems
+Camera camera;
+BufferStorage buffer_m;
+Renderer renderer;
+
 // Game state
-Camera* camera;
-vector<Mesh*> meshes;
 Samplers* samplers;
 float delta_time = 0;
 float last_ticks = 0;
@@ -68,7 +73,7 @@ void ProcessEvent(SDL_Event* e)
 		mod = SDL_GetModState();
 		if (k == SDLK_ESCAPE)
 			quit = 1;
-		camera->KeyCallbackRTS(s, delta_time);
+		camera.KeyCallbackRTS(s, delta_time);
 		break;
 	}
 	case SDL_KEYUP: {
@@ -78,24 +83,7 @@ void ProcessEvent(SDL_Event* e)
 }
 
 vector<Texture*> _LoadTextures() {
-	vector<Texture*> textures;
-	Texture* texture_diffuse = LoadTexture(GetTexturePath<const char*>("Image0001.png").c_str(), "texture_diffuse", TextureType::Diffuse);
-	Texture* texture_normal = LoadTexture(GetTexturePath<const char*>("Image0000_normal.png").c_str(), "texture_normal", TextureType::Normal);
-	Texture* texture_specular = LoadTexture(GetTexturePath<const char*>("Image0000_specular.png").c_str(), "texture_specular", TextureType::Specular);
-	Texture* texture_height = LoadTexture(GetTexturePath<const char*>("Image0000_height.png").c_str(), "texture_height", TextureType::Height);
-
-	if (texture_diffuse != nullptr) {
-		textures.push_back(texture_diffuse);
-	}
-	if (texture_normal != nullptr) {
-		textures.push_back(texture_normal);
-	}
-	if (texture_specular != nullptr) {
-		textures.push_back(texture_specular);
-	}
-	if (texture_height != nullptr) {
-		textures.push_back(texture_height);
-	}
+	MeshData(LoadTextureArray("Image0001.png", "Image0000_normal.png", "Image0000_specular.png", "Image0000_height.png"));
 	return textures;
 }																			
 

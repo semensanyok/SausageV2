@@ -5,24 +5,25 @@
 #include "Logging.h"
 
 using namespace std;
+using namespace glm;
 
 class BufferStorage {
 private:
-    constexpr int MAX_VERTEX = 1 000 000;
-    constexpr int VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
+    const int MAX_VERTEX = 1000000;
+    const int VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
     
-    constexpr int MAX_INDEX = 100 000;
-    constexpr int INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
+    const int MAX_INDEX = 100000;
+    const int INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
     
-    constexpr int MAX_COMMAND = 10 000;
-    constexpr int COMMAND_STORAGE_SIZE = MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
+    const int MAX_COMMAND = 10000;
+    const int COMMAND_STORAGE_SIZE = MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
 
     // UNIFORMS ///////////////////////////////
-    constexpr int MAX_TRANSFORM = MAX_COMMAND;
-    constexpr int TRANSFORM_STORAGE_SIZE = MAX_TRANSFORM * sizeof(mat4)
+    const int MAX_TRANSFORM = MAX_COMMAND;
+    const int TRANSFORM_STORAGE_SIZE = MAX_TRANSFORM * sizeof(mat4);
 
-    constexpr int MAX_IDS = MAX_COMMAND;
-    constexpr int IDS_STORAGE_SIZE = MAX_IDS * sizeof(MeshShaderIds)
+    const int MAX_TEXTURES = 100;
+    const int TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
     ////////////////////////////////////////////
 public:
 
@@ -38,12 +39,16 @@ public:
     
     GLuint command_buffer;
     DrawElementsIndirectCommand* command_ptr;
-    unsigned int comand_total = 0;
+    unsigned int command_total = 0;
 
     // UNIFORMS ///////////////////////////////
     GLuint transform_buffer;
     mat4* transform_ptr;
     unsigned int transforms_total = 0;
+
+    GLuint texture_buffer;
+    GLuint64* texture_ptr;
+    unsigned int textures_total = 0;
     ////////////////////////////////////////////
 	
     BufferStorage() {};
@@ -53,7 +58,7 @@ public:
         GLbitfield waitFlags = 0;
         GLuint64 waitDuration = 0;
         while (true) {
-            GLenum waitRet = glClientWaitSync(fence_sync, waitFlags, waitDuration);
+            GLenum waitRet = glClientWaitSync(*fence_sync, waitFlags, waitDuration);
             if (waitRet == GL_ALREADY_SIGNALED || waitRet == GL_CONDITION_SATISFIED) {
                 return;
             }
@@ -65,9 +70,9 @@ public:
 
             // After the first time, need to start flushing, and wait for a looong time.
             waitFlags = GL_SYNC_FLUSH_COMMANDS_BIT;
-            waitDuration = kOneSecondInNanoSeconds;
+            waitDuration = 1000000000; // one second in nanoseconds
         }
-        glDeleteSync(fence_sync)
+        glDeleteSync(*fence_sync);
     }
 
     /**
@@ -84,20 +89,20 @@ public:
         }
         for (int i = 0; i < vertices.size(); i++) {
             if (vertices[i].size() + vertex_total > MAX_VERTEX) {
-                LOG(std::format("ERROR BufferMeshData allocation. vertices total={} asked={} max={};", vertex_total, vertices.size(), MAX_VERTEX));
+                LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total="<<vertex_total<<"asked="<<vertices.size()<<"max="<<MAX_VERTEX).str());
                 return;
             }
             if (indices[i].size() + index_total > MAX_INDEX) {
-                LOG(std::format("ERROR BufferMeshData allocation. indices total={} asked={} max={};", index_total, vertices.size(), MAX_INDEX));
+                LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices.size() << "max=" << MAX_INDEX).str());
                 return;
             }
-            if (draw_ids[i].size() + command_total > MAX_COMMAND) {
-                LOG(std::format("ERROR BufferMeshData allocation. commands total={} asked={} max={}", command_total, draw_ids.size(), MAX_COMMAND));
+            if (command_total >= MAX_COMMAND) {
+                LOG((ostringstream() << "ERROR BufferMeshData allocation. commands total=" << command_total << "max=" << MAX_COMMAND).str());
                 return;
             }
             DrawElementsIndirectCommand command;
             command.baseVertex = vertex_total;
-            command.count = indices.count();
+            command.count = indices.size();
             command.firstIndex = 0;
             command.baseInstance = draw_ids[i];
             command.instanceCount = 1;
@@ -105,13 +110,12 @@ public:
             // copy to GPU
             memcpy(&vertex_ptr[vertex_total], &vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
             memcpy(&index_ptr[index_total], &indices[i].begin(), indices[i].size() * sizeof(unsigned int));
-            ids_ptr[ids_total] = shader_ids[i];
-            command_ptr[comand_total] = command;
+            command_ptr[command_total] = command;
 
             // update totals
             vertex_total += vertices[i].size();
             index_total += indices[i].size();
-            command_total += draw_ids[i].size();
+            command_total ++;
         }
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
         glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
@@ -121,27 +125,30 @@ public:
             WaitGPU(fence_sync);
         }
         // TODO: remove from buffer transforms path. (updated frequently, avoid branching?)
-        if (transforms.size() != comand_total) {
-            LOG(std::format("ERROR BufferTransforms allocation. transforms size={} must be equal to draws size={}", transforms.size(), comand_total));
+        if (transforms.size() != command_total) {
+            LOG((ostringstream() << "ERROR BufferTransforms allocation. transforms size=" << transforms.size() <<"must be equal to draws size=" << command_total).str());
             return;
         }
-        // TODO: remove from buffer transforms path. (updated frequently, avoid branching?)
-        if (transforms.size() + command_total > MAX_TRANSFORM) {
-            LOG(std::format("ERROR BufferTransforms allocation. transforms total={} asked={} max={}", transforms_total, transforms.size(), MAX_TRANSFORM));
-            return;
-        }
+        memcpy(transform_ptr, &transforms.begin(), transforms.size() * sizeof(mat4));
         // call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
         glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
     }
-    void BufferTextureData() {
-
+    GLuint64 AllocateTextureHandle(GLuint texture_id) {
+        if (textures_total >= MAX_TEXTURES) {
+            LOG((ostringstream() << "ERROR AllocateTextureHandle. textures_total=" << textures_total << "MAX_TEXTURES=" << MAX_TEXTURES).str());
+            return;
+        }
+        GLuint64 texture_handle = glGetTextureHandleARB(texture_id);
+        texture_ptr[textures_total] = texture_handle;
+        textures_total++;
+        return texture_handle;
     }
     void InitMeshBuffers() {
         glGenBuffers(1, &vertex_buffer);
         glGenBuffers(1, &index_buffer);
         glGenBuffers(1, &command_buffer);
         glGenBuffers(1, &transform_buffer);
-        glGenBuffers(1, &texture_storage_buffer);
+        glGenBuffers(1, &texture_buffer);
 
         const GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
@@ -158,17 +165,15 @@ public:
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, TRANSFORM_STORAGE_SIZE, NULL, flags);
-        transform_ptr = (mat4*)glMapBufferRange(GL_ARRAY_BUFFER, 0, TRANSFORMS_STORAGE_SIZE, flags);
+        transform_ptr = (mat4*)glMapBufferRange(GL_ARRAY_BUFFER, 0, TRANSFORM_STORAGE_SIZE, flags);
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ids_buffer);
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, IDS_STORAGE_SIZE, NULL, flags);
-        ids_ptr = (mat4*)glMapBufferRange(GL_ARRAY_BUFFER, 0, IDS_STORAGE_SIZE, flags);
-
-
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, TEXTURE_STORAGE_SIZE, NULL, flags);
+        texture_ptr = (GLuint64*)glMapBufferRange(GL_ARRAY_BUFFER, 0, TEXTURE_STORAGE_SIZE, flags);
     }
     void InitMeshVAO() {
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
+        glGenVertexArrays(1, &mesh_VAO);
+        glBindVertexArray(mesh_VAO);
         // pos
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -195,7 +200,7 @@ public:
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
         glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-        glDeleteBuffers(1, &index);
+        glDeleteBuffers(1, &index_buffer);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);

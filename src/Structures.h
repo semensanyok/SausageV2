@@ -49,11 +49,6 @@ enum TextureType
 struct Samplers {
     GLuint basic_repeat;
 };
-struct Texture {
-    unsigned int ref_count;
-    GLuint texture_id;
-    GLuint64 texture_handle_ARB;
-};
 // --------------------------------------------------------------------------------------------------------------------
 // Texture structures end
 

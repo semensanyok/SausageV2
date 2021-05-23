@@ -2,13 +2,50 @@
 
 #include "sausage.h"
 #include "AssetUtils.h"
-#include <string>
 #include "SDL_image.h"
 #include "Logging.h"
 #include "Structures.h"
 
 using namespace std;
 
+class Texture {
+    bool is_destoyed = false;
+    bool is_resident = false;
+    unsigned int ref_count;
+public:
+    const GLuint texture_id;
+    const GLuint64 texture_handle_ARB;
+    Texture(GLuint texture_id, GLuint64 texture_handle_ARB) : texture_id(texture_id), texture_handle_ARB(texture_handle_ARB), is_resident(false), is_destoyed(false) {};
+    void MakeResident() {
+        if (is_destoyed) {
+            LOG("ERROR making texutre resident. texture is destroyed");
+            return;
+        }
+        if (!is_resident) {
+            glMakeTextureHandleResidentARB(texture_handle_ARB);
+            is_resident = true;
+        }
+    }
+    void MakeNonResident() {
+        if (is_resident) {
+            glMakeTextureHandleNonResidentARB(texture_handle_ARB);
+            is_resident = false;
+        }
+    }
+    void BindSingleSampler(unsigned int location) {
+        glUniformHandleui64ARB(location, texture_handle_ARB);
+    }
+    void Dispose() {
+        MakeNonResident();
+        glDeleteTextures(1, &texture_id);
+        is_destoyed = true;
+    }
+    ~Texture() {
+        if (!is_destoyed) {
+            Dispose();
+        };
+    }
+};
 string GetTexturePath(const string& name, TextureType texture_type) {
     switch (texture_type)
     {
@@ -30,47 +67,83 @@ string GetTexturePath(const string& name, TextureType texture_type) {
     }
 }
 
+bool LoadLayer(const char* name, TextureType type) {
+    SDL_Surface* surface = IMG_Load(GetTexturePath(name).c_str());
+    if (surface == NULL)
+    {
+        LOG((ostringstream() << "IMG_Load: " << SDL_GetError()).str());
+        return false;
+    }
+    else
+    {
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+            0,
+            0, 0, (int)type,
+            surface->w, surface->h, 1,
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            surface->pixels);
+        SDL_FreeSurface(surface);
+        return true;
+    }
+}
+
 /**
 * load texture array for mesh. diffuse + normal + height + specular.
 */
-Texture LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name) {
-    int texture_size = (diffuse_name != nullptr) + (normal_name != nullptr)
+Texture LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name, BufferStorage* buffer_storage) {
     GLuint texture_id;
-    glGenTextures(1, &texture_id)
-
-}
-
-SDL_Surface* LoadTexture(const char* path, const char* name, TextureType texture_type) {
-    SDL_Surface* res_texture = IMG_Load(path);
-    if (res_texture == NULL) {
-        cerr << "IMG_Load: " << SDL_GetError() << endl;
-        return nullptr;
+    if (diffuse_name == nullptr) {
+        LOG(string("diffuse not found: ").append(diffuse_name));
+        return;
     }
-    Texture* texture = new Texture();
-    texture->type = texture_type;
-    texture->name = name;
-    glGenTextures(1, &(texture->id));
-
+    
+    // diffuse is a must. used to create storage. all textures must be same size and format.
+    SDL_Surface* surface = IMG_Load(GetTexturePath(diffuse_name).c_str());
+    if (surface == NULL) {
+        cerr << "IMG_Load: " << SDL_GetError() << endl;
+        return;
+    }
     GLenum format;
-    if (res_texture->format->BytesPerPixel == 3)
+    if (surface->format->BytesPerPixel == 3)
         format = GL_RGB;
-    else if (res_texture->format->BytesPerPixel == 4)
+    else if (surface->format->BytesPerPixel == 4)
         format = GL_RGBA;
+    else {
+        LOG((ostringstream() << "Unknown texture format. surface->format->BytesPerPixel == " << surface->format->BytesPerPixel).str());
+    }
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY,
+        1,                    //mipmaps. 1 == no mipmaps.
+        format,              //Internal format
+        surface->w, surface->h,//width,height
+        4            //Number of layers
+    );
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+        0,                     //Mipmap number
+        0, 0, (int)TextureType::Diffuse,               //xoffset, yoffset, zoffset
+        surface->w, surface->h, 1,               //width, height, depth
+        format,                //format
+        GL_UNSIGNED_BYTE,      //type
+        surface->pixels);
+    SDL_FreeSurface(surface);
 
+    // normal
+    if (normal_name != nullptr) {
+        LoadLayer(normal_name, TextureType::Normal);
+    }
 
-    glBindTexture(GL_TEXTURE_2D, texture->id);
+    // specular
+    if (specular_name != nullptr) {
+        LoadLayer(specular_name, TextureType::Specular);
+    }
 
-    glTexImage2D(GL_TEXTURE_2D, // target
-        0, // level, 0 = base, no minimap,
-        GL_RGBA, // internalformat
-        res_texture->w, // width
-        res_texture->h, // height
-        0, // border, always 0 in OpenGL ES
-        GL_RGBA, // format
-        GL_UNSIGNED_BYTE, // type
-        res_texture->pixels);
-    SDL_FreeSurface(res_texture);
-    return texture;
+    // height
+    if (height_name != nullptr) {
+        LoadLayer(height_name, TextureType::Height);
+    }
+    return Texture(texture_id, buffer_storage->AllocateTextureHandle(texture_id));
 }
 
 Samplers* InitSamplers() {
@@ -88,14 +161,4 @@ Samplers* InitSamplers() {
     samplers->basic_repeat = basic_repeat;
 
     return samplers;
-}
-
-void BindTexture(Texture* texture, unsigned int program) {
-    // set name for texture
-    glActiveTexture(GL_TEXTURE0 + (int)texture->type); // active proper texture unit before binding
-    // now set the sampler to the correct texture unit
-    int loc = glGetUniformLocation(program, texture->name);
-    glUniform1i(loc, (int)texture->type);
-    // and finally bind the texture
-    glBindTexture(GL_TEXTURE_2D, texture->id);
 }

@@ -24,47 +24,6 @@ MeshLoadData CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) 
     return CreateMesh(positions, indices);
 };
 
-// OLD. switched to bindless multidraw /////////////////////////////////////////
-//void InitBuffers(Mesh* mesh) {
-//    // create buffers/arrays
-//    glGenVertexArrays(1, &mesh->VAO);
-//    glGenBuffers(1, &mesh->VBO);
-//    glGenBuffers(1, &mesh->EBO);
-//
-//    glBindVertexArray(mesh->VAO);
-//    glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
-//    glBufferData(GL_ARRAY_BUFFER, mesh->vertices.size() * sizeof(Vertex), &mesh->vertices[0], GL_STATIC_DRAW);
-//
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->EBO);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices.size() * sizeof(unsigned int), &mesh->indices[0], GL_STATIC_DRAW);
-//
-//    // pos
-//    glEnableVertexAttribArray(0);
-//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-//
-//    // vertex normals
-//    glEnableVertexAttribArray(1);
-//    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-//
-//    // vertex texture coords
-//    glEnableVertexAttribArray(2);
-//    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-//
-//    // vertex tangent
-//    glEnableVertexAttribArray(3);
-//    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-//
-//    // vertex bitangent
-//    glEnableVertexAttribArray(4);
-//    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
-//}
-//
-//void ClearBuffers(Mesh* mesh) {
-//    glDeleteBuffers(1, &mesh->VAO);
-//    glDeleteBuffers(1, &mesh->VBO);
-//    glDeleteBuffers(1, &mesh->EBO);
-//}
-
 MeshLoadData ProcessMesh(aiMesh* mesh, const aiScene* scene)
 {
     // data to fill
