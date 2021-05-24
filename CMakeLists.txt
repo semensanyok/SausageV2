@@ -7,7 +7,7 @@ project ("sausage")
 
 set (CMAKE_CXX_STANDARD 20)
 
-add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD -D)
+add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 # ASSIMP
 option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 option(ASSIMP_BUILD_SAMPLES OFF)
@@ -18,17 +18,17 @@ add_subdirectory("dependencies/assimp")
 add_subdirectory("dependencies/glm")
 
 # ZLIB
-add_subdirectory("dependencies/zlib")
+# add_subdirectory("dependencies/zlib")
 
 add_subdirectory("lib/glad")
 
 # BULLET
-option(BUILD_BULLET2_DEMOS OFF)
-option(BUILD_CPU_DEMOS OFF)
-option(BUILD_EXTRAS OFF)
-option(BUILD_OPENGL3_DEMOS OFF)
-option(BUILD_UNIT_TESTS OFF)
-add_subdirectory(dependencies/bullet3)
+# option(BUILD_BULLET2_DEMOS OFF)
+# option(BUILD_CPU_DEMOS OFF)
+# option(BUILD_EXTRAS OFF)
+# option(BUILD_OPENGL3_DEMOS OFF)
+# option(BUILD_UNIT_TESTS OFF)
+# add_subdirectory(dependencies/bullet3)
 
 set(SDL2_DIR "lib/SDL")
 
@@ -36,18 +36,15 @@ set(SDL2_DIR "lib/SDL")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/SDL)
 set(SDL2_PATH ${SDL2_DIR})
 set(FREETYPE_INCLUDE_DIRS "lib/freetype/include/freetype2")
-set(LIBROCKET_INCLUDE_DIRS "dependencies/libRocket/Include")
+# set(LIBROCKET_INCLUDE_DIRS "dependencies/libRocket/Include")
 set(IMGUI_INC_PATH "dependencies/imgui/" "dependencies/imgui/backends/")
 
 include_directories(dependencies/assimp/include/
-                    dependencies/zlib/
-					dependencies/assimp/include/
-                    dependencies/bullet/src/
+                    # dependencies/zlib/
                     dependencies/glm/
-                    dependencies/glad/include/
                     ${SDL2_DIR}/include/
                     ${FREETYPE_INCLUDE_DIRS}/
-                    ${LIBROCKET_INCLUDE_DIRS}/
+                    # ${LIBROCKET_INCLUDE_DIRS}/
                     ${IMGUI_INC_PATH}
                     )
 
@@ -63,31 +60,25 @@ find_library(Freetype
     NO_DEFAULT_PATH # do not search system default paths
     )
 
-find_library(LibRocketControls2
-    NAMES RocketControls.lib # what to look for
-    HINTS "${CMAKE_SOURCE_DIR}/lib/libRocket/" # where to look
-    NO_DEFAULT_PATH # do not search system default paths
-    )
-find_library(LibRocketCore2
-    NAMES RocketCore.lib # what to look for
-    HINTS "${CMAKE_SOURCE_DIR}/lib/libRocket/" # where to look
-    NO_DEFAULT_PATH # do not search system default paths
-    )
-find_library(LibRocketDebugger2
-    NAMES RocketDebugger.lib # what to look for
-    HINTS "${CMAKE_SOURCE_DIR}/lib/libRocket/" # where to look
-    NO_DEFAULT_PATH # do not search system default paths
-    )
-
-# check if we found the library
-message(STATUS "HELLO_LIB: ${Freetype}")
-if (NOT Freetype)
-    message(SEND_ERROR "Did not find lib freetype")
-endif()
+# find_library(LibRocketControls2
+#     NAMES RocketControls.lib # what to look for
+#     HINTS "${CMAKE_SOURCE_DIR}/lib/libRocket/" # where to look
+#     NO_DEFAULT_PATH # do not search system default paths
+#     )
+# find_library(LibRocketCore2
+#     NAMES RocketCore.lib # what to look for
+#     HINTS "${CMAKE_SOURCE_DIR}/lib/libRocket/" # where to look
+#     NO_DEFAULT_PATH # do not search system default paths
+#     )
+# find_library(LibRocketDebugger2
+#     NAMES RocketDebugger.lib # what to look for
+#     HINTS "${CMAKE_SOURCE_DIR}/lib/libRocket/" # where to look
+#     NO_DEFAULT_PATH # do not search system default paths
+#     )
+# add_subdirectory("dependencies/libRocket/Build")
 
 set(FREETYPE_LIBRARY "${Freetype}")
 
-add_subdirectory("dependencies/libRocket/Build")
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
@@ -125,10 +116,13 @@ set(IMGUI_HEADERS
 # libs
 set(sources ${sources} ${IMGUI_HEADERS} ${IMGUI_SOURCES} )
 
-set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h"  )
+# "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp"
+set(sources ${sources} "src/systems/Gui.h" )
+set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h"  )
 
 #"src/main.cpp" "src/sausage.cpp"
 add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h")
 
-# RocketCore RocketDebugger RocketControls
-target_link_libraries(${CMAKE_PROJECT_NAME} assimp glad glm SDL2::Main zlib ${SDL2_IMAGE_LIBRARIES} ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2} ${Freetype})
+# RocketCore RocketDebugger RocketControls 
+# ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2}
+target_link_libraries(${CMAKE_PROJECT_NAME} assimp glad glm SDL2::Main ${SDL2_IMAGE_LIBRARIES} ${Freetype})

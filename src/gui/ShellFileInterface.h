@@ -24,7 +24,7 @@
  * THE SOFTWARE.
  *
  */
-
+#pragma once
 #ifndef SHELLFILEINTERFACE_H
 #define SHELLFILEINTERFACE_H
 

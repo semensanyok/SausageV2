@@ -2,9 +2,6 @@
 
 #include "sausage.h"
 #include "Logging.h"
-#include <string>
-#include <algorithm>
-#include "glm/gtx/string_cast.hpp"
 
 using namespace std;
 using namespace glm;

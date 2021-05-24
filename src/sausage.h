@@ -1,12 +1,6 @@
 #pragma once
 // Engine header file, common imports
 
-// GLFW. uncomment if decide to switch back from SDL
-// #define GLFW_INCLUDE_NONE
-// #include <GLFW/glfw3.h>
-
-
-#define GL_GLEXT_PROTOTYPES
 #include <SDL.h>
 #include <glad/glad.h>
 

@@ -15,7 +15,7 @@ private:
     const int MAX_INDEX = 100000;
     const int INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
     
-    const int MAX_COMMAND = 10000;
+    const int MAX_COMMAND = 10;
     const int COMMAND_STORAGE_SIZE = MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
 
     // UNIFORMS ///////////////////////////////
@@ -150,18 +150,37 @@ public:
         return texture_handle;
     }
     void InitMeshBuffers() {
-        glGenBuffers(1, &vertex_buffer);
-        glGenBuffers(1, &index_buffer);
         glGenBuffers(1, &command_buffer);
-        glGenBuffers(1, &transform_buffer);
-        glGenBuffers(1, &texture_buffer);
-        glGenBuffers(1, &texture_id_for_draw_id_buffer);
-
+        CheckGLError();
         const GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+        CheckGLError();
+        GLint* dataaa = new GLint(99);
+        glGetNamedBufferParameteriv(command_buffer,
+            GL_BUFFER_IMMUTABLE_STORAGE,
+            dataaa);
+        cout << *dataaa << endl;
         glBufferStorage(GL_DRAW_INDIRECT_BUFFER, COMMAND_STORAGE_SIZE, NULL, flags);
-        command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_ARRAY_BUFFER, 0, COMMAND_STORAGE_SIZE, flags);
-
+        glGetNamedBufferParameteriv(command_buffer,
+            GL_BUFFER_IMMUTABLE_STORAGE,
+            dataaa);
+        cout << *dataaa << endl;
+        CheckGLError();
+        command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_ARRAY_BUFFER, 0, COMMAND_STORAGE_SIZE, flags); // INVALID_OPERAION
+        CheckGLError();
+        glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
+        CheckGLError();
+        glUnmapNamedBuffer(command_buffer);
+        CheckGLError();
+        glGenBuffers(1, &vertex_buffer);
+        CheckGLError();
+        glGenBuffers(1, &index_buffer);
+        CheckGLError();
+        glGenBuffers(1, &transform_buffer);
+        CheckGLError();
+        glGenBuffers(1, &texture_buffer);
+        CheckGLError();
+        glGenBuffers(1, &texture_id_for_draw_id_buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
         glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, INDEX_STORAGE_SIZE, NULL, flags);
         index_ptr = (unsigned int*)glMapBufferRange(GL_ARRAY_BUFFER, 0, INDEX_STORAGE_SIZE, flags);
@@ -169,6 +188,7 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
         glBufferStorage(GL_ARRAY_BUFFER, VERTEX_STORAGE_SIZE, NULL, flags);
         vertex_ptr = (Vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, VERTEX_STORAGE_SIZE, flags);
+        InitMeshVAO();
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, TRANSFORM_STORAGE_SIZE, NULL, flags);
@@ -182,9 +202,19 @@ public:
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, COMMAND_STORAGE_SIZE, NULL, flags);
         texture_id_ptr = (unsigned int*)glMapBufferRange(GL_ARRAY_BUFFER, 0, COMMAND_STORAGE_SIZE, flags);
     }
+
+    void CheckGLError() {
+        int err = glGetError();
+        if (err != GL_NO_ERROR) {
+            LOG(glGetErrorString(err));
+        }
+    }
+
     void InitMeshVAO() {
         glGenVertexArrays(1, &mesh_VAO);
+        CheckGLError();
         glBindVertexArray(mesh_VAO);
+        CheckGLError();
         // pos
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);

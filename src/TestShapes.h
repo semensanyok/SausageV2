@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Mesh.h"
 #include "sausage.h"
+#include "Mesh.h"
 
 Mesh* GetPlane() {
 	static  std::vector<float> vertices = {

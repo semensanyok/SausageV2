@@ -88,7 +88,6 @@ void InitGame() {
 
 	// init
 	renderer->InitContext();
-	buffer_storage->InitMeshVAO();
 	buffer_storage->InitMeshBuffers();
 	samplers = InitSamplers();
 	InitGuiContext(renderer->window, renderer->context);

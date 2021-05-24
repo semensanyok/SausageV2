@@ -47,26 +47,6 @@ public:
         };
     }
 };
-string GetTexturePath(const string& name, TextureType texture_type) {
-    switch (texture_type)
-    {
-    case TextureType::Diffuse:
-        return name;
-        break;
-    case TextureType::Specular:
-        return name + "_specular";
-        break;
-    case TextureType::Normal:
-        return name + "_normal";
-        break;
-    case TextureType::Height:
-        return name + "_height";
-        break;
-    default:
-        return name;
-        break;
-    }
-}
 
 bool LoadLayer(const char* name, TextureType type) {
     SDL_Surface* surface = IMG_Load(GetTexturePath(name).c_str());
