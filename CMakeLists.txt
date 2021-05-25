@@ -121,7 +121,7 @@ set(sources ${sources} "src/systems/Gui.h" )
 set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h"  )
 
 #"src/main.cpp" "src/sausage.cpp"
-add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h")
+add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h")
 
 # RocketCore RocketDebugger RocketControls 
 # ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2}

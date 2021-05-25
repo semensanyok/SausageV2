@@ -3,6 +3,7 @@
 #include "sausage.h"
 #include "Structures.h"
 #include "Logging.h"
+#include "OpenGLHelpers.h"
 
 using namespace std;
 using namespace glm;
@@ -25,7 +26,6 @@ private:
     const int MAX_TEXTURES = 100;
     const int TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
     ////////////////////////////////////////////
-
     Vertex* vertex_ptr;
     unsigned int* index_ptr;
     DrawElementsIndirectCommand* command_ptr;
@@ -58,11 +58,11 @@ public:
     BufferStorage() {};
 	~BufferStorage() {};
 
-    void WaitGPU(GLsync* fence_sync) {
+    void WaitGPU(GLsync fence_sync) {
         GLbitfield waitFlags = 0;
         GLuint64 waitDuration = 0;
         while (true) {
-            GLenum waitRet = glClientWaitSync(*fence_sync, waitFlags, waitDuration);
+            GLenum waitRet = glClientWaitSync(fence_sync, waitFlags, waitDuration);
             if (waitRet == GL_ALREADY_SIGNALED || waitRet == GL_CONDITION_SATISFIED) {
                 return;
             }
@@ -76,7 +76,7 @@ public:
             waitFlags = GL_SYNC_FLUSH_COMMANDS_BIT;
             waitDuration = 1000000000; // one second in nanoseconds
         }
-        glDeleteSync(*fence_sync);
+        glDeleteSync(fence_sync);
     }
 
     /**
@@ -87,7 +87,7 @@ public:
         vector<vector<unsigned int>>& indices,
         vector<unsigned int>& draw_ids,
         vector<unsigned int>& texture_ids,
-        GLsync* fence_sync) {
+        GLsync fence_sync) {
         assert(vertices.size() == indices.size() && vertices.size() == draw_ids.size() && vertices.size() == texture_ids.size());
         if (fence_sync != nullptr) {
             WaitGPU(fence_sync);
@@ -123,10 +123,13 @@ public:
             index_total += indices[i].size();
             command_total ++;
         }
+        CheckGLError();
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
         glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+
+        CheckGLError();
     }
-    void BufferTransforms(vector<mat4>& transforms, GLsync* fence_sync) {
+    void BufferTransforms(vector<mat4>& transforms, GLsync fence_sync) {
         if (fence_sync != nullptr) {
             WaitGPU(fence_sync);
         }
@@ -145,6 +148,16 @@ public:
             return (GLuint64)0;
         }
         GLuint64 texture_handle = glGetTextureHandleARB(texture_id);
+        texture_ptr[textures_total] = texture_handle;
+        textures_total++;
+        return texture_handle;
+    }
+    GLuint64 AllocateTextureSamplerHandle(GLuint texture_id, GLuint sampler) {
+        if (textures_total >= MAX_TEXTURES) {
+            LOG((ostringstream() << "ERROR AllocateTextureHandle. textures_total=" << textures_total << "MAX_TEXTURES=" << MAX_TEXTURES).str());
+            return (GLuint64)0;
+        }
+        GLuint64 texture_handle = glGetTextureSamplerHandleARB(texture_id, sampler);
         texture_ptr[textures_total] = texture_handle;
         textures_total++;
         return texture_handle;
@@ -188,18 +201,9 @@ public:
         CheckGLError();
     }
 
-    void CheckGLError() {
-        int err = glGetError();
-        if (err != GL_NO_ERROR) {
-            LOG(glGetErrorString(err));
-        }
-    }
-
     void InitMeshVAO() {
         glGenVertexArrays(1, &mesh_VAO);
-        CheckGLError();
         glBindVertexArray(mesh_VAO);
-        CheckGLError();
         // pos
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -215,6 +219,10 @@ public:
         // vertex bitangent
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
+        CheckGLError();
+    }
+    void BindBuffers() {
+
     }
     void Dispose() {
         glDisableVertexAttribArray(0);

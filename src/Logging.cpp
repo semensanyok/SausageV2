@@ -173,6 +173,13 @@ void LogShaderFull(GLuint programme) {
 				i, GL_type_to_string(type), name, location);
 		}
 	}
+	glGetProgramiv(programme, GL_ACTIVE_TEXTURE_ARB, &params);
+	printf("GL_ACTIVE_TEXTURE_ARB = %i\n", params);
+	glGetProgramiv(programme, GL_ACTIVE_UNIFORM_BLOCKS, &params);
+	printf("GL_ACTIVE_UNIFORM_BLOCKS = %i\n", params);
+	glGetProgramiv(programme, GL_ACTIVE_VERTEX_UNITS_ARB, &params);
+	printf("GL_ACTIVE_VERTEX_UNITS_ARB = %i\n", params);
+
 
 	LogShaderMessage(programme);
 }

@@ -72,7 +72,8 @@ bool LoadLayer(const char* name, TextureType type) {
 /**
 * load texture array for mesh. diffuse + normal + height + specular.
 */
-Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name, BufferStorage* buffer_storage) {
+Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name, BufferStorage* buffer_storage,
+    GLuint texture_sampler) {
     GLuint texture_id;
     if (diffuse_name == nullptr) {
         LOG(string("diffuse not found: ").append(diffuse_name));
@@ -124,7 +125,7 @@ Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, con
     if (height_name != nullptr) {
         LoadLayer(height_name, TextureType::Height);
     }
-    GLuint64 tex_handle = buffer_storage->AllocateTextureHandle(texture_id);
+    GLuint64 tex_handle = buffer_storage->AllocateTextureSamplerHandle(texture_id, texture_sampler);
     Texture* texture = new Texture(texture_id, tex_handle);
     return texture;
 }

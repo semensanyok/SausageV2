@@ -8,11 +8,6 @@ class Shader
 public:
 	unsigned int id;
 
-	int texture_diffuse;
-	int texture_specular;
-	int texture_normal;
-	int texture_height;
-
 	bool operator==(Shader& other) {
 		return id == other.id;
 	}
@@ -69,11 +64,9 @@ public:
 		// delete the shaders as they're linked into our program now and no longer necessery
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
-
-		texture_diffuse = glGetUniformLocation(id, "texture_diffuse");
-		texture_specular = glGetUniformLocation(id, "texture_specular");
-		texture_normal	= glGetUniformLocation(id, "texture_normal");
-		texture_height = glGetUniformLocation(id, "texture_height");
+	}
+	void use() {
+		glUseProgram(id);
 	}
 	// utility uniform functions
 	// ------------------------------------------------------------------------
