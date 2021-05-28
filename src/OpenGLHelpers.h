@@ -1,19 +1,25 @@
 #pragma once
 
 #include "sausage.h"
-#include "Logging.h"
 
-void CheckGLError() {
-    int err = glGetError();
-    if (err != GL_NO_ERROR) {
-        //LOG(glGetErrorString(err));
-        cout << glGetErrorString(err) << endl;
-    }
-}
+using namespace std;
 
-void LogGetShaderInfoLog(GLuint shader)
-{
-	GLchar infoLog[1024];
-	glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-	LOG(string(infoLog));
-}
+#ifdef _MSC_VER
+#define FUNCTION_ADDRESS __FUNCSIG__
+#elif __GNUG__
+#define FUNCTION_ADDRESS __PRETTY_FUNCTION__
+#else
+#define FUNCTION_ADDRESS __func__
+#endif // _MSVC
+
+void CheckGLError(const char* funcname = "unspecified");
+
+const char* GL_type_to_string(GLenum type);
+
+void LogGetShaderInfoLog(GLuint shader);
+
+string glGetErrorString(GLenum error);
+
+void LogShaderMessage(unsigned int id);
+
+void LogShaderFull(GLuint programme);

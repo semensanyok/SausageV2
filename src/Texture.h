@@ -1,11 +1,11 @@
 #pragma once
 
 #include "sausage.h"
-#include "systems/BufferStorage.h"
 #include "AssetUtils.h"
 #include "SDL_image.h"
 #include "Logging.h"
 #include "Structures.h"
+#include "OpenGLHelpers.h"
 
 using namespace std;
 
@@ -48,6 +48,17 @@ public:
     }
 };
 
+GLenum GetTexFormat(int bytes_per_pixel, bool for_storage) {
+    if (bytes_per_pixel == 3) {
+        return for_storage ? GL_RGB8 : GL_RGB;
+    }
+    else if (bytes_per_pixel == 4) {
+        return for_storage ? GL_RGBA8 : GL_RGBA;
+    }
+    LOG((ostringstream() << "Unknown texture format. surface->format->BytesPerPixel == " << bytes_per_pixel).str());
+    return for_storage ? GL_RGBA8 : GL_RGBA;
+}
+
 bool LoadLayer(const char* name, TextureType type) {
     SDL_Surface* surface = IMG_Load(GetTexturePath(name).c_str());
     if (surface == NULL)
@@ -61,7 +72,7 @@ bool LoadLayer(const char* name, TextureType type) {
             0,
             0, 0, (int)type,
             surface->w, surface->h, 1,
-            GL_RGB,
+            GetTexFormat(surface->format->BytesPerPixel, false),
             GL_UNSIGNED_BYTE,
             surface->pixels);
         SDL_FreeSurface(surface);
@@ -72,8 +83,7 @@ bool LoadLayer(const char* name, TextureType type) {
 /**
 * load texture array for mesh. diffuse + normal + height + specular.
 */
-Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name, BufferStorage* buffer_storage,
-    GLuint texture_sampler) {
+Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name, GLuint texture_sampler) {
     GLuint texture_id;
     if (diffuse_name == nullptr) {
         LOG(string("diffuse not found: ").append(diffuse_name));
@@ -82,23 +92,11 @@ Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, con
     
     // diffuse is a must. used to create storage. all textures must be same size and format.
     SDL_Surface* surface = IMG_Load(GetTexturePath(diffuse_name).c_str());
-    if (surface == NULL) {
-        cerr << "IMG_Load: " << SDL_GetError() << endl;
-        return nullptr;
-    }
-    GLenum format;
-    if (surface->format->BytesPerPixel == 3)
-        format = GL_RGB;
-    else if (surface->format->BytesPerPixel == 4)
-        format = GL_RGBA;
-    else {
-        LOG((ostringstream() << "Unknown texture format. surface->format->BytesPerPixel == " << surface->format->BytesPerPixel).str());
-    }
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
         1,                    //mipmaps. 1 == no mipmaps.
-        format,              //Internal format
+        GetTexFormat(surface->format->BytesPerPixel, true),              //Internal format
         surface->w, surface->h,//width,height
         4            //Number of layers
     );
@@ -106,26 +104,24 @@ Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, con
         0,                     //Mipmap number
         0, 0, (int)TextureType::Diffuse,               //xoffset, yoffset, zoffset
         surface->w, surface->h, 1,               //width, height, depth
-        format,                //format
+        GetTexFormat(surface->format->BytesPerPixel, false),                //format
         GL_UNSIGNED_BYTE,      //type
         surface->pixels);
     SDL_FreeSurface(surface);
-
     // normal
     if (normal_name != nullptr) {
         LoadLayer(normal_name, TextureType::Normal);
     }
-
     // specular
     if (specular_name != nullptr) {
         LoadLayer(specular_name, TextureType::Specular);
     }
-
     // height
     if (height_name != nullptr) {
         LoadLayer(height_name, TextureType::Height);
     }
-    GLuint64 tex_handle = buffer_storage->AllocateTextureSamplerHandle(texture_id, texture_sampler);
+    //glGetTextureSamplerHandleARB()
+    GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, texture_sampler);
     Texture* texture = new Texture(texture_id, tex_handle);
     return texture;
 }

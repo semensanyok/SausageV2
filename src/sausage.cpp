@@ -94,7 +94,7 @@ void InitGame() {
 	renderer->InitContext();
 
 	buffer_storage->InitMeshBuffers();
-	buffer_storage->InitMeshVAO();
+	buffer_storage->BindMeshVAOandBuffers();
 	samplers = InitSamplers();
 	InitGuiContext(renderer->window, renderer->context);
 
@@ -103,10 +103,9 @@ void InitGame() {
 	vector<unsigned int> draw_ids;
 
 	LoadMeshes(vertices, indices, draw_ids, GetModelPath("cube.fbx"));
-	Texture* tex = LoadTextureArray("Image0001.png", "Image0000_normal.png", "Image0000_specular.png", "Image0000_height.png", buffer_storage,
-		samplers.basic_repeat);
+	Texture* tex = LoadTextureArray("Image0001.png", "Image0000_normal.png", "Image0000_specular.png", "Image0000_height.png", samplers.basic_repeat);
 	tex->MakeResident();
-	vector<unsigned int> texture_ids = { (unsigned int)(tex->texture_handle_ARB) };
+	vector<GLuint64> texture_ids = { tex->texture_handle_ARB };
 
 	// load render data
 	buffer_storage->BufferMeshData(vertices, indices, draw_ids, texture_ids, fence_sync);
@@ -119,46 +118,38 @@ void InitGame() {
 	LogShaderFull(shader.id);
 }
 
+vector<vector<Vertex>> vertices2;
+vector<vector<unsigned int>> indices2;
+vector<unsigned int> draw_ids2;
+
 void TestInitGame() {
 	// create systems
 	camera = new Camera(80.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 0.0f, 3.0f), 0.0f, -45.0f);
 	renderer = new Renderer();
 	buffer_storage = new BufferStorage();
-
-	// init
 	renderer->InitContext();
-	CheckGLError();
-	buffer_storage->InitMeshBuffers();
-	CheckGLError();
-	buffer_storage->InitMeshVAO();
-	CheckGLError();
-	samplers = InitSamplers();
+	// init
 	InitGuiContext(renderer->window, renderer->context);
-	CheckGLError();
-	vector<vector<Vertex>> vertices;
-	vector<vector<unsigned int>> indices;
-	vector<unsigned int> draw_ids;
+	samplers = InitSamplers();
 
-	TestLoadPlane(vertices, indices, draw_ids);
-	CheckGLError();
-	Texture* tex = LoadTextureArray("Image0001.png", "Image0000_normal.png", "Image0000_specular.png", "Image0000_height.png", buffer_storage,
-		samplers.basic_repeat);
-	CheckGLError();
+	Texture* tex = LoadTextureArray("Image0001.png", "Image0000_normal.png", "Image0000_specular.png", "Image0000_height.png", samplers.basic_repeat);
 	tex->MakeResident();
-	CheckGLError();
-	vector<unsigned int> texture_ids = { (unsigned int)(tex->texture_handle_ARB) };
+	vector<GLuint64> texture_ids = { tex->texture_handle_ARB };
 
 	// load render data
-	buffer_storage->BufferMeshData(vertices, indices, draw_ids, texture_ids, fence_sync);
-	CheckGLError();
+	TestLoadPlane(vertices2, indices2, draw_ids2);
+	buffer_storage->InitMeshBuffers();
+	buffer_storage->BufferMeshData(vertices2, indices2, draw_ids2, texture_ids, fence_sync);
 	vector<mat4> transforms{ mat4(1) };
 	buffer_storage->BufferTransforms(transforms, fence_sync);
-	CheckGLError();
-	//shader = Shader(GetShaderPath("debug_vs.glsl"), GetShaderPath("debug_fs.glsl"));
-	shader = Shader(GetShaderPath("bindless_vs.glsl"), GetShaderPath("bindless_fs.glsl"));
-	shader.setMat4("projection_view", camera->projection_matrix * camera->view_matrix);
+	
+	shader = Shader(GetShaderPath("debug_vs.glsl"), GetShaderPath("debug_fs.glsl"));
+
+	// WARNING! init VAO must happen after VBO buffer initialized. (or maybe some other reason. but it crashes if init vao before buffering.
 	glUseProgram(shader.id);
 	LogShaderFull(shader.id);
+	buffer_storage->BindMeshVAOandBuffers();
+	CheckGLError(FUNCTION_ADDRESS);
 }
 
 void _UpdateDeltaTime() {
@@ -171,45 +162,22 @@ void Render() {
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	/*glBindVertexArray(buffer_storage->mesh_VAO);
+	
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer_storage->command_buffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_storage->index_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer_storage->vertex_buffer);
-
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, buffer_storage->transform_buffer);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buffer_storage->texture_id_for_draw_id_buffer);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, buffer_storage->texture_buffer);
-	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer_storage->command_buffer);*/
-
 	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, buffer_storage->command_total, 0);
 	fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	CheckGLError(FUNCTION_ADDRESS);
 }
 
 void TestRender() {
-	//vector<vector<Vertex>> vertices;
-	//vector<vector<unsigned int>> indices;
-	//vector<unsigned int> draw_ids;
-
-	//TestLoadPlane(vertices, indices, draw_ids);
-	//glDrawElements(GL_TRIANGLES, indices[0].size(), GL_UNSIGNED_INT, &*indices[0].begin());
-
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDrawElements(GL_TRIANGLES, indices2[0].size(), GL_UNSIGNED_INT, &*indices2[0].begin());
 
-	/*glBindVertexArray(buffer_storage->mesh_VAO);
-	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer_storage->command_buffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_storage->index_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer_storage->vertex_buffer);
-
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, buffer_storage->transform_buffer);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buffer_storage->texture_id_for_draw_id_buffer);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, buffer_storage->texture_buffer);
-	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer_storage->command_buffer);*/
-
-	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, buffer_storage->command_total, 0);
-	fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	//glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, buffer_storage->command_total, 0);
+	//CheckGLError(FUNCTION_ADDRESS);
+	//fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 }
 
 int SDL_main(int argc, char** argv)
@@ -226,9 +194,9 @@ int SDL_main(int argc, char** argv)
 			ImGui_ImplSDL2_ProcessEvent(&e);
 			ProcessEvent(&e);
 		}
-		Render();
+		//Render();
 		TestRender();
-		//RenderGui(renderer->window, camera);
+		RenderGui(renderer->window, camera);
 		// Draw
 		SDL_GL_SwapWindow(renderer->window);
 	}
