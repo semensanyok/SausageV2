@@ -11,7 +11,7 @@ using namespace glm;
 static atomic<unsigned int> mesh_count{ 0 };
 
 MeshLoadData CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
-    return MeshLoadData{ vertices, indices, ++mesh_count };
+    return MeshLoadData{ vertices, indices, mesh_count++ };
 };
 
 MeshLoadData CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {

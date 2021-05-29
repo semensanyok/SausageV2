@@ -93,20 +93,20 @@ void InitGame() {
 	// init
 	renderer->InitContext();
 
-	buffer_storage->InitMeshBuffers();
 	samplers = InitSamplers();
 	InitGuiContext(renderer->window, renderer->context);
 
-	vector<vector<Vertex>> vertices;
-	vector<vector<unsigned int>> indices;
-	vector<unsigned int> draw_ids;
 
-	LoadMeshes(vertices, indices, draw_ids, GetModelPath("cube.fbx"));
 	Texture* tex = LoadTextureArray("Image0001.png", "Image0000_normal.png", "Image0000_specular.png", "Image0000_height.png", samplers.basic_repeat);
 	tex->MakeResident();
 	vector<GLuint64> texture_ids = { tex->texture_handle_ARB };
 
-	// load render data
+	vector<vector<Vertex>> vertices;
+	vector<vector<unsigned int>> indices;
+	vector<unsigned int> draw_ids;
+	LoadMeshes(vertices, indices, draw_ids, GetModelPath("cube.fbx"));
+
+	buffer_storage->InitMeshBuffers();
 	buffer_storage->BufferMeshData(vertices, indices, draw_ids, texture_ids, fence_sync);
 	vector<mat4> transforms{ mat4(1) };
 	buffer_storage->BufferTransforms(transforms, fence_sync);
@@ -115,12 +115,9 @@ void InitGame() {
 	shader.setMat4("projection_view", camera->projection_matrix * camera->view_matrix);
 	glUseProgram(shader.id);
 	buffer_storage->BindMeshVAOandBuffers();
+	CheckGLError();
 	LogShaderFull(shader.id);
 }
-
-vector<vector<Vertex>> vertices2;
-vector<vector<unsigned int>> indices2;
-vector<unsigned int> draw_ids2;
 
 void TestInitGame() {
 	// create systems
@@ -135,7 +132,10 @@ void TestInitGame() {
 	Texture* tex = LoadTextureArray("Image0001.png", "Image0000_normal.png", "Image0000_specular.png", "Image0000_height.png", samplers.basic_repeat);
 	tex->MakeResident();
 	vector<GLuint64> texture_ids = { tex->texture_handle_ARB };
-
+	
+	vector<vector<Vertex>> vertices2;
+	vector<vector<unsigned int>> indices2;
+	vector<unsigned int> draw_ids2;
 	// load render data
 	TestLoadPlane(vertices2, indices2, draw_ids2);
 	buffer_storage->InitMeshBuffers();
@@ -168,12 +168,11 @@ void Render() {
 }
 
 void TestRender() {
-	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//glDrawElements(GL_TRIANGLES, indices2[0].size(), GL_UNSIGNED_INT, &*indices2[0].begin());
-
-	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (GLvoid*)0, buffer_storage->command_total, 0);
+	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, buffer_storage->command_total, 0);
+	// glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr);
 	CheckGLError();
 	//fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 }
@@ -182,8 +181,8 @@ int SDL_main(int argc, char** argv)
 {
 	auto log_thread = LogIO(quit);
 
-	//InitGame();
-	TestInitGame();
+	InitGame();
+	//TestInitGame();
 
 	while (!quit) {
 		_UpdateDeltaTime();
@@ -192,8 +191,8 @@ int SDL_main(int argc, char** argv)
 			ImGui_ImplSDL2_ProcessEvent(&e);
 			ProcessEvent(&e);
 		}
-		//Render();
-		TestRender();
+		Render();
+		//TestRender();
 		RenderGui(renderer->window, camera);
 		// Draw
 		SDL_GL_SwapWindow(renderer->window);

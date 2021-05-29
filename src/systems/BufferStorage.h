@@ -31,6 +31,13 @@ public:
 
     const int TRANSFORMS_UNIFORM_LOC = 0;
     const int TEXTURE_UNIFORM_LOC = 1;
+
+    // MAPPED BUFFERS
+    Vertex* vertex_ptr;
+    unsigned int* index_ptr;
+    DrawElementsIndirectCommand* command_ptr;
+    mat4* transform_ptr;
+    GLuint64* texture_ptr;
 public:
 
 	unsigned int mesh_VAO;
@@ -50,10 +57,7 @@ public:
 
     GLuint texture_buffer;
     unsigned int textures_total = 0;
-
     ////////////////////////////////////////////
-
-    vector<DrawElementsIndirectCommand> commands;
 	
     BufferStorage() {};
 	~BufferStorage() {};
@@ -93,14 +97,8 @@ public:
             WaitGPU(fence_sync);
         }
 
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-        auto command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, COMMAND_STORAGE_SIZE, flags);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-        auto index_ptr = (unsigned int*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, INDEX_STORAGE_SIZE, flags);
-        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-        auto vertex_ptr = (Vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, VERTEX_STORAGE_SIZE, flags);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
-        auto texture_id_ptr = (GLuint64*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, TEXTURE_STORAGE_SIZE, flags);
+        // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
+        command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, command_total, (command_total + draw_ids.size()) * sizeof(DrawElementsIndirectCommand), flags);
         for (int i = 0; i < vertices.size(); i++) {
             if (vertices[i].size() + vertex_total > MAX_VERTEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices[i].size() << "max=" << MAX_VERTEX).str());
@@ -118,87 +116,78 @@ public:
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. textures total=" << textures_total << "max=" << MAX_TEXTURES).str());
                 return;
             }
-            DrawElementsIndirectCommand command;
-            command.baseVertex = vertex_total;
-            command.count = indices.size();
-            command.firstIndex = 0;
-            command.baseInstance = draw_ids[i];
-            command.instanceCount = 1;
-            commands.push_back(command);
+            DrawElementsIndirectCommand* command = &command_ptr[command_total];
+            command->count = indices[i].size();
+            command->instanceCount = 1;
+            command->firstIndex = 0;
+            command->baseVertex = vertex_total;
+            command->baseInstance = draw_ids[i];
 
             // copy to GPU
             memcpy(&vertex_ptr[vertex_total], &*vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
             memcpy(&index_ptr[index_total], &*indices[i].begin(), indices[i].size() * sizeof(unsigned int));
-            command_ptr[command_total] = command;
-            texture_id_ptr[textures_total] = texture_ids[i];
+            texture_ptr[textures_total] = texture_ids[i];
 
             vertex_total += vertices[i].size();
             index_total += indices[i].size();
             textures_total++;
             command_total++;
         }
+        // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
+        glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+        // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
         if (!glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER)) {
             CheckGLError();
         }
-        if (!glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER)) {
-            CheckGLError();
-        }
-        if (!glUnmapBuffer(GL_ARRAY_BUFFER)) {
-            CheckGLError();
-        }
-        if (!glUnmapBuffer(GL_SHADER_STORAGE_BUFFER)) {
-            CheckGLError();
-        }
-        // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
-        glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
         CheckGLError();
     }
+
     void BufferTransforms(vector<mat4>& transforms, GLsync fence_sync) {
         if (fence_sync != nullptr) {
             WaitGPU(fence_sync);
         }
-        // TODO: remove from buffer transforms path. (updated frequently, avoid branching?)
+        // TODO: remove from buffer transforms path. (updated frequently)
         if (transforms.size() != command_total) {
             LOG((ostringstream() << "ERROR BufferTransforms allocation. transforms size=" << transforms.size() <<"must be equal to draws size=" << command_total).str());
             return;
         }
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
-        auto transforms_ptr = (mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, TRANSFORM_STORAGE_SIZE, flags);
-        memcpy(&transforms_ptr[transforms_total], &*transforms.begin(), transforms.size() * sizeof(mat4));
-        if (!glUnmapBuffer(GL_SHADER_STORAGE_BUFFER)) {
-            CheckGLError();
-        }
-        // call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
+        memcpy(&transform_ptr[transforms_total], &*transforms.begin(), transforms.size() * sizeof(mat4));
+        // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
         glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-        // update totals
         transforms_total += transforms.size();
     }
     void InitMeshBuffers() {
         glGenVertexArrays(1, &mesh_VAO);
+        glBindVertexArray(mesh_VAO); // MUST be bound before glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer).
 
+        // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
         glGenBuffers(1, &command_buffer);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-        glBufferStorage(GL_DRAW_INDIRECT_BUFFER, COMMAND_STORAGE_SIZE, NULL, flags);
-        
+        glBufferStorage(GL_DRAW_INDIRECT_BUFFER, COMMAND_STORAGE_SIZE, NULL,  flags);
+
         glGenBuffers(1, &index_buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
         glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, INDEX_STORAGE_SIZE, NULL, flags);
+        index_ptr = (unsigned int*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, INDEX_STORAGE_SIZE, flags);
 
         glGenBuffers(1, &vertex_buffer);
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
         glBufferStorage(GL_ARRAY_BUFFER, VERTEX_STORAGE_SIZE, NULL, flags);
+        vertex_ptr = (Vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, VERTEX_STORAGE_SIZE, flags);
 
         glGenBuffers(1, &transform_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, TRANSFORM_STORAGE_SIZE, NULL, flags);
+        transform_ptr = (mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, TRANSFORM_STORAGE_SIZE, flags);
 
         glGenBuffers(1, &texture_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, TEXTURE_STORAGE_SIZE, NULL, flags);
+        texture_ptr = (GLuint64*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, TEXTURE_STORAGE_SIZE, flags);
     }
 
     void BindMeshVAOandBuffers() {
-        // !WARNING. binding buffers after VAO lead to crash
+        // !WARNING. binding buffer after glVertexAttribPointer lead to hardware crash.
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
@@ -206,19 +195,14 @@ public:
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
         
         glBindVertexArray(mesh_VAO);
-        // pos
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-        // vertex normals
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-        // vertex texture coords
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-        // vertex tangent
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-        // vertex bitangent
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
         
