@@ -1,10 +1,15 @@
 #include "OpenGLHelpers.h"
 
-void CheckGLError(const char* funcname) {
+void CheckGLError(const std::source_location& location) {
     int err = glGetError();
     if (err != GL_NO_ERROR) {
         //LOG(glGetErrorString(err));
-        cout << "GL error: '" << glGetErrorString(err) << "' at: " << string(funcname) << endl;
+        cout << "GL error: '" << glGetErrorString(err) 
+			<< "' at: "
+			<< location.file_name() << "("
+			<< location.line() << ":"
+			<< location.column() << ")#"
+			<< location.function_name() << endl;
     }
 }
 
@@ -139,6 +144,5 @@ void LogShaderFull(GLuint programme) {
 	//printf("GL_ACTIVE_TEXTURE_ARB = %i\n", params);
 	glGetProgramiv(programme, GL_ACTIVE_UNIFORM_BLOCKS, &params);
 	printf("GL_ACTIVE_UNIFORM_BLOCKS = %i\n", params);
-	CheckGLError(FUNCTION_ADDRESS);
 	LogShaderMessage(programme);
 }

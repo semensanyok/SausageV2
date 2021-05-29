@@ -94,7 +94,6 @@ void InitGame() {
 	renderer->InitContext();
 
 	buffer_storage->InitMeshBuffers();
-	buffer_storage->BindMeshVAOandBuffers();
 	samplers = InitSamplers();
 	InitGuiContext(renderer->window, renderer->context);
 
@@ -115,6 +114,7 @@ void InitGame() {
 	shader = Shader(GetShaderPath("bindless_vs.glsl"), GetShaderPath("bindless_fs.glsl"));
 	shader.setMat4("projection_view", camera->projection_matrix * camera->view_matrix);
 	glUseProgram(shader.id);
+	buffer_storage->BindMeshVAOandBuffers();
 	LogShaderFull(shader.id);
 }
 
@@ -145,11 +145,10 @@ void TestInitGame() {
 	
 	shader = Shader(GetShaderPath("debug_vs.glsl"), GetShaderPath("debug_fs.glsl"));
 
-	// WARNING! init VAO must happen after VBO buffer initialized. (or maybe some other reason. but it crashes if init vao before buffering.
 	glUseProgram(shader.id);
 	LogShaderFull(shader.id);
 	buffer_storage->BindMeshVAOandBuffers();
-	CheckGLError(FUNCTION_ADDRESS);
+	CheckGLError();
 }
 
 void _UpdateDeltaTime() {
@@ -163,20 +162,19 @@ void Render() {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer_storage->command_buffer);
 	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, buffer_storage->command_total, 0);
 	fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-	CheckGLError(FUNCTION_ADDRESS);
+	CheckGLError();
 }
 
 void TestRender() {
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDrawElements(GL_TRIANGLES, indices2[0].size(), GL_UNSIGNED_INT, &*indices2[0].begin());
+	//glDrawElements(GL_TRIANGLES, indices2[0].size(), GL_UNSIGNED_INT, &*indices2[0].begin());
 
-	//glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, buffer_storage->command_total, 0);
-	//CheckGLError(FUNCTION_ADDRESS);
+	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (GLvoid*)0, buffer_storage->command_total, 0);
+	CheckGLError();
 	//fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 }
 

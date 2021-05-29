@@ -52,6 +52,8 @@ public:
     unsigned int textures_total = 0;
 
     ////////////////////////////////////////////
+
+    vector<DrawElementsIndirectCommand> commands;
 	
     BufferStorage() {};
 	~BufferStorage() {};
@@ -122,6 +124,7 @@ public:
             command.firstIndex = 0;
             command.baseInstance = draw_ids[i];
             command.instanceCount = 1;
+            commands.push_back(command);
 
             // copy to GPU
             memcpy(&vertex_ptr[vertex_total], &*vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
@@ -135,20 +138,20 @@ public:
             command_total++;
         }
         if (!glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER)) {
-            CheckGLError(FUNCTION_ADDRESS);
+            CheckGLError();
         }
         if (!glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER)) {
-            CheckGLError(FUNCTION_ADDRESS);
+            CheckGLError();
         }
         if (!glUnmapBuffer(GL_ARRAY_BUFFER)) {
-            CheckGLError(FUNCTION_ADDRESS);
+            CheckGLError();
         }
         if (!glUnmapBuffer(GL_SHADER_STORAGE_BUFFER)) {
-            CheckGLError(FUNCTION_ADDRESS);
+            CheckGLError();
         }
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
         glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-        CheckGLError(FUNCTION_ADDRESS);
+        CheckGLError();
     }
     void BufferTransforms(vector<mat4>& transforms, GLsync fence_sync) {
         if (fence_sync != nullptr) {
@@ -163,7 +166,7 @@ public:
         auto transforms_ptr = (mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, TRANSFORM_STORAGE_SIZE, flags);
         memcpy(&transforms_ptr[transforms_total], &*transforms.begin(), transforms.size() * sizeof(mat4));
         if (!glUnmapBuffer(GL_SHADER_STORAGE_BUFFER)) {
-            CheckGLError(FUNCTION_ADDRESS);
+            CheckGLError();
         }
         // call after SSBO write (GL_SHADER_STORAGE_BUFFER). https://www.khronos.org/opengl/wiki/Memory_Model#Incoherent_memory_access
         glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
@@ -195,11 +198,13 @@ public:
     }
 
     void BindMeshVAOandBuffers() {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        // !WARNING. binding buffers after VAO lead to crash
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
-
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+        
         glBindVertexArray(mesh_VAO);
         // pos
         glEnableVertexAttribArray(0);

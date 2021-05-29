@@ -1,0 +1,1 @@
+If using visual studio, 16.10 is required (to support latest c++20 features, like <source_location>).
