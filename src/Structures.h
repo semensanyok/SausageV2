@@ -41,7 +41,7 @@ struct DrawElementsIndirectCommand
 
 enum TextureType
 {
-    Diffuse, // texture 2d array index 0
+    Diffuse, // sampler2DArray   index 0
     Normal,  //                        1
     Specular,//                        2
     Height,  //                        3
@@ -52,17 +52,10 @@ struct Samplers {
 // --------------------------------------------------------------------------------------------------------------------
 // Texture structures end
 
-// OLD. switched to bindless multidraw /////////////////////////////////////////
-// struct Mesh {
-//     vector<Vertex> vertices;
-//     vector<unsigned int> indices;
-//     unsigned int draw_id;
-//     unsigned int VAO, VBO, EBO;
-// };
-
 struct MeshData {
-    // after data loaded, contains gl_DrawIDARB
-    unsigned int draw_id;
+    // offset into buffer array
+    unsigned int id;
+    mat4 model;
 };
 
 struct MeshLoadData {

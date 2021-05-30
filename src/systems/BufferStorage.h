@@ -21,23 +21,25 @@ public:
     const int COMMAND_STORAGE_SIZE = MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
 
     // UNIFORMS ///////////////////////////////
-    const int MAX_TRANSFORM = MAX_COMMAND;
-    const int TRANSFORM_STORAGE_SIZE = MAX_TRANSFORM * sizeof(mat4);
+    const int MAX_MVP = MAX_COMMAND;
+    const int MVP_STORAGE_SIZE = MAX_MVP * sizeof(mat4);
 
     const int MAX_TEXTURES = 100;
     const int TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
     ////////////////////////////////////////////
     const GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 
-    const int TRANSFORMS_UNIFORM_LOC = 0;
+    const int MVP_UNIFORM_LOC = 0;
     const int TEXTURE_UNIFORM_LOC = 1;
 
     // MAPPED BUFFERS
     Vertex* vertex_ptr;
     unsigned int* index_ptr;
     DrawElementsIndirectCommand* command_ptr;
-    mat4* transform_ptr;
+    mat4* mvp_ptr;
     GLuint64* texture_ptr;
+
+    bool is_need_barrier = false;
 public:
 
 	unsigned int mesh_VAO;
@@ -49,11 +51,9 @@ public:
     unsigned index_total = 0;
 
     // UNIFORMS AND SSBO///////////////////////////////
+    GLuint mvp_buffer;
     GLuint command_buffer;
     unsigned int command_total = 0;
-    
-    GLuint transform_buffer;
-    unsigned int transforms_total = 0;
 
     GLuint texture_buffer;
     unsigned int textures_total = 0;
@@ -82,23 +82,28 @@ public:
         }
         glDeleteSync(fence_sync);
     }
-
+    void BarrierIfChange() {
+        if (is_need_barrier) {
+            glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+            is_need_barrier = false;
+        }
+    }
     /**
     * fence_sync created after all render ops issued for these buffers.
     */
     void BufferMeshData(
         vector<vector<Vertex>>& vertices,
         vector<vector<unsigned int>>& indices,
-        vector<unsigned int>& draw_ids,
+        vector<MeshData>& mesh_data,
         vector<GLuint64>& texture_ids,
         GLsync fence_sync) {
-        assert(vertices.size() == indices.size() && vertices.size() == draw_ids.size() && vertices.size() == texture_ids.size());
+        assert(vertices.size() == indices.size() && vertices.size() == mesh_data.size() && vertices.size() == texture_ids.size());
         if (fence_sync != nullptr) {
             WaitGPU(fence_sync);
         }
 
         // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-        command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, command_total, (command_total + draw_ids.size()) * sizeof(DrawElementsIndirectCommand), flags);
+        command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, command_total, (command_total + mesh_data.size()) * sizeof(DrawElementsIndirectCommand), flags);
         for (int i = 0; i < vertices.size(); i++) {
             if (vertices[i].size() + vertex_total > MAX_VERTEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices[i].size() << "max=" << MAX_VERTEX).str());
@@ -121,7 +126,7 @@ public:
             command->instanceCount = 1;
             command->firstIndex = 0;
             command->baseVertex = vertex_total;
-            command->baseInstance = draw_ids[i];
+            command->baseInstance = mesh_data[i].id;
 
             // copy to GPU
             memcpy(&vertex_ptr[vertex_total], &*vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
@@ -134,27 +139,41 @@ public:
             command_total++;
         }
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
-        glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+        is_need_barrier = true;
         // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
         if (!glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER)) {
             CheckGLError();
         }
         CheckGLError();
     }
-
-    void BufferTransforms(vector<mat4>& transforms, GLsync fence_sync) {
+    void BufferMvp(MeshData& mesh_data, mat4& mvp, GLsync fence_sync) {
         if (fence_sync != nullptr) {
             WaitGPU(fence_sync);
         }
-        // TODO: remove from buffer transforms path. (updated frequently)
-        if (transforms.size() != command_total) {
-            LOG((ostringstream() << "ERROR BufferTransforms allocation. transforms size=" << transforms.size() <<"must be equal to draws size=" << command_total).str());
+        if (mesh_data.id > command_total) {
+            LOG((ostringstream() << "ERROR BufferMvp. offset=" << mesh_data.id << " not valid. expected less then command_total=" << command_total).str());
             return;
         }
-        memcpy(&transform_ptr[transforms_total], &*transforms.begin(), transforms.size() * sizeof(mat4));
-        // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
-        glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-        transforms_total += transforms.size();
+        mvp_ptr[mesh_data.id] = mvp;
+        is_need_barrier = true;
+    }
+    void BufferMvps(vector<mat4>& mvps, vector<MeshData>& mesh_data, GLsync fence_sync) {
+        if (fence_sync != nullptr) {
+            WaitGPU(fence_sync);
+        }
+        if (mvps.size() != mesh_data.size()) {
+            LOG((ostringstream() << "ERROR BufferMvps. mesh_data param size=" << mesh_data.size() << "must be equal to mvps param size=" << mvps.size()).str());
+            return;
+        }
+        if (mesh_data.size() != command_total) {
+            LOG((ostringstream() << "ERROR BufferMvps. mesh_data size=" << mesh_data.size() <<"must be equal to draws size=" << command_total).str());
+            return;
+        }
+        for (int i = 0; i < mvps.size(); i++) {
+            mvp_ptr[mesh_data[i].id] = mvps[i];
+        }
+        //memcpy(&mvp_ptr[command_total], mvps.data(), mvps.size() * sizeof(mat4));
+        is_need_barrier = true;
     }
     void InitMeshBuffers() {
         glGenVertexArrays(1, &mesh_VAO);
@@ -175,10 +194,10 @@ public:
         glBufferStorage(GL_ARRAY_BUFFER, VERTEX_STORAGE_SIZE, NULL, flags);
         vertex_ptr = (Vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, VERTEX_STORAGE_SIZE, flags);
 
-        glGenBuffers(1, &transform_buffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, TRANSFORM_STORAGE_SIZE, NULL, flags);
-        transform_ptr = (mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, TRANSFORM_STORAGE_SIZE, flags);
+        glGenBuffers(1, &mvp_buffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mvp_buffer);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, MVP_STORAGE_SIZE, NULL, flags);
+        mvp_ptr = (mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, MVP_STORAGE_SIZE, flags);
 
         glGenBuffers(1, &texture_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
@@ -189,7 +208,7 @@ public:
     void BindMeshVAOandBuffers() {
         // !WARNING. binding buffer after glVertexAttribPointer lead to hardware crash.
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mvp_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
@@ -206,7 +225,7 @@ public:
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
         
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TRANSFORMS_UNIFORM_LOC, transform_buffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, MVP_UNIFORM_LOC, mvp_buffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_UNIFORM_LOC, texture_buffer);
     }
     void Dispose() {
@@ -221,9 +240,9 @@ public:
         glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
         glDeleteBuffers(1, &index_buffer);
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, mvp_buffer);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        glDeleteBuffers(1, &transform_buffer);
+        glDeleteBuffers(1, &mvp_buffer);
 
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
         glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);

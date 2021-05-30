@@ -8,6 +8,11 @@ using namespace glm;
 
 class Camera
 {
+private:
+	void _UpdateMatrices() {
+		this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
+		this->projection_view = projection_matrix * view_matrix;
+	}
 public:
 
 	Camera(float FOV, 
@@ -31,10 +36,10 @@ public:
 		this->pitch_angle = pitch_angle;
 		this->world_up = world_up;
 		this->up = up;
-		this->projection_matrix = perspective(this->FOV, this->width / this->height, this->near_plane, this->far_plane);
+		this->projection_matrix = perspective(radians(this->FOV), (float)this->width / (float)this->height, this->near_plane, this->far_plane);
 
 		UpdateCameraFrontUpRight();
-		this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
+		_UpdateMatrices();
 	};
 	~Camera() {};
 	void UpdateCameraFrontUpRight() {
@@ -45,12 +50,12 @@ public:
 	}
 	void KeyCallbackRTS(int scan_code, float delta_time) {
 		float velocity = delta_time * movement_speed;
-		if (scan_code == SDL_SCANCODE_W)   pos += vec3(0, velocity, 0);
-		if (scan_code == SDL_SCANCODE_A)   pos += right * velocity;
-		if (scan_code == SDL_SCANCODE_S)   pos -= vec3(0, velocity, 0); // glm::normalize(glm::cross(cameraFront, cameraUp))
-		if (scan_code == SDL_SCANCODE_D)   pos -= right * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
+		if (scan_code == SDL_SCANCODE_W)   pos -= vec3(0, 0, velocity);
+		if (scan_code == SDL_SCANCODE_A)   pos -= right * velocity;
+		if (scan_code == SDL_SCANCODE_S)   pos += vec3(0, 0, velocity);
+		if (scan_code == SDL_SCANCODE_D)   pos += right * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
 
-		this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
+		_UpdateMatrices();
 	};
 
 	void MouseMotionCallbackRTS(SDL_Event* e)
@@ -69,37 +74,41 @@ public:
 		}
 
 		UpdateCameraFrontUpRight();
-		this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
+		_UpdateMatrices();
 	}
 
-	//void KeyCallbackFreeCam(int scan_code, float delta_time) {
-	//	float velocity = delta_time * movement_speed;
-	//	if (scan_code == SDL_SCANCODE_W)   pos += direction * velocity;
-	//	if (scan_code == SDL_SCANCODE_A)   pos += right * velocity;
-	//	if (scan_code == SDL_SCANCODE_S)   pos -= direction * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
-	//	if (scan_code == SDL_SCANCODE_D)   pos -= right * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
+	void KeyCallbackFreeCam(int scan_code, float delta_time) {
+		float velocity = delta_time * movement_speed;
+		if (scan_code == SDL_SCANCODE_W)   pos += direction * velocity;
+		if (scan_code == SDL_SCANCODE_A)   pos -= right * velocity;
+		if (scan_code == SDL_SCANCODE_S)   pos -= direction * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
+		if (scan_code == SDL_SCANCODE_D)   pos += right * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
 
-	//	this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
+		_UpdateMatrices();
+	};
 
-	//	_LogPos();
-	//};
+	void MouseMotionCallbackFreeCam(SDL_Event* e)
+	{
+		this->yaw_angle += ((float)e->motion.xrel * this->sensivity);
+		this->pitch_angle -= ((float)e->motion.yrel * this->sensivity);
+		this->pitch_angle = std::clamp(this->pitch_angle, -90.0f, 90.0f);
+		if (yaw_angle > 360.0f || yaw_angle < -360.0f) {
+			yaw_angle = 0.0f;
+		}
+		if (pitch_angle > 90.0f) {
+			pitch_angle = 90.0f;
+		}
+		if (pitch_angle < -90.0f) {
+			pitch_angle = -90.0f;
+		}
 
-	//void MouseMotionCallbackFreeCam(SDL_Event* e)
-	//{
-	//	this->yaw_angle += ((float)e->motion.xrel * this->sensivity);
-	//	this->pitch_angle -= ((float)e->motion.yrel * this->sensivity);
-	//	this->pitch_angle = std::clamp(this->pitch_angle, -90.0f, 90.0f);
-	//	if (yaw_angle > 360.0f || yaw_angle < -360.0f) {
-	//		yaw_angle = 0.0f;
-	//	}
-
-	//	UpdateCameraFrontUpRight();
-	//	this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
-	//	_LogPos();
-	//}
+		UpdateCameraFrontUpRight();
+		_UpdateMatrices();
+	}
 
 	mat4 view_matrix;
 	mat4 projection_matrix;
+	mat4 projection_view;
 	vec3 pos;
 	vec3 up;
 	vec3 world_up;

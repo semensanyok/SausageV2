@@ -21,42 +21,42 @@ void TestLoadPlane(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>
 	draw_ids.push_back(mesh.draw_id);
 }
 
-//void TestLoadCube(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices, vector<unsigned int>& draw_ids) {
-//	static  std::vector<Vertex> vertices2 = {
-//		// front
-//		Vertex{vec3(-1.0, -1.0,  1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
-//		Vertex{vec3(1.0, -1.0,  1.0, vec3(0), vec2(0), vec3(0), vec3(0)},
-//		Vertex{vec3(1.0,  1.0,  1.0, vec3(0), vec2(0), vec3(0), vec3(0)},
-//		Vertex{vec3(-1.0,  1.0,  1.0, vec3(0), vec2(0), vec3(0), vec3(0)},
-//		// back
-//		Vertex{vec3(-1.0, -1.0, -1.0, vec3(0), vec2(0), vec3(0), vec3(0)},
-//		Vertex{vec3(1.0, -1.0, -1.0, vec3(0), vec2(0), vec3(0), vec3(0)},
-//		Vertex{vec3(1.0,  1.0, -1.0, vec3(0), vec2(0), vec3(0), vec3(0)},
-//		Vertex{vec3(-1.0,  1.0, -1.0, vec3(0), vec2(0), vec3(0), vec3(0)},
-//			};
-//	static  std::vector<unsigned int> indices2 = {
-//		// front
-//		0, 1, 2,
-//		2, 3, 0,
-//		// right
-//		1, 5, 6,
-//		6, 2, 1,
-//		// back
-//		7, 6, 5,
-//		5, 4, 7,
-//		// left
-//		4, 0, 3,
-//		3, 7, 4,
-//		// bottom
-//		4, 5, 1,
-//		1, 0, 4,
-//		// top
-//		3, 2, 6,
-//		6, 7, 3
-//	};
-//	MeshLoadData mesh = CreateMesh(vertices2, indices2);
-//	vertices.push_back(mesh.vertices);
-//	indices.push_back(mesh.indices);
-//	draw_ids.push_back(mesh.draw_id);
-//}
+void TestLoadCube(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices, vector<unsigned int>& draw_ids) {
+	static  std::vector<Vertex> vertices2 = {
+		// front
+		Vertex{vec3(-1.0, -1.0,  1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
+		Vertex{vec3(1.0, -1.0,  1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
+		Vertex{vec3(1.0,  1.0,  1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
+		Vertex{vec3(-1.0,  1.0,  1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
+		// back
+		Vertex{vec3(-1.0, -1.0, -1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
+		Vertex{vec3(1.0, -1.0, -1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
+		Vertex{vec3(1.0,  1.0, -1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
+		Vertex{vec3(-1.0,  1.0, -1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
+			};
+	static  std::vector<unsigned int> indices2 = {
+		// front
+		0, 1, 2,
+		2, 3, 0,
+		// right
+		1, 5, 6,
+		6, 2, 1,
+		// back
+		7, 6, 5,
+		5, 4, 7,
+		// left
+		4, 0, 3,
+		3, 7, 4,
+		// bottom
+		4, 5, 1,
+		1, 0, 4,
+		// top
+		3, 2, 6,
+		6, 7, 3
+	};
+	MeshLoadData mesh = CreateMesh(vertices2, indices2);
+	vertices.push_back(mesh.vertices);
+	indices.push_back(mesh.indices);
+	draw_ids.push_back(mesh.draw_id);
+}
 

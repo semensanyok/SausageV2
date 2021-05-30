@@ -145,4 +145,5 @@ void LogShaderFull(GLuint programme) {
 	glGetProgramiv(programme, GL_ACTIVE_UNIFORM_BLOCKS, &params);
 	printf("GL_ACTIVE_UNIFORM_BLOCKS = %i\n", params);
 	LogShaderMessage(programme);
+	CheckGLError();
 }

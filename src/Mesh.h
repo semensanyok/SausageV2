@@ -4,6 +4,7 @@
 #include "Structures.h"
 #include <vector>
 #include <atomic>
+#include "systems/Camera.h"
 
 using namespace std;
 using namespace glm;
@@ -70,7 +71,6 @@ MeshLoadData ProcessMesh(aiMesh* mesh, const aiScene* scene)
         }
         else
             vertex.TexCoords = vec2(0.0f, 0.0f);
-
         vertices.push_back(vertex);
     }
     // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -86,7 +86,12 @@ MeshLoadData ProcessMesh(aiMesh* mesh, const aiScene* scene)
 }
 
 // Structure of arrays style for multidraw.
-void LoadMeshes(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices, vector<unsigned int>& draw_ids, const string& file_name)
+void LoadMeshes(
+    vector<vector<Vertex>>& vertices,
+    vector<vector<unsigned int>>& indices,
+    vector<MeshData>& mesh_data,
+    const string& file_name
+)
 {
     Assimp::Importer assimp_importer;
 
@@ -97,16 +102,23 @@ void LoadMeshes(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& 
         cout << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString() << endl;
         throw runtime_error(string("ERROR::ASSIMP:: ") += assimp_importer.GetErrorString());
     }
-    // process each mesh located at the current node
-    for (unsigned int i = 0; i < scene->mNumMeshes; i++)
-    {
-        // the node object only contains indices to index the actual objects in the scene. 
-        // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-        aiMesh* mesh = scene->mMeshes[i];
-        MeshLoadData data = ProcessMesh(mesh, scene);
-        vertices.push_back(data.vertices);
-        indices.push_back(data.indices);
-        draw_ids.push_back(data.draw_id);
+    for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
+        auto child = scene->mRootNode->mChildren[i];
+        auto ai_t = child->mTransformation;
+        auto model = mat4(
+            ai_t.a1, ai_t.b1, ai_t.c1, ai_t.d1,
+            ai_t.a2, ai_t.b2, ai_t.c2, ai_t.d2,
+            ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
+            ai_t.a4, ai_t.b4, ai_t.c4, ai_t.d4);
+        for (unsigned int j = 0; j < child->mNumMeshes; j++)
+        {
+            // the node object only contains indices to index the actual objects in the scene. 
+            // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
+            aiMesh* mesh = scene->mMeshes[child->mMeshes[j]];
+            auto data = ProcessMesh(mesh, scene);
+            vertices.push_back(data.vertices);
+            indices.push_back(data.indices);
+            mesh_data.push_back(MeshData{ data.draw_id, model });
+        }
     }
 }
-

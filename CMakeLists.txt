@@ -23,6 +23,9 @@ add_subdirectory("dependencies/glm")
 add_subdirectory("lib/glad")
 
 # BULLET
+# multithread support. something about defining BT_THREADSAFE 
+# option(BULLET2_USE_THREAD_LOCKS ON)
+
 # option(BUILD_BULLET2_DEMOS OFF)
 # option(BUILD_CPU_DEMOS OFF)
 # option(BUILD_EXTRAS OFF)

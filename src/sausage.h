@@ -9,6 +9,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "glm/gtx/string_cast.hpp"
 
 #include <assimp/scene.h>
 #include <assimp/Importer.hpp>
