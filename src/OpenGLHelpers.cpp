@@ -1,6 +1,6 @@
 #include "OpenGLHelpers.h"
 
-void CheckGLError(const std::source_location& location) {
+bool CheckGLError(const std::source_location& location) {
     int err = glGetError();
     if (err != GL_NO_ERROR) {
         //LOG(glGetErrorString(err));
@@ -10,7 +10,9 @@ void CheckGLError(const std::source_location& location) {
 			<< location.line() << ":"
 			<< location.column() << ")#"
 			<< location.function_name() << endl;
+		return true;
     }
+	return false;
 }
 
 const char* GL_type_to_string(GLenum type) {

@@ -48,6 +48,11 @@ public:
 		right = normalize(cross(target, world_up));
 		up = normalize(cross(right, target));
 	}
+	void MouseWheelCallbackRTS(SDL_MouseWheelEvent& mw_event, float delta_time) {
+		this->pos.y -= (mw_event.y * scroll_speed);
+		
+		_UpdateMatrices();
+	};
 	void KeyCallbackRTS(int scan_code, float delta_time) {
 		float velocity = delta_time * movement_speed;
 		if (scan_code == SDL_SCANCODE_W)   pos -= vec3(0, 0, velocity);
@@ -57,7 +62,14 @@ public:
 
 		_UpdateMatrices();
 	};
+	void ResizeCallback(int new_width, int new_height) {
+		this->width = new_width;
+		this->height = new_height;
+		this->projection_matrix = perspective(radians(this->FOV), (float)this->width / (float)this->height, this->near_plane, this->far_plane);
+		this->projection_view = projection_matrix * view_matrix;
 
+		_UpdateMatrices();
+	}
 	void MouseMotionCallbackRTS(SDL_Event* e)
 	{
 		this->yaw_angle += ((float)e->motion.xrel * this->sensivity);
@@ -118,6 +130,7 @@ public:
 	float pitch_angle;
 	float sensivity = 0.1f;
 	float movement_speed = 0.1f;
+	float scroll_speed = 1.0f;
 
 	float FOV;
 	float width;

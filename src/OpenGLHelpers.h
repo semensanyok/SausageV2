@@ -12,7 +12,7 @@ using namespace std;
 #define FUNCTION_ADDRESS __func__
 #endif // _MSVC
 
-void CheckGLError(const source_location& location = source_location::current());
+bool CheckGLError(const source_location& location = source_location::current());
 
 const char* GL_type_to_string(GLenum type);
 

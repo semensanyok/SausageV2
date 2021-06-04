@@ -1,8 +1,12 @@
 #pragma once
 
 #include "sausage.h"
+
 using namespace std;
 using namespace glm;
+
+class BufferStorage;
+class Shader;
 
 struct Vertex {
     // position
@@ -53,13 +57,22 @@ struct Samplers {
 // Texture structures end
 
 struct MeshData {
-    // offset into buffer array
+    // draw id.
     unsigned int id;
     mat4 model;
+    DrawElementsIndirectCommand command;
+    BufferStorage* buffer;
+    // aabb params
+    // 
 };
 
 struct MeshLoadData {
     vector<Vertex> vertices;
     vector<unsigned int> indices;
     unsigned int draw_id;
+};
+
+struct DrawCall {
+    Shader* shader;
+    vector<BufferStorage*> buffers;
 };

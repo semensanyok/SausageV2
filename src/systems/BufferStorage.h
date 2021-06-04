@@ -9,39 +9,33 @@ using namespace std;
 using namespace glm;
 
 class BufferStorage {
-public:
-//private:
+private:
     const int MAX_VERTEX = 1000000;
     const int VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
     
     const int MAX_INDEX = 100000;
     const int INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
     
-    const int MAX_COMMAND = 10;
+    const int MAX_COMMAND = 1000;
     const int COMMAND_STORAGE_SIZE = MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
-
-    // UNIFORMS ///////////////////////////////
+    ///////////
+    // UNIFORMS
+    ///////////
     const int MAX_MVP = MAX_COMMAND;
     const int MVP_STORAGE_SIZE = MAX_MVP * sizeof(mat4);
 
     const int MAX_TEXTURES = 100;
     const int TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
-    ////////////////////////////////////////////
+    
     const GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-
     const int MVP_UNIFORM_LOC = 0;
     const int TEXTURE_UNIFORM_LOC = 1;
-
-    // MAPPED BUFFERS
-    Vertex* vertex_ptr;
-    unsigned int* index_ptr;
-    DrawElementsIndirectCommand* command_ptr;
-    mat4* mvp_ptr;
-    GLuint64* texture_ptr;
-
+    
     bool is_need_barrier = false;
-public:
 
+	///////////
+	/// Buffers
+    ///////////
 	unsigned int mesh_VAO;
     
     GLuint vertex_buffer;
@@ -49,20 +43,42 @@ public:
     
     GLuint index_buffer;
     unsigned index_total = 0;
-
-    // UNIFORMS AND SSBO///////////////////////////////
+    /////////////////////
+    // UNIFORMS AND SSBO
+    /////////////////////
     GLuint mvp_buffer;
     GLuint command_buffer;
     unsigned int command_total = 0;
 
     GLuint texture_buffer;
     unsigned int textures_total = 0;
-    ////////////////////////////////////////////
+    //////////////////////////
+    // Mapped buffers pointers
+    //////////////////////////
+    Vertex* vertex_ptr;
+    unsigned int* index_ptr;
+    DrawElementsIndirectCommand* command_ptr;
+    mat4* mvp_ptr;
+    GLuint64* texture_ptr;
+public:
+    unsigned int id;
+
+    GLsync fence_sync = 0;
+
+    vector<DrawElementsIndirectCommand> active_commands;
+    unsigned int active_commands_to_render = 0;
 	
-    BufferStorage() {};
+    bool bind_draw_buffer = true;
+    BufferStorage() {
+        static int count = 0;
+        id = count++;
+    };
 	~BufferStorage() {};
 
-    void WaitGPU(GLsync fence_sync) {
+    void WaitGPU(GLsync fence_sync, const source_location& location = source_location::current()) {
+        if (fence_sync == 0) {
+            return;
+        }
         GLbitfield waitFlags = 0;
         GLuint64 waitDuration = 0;
         while (true) {
@@ -72,7 +88,10 @@ public:
             }
 
             if (waitRet == GL_WAIT_FAILED) {
-                LOG(string("WaitGPU wait sync returned status GL_WAIT_FAILED"));
+                LOG((ostringstream() << "WaitGPU wait sync returned status GL_WAIT_FAILED at" << location.file_name() << "("
+                    << location.line() << ":"
+                    << location.column() << ")#"
+                    << location.function_name()).str());
                 return;
             }
 
@@ -90,43 +109,48 @@ public:
     }
     /**
     * fence_sync created after all render ops issued for these buffers.
+    * 
     */
-    void BufferMeshData(
+    vector<DrawElementsIndirectCommand> BufferMeshData(
         vector<vector<Vertex>>& vertices,
         vector<vector<unsigned int>>& indices,
         vector<MeshData>& mesh_data,
-        vector<GLuint64>& texture_ids,
-        GLsync fence_sync) {
+        vector<GLuint64>& texture_ids) {
         assert(vertices.size() == indices.size() && vertices.size() == mesh_data.size() && vertices.size() == texture_ids.size());
-        if (fence_sync != nullptr) {
-            WaitGPU(fence_sync);
-        }
-
-        // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-        command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, command_total, (command_total + mesh_data.size()) * sizeof(DrawElementsIndirectCommand), flags);
+        WaitGPU(fence_sync);
+        vector<DrawElementsIndirectCommand> commands(mesh_data.size());
         for (int i = 0; i < vertices.size(); i++) {
             if (vertices[i].size() + vertex_total > MAX_VERTEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices[i].size() << "max=" << MAX_VERTEX).str());
-                return;
+                return {};
             }
             if (indices[i].size() + index_total > MAX_INDEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices[i].size() << "max=" << MAX_INDEX).str());
-                return;
+                return {};
             }
             if (command_total >= MAX_COMMAND) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. commands total=" << command_total << "max=" << MAX_COMMAND).str());
-                return;
+                return {};
             }
             if (textures_total >= MAX_TEXTURES) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. textures total=" << textures_total << "max=" << MAX_TEXTURES).str());
-                return;
+                return {};
             }
-            DrawElementsIndirectCommand* command = &command_ptr[command_total];
-            command->count = indices[i].size();
-            command->instanceCount = 1;
-            command->firstIndex = 0;
-            command->baseVertex = vertex_total;
-            command->baseInstance = mesh_data[i].id;
+            //***Return commands. perform hierarchical occlusion culling and then call multidraw with array of commands. (or buffer gpu for several frames, till camera exits 'view cell'
+            //DrawElementsIndirectCommand command; = &command_ptr[command_total];
+            //command->count = indices[i].size();
+            //command->instanceCount = 1;
+            //command->firstIndex = 0;
+            //command->baseVertex = vertex_total;
+            //command->baseInstance = mesh_data[i].id;
+
+            DrawElementsIndirectCommand command;
+            command.count = indices[i].size();
+            command.instanceCount = 1;
+            command.firstIndex = 0;
+            command.baseVertex = vertex_total;
+            command.baseInstance = command_total;
+            commands[i] = command;
 
             // copy to GPU
             memcpy(&vertex_ptr[vertex_total], &*vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
@@ -140,16 +164,32 @@ public:
         }
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
         is_need_barrier = true;
-        // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
-        if (!glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER)) {
-            CheckGLError();
-        }
         CheckGLError();
+        return commands;
     }
-    void BufferMvp(MeshData& mesh_data, mat4& mvp, GLsync fence_sync) {
-        if (fence_sync != nullptr) {
+    void SetCommands(vector<DrawElementsIndirectCommand>& active_commands) {
+    // todo: compare two
+    //  to render for several frames, till camera exits 'view cell'
+        if (bind_draw_buffer) {
             WaitGPU(fence_sync);
+            // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+            command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, active_commands.size() * sizeof(DrawElementsIndirectCommand), flags);
+            memcpy(&command_ptr[0], &*active_commands.begin(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
+            // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
+            if (!glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER)) {
+                CheckGLError();
+            }
         }
+    // to call multidraw with array of commands each frame.
+        else {
+            this->active_commands = active_commands;
+        }
+        active_commands_to_render = active_commands.size();
+    }
+    
+    void BufferMvp(MeshData& mesh_data, mat4& mvp) {
+        WaitGPU(fence_sync);
         if (mesh_data.id > command_total) {
             LOG((ostringstream() << "ERROR BufferMvp. offset=" << mesh_data.id << " not valid. expected less then command_total=" << command_total).str());
             return;
@@ -157,10 +197,8 @@ public:
         mvp_ptr[mesh_data.id] = mvp;
         is_need_barrier = true;
     }
-    void BufferMvps(vector<mat4>& mvps, vector<MeshData>& mesh_data, GLsync fence_sync) {
-        if (fence_sync != nullptr) {
-            WaitGPU(fence_sync);
-        }
+    void BufferMvps(vector<mat4>& mvps, vector<MeshData>& mesh_data) {
+        WaitGPU(fence_sync);
         if (mvps.size() != mesh_data.size()) {
             LOG((ostringstream() << "ERROR BufferMvps. mesh_data param size=" << mesh_data.size() << "must be equal to mvps param size=" << mvps.size()).str());
             return;
@@ -180,9 +218,11 @@ public:
         glBindVertexArray(mesh_VAO); // MUST be bound before glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer).
 
         // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-        glGenBuffers(1, &command_buffer);
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-        glBufferStorage(GL_DRAW_INDIRECT_BUFFER, COMMAND_STORAGE_SIZE, NULL,  flags);
+        if (bind_draw_buffer) {
+            glGenBuffers(1, &command_buffer);
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+            glBufferStorage(GL_DRAW_INDIRECT_BUFFER, COMMAND_STORAGE_SIZE, NULL, flags);
+        }
 
         glGenBuffers(1, &index_buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
@@ -211,7 +251,9 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, mvp_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+        if (bind_draw_buffer) {
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+        }
         
         glBindVertexArray(mesh_VAO);
         glEnableVertexAttribArray(0);
@@ -229,6 +271,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_UNIFORM_LOC, texture_buffer);
     }
     void Dispose() {
+        WaitGPU(fence_sync);
         glDisableVertexAttribArray(0);
         glDeleteVertexArrays(1, &mesh_VAO);
 
@@ -244,8 +287,10 @@ public:
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         glDeleteBuffers(1, &mvp_buffer);
 
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-        glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
-        glDeleteBuffers(1, &command_buffer);
+        if (bind_draw_buffer) {
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+            glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
+            glDeleteBuffers(1, &command_buffer);
+        }
     }
 };

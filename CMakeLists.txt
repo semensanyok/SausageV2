@@ -6,6 +6,8 @@ cmake_minimum_required (VERSION 3.8)
 project ("sausage")
 
 set (CMAKE_CXX_STANDARD 20)
+# force lib build, not dll
+set(BUILD_SHARED_LIBS false)
 
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 # ASSIMP
@@ -26,12 +28,12 @@ add_subdirectory("lib/glad")
 # multithread support. something about defining BT_THREADSAFE 
 # option(BULLET2_USE_THREAD_LOCKS ON)
 
-# option(BUILD_BULLET2_DEMOS OFF)
-# option(BUILD_CPU_DEMOS OFF)
-# option(BUILD_EXTRAS OFF)
-# option(BUILD_OPENGL3_DEMOS OFF)
-# option(BUILD_UNIT_TESTS OFF)
-# add_subdirectory(dependencies/bullet3)
+option(BUILD_BULLET2_DEMOS OFF)
+option(BUILD_CPU_DEMOS OFF)
+option(BUILD_EXTRAS OFF)
+option(BUILD_OPENGL3_DEMOS OFF)
+option(BUILD_UNIT_TESTS OFF)
+add_subdirectory(dependencies/bullet3)
 
 set(SDL2_DIR "lib/SDL")
 
@@ -50,7 +52,6 @@ include_directories(dependencies/assimp/include/
                     # ${LIBROCKET_INCLUDE_DIRS}/
                     ${IMGUI_INC_PATH}
                     )
-
 find_library(Freetype
     NAMES freetype.lib # what to look for
     HINTS "${CMAKE_SOURCE_DIR}/lib/freetype/lib/" # where to look
@@ -121,11 +122,13 @@ set(sources ${sources} ${IMGUI_HEADERS} ${IMGUI_SOURCES} )
 
 # "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp"
 set(sources ${sources} "src/systems/Gui.h" )
-set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/AssetUtils.h" "src/Logging.h" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h" "src/OpenGLHelpers.cpp"  )
+set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/Mesh.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/utils/AssetUtils.h" "src/Logging.h" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h" "src/OpenGLHelpers.cpp"  )
 
 #"src/main.cpp" "src/sausage.cpp"
-add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h")
+add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h" "src/systems/SystemsManager.h" "src/Scene.h" "src/systems/Controller.h")
 
 # RocketCore RocketDebugger RocketControls 
 # ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2}
-target_link_libraries(${CMAKE_PROJECT_NAME} assimp glad glm SDL2::Main ${SDL2_IMAGE_LIBRARIES} ${Freetype})
+target_link_libraries(${CMAKE_PROJECT_NAME} assimp glad glm SDL2::Main 
+Bullet3Collision Bullet3Dynamics Bullet3Common Bullet3Geometry 
+${SDL2_IMAGE_LIBRARIES} ${Freetype})

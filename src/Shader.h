@@ -1,18 +1,26 @@
 #pragma once
 
+#include "sausage.h"
 #include "Texture.h"
-#include <string>
 
 class Shader
 {
 public:
 	unsigned int id;
+	bool is_active = true;
+	string vertex_path;
+	string fragment_path;
 
 	bool operator==(Shader& other) {
 		return id == other.id;
 	}
+	friend ostream &operator<<(ostream& stream, const Shader& shader) {
+		stream << "Shader(id=" << shader.id << ",vertex shader name=" << shader.vertex_path << ",fragment shader name=" << shader.fragment_path << ")";
+		return stream;
+	}
 	Shader() {};
-	Shader(string vertexPath, string fragmentPath)
+	~Shader() { _Dispose();  };
+	Shader(string vertex_path, string fragment_path): vertex_path{vertex_path}, fragment_path{ fragment_path }
 	{
 		// 1. retrieve the vertex/fragment source code from filePath
 		string vertexCode;
@@ -24,8 +32,8 @@ public:
 		fShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
 		try
 		{
-			vShaderFile.open(vertexPath);
-			fShaderFile.open(fragmentPath);
+			vShaderFile.open(vertex_path);
+			fShaderFile.open(fragment_path);
 			stringstream vShaderStream, fShaderStream;
 			// read file's buffer contents into streams
 			vShaderStream << vShaderFile.rdbuf();
@@ -64,6 +72,10 @@ public:
 		// delete the shaders as they're linked into our program now and no longer necessery
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
+	}
+	void _Dispose() {
+		glDeleteProgram(id);
+		is_active = false;
 	}
 	void use() {
 		glUseProgram(id);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sausage.h"
-#include "AssetUtils.h"
+#include "utils/AssetUtils.h"
 #include "SDL_image.h"
 #include "Logging.h"
 #include "Structures.h"
@@ -89,17 +89,19 @@ Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, con
         LOG(string("diffuse not found: ").append(diffuse_name));
         return nullptr;
     }
-    
     // diffuse is a must. used to create storage. all textures must be same size and format.
     SDL_Surface* surface = IMG_Load(GetTexturePath(diffuse_name).c_str());
     glGenTextures(1, &texture_id);
+    //CheckGLError();
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
+    //CheckGLError();
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
         1,                    //mipmaps. 1 == no mipmaps.
         GetTexFormat(surface->format->BytesPerPixel, true),              //Internal format
         surface->w, surface->h,//width,height
         4            //Number of layers
     );
+    //CheckGLError();
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
         0,                     //Mipmap number
         0, 0, (int)TextureType::Diffuse,               //xoffset, yoffset, zoffset
@@ -107,6 +109,7 @@ Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, con
         GetTexFormat(surface->format->BytesPerPixel, false),                //format
         GL_UNSIGNED_BYTE,      //type
         surface->pixels);
+    //CheckGLError();
     SDL_FreeSurface(surface);
     // normal
     if (normal_name != nullptr) {
@@ -120,9 +123,9 @@ Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, con
     if (height_name != nullptr) {
         LoadLayer(height_name, TextureType::Height);
     }
-    //glGetTextureSamplerHandleARB()
     GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, texture_sampler);
     Texture* texture = new Texture(texture_id, tex_handle);
+    //CheckGLError();
     return texture;
 }
 

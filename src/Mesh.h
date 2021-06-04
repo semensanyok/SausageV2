@@ -64,9 +64,10 @@ MeshLoadData ProcessMesh(aiMesh* mesh, const aiScene* scene)
             vector.z = mesh->mTangents[i].z;
             vertex.Tangent = vector;
             // bitangent
-            //vector.x = mesh->mBitangents[i].x;
-            //vector.y = mesh->mBitangents[i].y;
-            //vector.z = mesh->mBitangents[i].z;
+            vertex.Bitangent = vec3(
+                mesh->mBitangents[i].x,
+                mesh->mBitangents[i].y,
+                mesh->mBitangents[i].z);
             //vertex.Bitangent = vector;
         }
         else
@@ -102,6 +103,36 @@ void LoadMeshes(
         cout << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString() << endl;
         throw runtime_error(string("ERROR::ASSIMP:: ") += assimp_importer.GetErrorString());
     }
+    //for (int i = 0; i < scene->mNumMaterials; i++) {
+    //    auto material = scene->mMaterials[i];
+    //    auto props = material->mProperties;
+    //    auto prop = props[0];
+    //    auto type = prop->mType;
+    //    aiString Path; 
+    //    auto tex = material->GetTexture(aiTextureType_BASE_COLOR, 0, &Path, NULL, NULL, NULL, NULL, NULL);
+    //    cout << string(Path.C_Str()) << endl;
+    //}
+
+    for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
+        const aiMaterial* pMaterial = scene->mMaterials[i];
+        if (pMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+            aiString Path;
+
+            if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                cout << string(Path.C_Str()) << endl;
+            }
+            if (pMaterial->GetTexture(aiTextureType_NORMALS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                cout << string(Path.C_Str()) << endl;
+            }
+            if (pMaterial->GetTexture(aiTextureType_HEIGHT, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                cout << string(Path.C_Str()) << endl;
+            }
+            if (pMaterial->GetTexture(aiTextureType_SPECULAR, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                cout << string(Path.C_Str()) << endl;
+            }
+        }
+    }
+
     for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
         auto child = scene->mRootNode->mChildren[i];
         auto ai_t = child->mTransformation;
