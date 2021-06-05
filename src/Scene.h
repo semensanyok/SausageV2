@@ -4,6 +4,7 @@
 #include "systems/BufferStorage.h"
 #include "systems/Renderer.h"
 #include "Structures.h"
+#include "MeshManager.h"
 
 class Scene {
 	vector<MeshData> all_meshes;
@@ -11,6 +12,7 @@ class Scene {
 	
 	vector<MeshData> draw_meshes;
 	vector<DrawElementsIndirectCommand> draw_commands;
+	vector<Texture*> textures;
 
 	BufferStorage* buffer;
 	Camera* camera;
@@ -40,18 +42,43 @@ private:
 	void _LoadData() {
 		vector<vector<Vertex>> vertices;
 		vector<vector<unsigned int>> indices;
+		vector<MeshData> new_meshes;
+		vector<DrawElementsIndirectCommand> new_commands;
+		vector<GLuint64> tex_handles;
 
-		LoadMeshes(vertices, indices, all_meshes, GetModelPath("cubes.fbx"));
-		Texture* tex = LoadTextureArray("Image0000.png", "Image0000_normal.png", "Image0000_specular.png", "Image0000_height.png", samplers.basic_repeat);
-		tex->MakeResident();
-		vector<GLuint64> texture_ids(all_meshes.size(), tex->texture_handle_ARB);
+		map<unsigned int, MaterialTexNames> mesh_id_to_tex;
+		map<string, Texture*> diffuse_name_to_tex;
+		
+		MeshManager::LoadMeshes(vertices, indices, GetModelPath("cubes.fbx"), new_meshes, mesh_id_to_tex);
 		CheckGLError();
-		all_commands = buffer->BufferMeshData(vertices, indices, all_meshes, texture_ids);
+		for (auto mesh_id_tex : mesh_id_to_tex) {
+			auto existing = diffuse_name_to_tex.find(mesh_id_tex.second.diffuse_name);
+			if (existing == diffuse_name_to_tex.end()) {
+				Texture* tex = LoadTextureArray(samplers.basic_repeat, mesh_id_tex.second);
+				if (tex != nullptr) {
+					textures.push_back(tex);
+					tex_handles.push_back(tex->texture_handle_ARB);
+					diffuse_name_to_tex[mesh_id_tex.second.diffuse_name] = tex;
+					tex->MakeResident();
+				}
+				else {
+					tex_handles.push_back(0);
+				}
+			}
+			else {
+				tex_handles.push_back(existing->second->texture_handle_ARB);
+			}
+		}
+		CheckGLError();
+		new_commands = buffer->BufferMeshData(vertices, indices, new_meshes, tex_handles);
+
 		CheckGLError();
 		auto shader = renderer->RegisterShader("bindless_vs.glsl", "bindless_fs.glsl");
 		CheckGLError();
 		renderer->AddDraw(shader, buffer);
 		CheckGLError();
+		all_meshes.insert(all_meshes.end(), new_meshes.begin(), new_meshes.end());
+		all_commands.insert(all_commands.end(), new_commands.begin(), new_commands.end());
 	}
 	void _OcclusionGather() {
 		draw_meshes = all_meshes;

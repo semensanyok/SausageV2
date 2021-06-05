@@ -49,6 +49,19 @@ enum TextureType
     Normal,  //                        1
     Specular,//                        2
     Height,  //                        3
+    Metal,   //                        4
+    AO,      //                        5
+    Opacity, //                        6
+};
+struct MaterialTexNames
+{
+    string diffuse_name;
+    string normal_name;
+    string specular_name;
+    string height_name;
+    string metal_name;
+    string ao_name;
+    string opacity_name;
 };
 struct Samplers {
     GLuint basic_repeat;

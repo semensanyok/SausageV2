@@ -5,15 +5,12 @@
 #include "imgui_impl_opengl3.h"
 
 #include "Settings.h"
-#include "Mesh.h"
-#include "Settings.h"
 #include "Shader.h"
 #include "utils/AssetUtils.h"
 #include "Logging.h"
 #include "Texture.h"
 #include "systems/SystemsManager.h"
 #include "OpenGLHelpers.h"
-#include "TestShapes.h"
 #include "Scene.h"
 
 using namespace std;

@@ -59,7 +59,7 @@ GLenum GetTexFormat(int bytes_per_pixel, bool for_storage) {
     return for_storage ? GL_RGBA8 : GL_RGBA;
 }
 
-bool LoadLayer(const char* name, TextureType type) {
+bool LoadLayer(string name, TextureType type) {
     SDL_Surface* surface = IMG_Load(GetTexturePath(name).c_str());
     if (surface == NULL)
     {
@@ -68,6 +68,7 @@ bool LoadLayer(const char* name, TextureType type) {
     }
     else
     {
+        CheckGLError();
         glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
             0,
             0, 0, (int)type,
@@ -75,6 +76,7 @@ bool LoadLayer(const char* name, TextureType type) {
             GetTexFormat(surface->format->BytesPerPixel, false),
             GL_UNSIGNED_BYTE,
             surface->pixels);
+        CheckGLError();
         SDL_FreeSurface(surface);
         return true;
     }
@@ -83,25 +85,26 @@ bool LoadLayer(const char* name, TextureType type) {
 /**
 * load texture array for mesh. diffuse + normal + height + specular.
 */
-Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, const char* specular_name, const char* height_name, GLuint texture_sampler) {
+Texture* LoadTextureArray(GLuint texture_sampler,
+    MaterialTexNames& tex_names) {
     GLuint texture_id;
-    if (diffuse_name == nullptr) {
-        LOG(string("diffuse not found: ").append(diffuse_name));
+    if (tex_names.diffuse_name.empty()) {
+        LOG(string("diffuse not found: ").append(tex_names.diffuse_name));
         return nullptr;
     }
     // diffuse is a must. used to create storage. all textures must be same size and format.
-    SDL_Surface* surface = IMG_Load(GetTexturePath(diffuse_name).c_str());
+    SDL_Surface* surface = IMG_Load(GetTexturePath(tex_names.diffuse_name).c_str());
     glGenTextures(1, &texture_id);
-    //CheckGLError();
+    CheckGLError();
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
-    //CheckGLError();
+    CheckGLError();
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
         1,                    //mipmaps. 1 == no mipmaps.
         GetTexFormat(surface->format->BytesPerPixel, true),              //Internal format
         surface->w, surface->h,//width,height
         4            //Number of layers
     );
-    //CheckGLError();
+    CheckGLError();
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
         0,                     //Mipmap number
         0, 0, (int)TextureType::Diffuse,               //xoffset, yoffset, zoffset
@@ -109,23 +112,30 @@ Texture* LoadTextureArray(const char* diffuse_name, const char* normal_name, con
         GetTexFormat(surface->format->BytesPerPixel, false),                //format
         GL_UNSIGNED_BYTE,      //type
         surface->pixels);
-    //CheckGLError();
+    CheckGLError();
     SDL_FreeSurface(surface);
-    // normal
-    if (normal_name != nullptr) {
-        LoadLayer(normal_name, TextureType::Normal);
+    if (!tex_names.normal_name.empty()) {
+        LoadLayer(tex_names.normal_name, TextureType::Normal);
     }
-    // specular
-    if (specular_name != nullptr) {
-        LoadLayer(specular_name, TextureType::Specular);
+    if (!tex_names.specular_name.empty()) {
+        LoadLayer(tex_names.specular_name, TextureType::Specular);
     }
-    // height
-    if (height_name != nullptr) {
-        LoadLayer(height_name, TextureType::Height);
+    if (!tex_names.height_name.empty()) {
+        LoadLayer(tex_names.height_name, TextureType::Height);
+    }
+    // Invalid operation GL error.
+    //if (!tex_names.metal_name.empty()) {
+    //    LoadLayer(tex_names.metal_name, TextureType::Metal);
+    //}
+    if (!tex_names.ao_name.empty()) {
+        LoadLayer(tex_names.ao_name, TextureType::AO);
+    }
+    if (!tex_names.opacity_name.empty()) {
+        LoadLayer(tex_names.opacity_name, TextureType::Opacity);
     }
     GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, texture_sampler);
+    CheckGLError();
     Texture* texture = new Texture(texture_id, tex_handle);
-    //CheckGLError();
     return texture;
 }
 

@@ -74,6 +74,14 @@ public:
         id = count++;
     };
 	~BufferStorage() {};
+    bool operator<(const BufferStorage& other)
+    {
+        return id < other.id;
+    }
+    bool operator==(const BufferStorage& other)
+    {
+        return id == other.id;
+    }
 
     void WaitGPU(GLsync fence_sync, const source_location& location = source_location::current()) {
         if (fence_sync == 0) {
@@ -115,8 +123,8 @@ public:
         vector<vector<Vertex>>& vertices,
         vector<vector<unsigned int>>& indices,
         vector<MeshData>& mesh_data,
-        vector<GLuint64>& texture_ids) {
-        assert(vertices.size() == indices.size() && vertices.size() == mesh_data.size() && vertices.size() == texture_ids.size());
+        vector<GLuint64>& texture_handles) {
+        assert(vertices.size() == indices.size() && vertices.size() == mesh_data.size() && vertices.size() == texture_handles.size());
         WaitGPU(fence_sync);
         vector<DrawElementsIndirectCommand> commands(mesh_data.size());
         for (int i = 0; i < vertices.size(); i++) {
@@ -155,8 +163,10 @@ public:
             // copy to GPU
             memcpy(&vertex_ptr[vertex_total], &*vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
             memcpy(&index_ptr[index_total], &*indices[i].begin(), indices[i].size() * sizeof(unsigned int));
-            texture_ptr[textures_total] = texture_ids[i];
-
+            auto handle = texture_handles[i];
+            if (handle != 0) {
+                texture_ptr[textures_total] = handle;
+            }
             vertex_total += vertices[i].size();
             index_total += indices[i].size();
             textures_total++;

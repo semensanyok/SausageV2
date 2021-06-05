@@ -15,7 +15,7 @@ void TestLoadPlane(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>
 		0, 1, 3,  // first Triangle
 		1, 2, 3   // second Triangle
 	};
-	MeshLoadData mesh = CreateMesh(vertices2, indices2);
+	MeshLoadData mesh = MeshManager::CreateMesh(vertices2, indices2);
 	vertices.push_back(mesh.vertices);
 	indices.push_back(mesh.indices);
 	draw_ids.push_back(mesh.draw_id);
@@ -54,7 +54,7 @@ void TestLoadCube(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>
 		3, 2, 6,
 		6, 7, 3
 	};
-	MeshLoadData mesh = CreateMesh(vertices2, indices2);
+	MeshLoadData mesh = MeshManager::CreateMesh(vertices2, indices2);
 	vertices.push_back(mesh.vertices);
 	indices.push_back(mesh.indices);
 	draw_ids.push_back(mesh.draw_id);

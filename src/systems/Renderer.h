@@ -16,7 +16,7 @@ public:
 	SDL_GLContext context;
 
 	map<unsigned int, Shader*> shaders;
-	map<unsigned int, vector<BufferStorage*>> shader_render_queue;
+	map<unsigned int, set<BufferStorage*>> shader_render_queue;
 
 	Renderer() {};
 	~Renderer() {};
@@ -26,7 +26,6 @@ public:
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		RenderGui(window, camera);
 
 		for (auto draw : shader_render_queue) {
 			if (!draw.second.empty()) {
@@ -43,13 +42,14 @@ public:
 				}
 			}
 		}
+		RenderGui(window, camera);
 		SDL_GL_SwapWindow(window);
 	}
 
 	Shader* RegisterShader(const char* vs_name, const char* fs_name) {
 		Shader* shader = new Shader(GetShaderPath(vs_name), GetShaderPath(fs_name));
 		shaders[shader->id] = shader;
-		shader_render_queue[shader->id] = vector<BufferStorage*>();
+		shader_render_queue[shader->id] = set<BufferStorage*>();
 		return shader;
 	}
 
@@ -58,7 +58,13 @@ public:
 			LOG((ostringstream() << "Unable to add draw for unregistered shader: " << shader).str());
 			return false;
 		}
-		shader_render_queue[shader->id].push_back(buffers);
+		auto render_queue = shader_render_queue[shader->id];
+		if (render_queue.contains(buffers)) {
+			LOG((ostringstream() << "buffer storage " << buffers->id << "already registered for shader " << shader->id).str());
+		}
+		else {
+			shader_render_queue[shader->id].insert(buffers);
+		}
 		return true;
 	}
 
@@ -74,7 +80,7 @@ public:
 		}
 	}
 
-	void RemoveDrawFromShader(vector<BufferStorage*>& buffers, unsigned int buffer_id) {
+	void RemoveDrawFromShader(set<BufferStorage*>& buffers, unsigned int buffer_id) {
 		auto iter = buffers.begin();
 		while (iter != buffers.end()) {
 			if ((*iter)->id == buffer_id) {
