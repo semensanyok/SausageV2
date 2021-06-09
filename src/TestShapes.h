@@ -2,9 +2,9 @@
 
 #include "sausage.h"
 #include "Structures.h"
-#include "Mesh.h"
+#include "systems/MeshManager.h"
 
-void TestLoadPlane(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices, vector<unsigned int>& draw_ids) {
+void TestLoadPlane(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices) {
 	static  std::vector<float> vertices2 = {
 		0.5f,  0.5f, 0.0f,  // top right
 		0.5f, -0.5f, 0.0f,  // bottom right
@@ -18,10 +18,9 @@ void TestLoadPlane(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>
 	MeshLoadData mesh = MeshManager::CreateMesh(vertices2, indices2);
 	vertices.push_back(mesh.vertices);
 	indices.push_back(mesh.indices);
-	draw_ids.push_back(mesh.draw_id);
 }
 
-void TestLoadCube(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices, vector<unsigned int>& draw_ids) {
+void TestLoadCube(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices) {
 	static  std::vector<Vertex> vertices2 = {
 		// front
 		Vertex{vec3(-1.0, -1.0,  1.0), vec3(0), vec2(0), vec3(0), vec3(0)},
@@ -57,6 +56,5 @@ void TestLoadCube(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>
 	MeshLoadData mesh = MeshManager::CreateMesh(vertices2, indices2);
 	vertices.push_back(mesh.vertices);
 	indices.push_back(mesh.indices);
-	draw_ids.push_back(mesh.draw_id);
 }
 

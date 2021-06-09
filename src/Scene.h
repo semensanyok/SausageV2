@@ -5,58 +5,71 @@
 #include "systems/Renderer.h"
 #include "Structures.h"
 #include "MeshManager.h"
+#include "systems/TextureManager.h"
 
 class Scene {
-	vector<MeshData> all_meshes;
-	vector<DrawElementsIndirectCommand> all_commands;
-	
-	vector<MeshData> draw_meshes;
-	vector<DrawElementsIndirectCommand> draw_commands;
-	vector<Texture*> textures;
-
 	BufferStorage* buffer;
+	TextureManager* texture_manager;
 	Camera* camera;
 	Renderer* renderer;
 	Samplers samplers;
+
+	Shader* blinn_phong;
+	// custom draws per shader
+	vector<MeshData> all_meshes;
+	vector<MeshData> draw_meshes;
+	vector<Light> all_lights;
+	vector<Light> draw_lights;
+	map<ShaderType, DrawCall*> draw_calls;
+	
 public:
-	Scene(BufferStorage* buffer, Camera* camera, Renderer* renderer, Samplers samplers) : camera{ camera }, buffer{ buffer }, renderer{ renderer }, samplers{ samplers } {
+	Scene(BufferStorage* buffer, TextureManager* texture_manager, Camera* camera, Renderer* renderer, Samplers samplers) : camera{ camera }, buffer{ buffer }, texture_manager{ texture_manager }, renderer{ renderer }, samplers{ samplers } {
 	}
 	~Scene() {};
 	void Init() {
 		_LoadData();
+		blinn_phong = renderer->RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl");
 	}
 	void PrepareDraws() {
-		draw_meshes = all_meshes;
-		draw_commands = all_commands;
-		UpdateMVP(camera->projection_view);
-		buffer->SetCommands(draw_commands);
-	}
-	void UpdateMVP(mat4& projection_view) {
-		vector<mat4> mvps(draw_meshes.size());
+		auto draw = new DrawCall{ buffer, blinn_phong, (unsigned int)draw_meshes.size(), 0 };
+		renderer->AddDraw(draw);
+		vector<DrawElementsIndirectCommand> commands(draw_meshes.size());
 		for (int i = 0; i < draw_meshes.size(); i++) {
-			mvps[i] = projection_view * draw_meshes[i].model;
+			commands[i] = draw_meshes[i].command;
 		}
-		buffer->BufferMvps(mvps, draw_meshes);
+		UpdateMVP();
+		buffer->AddCommands(commands);
+		buffer->BufferLights(draw_lights);
+	}
+	void UpdateMVP() {
+		vector<mat4> transforms(draw_meshes.size());
+		for (int i = 0; i < draw_meshes.size(); i++) {
+			transforms[i] = draw_meshes[i].model;
+		}
+		buffer->BufferTransform(draw_meshes, transforms);
 	}
 private:
 	void _LoadData() {
+		_LoadMeshes();
+	}
+	void _LoadMeshes() {
 		vector<vector<Vertex>> vertices;
 		vector<vector<unsigned int>> indices;
 		vector<MeshData> new_meshes;
+		vector<Light> new_lights;
 		vector<DrawElementsIndirectCommand> new_commands;
 		vector<GLuint64> tex_handles;
 
 		map<unsigned int, MaterialTexNames> mesh_id_to_tex;
 		map<string, Texture*> diffuse_name_to_tex;
-		
-		MeshManager::LoadMeshes(vertices, indices, GetModelPath("cubes.fbx"), new_meshes, mesh_id_to_tex);
+
+		MeshManager::LoadMeshes(vertices, indices, GetModelPath("cubes.fbx"), new_meshes, new_lights, mesh_id_to_tex);
 		CheckGLError();
 		for (auto mesh_id_tex : mesh_id_to_tex) {
 			auto existing = diffuse_name_to_tex.find(mesh_id_tex.second.diffuse_name);
 			if (existing == diffuse_name_to_tex.end()) {
-				Texture* tex = LoadTextureArray(samplers.basic_repeat, mesh_id_tex.second);
+				Texture* tex = texture_manager->LoadTextureArray(samplers.basic_repeat, mesh_id_tex.second);
 				if (tex != nullptr) {
-					textures.push_back(tex);
 					tex_handles.push_back(tex->texture_handle_ARB);
 					diffuse_name_to_tex[mesh_id_tex.second.diffuse_name] = tex;
 					tex->MakeResident();
@@ -70,17 +83,16 @@ private:
 			}
 		}
 		CheckGLError();
-		new_commands = buffer->BufferMeshData(vertices, indices, new_meshes, tex_handles);
-
-		CheckGLError();
-		auto shader = renderer->RegisterShader("bindless_vs.glsl", "bindless_fs.glsl");
-		CheckGLError();
-		renderer->AddDraw(shader, buffer);
+		buffer->BufferMeshData(vertices, indices, new_meshes, tex_handles);
 		CheckGLError();
 		all_meshes.insert(all_meshes.end(), new_meshes.begin(), new_meshes.end());
-		all_commands.insert(all_commands.end(), new_commands.begin(), new_commands.end());
+		all_lights.insert(all_lights.end(), new_lights.begin(), new_lights.end());
+	}
+	void _LoadTerrain() {
+
 	}
 	void _OcclusionGather() {
 		draw_meshes = all_meshes;
+		draw_lights = all_lights;
 	}
 };

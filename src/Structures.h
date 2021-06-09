@@ -47,12 +47,13 @@ enum TextureType
 {
     Diffuse, // sampler2DArray   index 0
     Normal,  //                        1
-    Specular,//                        2
-    Height,  //                        3
-    Metal,   //                        4
-    AO,      //                        5
-    Opacity, //                        6
+    Specular,//                        2 roughness in PBR
+    AO,      //                        3
+    Height,  //                        4 PBR
+    Metal,   //                        5 PBR
+    Opacity, //                        6 PBR
 };
+
 struct MaterialTexNames
 {
     string diffuse_name;
@@ -68,10 +69,30 @@ struct Samplers {
 };
 // --------------------------------------------------------------------------------------------------------------------
 // Texture structures end
-
+enum LightType {
+    Point,
+    Directional,
+    Spot
+};
+struct Light {
+    vec3 direction;
+    vec3 position;
+    float spot_max_angle;
+    vec3 color;
+    unsigned int light_type;
+};
+struct Lights {
+    int num_lights;
+    Light lights[];
+};
+enum ShaderType {
+    BlinnPhong,
+    BRDF
+};
 struct MeshData {
     // draw id.
     unsigned int id;
+    //MeshType type;
     mat4 model;
     DrawElementsIndirectCommand command;
     BufferStorage* buffer;
@@ -86,6 +107,8 @@ struct MeshLoadData {
 };
 
 struct DrawCall {
+    BufferStorage* buffer;
     Shader* shader;
-    vector<BufferStorage*> buffers;
+    unsigned int command_count;
+    unsigned int command_offset; // offset in BufferStorage command buffer
 };

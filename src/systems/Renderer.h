@@ -8,6 +8,7 @@
 #include "Shader.h"
 #include "Structures.h"
 #include "Gui.h"
+#include "TestShapes.h"
 
 class Renderer {
 public:
@@ -16,7 +17,8 @@ public:
 	SDL_GLContext context;
 
 	map<unsigned int, Shader*> shaders;
-	map<unsigned int, set<BufferStorage*>> shader_render_queue;
+	map<unsigned int, vector<DrawCall*>> buffer_shaders;
+	set<pair<int, int>> buf_shad_ids;
 
 	Renderer() {};
 	~Renderer() {};
@@ -26,70 +28,57 @@ public:
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-		for (auto draw : shader_render_queue) {
-			if (!draw.second.empty()) {
-				glUseProgram(draw.first);
+		for (auto buffer_shader : buffer_shaders) {
+			if (buffer_shader.second.empty()) {
+				continue;
 			}
-			for (BufferStorage* buffer : draw.second) {
-				if (buffer->active_commands_to_render > 0) {
-					buffer->BarrierIfChange();
-					buffer->BindMeshVAOandBuffers();
-					glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, buffer->active_commands_to_render, 0);
+			auto buffer = (*buffer_shader.second.begin()).buffer;
+			buffer->BarrierIfChangeAndUnmap();
+			buffer->BindMeshVAOandBuffers();
+			for (auto draw : buffer_shader.second) {
+				if (draw->buffer->active_commands_to_render > 0) {
+					glUseProgram(draw->shader->id);
+					draw->shader->setMat4("projection_view", camera->projection_view);
+					glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, draw.command_count, draw.command_offset);
 					//glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, buffer->active_commands.data(), buffer->active_commands_to_render, 0);
-					buffer->fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-					CheckGLError();
 				}
 			}
+			buffer->fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+			CheckGLError();
 		}
 		RenderGui(window, camera);
 		SDL_GL_SwapWindow(window);
 	}
 
 	Shader* RegisterShader(const char* vs_name, const char* fs_name) {
+		for (auto shader : shaders) {
+			if (shader.second->vertex_path.ends_with(vs_name) || shader.second->fragment_path.ends_with(fs_name)) {
+				LOG((ostringstream() << "Shader with vs_name=" << string(vs_name) << " fs_name=" << string(fs_name) << " already registered").str());
+			}
+			return shader.second;
+		}
 		Shader* shader = new Shader(GetShaderPath(vs_name), GetShaderPath(fs_name));
 		shaders[shader->id] = shader;
-		shader_render_queue[shader->id] = set<BufferStorage*>();
 		return shader;
 	}
 
-	bool AddDraw(Shader* shader, BufferStorage* buffers) {
-		if (!shader_render_queue.contains(shader->id)) {
-			LOG((ostringstream() << "Unable to add draw for unregistered shader: " << shader).str());
+	bool AddDraw(DrawCall* draw) {
+		if (!shaders.contains(draw->shader->id)) {
+			LOG((ostringstream() << "Unable to add draw for unregistered shader: " << draw->shader->id << " vs:" << draw->shader->vertex_path << " fs:" << draw->shader->fragment_path).str());
 			return false;
 		}
-		auto render_queue = shader_render_queue[shader->id];
-		if (render_queue.contains(buffers)) {
-			LOG((ostringstream() << "buffer storage " << buffers->id << "already registered for shader " << shader->id).str());
+		pair<int, int> buf_shad_id{ draw->buffer->id, draw->shader->id };
+		if (buf_shad_ids.contains(buf_shad_id)) {
+			LOG((ostringstream() << "Draw for shader: " << draw->shader->id << " buffer:" << draw->buffer->id << "already exists").str());
+			return false;
 		}
-		else {
-			shader_render_queue[shader->id].insert(buffers);
-		}
+		buffer_shaders[draw->buffer->id].push_back(draw);
+		buf_shad_ids.insert(buf_shad_id);
 		return true;
 	}
 
 	bool RemoveDraw(BufferStorage* buffers_to_remove, Shader* shader = nullptr) {
-		if (shader != nullptr && shader_render_queue.contains(shader->id)) {
-			auto buffers = shader_render_queue[shader->id];
-			RemoveDrawFromShader(buffers, buffers_to_remove->id);
-		}
-		else {
-			for (auto buffers : shader_render_queue) {
-				RemoveDrawFromShader(buffers.second, buffers_to_remove->id);
-			}
-		}
-	}
-
-	void RemoveDrawFromShader(set<BufferStorage*>& buffers, unsigned int buffer_id) {
-		auto iter = buffers.begin();
-		while (iter != buffers.end()) {
-			if ((*iter)->id == buffer_id) {
-				iter = buffers.erase(iter);
-			}
-			else {
-				iter++;
-			}
-		}
+		
 	}
 
 	void InitContext() {

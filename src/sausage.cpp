@@ -33,7 +33,7 @@ void Init() {
 	systems_manager->InitSystems();
 	CheckGLError();
 	samplers = InitSamplers();
-	scene = new Scene(systems_manager->buffer_storage, systems_manager->camera, systems_manager->renderer, samplers);
+	scene = new Scene(systems_manager->buffer_storage, systems_manager->texture_manager, systems_manager->camera, systems_manager->renderer, samplers);
 	scene->Init();
 	scene->PrepareDraws();
 	controller = new Controller(systems_manager->camera, scene);

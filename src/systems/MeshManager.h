@@ -18,6 +18,7 @@ public:
         vector<vector<unsigned int>>& indices,
         const string& file_name,
         vector<MeshData>& out_mesh_data,
+        vector<Light>& out_lights,
         map<unsigned int, MaterialTexNames>& out_mesh_id_to_tex
     )
     {

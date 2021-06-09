@@ -20,7 +20,7 @@ public:
 	}
 	Shader() {};
 	~Shader() { _Dispose();  };
-	Shader(string vertex_path, string fragment_path): vertex_path{vertex_path}, fragment_path{ fragment_path }
+	Shader(string vertex_path, string fragment_path): vertex_path{ vertex_path }, fragment_path{ fragment_path }
 	{
 		// 1. retrieve the vertex/fragment source code from filePath
 		string vertexCode;

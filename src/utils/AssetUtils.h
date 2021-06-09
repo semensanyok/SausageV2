@@ -19,7 +19,6 @@ template <typename T>
 string GetShaderPath(T name) {
 	using namespace filesystem;
 	path spath(".");
-	spath /= "assets";
 	spath /= "shaders";
 	spath /= name;
 	return spath.string(); 

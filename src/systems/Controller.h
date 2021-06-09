@@ -25,7 +25,6 @@ public:
 			break;
 		case SDL_MOUSEWHEEL:
 			camera->MouseWheelCallbackRTS(e->wheel, delta_time);
-			scene->UpdateMVP(camera->projection_view);
 			break;
 		case SDL_QUIT:
 			quit = 1;
@@ -38,7 +37,6 @@ public:
 				SCR_HEIGHT = e->window.data2;
 				glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 				camera->ResizeCallback(SCR_WIDTH, SCR_HEIGHT);
-				scene->UpdateMVP(camera->projection_view);
 				break;
 			}
 			break;
@@ -60,7 +58,6 @@ public:
 			if (k == SDLK_ESCAPE)
 				quit = 1;
 			camera->KeyCallbackRTS(s, delta_time);
-			scene->UpdateMVP(camera->projection_view);
 			break;
 		}
 		case SDL_KEYUP: {

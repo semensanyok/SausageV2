@@ -18,6 +18,9 @@ private:
     
     const int MAX_COMMAND = 1000;
     const int COMMAND_STORAGE_SIZE = MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
+    
+    const int MAX_LIGHTS = 1000;
+    const int LIGHT_STORAGE_SIZE = sizeof(int) + MAX_LIGHTS * sizeof(Light);
     ///////////
     // UNIFORMS
     ///////////
@@ -32,6 +35,7 @@ private:
     const int TEXTURE_UNIFORM_LOC = 1;
     
     bool is_need_barrier = false;
+    bool is_cmd_buffer_mapped = false;
 
 	///////////
 	/// Buffers
@@ -52,6 +56,7 @@ private:
 
     GLuint texture_buffer;
     unsigned int textures_total = 0;
+    GLuint light_buffer;
     //////////////////////////
     // Mapped buffers pointers
     //////////////////////////
@@ -60,6 +65,7 @@ private:
     DrawElementsIndirectCommand* command_ptr;
     mat4* mvp_ptr;
     GLuint64* texture_ptr;
+    Lights* light_ptr;
 public:
     unsigned int id;
 
@@ -109,40 +115,46 @@ public:
         }
         glDeleteSync(fence_sync);
     }
-    void BarrierIfChange() {
+    void BarrierIfChangeAndUnmap() {
         if (is_need_barrier) {
             glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
             is_need_barrier = false;
+        }
+        if (is_cmd_buffer_mapped) {
+            // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
+            if (!glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER)) {
+                CheckGLError();
+            }
+            is_cmd_buffer_mapped = false;
         }
     }
     /**
     * fence_sync created after all render ops issued for these buffers.
     * 
     */
-    vector<DrawElementsIndirectCommand> BufferMeshData(
+    void BufferMeshData(
         vector<vector<Vertex>>& vertices,
         vector<vector<unsigned int>>& indices,
         vector<MeshData>& mesh_data,
         vector<GLuint64>& texture_handles) {
         assert(vertices.size() == indices.size() && vertices.size() == mesh_data.size() && vertices.size() == texture_handles.size());
         WaitGPU(fence_sync);
-        vector<DrawElementsIndirectCommand> commands(mesh_data.size());
         for (int i = 0; i < vertices.size(); i++) {
             if (vertices[i].size() + vertex_total > MAX_VERTEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices[i].size() << "max=" << MAX_VERTEX).str());
-                return {};
+                return;
             }
             if (indices[i].size() + index_total > MAX_INDEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices[i].size() << "max=" << MAX_INDEX).str());
-                return {};
+                return;
             }
             if (command_total >= MAX_COMMAND) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. commands total=" << command_total << "max=" << MAX_COMMAND).str());
-                return {};
+                return;
             }
             if (textures_total >= MAX_TEXTURES) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. textures total=" << textures_total << "max=" << MAX_TEXTURES).str());
-                return {};
+                return;
             }
             //***Return commands. perform hierarchical occlusion culling and then call multidraw with array of commands. (or buffer gpu for several frames, till camera exits 'view cell'
             //DrawElementsIndirectCommand command; = &command_ptr[command_total];
@@ -158,7 +170,7 @@ public:
             command.firstIndex = 0;
             command.baseVertex = vertex_total;
             command.baseInstance = command_total;
-            commands[i] = command;
+            mesh_data[i].command = command;
 
             // copy to GPU
             memcpy(&vertex_ptr[vertex_total], &*vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
@@ -175,52 +187,62 @@ public:
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
         is_need_barrier = true;
         CheckGLError();
-        return commands;
     }
-    void SetCommands(vector<DrawElementsIndirectCommand>& active_commands) {
+    int AddCommands(vector<DrawElementsIndirectCommand>& active_commands) {
     // todo: compare two
     //  to render for several frames, till camera exits 'view cell'
         if (bind_draw_buffer) {
             WaitGPU(fence_sync);
-            // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-            command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, active_commands.size() * sizeof(DrawElementsIndirectCommand), flags);
-            memcpy(&command_ptr[0], &*active_commands.begin(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
-            // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
-            if (!glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER)) {
-                CheckGLError();
+            if (!is_cmd_buffer_mapped) {
+                // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
+                glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+                command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, active_commands.size() * sizeof(DrawElementsIndirectCommand), flags);
+                is_cmd_buffer_mapped = true;
             }
+            memcpy(command_ptr, &*active_commands.begin(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
         }
     // to call multidraw with array of commands each frame.
         else {
             this->active_commands = active_commands;
         }
-        active_commands_to_render = active_commands.size();
+        int command_sequence_start_offset = active_commands_to_render;
+        active_commands_to_render += active_commands.size();
+        return command_sequence_start_offset;
     }
     
-    void BufferMvp(MeshData& mesh_data, mat4& mvp) {
+    void BufferTransform(MeshData& mesh_data, mat4& transform) {
         WaitGPU(fence_sync);
         if (mesh_data.id > command_total) {
             LOG((ostringstream() << "ERROR BufferMvp. offset=" << mesh_data.id << " not valid. expected less then command_total=" << command_total).str());
             return;
         }
-        mvp_ptr[mesh_data.id] = mvp;
+        mvp_ptr[mesh_data.id] = transform;
         is_need_barrier = true;
     }
-    void BufferMvps(vector<mat4>& mvps, vector<MeshData>& mesh_data) {
+    void BufferTransform(vector<MeshData>& mesh_data, vector<mat4>& transform) {
         WaitGPU(fence_sync);
-        if (mvps.size() != mesh_data.size()) {
-            LOG((ostringstream() << "ERROR BufferMvps. mesh_data param size=" << mesh_data.size() << "must be equal to mvps param size=" << mvps.size()).str());
+        if (transform.size() != mesh_data.size()) {
+            LOG((ostringstream() << "ERROR BufferMvps. mesh_data param size=" << mesh_data.size() << "must be equal to mvps param size=" << transform.size()).str());
             return;
         }
         if (mesh_data.size() != command_total) {
             LOG((ostringstream() << "ERROR BufferMvps. mesh_data size=" << mesh_data.size() <<"must be equal to draws size=" << command_total).str());
             return;
         }
-        for (int i = 0; i < mvps.size(); i++) {
-            mvp_ptr[mesh_data[i].id] = mvps[i];
+        for (int i = 0; i < transform.size(); i++) {
+            mvp_ptr[mesh_data[i].id] = transform[i];
         }
         //memcpy(&mvp_ptr[command_total], mvps.data(), mvps.size() * sizeof(mat4));
+        is_need_barrier = true;
+    }
+    void BufferLights(vector<Light>& lights) {
+        WaitGPU(fence_sync);
+        if (lights.size() > MAX_LIGHTS) {
+            LOG((ostringstream() << "ERROR BufferLights. max lights buffer size=" << MAX_LIGHTS << " requested=" << lights.size()).str());
+            return;
+        }
+        light_ptr->num_lights = (int)lights.size();
+        memcpy(&light_ptr->lights, lights.data(), lights.size() * sizeof(Light));
         is_need_barrier = true;
     }
     void InitMeshBuffers() {
@@ -253,6 +275,11 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, TEXTURE_STORAGE_SIZE, NULL, flags);
         texture_ptr = (GLuint64*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, TEXTURE_STORAGE_SIZE, flags);
+
+        glGenBuffers(1, &light_buffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, LIGHT_STORAGE_SIZE, NULL, flags);
+        light_ptr = (Lights*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, LIGHT_STORAGE_SIZE, flags);
     }
 
     void BindMeshVAOandBuffers() {
