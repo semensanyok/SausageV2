@@ -94,6 +94,7 @@ foreach(file ${files})
   message(${filename})
   FILE(COPY "${file}/" DESTINATION "${CMAKE_BINARY_DIR}/${filename}")
 endforeach()
+FILE(COPY "src/shaders/" DESTINATION "${CMAKE_BINARY_DIR}/shaders")
 
 ####### IMGUI ##################
 set(IMGUI_SOURCES

@@ -4,7 +4,7 @@
 #include "systems/BufferStorage.h"
 #include "systems/Renderer.h"
 #include "Structures.h"
-#include "MeshManager.h"
+#include "systems/MeshManager.h"
 #include "systems/TextureManager.h"
 
 class Scene {
@@ -31,6 +31,7 @@ public:
 		blinn_phong = renderer->RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl");
 	}
 	void PrepareDraws() {
+		_OcclusionGather();
 		auto draw = new DrawCall{ buffer, blinn_phong, (unsigned int)draw_meshes.size(), 0 };
 		renderer->AddDraw(draw);
 		vector<DrawElementsIndirectCommand> commands(draw_meshes.size());
@@ -39,7 +40,9 @@ public:
 		}
 		UpdateMVP();
 		buffer->AddCommands(commands);
+		CheckGLError();
 		buffer->BufferLights(draw_lights);
+		CheckGLError();
 	}
 	void UpdateMVP() {
 		vector<mat4> transforms(draw_meshes.size());
@@ -66,12 +69,12 @@ private:
 		MeshManager::LoadMeshes(vertices, indices, GetModelPath("cubes.fbx"), new_meshes, new_lights, mesh_id_to_tex);
 		CheckGLError();
 		for (auto mesh_id_tex : mesh_id_to_tex) {
-			auto existing = diffuse_name_to_tex.find(mesh_id_tex.second.diffuse_name);
+			auto existing = diffuse_name_to_tex.find(mesh_id_tex.second.diffuse);
 			if (existing == diffuse_name_to_tex.end()) {
 				Texture* tex = texture_manager->LoadTextureArray(samplers.basic_repeat, mesh_id_tex.second);
 				if (tex != nullptr) {
 					tex_handles.push_back(tex->texture_handle_ARB);
-					diffuse_name_to_tex[mesh_id_tex.second.diffuse_name] = tex;
+					diffuse_name_to_tex[mesh_id_tex.second.diffuse] = tex;
 					tex->MakeResident();
 				}
 				else {

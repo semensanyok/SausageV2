@@ -197,9 +197,10 @@ public:
                 // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
                 glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
                 command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, active_commands.size() * sizeof(DrawElementsIndirectCommand), flags);
+                CheckGLError();
                 is_cmd_buffer_mapped = true;
             }
-            memcpy(command_ptr, &*active_commands.begin(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
+            memcpy(command_ptr, active_commands.data(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
         }
     // to call multidraw with array of commands each frame.
         else {

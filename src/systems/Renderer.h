@@ -32,14 +32,14 @@ public:
 			if (buffer_shader.second.empty()) {
 				continue;
 			}
-			auto buffer = (*buffer_shader.second.begin()).buffer;
+			auto buffer = (*buffer_shader.second.begin())->buffer;
 			buffer->BarrierIfChangeAndUnmap();
 			buffer->BindMeshVAOandBuffers();
 			for (auto draw : buffer_shader.second) {
 				if (draw->buffer->active_commands_to_render > 0) {
 					glUseProgram(draw->shader->id);
 					draw->shader->setMat4("projection_view", camera->projection_view);
-					glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, draw.command_count, draw.command_offset);
+					glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, draw->command_count, draw->command_offset);
 					//glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, buffer->active_commands.data(), buffer->active_commands_to_render, 0);
 				}
 			}
