@@ -64,13 +64,13 @@ public:
         switch (light->mType)
         {
         case aiLightSource_DIRECTIONAL:
-            return Light{FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse),LightType::Directional };
+            return Light{FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular), LightType::Directional };
         case aiLightSource_POINT:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse),LightType::Point };
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular), LightType::Point };
         case aiLightSource_SPOT:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),light->mAngleOuterCone,FromAi(light->mColorDiffuse),LightType::Spot };
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),light->mAngleOuterCone,FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular), LightType::Spot };
         default:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse),LightType::Directional };
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular), LightType::Directional };
         }
     }
     static vec3 FromAi(aiVector3D& aivec) {

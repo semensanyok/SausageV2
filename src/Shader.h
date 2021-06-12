@@ -180,7 +180,7 @@ private:
 		}
 		catch (ifstream::failure& e)
 		{
-			cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << endl;
+			LOG((stringstream() << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what()).str());
 			return string();
 		}
 	}
@@ -196,7 +196,7 @@ private:
 			if (!success)
 			{
 				glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-				cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << endl;
+				LOG((stringstream() << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- ").str());
 			}
 		}
 		else
@@ -205,7 +205,7 @@ private:
 			if (!success)
 			{
 				glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-				cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << endl;
+				LOG((stringstream() << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- ").str());
 			}
 		}
 	}

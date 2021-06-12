@@ -12,23 +12,9 @@ layout (location = 4) in vec3 bitangent;
 
 uniform mat4 projection_view;
 
-struct Light {
-    vec3 direction;
-    vec3 position;
-    float spot_max_angle;
-    vec3 color;
-    unsigned int light_type;
-};
-
 layout (std430, binding = 0) buffer Transforms
 {
     mat4 models[];
-};
-
-layout (std430, binding = 2) buffer Lights
-{
-    int num_lights;
-    Light lights[];
 };
 
 out vs_out {

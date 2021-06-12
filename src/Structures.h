@@ -74,12 +74,24 @@ enum LightType {
     Directional,
     Spot
 };
+
+float OGRE_P_L_ATT_DIST_7L = 0.7f;
+float OGRE_P_L_ATT_DIST_7Q = 1.8f;
+float OGRE_P_L_ATT_DIST_13L = 0.35f;
+float OGRE_P_L_ATT_DIST_13Q = 0.44f;
+float OGRE_P_L_ATT_DIST_20L = 0.22f;
+float OGRE_P_L_ATT_DIST_20Q = 0.20f;
+
 struct Light {
     vec3 direction;
     vec3 position;
     float spot_max_angle;
     vec3 color;
-    unsigned int light_type;
+    vec3 specular;
+    unsigned int type;
+    float constant_attenuation;
+    float linear_attenuation;
+    float quadratic_attenuation;
 };
 struct Lights {
     int num_lights;
