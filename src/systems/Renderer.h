@@ -9,8 +9,13 @@
 #include "Structures.h"
 #include "Gui.h"
 #include "TestShapes.h"
+#include "FileWatcher.h"
+#include "utils/ThreadSafeQueue.h"
 
 class Renderer {
+private:
+	ThreadSafeQueue<function<void()>> gl_commands;
+
 public:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
@@ -25,6 +30,7 @@ public:
 
 	void Render(Camera* camera)
 	{
+		_ExecuteCommands();
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -39,6 +45,8 @@ public:
 				if (draw->buffer->active_commands_to_render > 0) {
 					glUseProgram(draw->shader->id);
 					draw->shader->setMat4("projection_view", camera->projection_view);
+					draw->shader->setVec3("view_pos", camera->pos);
+
 					glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, draw->command_count, draw->command_offset);
 					//glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, buffer->active_commands.data(), buffer->active_commands_to_render, 0);
 				}
@@ -50,7 +58,12 @@ public:
 		SDL_GL_SwapWindow(window);
 	}
 
-	Shader* RegisterShader(const char* vs_name, const char* fs_name) {
+	void AddGlCommand(function<void()>& f)
+	{
+		gl_commands.Push(f);
+	}
+
+	Shader* RegisterShader(const char* vs_name, const char* fs_name, FileWatcher* file_watcher) {
 		for (auto shader : shaders) {
 			if (shader.second->vertex_path.ends_with(vs_name) || shader.second->fragment_path.ends_with(fs_name)) {
 				LOG((ostringstream() << "Shader with vs_name=" << string(vs_name) << " fs_name=" << string(fs_name) << " already registered").str());
@@ -58,6 +71,7 @@ public:
 			return shader.second;
 		}
 		Shader* shader = new Shader(GetShaderPath(vs_name), GetShaderPath(fs_name));
+		shader->InitOrReload();
 		shaders[shader->id] = shader;
 		return shader;
 	}
@@ -145,5 +159,16 @@ public:
 		SDL_GL_DeleteContext(context);
 		SDL_DestroyWindow(window);
 		SDL_Quit();
+	}
+private:
+	void _ExecuteCommands()
+	{
+		function<void()> f;
+		auto commands = gl_commands.PopAll();
+		while (!commands.empty()) {
+			auto& command = commands.front();
+			command();
+			commands.pop();
+		}
 	}
 };

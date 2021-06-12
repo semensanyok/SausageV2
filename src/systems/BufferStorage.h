@@ -33,6 +33,7 @@ private:
     const GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
     const int MVP_UNIFORM_LOC = 0;
     const int TEXTURE_UNIFORM_LOC = 1;
+    const int LIGHTS_UNIFORM_LOC = 2;
     
     bool is_need_barrier = false;
     bool is_cmd_buffer_mapped = false;
@@ -307,6 +308,7 @@ public:
         
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, MVP_UNIFORM_LOC, mvp_buffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_UNIFORM_LOC, texture_buffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC, light_buffer);
     }
     void Dispose() {
         WaitGPU(fence_sync);

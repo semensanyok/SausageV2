@@ -55,6 +55,29 @@ public:
                 out_mesh_id_to_tex[mesh_data.id] = tex_names;
             }
         }
+        for (unsigned int i = 0; i < scene->mNumLights; i++) {
+            auto light = scene->mLights[i];
+            out_lights.push_back(FromAi(scene->mLights[i]));
+        }
+    }
+    static Light FromAi(aiLight* light) {
+        switch (light->mType)
+        {
+        case aiLightSource_DIRECTIONAL:
+            return Light{FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse),LightType::Directional };
+        case aiLightSource_POINT:
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse),LightType::Point };
+        case aiLightSource_SPOT:
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),light->mAngleOuterCone,FromAi(light->mColorDiffuse),LightType::Spot };
+        default:
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse),LightType::Directional };
+        }
+    }
+    static vec3 FromAi(aiVector3D& aivec) {
+        return vec3(aivec.x, aivec.y, aivec.z);
+    }
+    static vec3 FromAi(aiColor3D& aivec) {
+        return vec3(aivec.r, aivec.g, aivec.b);
     }
     static MeshLoadData CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
         return MeshLoadData{ vertices, indices, mesh_count++ };

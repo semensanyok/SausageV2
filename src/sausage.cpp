@@ -10,6 +10,7 @@
 #include "systems/SystemsManager.h"
 #include "OpenGLHelpers.h"
 #include "Scene.h"
+#include "FileWatcher.h"
 
 using namespace std;
 using namespace glm;
@@ -31,7 +32,7 @@ void Init() {
 	systems_manager->InitSystems();
 	CheckGLError();
 	samplers = InitSamplers();
-	scene = new Scene(systems_manager->buffer_storage, systems_manager->texture_manager, systems_manager->camera, systems_manager->renderer, samplers);
+	scene = new Scene(systems_manager->buffer_storage, systems_manager->texture_manager, systems_manager->camera, systems_manager->renderer, systems_manager->file_watcher, samplers);
 	scene->Init();
 	scene->PrepareDraws();
 	controller = new Controller(systems_manager->camera, scene);
@@ -49,6 +50,7 @@ int SDL_main(int argc, char** argv)
 	auto log_thread = LogIO(quit);
 
 	Init();
+	systems_manager->file_watcher->Start(quit);
 
 	while (!quit) {
 		_UpdateDeltaTime();
@@ -58,9 +60,11 @@ int SDL_main(int argc, char** argv)
 			controller->ProcessEvent(&e, delta_time, quit);
 		}
 		systems_manager->Render();
+		CheckGLError();
 	}
 	systems_manager->Clear();
 
 	log_thread.join();
+	systems_manager->file_watcher->Join();
 	return 0;
 }

@@ -12,8 +12,6 @@ layout (location = 4) in vec3 bitangent;
 
 uniform mat4 projection_view;
 
-#define MAX_LIGHTS 1000
-
 struct Light {
     vec3 direction;
     vec3 position;
@@ -39,8 +37,6 @@ out vs_out {
     vec3 frag_pos;
     mat3 TBN;
 } Out;
-
-out vec2 uv_out;
 
 void main(void) {
   mat4 model = models[gl_DrawIDARB];

@@ -2,14 +2,19 @@
 
 #include "sausage.h"
 #include "Texture.h"
+#include "FileWatcher.h"
+
+using namespace std;
 
 class Shader
 {
 public:
-	unsigned int id;
+	GLuint id = 0;
 	bool is_active = true;
 	string vertex_path;
 	string fragment_path;
+	GLuint vs = 0, fs = 0;
+	GLuint vs_in_use = 0, fs_in_use = 0;
 
 	bool operator==(Shader& other) {
 		return id == other.id;
@@ -18,60 +23,78 @@ public:
 		stream << "Shader(id=" << shader.id << ",vertex shader name=" << shader.vertex_path << ",fragment shader name=" << shader.fragment_path << ")";
 		return stream;
 	}
-	Shader() {};
 	~Shader() { _Dispose();  };
 	Shader(string vertex_path, string fragment_path): vertex_path{ vertex_path }, fragment_path{ fragment_path }
 	{
-		// 1. retrieve the vertex/fragment source code from filePath
-		string vertexCode;
-		string fragmentCode;
-		ifstream vShaderFile;
-		ifstream fShaderFile;
-		// ensure ifstream objects can throw exceptions:
-		vShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
-		fShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
-		try
-		{
-			vShaderFile.open(vertex_path);
-			fShaderFile.open(fragment_path);
-			stringstream vShaderStream, fShaderStream;
-			// read file's buffer contents into streams
-			vShaderStream << vShaderFile.rdbuf();
-			fShaderStream << fShaderFile.rdbuf();
-			// close file handlers
-			vShaderFile.close();
-			fShaderFile.close();
-			// convert stream into string
-			vertexCode = vShaderStream.str();
-			fragmentCode = fShaderStream.str();
+	}
+
+	void InitOrReload() {
+		CompileShaders();
+		CheckGLError();
+		CreateProgram();
+		CheckGLError();
+	}
+	void CreateProgram() {
+		if (id != 0 && fs_in_use != 0) {
+			glDetachShader(id, fs_in_use);
 		}
-		catch (ifstream::failure& e)
-		{
-			cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << endl;
+		if (id != 0 && vs_in_use != 0) {
+			glDetachShader(id, vs_in_use);
 		}
-		const char* vShaderCode = vertexCode.c_str();
-		const char* fShaderCode = fragmentCode.c_str();
-		// 2. compile shaders
-		unsigned int vertex, fragment;
-		// vertex shader
-		vertex = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(vertex, 1, &vShaderCode, NULL);
-		glCompileShader(vertex);
-		checkCompileErrors(vertex, "VERTEX");
-		// fragment Shader
-		fragment = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(fragment, 1, &fShaderCode, NULL);
-		glCompileShader(fragment);
-		checkCompileErrors(fragment, "FRAGMENT");
+		vs_in_use = vs;
+		fs_in_use = fs;
 		// shader Program
-		id = glCreateProgram();
-		glAttachShader(id, vertex);
-		glAttachShader(id, fragment);
+		if (id == 0) {
+			id = glCreateProgram();
+		}
+		glAttachShader(id, vs_in_use);
+		CheckGLError();
+		glAttachShader(id, fs_in_use);
+		CheckGLError();
 		glLinkProgram(id);
+		CheckGLError();
 		checkCompileErrors(id, "PROGRAM");
-		// delete the shaders as they're linked into our program now and no longer necessery
-		glDeleteShader(vertex);
-		glDeleteShader(fragment);
+		// delete the shaders as they're linked into our program now and no longer necessary
+		glDeleteShader(vs_in_use);
+		glDeleteShader(fs_in_use);
+		CheckGLError();
+	}
+	void CompileShaders() {
+		//static map<string, GLuint> path_to_shader_id;
+		//
+		//auto existing_vs = path_to_shader_id.find(vertex_path);
+		//if (existing_vs != path_to_shader_id.end()) {
+		//	vs = (*existing_vs).second;
+		//}
+		//else {
+		CheckGLError();
+		auto code = _LoadCode(vertex_path);
+		if (!code.empty()) {
+			auto code_c = code.c_str();
+			vs = glCreateShader(GL_VERTEX_SHADER);
+			CheckGLError();
+			glShaderSource(vs, 1, &code_c, NULL);
+			CheckGLError();
+			glCompileShader(vs);
+			CheckGLError();
+			checkCompileErrors(vs, "VERTEX");
+		}
+
+		//auto existing_fs = path_to_shader_id.find(fragment_path);
+		//if (existing_fs != path_to_shader_id.end()) {
+		//	fs = (*existing_fs).second;
+		//}
+		//else {
+		code = _LoadCode(fragment_path);
+		if (!code.empty()) {
+			auto code_c = code.c_str();
+			fs = glCreateShader(GL_FRAGMENT_SHADER);
+			glShaderSource(fs, 1, &code_c, NULL);
+			glCompileShader(fs);
+			checkCompileErrors(fs, "FRAGMENT");
+		}
+
+		CheckGLError();
 	}
 	void _Dispose() {
 		glDeleteProgram(id);
@@ -141,6 +164,26 @@ public:
 	}
 
 private:
+	string _LoadCode(string& path) {
+		try
+		{
+			ifstream file;
+			file.exceptions(ifstream::failbit | ifstream::badbit);
+			file.open(path);
+			stringstream sstream;
+			// read file's buffer contents into streams
+			sstream << file.rdbuf();
+			// close file handlers
+			file.close();
+			// convert stream into string
+			return sstream.str();
+		}
+		catch (ifstream::failure& e)
+		{
+			cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << endl;
+			return string();
+		}
+	}
 	// utility function for checking shader compilation/linking errors.
 	// ------------------------------------------------------------------------
 	void checkCompileErrors(GLuint shader, string type)

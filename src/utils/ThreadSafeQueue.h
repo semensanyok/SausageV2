@@ -1,34 +1,40 @@
 #pragma once
-#include <mutex>
-#include <queue>
-#include <string>
+#include "sausage.h"
 
+template <typename T>
 class ThreadSafeQueue {
 	ofstream logstream;
-	queue<string> log;
+	queue<T> container;
 	mutex log_mutex;
 	condition_variable is_log_event;
 	bool end;
 
 public:
-	ThreadSafeQueue() : log{queue<string>()} {};
+	ThreadSafeQueue() : container{queue<T>()} {};
 	~ThreadSafeQueue() {};
-	string pop(bool &quit)
+	queue<T> PopAll()
+	{
+		std::lock_guard<std::mutex> mlock(log_mutex);
+		auto res = queue<T>(container);
+		container = queue<T>();
+		return res;
+	}
+	T WaitPop(bool &quit)
 	{
 		std::unique_lock<std::mutex> mlock(log_mutex);
-		while (log.empty() && !quit)
+		while (container.empty() && !quit)
 		{
 			is_log_event.wait(mlock);
 		}
-		auto message = log.front();
-		log.pop();
+		auto message = container.front();
+		container.pop();
 		return message;
 	}
 
-	void push(const string& message)
+	void Push(const T& message)
 	{
 		std::unique_lock<std::mutex> mlock(log_mutex);
-		log.push(message);
+		container.push(message);
 		mlock.unlock();
 		is_log_event.notify_one();
 	}

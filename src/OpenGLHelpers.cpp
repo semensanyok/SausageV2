@@ -1,7 +1,8 @@
 #include "OpenGLHelpers.h"
 
 bool CheckGLError(const std::source_location& location) {
-    int err = glGetError();
+    
+	int err = glGetError();
     if (err != GL_NO_ERROR) {
         //LOG(glGetErrorString(err));
         cout << "GL error: '" << glGetErrorString(err) 

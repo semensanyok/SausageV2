@@ -14,6 +14,7 @@ public:
 	BufferStorage* buffer_storage;
 	Renderer* renderer;
 	TextureManager* texture_manager;
+	FileWatcher* file_watcher;
 
 	SystemsManager() {};
 	~SystemsManager() {};
@@ -24,6 +25,7 @@ public:
 
 	void InitSystems() {
 		texture_manager = new TextureManager();
+		file_watcher = new FileWatcher();
 		camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
 		renderer = new Renderer();
 		renderer->InitContext();

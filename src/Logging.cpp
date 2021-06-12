@@ -1,16 +1,16 @@
 #include "Logging.h"
 static ofstream logstream("LOG.log");
 
-static ThreadSafeQueue log_queue;
+static ThreadSafeQueue<string> log_queue;
 
 void LOG(const string& s) {
-	log_queue.push(s);
+	log_queue.Push(s);
 }
 
 thread LogIO(bool& quit) {
 	return thread([&] {while (!quit) {
 		//this_thread::sleep_for(std::chrono::milliseconds(300));
-		auto s = log_queue.pop(quit);
+		auto s = log_queue.WaitPop(quit);
 		cout << s << endl;
 		logstream << s << endl;
 	}});
