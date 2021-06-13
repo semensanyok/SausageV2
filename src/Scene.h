@@ -7,15 +7,11 @@
 #include "systems/MeshManager.h"
 #include "systems/TextureManager.h"
 #include "FileWatcher.h"
+#include "systems/SystemsManager.h"
 
 class Scene {
 public:
-	BufferStorage* buffer;
-	TextureManager* texture_manager;
-	Camera* camera;
-	Renderer* renderer;
-	FileWatcher* file_watcher;
-	Samplers samplers;
+	SystemsManager* systems_manager;
 
 	Shader* blinn_phong;
 	// custom draws per shader
@@ -25,40 +21,34 @@ public:
 	vector<Light> draw_lights;
 	map<ShaderType, DrawCall*> draw_calls;
 	
-	Scene(BufferStorage* buffer, TextureManager* texture_manager, Camera* camera, Renderer* renderer, FileWatcher* file_watcher, Samplers samplers) : 
-		camera{ camera }, 
-		buffer{ buffer }, 
-		texture_manager{ texture_manager }, 
-		renderer{ renderer }, 
-		file_watcher{ file_watcher }, 
-		samplers{ samplers } {
-
+	string scene_path = GetModelPath("frog.fbx");
+	Scene(SystemsManager* systems_manager) :
+		systems_manager{ systems_manager } {
 	}
-	~Scene() {};\
+	~Scene() {};
 	void Init() {
 		_LoadData();
-		blinn_phong = renderer->RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl", file_watcher);
-		function<void()> gl_command = bind(&Shader::InitOrReload, blinn_phong);
-		function<void()> callback = bind(&Renderer::AddGlCommand, renderer, gl_command);
-		file_watcher->AddCallback(blinn_phong->fragment_path, callback);
+		blinn_phong = systems_manager->RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl");
+		
+		function<void()> scene_reload_callback = bind(&Scene::ReloadBuffer, this);
+		scene_reload_callback = bind(&Renderer::AddGlCommand, systems_manager->renderer, scene_reload_callback);
+		systems_manager->file_watcher->AddCallback(scene_path, scene_reload_callback);
 
 		CheckGLError();
 	}
 	void PrepareDraws() {
 		_OcclusionGather();
-		auto draw = new DrawCall{ buffer, blinn_phong, (unsigned int)draw_meshes.size(), 0 };
-		renderer->AddDraw(draw);
+		auto draw = new DrawCall{ systems_manager->buffer, blinn_phong, (unsigned int)draw_meshes.size(), 0 };
+		systems_manager->renderer->AddDraw(draw);
+		
 		vector<DrawElementsIndirectCommand> commands(draw_meshes.size());
 		for (int i = 0; i < draw_meshes.size(); i++) {
 			commands[i] = draw_meshes[i].command;
 		}
 		UpdateMVP();
-		buffer->AddCommands(commands);
+		systems_manager->buffer->AddCommands(commands);
 		CheckGLError();
-		draw_lights[0].position = vec3(-2.7, 1.7, 8.4);
-		draw_lights[1].position = vec3(0, -5, 5);
-
-		buffer->BufferLights(draw_lights);
+		systems_manager->buffer->BufferLights(draw_lights);
 		CheckGLError();
 	}
 	void UpdateMVP() {
@@ -66,7 +56,14 @@ public:
 		for (int i = 0; i < draw_meshes.size(); i++) {
 			transforms[i] = draw_meshes[i].model;
 		}
-		buffer->BufferTransform(draw_meshes, transforms);
+		systems_manager->buffer->BufferTransform(draw_meshes, transforms);
+	}
+	void ReloadBuffer() {
+		all_meshes.clear();
+		all_lights.clear();
+		systems_manager->ReloadBuffer();
+		_LoadData();
+		PrepareDraws();
 	}
 private:
 	void _LoadData() {
@@ -83,13 +80,12 @@ private:
 		map<unsigned int, MaterialTexNames> mesh_id_to_tex;
 		map<string, Texture*> diffuse_name_to_tex;
 
-		//MeshManager::LoadMeshes(vertices, indices, GetModelPath("cubes.fbx"), new_meshes, new_lights, mesh_id_to_tex);
-		MeshManager::LoadMeshes(vertices, indices, GetModelPath("cubes.fbx"), new_meshes, new_lights, mesh_id_to_tex);
+		MeshManager::LoadMeshes(vertices, indices, scene_path, new_meshes, new_lights, mesh_id_to_tex);
 		CheckGLError();
 		for (auto mesh_id_tex : mesh_id_to_tex) {
 			auto existing = diffuse_name_to_tex.find(mesh_id_tex.second.diffuse);
 			if (existing == diffuse_name_to_tex.end()) {
-				Texture* tex = texture_manager->LoadTextureArray(samplers.basic_repeat, mesh_id_tex.second);
+				Texture* tex = systems_manager->texture_manager->LoadTextureArray(systems_manager->samplers.basic_repeat, mesh_id_tex.second);
 				if (tex != nullptr) {
 					tex_handles.push_back(tex->texture_handle_ARB);
 					diffuse_name_to_tex[mesh_id_tex.second.diffuse] = tex;
@@ -104,10 +100,10 @@ private:
 			}
 		}
 		CheckGLError();
-		buffer->BufferMeshData(vertices, indices, new_meshes, tex_handles);
+		systems_manager->buffer->BufferMeshData(vertices, indices, new_meshes, tex_handles);
 		CheckGLError();
-		all_meshes.insert(all_meshes.end(), new_meshes.begin(), new_meshes.end());
-		all_lights.insert(all_lights.end(), new_lights.begin(), new_lights.end());
+		all_meshes=new_meshes;
+		all_lights=new_lights;
 	}
 	void _LoadTerrain() {
 

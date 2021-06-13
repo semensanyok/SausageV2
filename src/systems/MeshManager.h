@@ -22,14 +22,16 @@ public:
         map<unsigned int, MaterialTexNames>& out_mesh_id_to_tex
     )
     {
+        bool is_obj = file_name.ends_with(".obj");
         Assimp::Importer assimp_importer;
 
-        const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+        //const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+        const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
-            cout << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString() << endl;
-            throw runtime_error(string("ERROR::ASSIMP:: ") += assimp_importer.GetErrorString());
+            LOG((ostringstream() << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString()).str());
+            return;
         }
 
         for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
@@ -45,7 +47,7 @@ public:
                 // the node object only contains indices to index the actual objects in the scene. 
                 // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
                 aiMesh* mesh = scene->mMeshes[child->mMeshes[j]];
-                MaterialTexNames tex_names = _GetTexNames(mesh, scene);
+                MaterialTexNames tex_names = _GetTexNames(mesh, scene, is_obj);
 
                 auto data = ProcessMesh(mesh, scene);
                 vertices.push_back(data.vertices);
@@ -105,12 +107,10 @@ private:
         {
             Vertex vertex;
             vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder vec3 first.
-            // positions
             vector.x = mesh->mVertices[i].x;
             vector.y = mesh->mVertices[i].y;
             vector.z = mesh->mVertices[i].z;
             vertex.Position = vector;
-            // normals
             if (mesh->HasNormals())
             {
                 vector.x = mesh->mNormals[i].x;
@@ -118,7 +118,6 @@ private:
                 vector.z = mesh->mNormals[i].z;
                 vertex.Normal = vector;
             }
-            // texture coordinates
             if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
             {
                 vec2 vec;
@@ -127,12 +126,10 @@ private:
                 vec.x = mesh->mTextureCoords[0][i].x;
                 vec.y = mesh->mTextureCoords[0][i].y;
                 vertex.TexCoords = vec;
-                // tangent
                 vector.x = mesh->mTangents[i].x;
                 vector.y = mesh->mTangents[i].y;
                 vector.z = mesh->mTangents[i].z;
                 vertex.Tangent = vector;
-                // bitangent
                 vertex.Bitangent = vec3(
                     mesh->mBitangents[i].x,
                     mesh->mBitangents[i].y,
@@ -142,19 +139,16 @@ private:
                 vertex.TexCoords = vec2(0.0f, 0.0f);
             vertices.push_back(vertex);
         }
-        // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
         for (unsigned int i = 0; i < mesh->mNumFaces; i++)
         {
             aiFace face = mesh->mFaces[i];
-            // retrieve all indices of the face and store them in the indices vector
             for (unsigned int j = 0; j < face.mNumIndices; j++)
                 indices.push_back(face.mIndices[j]);
         }
-        // return a mesh object created from the extracted mesh data
         return CreateMesh(vertices, indices);
     }
 
-    static MaterialTexNames _GetTexNames(const aiMesh* mesh, const aiScene* scene) {
+    static MaterialTexNames _GetTexNames(const aiMesh* mesh, const aiScene* scene, bool is_obj = false) {
         string diffuse_name;
         string normal_name;
         string specular_name;
@@ -166,32 +160,38 @@ private:
         aiString Path;
         auto mat = scene->mMaterials[mesh->mMaterialIndex];
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << string(Path.C_Str()) << endl;
-            diffuse_name = string(Path.C_Str());
+            cout << filesystem::path(Path.C_Str()).filename() << endl;
+            diffuse_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_NORMALS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << string(Path.C_Str()) << endl;
-            normal_name = string(Path.C_Str());
+            cout << filesystem::path(Path.C_Str()).filename() << endl;
+            normal_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_SPECULAR, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << "SPEC" << string(Path.C_Str()) << endl;
-            specular_name = string(Path.C_Str());
+            cout << filesystem::path(Path.C_Str()).filename() << endl;
+            specular_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_HEIGHT, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << string(Path.C_Str()) << endl;
-            height_name = string(Path.C_Str());
+            cout << filesystem::path(Path.C_Str()).filename() << endl;
+            // Blender obj export saves .mtl with normal tex as bump tex.
+            if (is_obj) {
+                normal_name = filesystem::path(Path.C_Str()).filename().string();
+            }
+            else {
+                height_name = filesystem::path(Path.C_Str()).filename().string();
+            }
         }
         if (mat->GetTexture(aiTextureType_METALNESS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << "METAL" << string(Path.C_Str()) << endl;
-            metal_name = string(Path.C_Str());
+            cout << filesystem::path(Path.C_Str()).filename() << endl;
+            metal_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << "AMBIENT" << string(Path.C_Str()) << endl;
-            ao_name = string(Path.C_Str());
+            cout << filesystem::path(Path.C_Str()).filename() << endl;
+            ao_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_OPACITY, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << "OPACITY" << string(Path.C_Str()) << endl;
-            opacity_name = string(Path.C_Str());
+            cout << filesystem::path(Path.C_Str()).filename() << endl;
+            opacity_name = filesystem::path(Path.C_Str()).filename().string();
         }
         return MaterialTexNames(diffuse_name, normal_name, specular_name, height_name, metal_name, ao_name, opacity_name);
     }

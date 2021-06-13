@@ -25,18 +25,22 @@ public:
 
         auto existing = _RegisterOrGetIfExists(diffuse_path);
         if (existing != nullptr) {
+            LOG((ostringstream() << "Texture already loaded: " << diffuse_path).str());
             return existing;
         }
         existing = _RegisterOrGetIfExists(normal_path);
         if (existing != nullptr) {
+            LOG((ostringstream() << "Texture already loaded: " << normal_path).str());
             return existing;
         }
         existing = _RegisterOrGetIfExists(specular_path);
         if (existing != nullptr) {
+            LOG((ostringstream() << "Texture already loaded: " << specular_path).str());
             return existing;
         }
         existing = _RegisterOrGetIfExists(height_path);
         if (existing != nullptr) {
+            LOG((ostringstream() << "Texture already loaded: " << height_path).str());
             return existing;
         }
         SDL_Surface* surface = IMG_Load(diffuse_path.c_str());

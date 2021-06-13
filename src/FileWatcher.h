@@ -9,6 +9,7 @@ class FileWatcher
 {
 public:
 	void AddCallback(string& path, function<void()>& file_change_callback);
+	void RemoveCallback(string& path);
 	void Start(bool& quit);
 	void Join();
 	FileWatcher();
@@ -17,6 +18,12 @@ public:
 private:
 	map<string, pair<chrono::system_clock::duration, vector<function<void()>>>> watchers;
 	thread t;
+};
+
+void FileWatcher::RemoveCallback(string& path)
+{
+	lock_guard lock_shader(shader_mutex);
+	watchers.erase(path);
 };
 
 void FileWatcher::AddCallback(string& path, function<void()>& file_change_callback)

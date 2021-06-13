@@ -3,16 +3,13 @@
 #include "sausage.h"
 #include "Camera.h"
 #include "Settings.h"
-#include "Scene.h"
 
 class Controller {
 public:
 	Camera* camera;
-	Scene* scene;
 
-	Controller(Camera* camera, Scene* scene = nullptr) : camera{ camera }, scene{ scene } {};
+	Controller(Camera* camera) : camera{ camera } {};
 
-	void SetScene(Scene* scene) {};
 	void ProcessEvent(SDL_Event* e, float delta_time, bool& quit)
 	{
 		switch (e->type) {

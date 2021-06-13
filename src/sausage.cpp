@@ -7,10 +7,10 @@
 #include "utils/AssetUtils.h"
 #include "Logging.h"
 #include "Texture.h"
-#include "systems/SystemsManager.h"
 #include "OpenGLHelpers.h"
-#include "Scene.h"
 #include "FileWatcher.h"
+#include "Scene.h"
+#include "systems/SystemsManager.h"
 
 using namespace std;
 using namespace glm;
@@ -32,10 +32,10 @@ void Init() {
 	systems_manager->InitSystems();
 	CheckGLError();
 	samplers = InitSamplers();
-	scene = new Scene(systems_manager->buffer_storage, systems_manager->texture_manager, systems_manager->camera, systems_manager->renderer, systems_manager->file_watcher, samplers);
+	scene = new Scene(systems_manager);
 	scene->Init();
 	scene->PrepareDraws();
-	controller = new Controller(systems_manager->camera, scene);
+	controller = new Controller(systems_manager->camera);
 	CheckGLError();
 }
 

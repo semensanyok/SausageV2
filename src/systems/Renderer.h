@@ -9,7 +9,6 @@
 #include "Structures.h"
 #include "Gui.h"
 #include "TestShapes.h"
-#include "FileWatcher.h"
 #include "utils/ThreadSafeQueue.h"
 
 class Renderer {
@@ -58,12 +57,22 @@ public:
 		SDL_GL_SwapWindow(window);
 	}
 
+	void RemoveBuffer(BufferStorage* buffer) {
+		auto buf = buffer_shaders.find(buffer->id);
+		if (buf != buffer_shaders.end()) {
+			for (auto draw : (*buf).second) {
+				buf_shad_ids.erase(pair(draw->buffer->id, draw->shader->id));
+			}
+			buffer_shaders.erase(buf);
+		}
+	}
+
 	void AddGlCommand(function<void()>& f)
 	{
 		gl_commands.Push(f);
 	}
 
-	Shader* RegisterShader(const char* vs_name, const char* fs_name, FileWatcher* file_watcher) {
+	Shader* RegisterShader(const char* vs_name, const char* fs_name) {
 		for (auto shader : shaders) {
 			if (shader.second->vertex_path.ends_with(vs_name) || shader.second->fragment_path.ends_with(fs_name)) {
 				LOG((ostringstream() << "Shader with vs_name=" << string(vs_name) << " fs_name=" << string(fs_name) << " already registered").str());

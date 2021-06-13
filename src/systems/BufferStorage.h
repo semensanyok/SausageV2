@@ -68,7 +68,7 @@ private:
     GLuint64* texture_ptr;
     Lights* light_ptr;
 public:
-    unsigned int id;
+    int id = -1;
 
     GLsync fence_sync = 0;
 
@@ -81,6 +81,14 @@ public:
         id = count++;
     };
 	~BufferStorage() {};
+    void Reset() {
+        fence_sync = 0;
+        active_commands_to_render = 0;
+        vertex_total = 0;
+        index_total = 0;
+        command_total = 0;
+        textures_total = 0;
+    };
     bool operator<(const BufferStorage& other)
     {
         return id < other.id;
@@ -174,8 +182,8 @@ public:
             mesh_data[i].command = command;
 
             // copy to GPU
-            memcpy(&vertex_ptr[vertex_total], &*vertices[i].begin(), vertices[i].size() * sizeof(Vertex));
-            memcpy(&index_ptr[index_total], &*indices[i].begin(), indices[i].size() * sizeof(unsigned int));
+            memcpy(&vertex_ptr[vertex_total], vertices[i].data(), vertices[i].size() * sizeof(Vertex));
+            memcpy(&index_ptr[index_total], indices[i].data(), indices[i].size() * sizeof(unsigned int));
             auto handle = texture_handles[i];
             if (handle != 0) {
                 texture_ptr[textures_total] = handle;
@@ -314,23 +322,34 @@ public:
         WaitGPU(fence_sync);
         glDisableVertexAttribArray(0);
         glDeleteVertexArrays(1, &mesh_VAO);
-
+        CheckGLError();
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
         glUnmapBuffer(GL_ARRAY_BUFFER);
         glDeleteBuffers(1, &vertex_buffer);
-
+        CheckGLError();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
         glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
         glDeleteBuffers(1, &index_buffer);
-
+        CheckGLError();
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, mvp_buffer);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         glDeleteBuffers(1, &mvp_buffer);
-
+        CheckGLError();
         if (bind_draw_buffer) {
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-            glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
+            if (is_cmd_buffer_mapped) {
+                glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
+            }
             glDeleteBuffers(1, &command_buffer);
         }
+        CheckGLError();
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glDeleteBuffers(1, &texture_buffer);
+        CheckGLError();
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glDeleteBuffers(1, &light_buffer);
+        CheckGLError();
     }
 };
