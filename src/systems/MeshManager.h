@@ -8,10 +8,9 @@
 using namespace std;
 using namespace glm;
 
-static atomic<unsigned int> mesh_count{ 0 };
-
 class MeshManager {
 public:
+    inline static atomic<unsigned int> mesh_count{ 0 };
     // Structure of arrays style for multidraw.
     static void LoadMeshes(
         vector<vector<Vertex>>& vertices,

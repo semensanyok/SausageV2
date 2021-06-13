@@ -92,6 +92,7 @@ public:
         GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, texture_sampler);
         CheckGLError();
         Texture* texture = new Texture(texture_id, tex_handle);
+        path_to_tex[diffuse_path] = texture;
         return texture;
     }
 private:

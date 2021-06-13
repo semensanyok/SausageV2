@@ -61,6 +61,7 @@ public:
 	void ReloadBuffer() {
 		all_meshes.clear();
 		all_lights.clear();
+		MeshManager::mesh_count = 0;
 		systems_manager->ReloadBuffer();
 		_LoadData();
 		PrepareDraws();
