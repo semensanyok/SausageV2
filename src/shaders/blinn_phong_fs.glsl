@@ -91,8 +91,8 @@ void AddLightColor(in vec3 mat_normal, inout vec3 res, in vec3 view_dir, in vec3
 
 void main(void) {
   test_lights = Light[2](
-  Light(vec3(0,-1,0), vec3(-5,5,5),0,vec3(1,1,1),vec3(1,1,1),DIRECTIONAL_LIGHT, 1, OGRE_P_L_ATT_DIST_7L, OGRE_P_L_ATT_DIST_7Q),
-  Light(vec3(0,-1,0), vec3(5,5,5),0,vec3(50,50,50),vec3(50,50,50),POINT_LIGHT,1,OGRE_P_L_ATT_DIST_7L, OGRE_P_L_ATT_DIST_7Q)
+  Light(vec3(0,-0.5,-0.5), vec3(0,0,0),0,vec3(1,1,1),vec3(1,1,1),DIRECTIONAL_LIGHT, 1, OGRE_P_L_ATT_DIST_7L, OGRE_P_L_ATT_DIST_7Q),
+  Light(vec3(0,-1,0), vec3(0,5,1),0,vec3(50,50,50),vec3(50,50,50),POINT_LIGHT,1,OGRE_P_L_ATT_DIST_7L, OGRE_P_L_ATT_DIST_7Q)
   );
   vec3 mat_diffuse = texture(textures[In.draw_id_arb], vec3(In.uv, 0)).rgb;
   vec3 mat_specular = texture(textures[In.draw_id_arb], vec3(In.uv,2)).rgb;
@@ -102,4 +102,5 @@ void main(void) {
   vec3 res = mat_diffuse * ambient_const;
   AddLightColor(mat_normal, res, view_dir, mat_diffuse, mat_specular);
   color = vec4(res, 1.0);
+  //color = vec4(vec3(gl_FragCoord.z), 1.0); // z buffer
 }

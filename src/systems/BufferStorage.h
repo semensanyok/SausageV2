@@ -176,7 +176,7 @@ public:
             DrawElementsIndirectCommand command;
             command.count = indices[i].size();
             command.instanceCount = 1;
-            command.firstIndex = 0;
+            command.firstIndex = index_total;
             command.baseVertex = vertex_total;
             command.baseInstance = command_total;
             mesh_data[i].command = command;

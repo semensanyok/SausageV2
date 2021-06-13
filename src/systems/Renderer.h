@@ -15,14 +15,13 @@ class Renderer {
 private:
 	ThreadSafeQueue<function<void()>> gl_commands;
 
+	map<unsigned int, Shader*> shaders;
+	map<unsigned int, vector<DrawCall*>> buffer_shaders;
+	set<pair<int, int>> buf_shad_ids;
 public:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	SDL_GLContext context;
-
-	map<unsigned int, Shader*> shaders;
-	map<unsigned int, vector<DrawCall*>> buffer_shaders;
-	set<pair<int, int>> buf_shad_ids;
 
 	Renderer() {};
 	~Renderer() {};
@@ -39,7 +38,7 @@ public:
 			}
 			auto buffer = (*buffer_shader.second.begin())->buffer;
 			buffer->BarrierIfChangeAndUnmap();
-			buffer->BindMeshVAOandBuffers();
+			buffer->BindMeshVAOandBuffers(); // TODO: one buffer, no rebind
 			for (auto draw : buffer_shader.second) {
 				if (draw->buffer->active_commands_to_render > 0) {
 					glUseProgram(draw->shader->id);
@@ -100,10 +99,6 @@ public:
 		return true;
 	}
 
-	bool RemoveDraw(BufferStorage* buffers_to_remove, Shader* shader = nullptr) {
-		
-	}
-
 	void InitContext() {
 		SDL_Init(SDL_INIT_VIDEO);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
@@ -152,8 +147,8 @@ public:
 			LOG("[INFO] glad initialized\n");
 		}
 
-		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		glEnable(GL_DEPTH_TEST);
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		// debug
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
