@@ -16,8 +16,6 @@ const float OGRE_P_L_ATT_DIST_20Q = 0.20f;
 
 uniform vec3 view_pos;
 
-uniform int num_lights;
-
 out vec4 color;
 
 float ambient_const = 0.1f;
@@ -54,9 +52,12 @@ layout (std430, binding = 1) buffer TextureArray
 
 layout (std430, binding = 2) buffer Lights
 {
+	int num_lights;
+	float padding0;
+    float padding1;
+	float padding2;
     Light lights[];
 };
-Light test_lights[2];
 
 vec3 GetSpecular(in Light light, in vec3 view_dir, in vec3 light_dir, in vec3 mat_specular) {
     vec3 half_way_dir = normalize(view_dir + light_dir);
@@ -118,5 +119,7 @@ void main(void) {
   vec3 view_dir = normalize(view_pos - In.frag_pos);
   vec3 res = mat_diffuse * ambient_const;
   AddLightColor(mat_normal, res, view_dir, mat_diffuse, mat_specular);
-  color = vec4(res, 1.0);
+  vec2 mipmapLevel = textureQueryLod(textures[In.draw_id_arb], In.uv);
+  color = vec4(mipmapLevel,0,1);
+  //color = vec4(res, 1.0);
 }

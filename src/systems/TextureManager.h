@@ -2,16 +2,21 @@
 
 #include "sausage.h"
 #include "Texture.h"
+#include "Structures.h"
 
 class TextureManager {
     map<size_t, Texture*> path_to_tex;
 public:
-    TextureManager() {};
+    Samplers samplers;
+    bool is_samplers_init = false;
+    TextureManager() { };
     /**
     * load texture array for mesh. diffuse + normal + height + specular.
     */
-    Texture* LoadTextureArray(GLuint texture_sampler,
-        MaterialTexNames& tex_names) {
+    Texture* LoadTextureArray(MaterialTexNames& tex_names) {
+        if (!is_samplers_init) {
+            InitSamplers();
+        }
         GLuint texture_id;
         if (tex_names.diffuse.empty()) {
             LOG(string("diffuse not found: ").append(tex_names.diffuse));
@@ -43,7 +48,7 @@ public:
         glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
         CheckGLError();
         glTexStorage3D(GL_TEXTURE_2D_ARRAY,
-            1,                    //mipmaps. 1 == no mipmaps.
+            8,                    //mipmaps. 1 == no mipmaps.
             GetTexFormat(surface->format->BytesPerPixel, true),              //Internal format
             surface->w, surface->h,//width,height
             4            //Number of layers
@@ -56,6 +61,7 @@ public:
             GetTexFormat(surface->format->BytesPerPixel, false),                //format
             GL_UNSIGNED_BYTE,      //type
             surface->pixels);
+        
         CheckGLError();
         SDL_FreeSurface(surface);
         if (!tex_names.normal.empty()) {
@@ -77,12 +83,29 @@ public:
         if (!tex_names.opacity.empty()) {
             LoadLayer(tex_names.opacity, TextureType::Opacity);
         }
-        GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, texture_sampler);
+        glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+        GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers.basic_repeat);
         CheckGLError();
         Texture* texture = new Texture(texture_id, tex_handle);
         path_to_tex[key_hash] = texture;
         return texture;
     }
+
+    void InitSamplers() {
+        unsigned int basic_repeat = 0;
+        glCreateSamplers(1, &basic_repeat);
+        glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+        glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST); // bilinear
+        //glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR); // trilinear
+        glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        samplers.basic_repeat = basic_repeat;
+        is_samplers_init = true;
+    }
+
 private:
     GLenum GetTexFormat(int bytes_per_pixel, bool for_storage) {
         if (bytes_per_pixel == 3) {

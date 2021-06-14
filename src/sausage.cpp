@@ -31,7 +31,6 @@ void Init() {
 	systems_manager = new SystemsManager();
 	systems_manager->InitSystems();
 	CheckGLError();
-	samplers = InitSamplers();
 	scene = new Scene(systems_manager);
 	scene->Init();
 	scene->PrepareDraws();

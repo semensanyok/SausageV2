@@ -15,7 +15,6 @@ public:
 	Renderer* renderer;
 	TextureManager* texture_manager;
 	FileWatcher* file_watcher;
-	Samplers samplers;
 
 	SystemsManager() {};
 	~SystemsManager() {};
@@ -31,7 +30,6 @@ public:
 		renderer = new Renderer();
 		renderer->InitContext();
 		InitBuffer();
-		samplers = InitSamplers();
 	}
 
 	void ReloadBuffer() {

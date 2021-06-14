@@ -88,7 +88,7 @@ private:
 		for (auto mesh_id_tex : mesh_id_to_tex) {
 			auto existing = diffuse_name_to_tex.find(mesh_id_tex.second.diffuse);
 			if (existing == diffuse_name_to_tex.end()) {
-				Texture* tex = systems_manager->texture_manager->LoadTextureArray(systems_manager->samplers.basic_repeat, mesh_id_tex.second);
+				Texture* tex = systems_manager->texture_manager->LoadTextureArray(mesh_id_tex.second);
 				if (tex != nullptr) {
 					tex_handles.push_back(tex->texture_handle_ARB);
 					diffuse_name_to_tex[mesh_id_tex.second.diffuse] = tex;
