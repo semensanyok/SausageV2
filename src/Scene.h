@@ -38,8 +38,6 @@ public:
 	}
 	void PrepareDraws() {
 		_OcclusionGather();
-		auto draw = new DrawCall{ systems_manager->buffer, blinn_phong, (unsigned int)draw_meshes.size(), 0 };
-		systems_manager->renderer->AddDraw(draw);
 		
 		vector<DrawElementsIndirectCommand> commands(draw_meshes.size());
 		for (int i = 0; i < draw_meshes.size(); i++) {
@@ -50,6 +48,8 @@ public:
 		CheckGLError();
 		systems_manager->buffer->BufferLights(draw_lights);
 		CheckGLError();
+		auto draw = new DrawCall{ systems_manager->buffer, blinn_phong, (unsigned int)draw_meshes.size(), 0, (int)draw_lights.size() };
+		systems_manager->renderer->AddDraw(draw);
 	}
 	void UpdateMVP() {
 		vector<mat4> transforms(draw_meshes.size());
@@ -82,6 +82,10 @@ private:
 		map<string, Texture*> diffuse_name_to_tex;
 
 		MeshManager::LoadMeshes(vertices, indices, scene_path, new_meshes, new_lights, mesh_id_to_tex);
+		new_lights.clear();
+		new_lights.push_back(Light{ vec4(0,-1,0,0), vec4(0,7,0,0), vec4(50,50,50,0),vec4(50,50,50,0),LightType::Spot,  0.91, 0.82, 1, OGRE_P_L_ATT_DIST_7L, OGRE_P_L_ATT_DIST_7Q });
+		new_lights.push_back(Light{ vec4(0,-1,0,0), vec4(5,5,5,0), vec4(50,50,50,0),vec4(50,50,50,0),LightType::Point,  0, 0, 1, OGRE_P_L_ATT_DIST_7L, OGRE_P_L_ATT_DIST_7Q });
+
 		CheckGLError();
 		for (auto mesh_id_tex : mesh_id_to_tex) {
 			auto existing = diffuse_name_to_tex.find(mesh_id_tex.second.diffuse);

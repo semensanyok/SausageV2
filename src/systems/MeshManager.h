@@ -65,20 +65,20 @@ public:
         switch (light->mType)
         {
         case aiLightSource_DIRECTIONAL:
-            return Light{FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular), LightType::Directional };
+            return Light{FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0};
         case aiLightSource_POINT:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular), LightType::Point };
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Point,0,0,light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
         case aiLightSource_SPOT:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),light->mAngleOuterCone,FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular), LightType::Spot };
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Spot,light->mAngleInnerCone,light->mAngleOuterCone,light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
         default:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),0,FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular), LightType::Directional };
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0 };
         }
     }
-    static vec3 FromAi(aiVector3D& aivec) {
-        return vec3(aivec.x, aivec.y, aivec.z);
+    static vec4 FromAi(aiVector3D& aivec) {
+        return vec4(aivec.x, aivec.y, aivec.z, 0);
     }
-    static vec3 FromAi(aiColor3D& aivec) {
-        return vec3(aivec.r, aivec.g, aivec.b);
+    static vec4 FromAi(aiColor3D& aivec) {
+        return vec4(aivec.r, aivec.g, aivec.b, 0);
     }
     static MeshLoadData CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
         return MeshLoadData{ vertices, indices, mesh_count++ };

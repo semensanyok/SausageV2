@@ -14,18 +14,24 @@ uniform mat4 projection_view;
 
 layout (std430, binding = 0) buffer Transforms
 {
-    mat4 model[];
+    mat4 models[];
 };
 
 out vs_out {
     int draw_id_arb;
     vec2 uv;
+    vec3 frag_pos;
+    mat3 TBN;
 } Out;
 
-out vec2 uv_out;
-
 void main(void) {
-  gl_Position = model[gl_DrawIDARB] * vec4(position, 1.0);
-  Out.uv = uv;
+  mat4 model = models[gl_DrawIDARB];
+  Out.frag_pos = vec3(model * vec4(position, 1.0));
+  gl_Position = projection_view * vec4(Out.frag_pos, 1.0);
   Out.draw_id_arb = gl_DrawIDARB;
+  Out.uv = uv;
+  vec3 T = normalize(vec3(model * vec4(tangent, 0.0)));
+  vec3 B = normalize(vec3(model * vec4(bitangent, 0.0)));
+  vec3 N = normalize(vec3(model * vec4(normal, 0.0)));
+  Out.TBN = mat3(T, B, N);
 }

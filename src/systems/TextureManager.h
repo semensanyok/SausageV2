@@ -4,7 +4,7 @@
 #include "Texture.h"
 
 class TextureManager {
-    map<string, Texture*> path_to_tex;
+    map<size_t, Texture*> path_to_tex;
 public:
     TextureManager() {};
     /**
@@ -22,26 +22,14 @@ public:
         string normal_path = GetTexturePath(tex_names.normal);
         string specular_path = GetTexturePath(tex_names.specular);
         string height_path = GetTexturePath(tex_names.height);
+        auto key = diffuse_path + normal_path + specular_path + height_path;
+        auto key_hash = hash<string>{}(key);
 
-        auto existing = _RegisterOrGetIfExists(diffuse_path);
-        if (existing != nullptr) {
-            LOG((ostringstream() << "Texture already loaded: " << diffuse_path).str());
-            return existing;
-        }
-        existing = _RegisterOrGetIfExists(normal_path);
-        if (existing != nullptr) {
-            LOG((ostringstream() << "Texture already loaded: " << normal_path).str());
-            return existing;
-        }
-        existing = _RegisterOrGetIfExists(specular_path);
-        if (existing != nullptr) {
-            LOG((ostringstream() << "Texture already loaded: " << specular_path).str());
-            return existing;
-        }
-        existing = _RegisterOrGetIfExists(height_path);
-        if (existing != nullptr) {
-            LOG((ostringstream() << "Texture already loaded: " << height_path).str());
-            return existing;
+        auto existing = path_to_tex.find(key_hash);
+        if (existing != path_to_tex.end()) {
+            LOG((ostringstream() << "Texture array already loaded: " << 
+                diffuse_path + ", " + normal_path + ", " + specular_path + ", " + height_path).str());
+            return (*existing).second;
         }
         SDL_Surface* surface = IMG_Load(diffuse_path.c_str());
         if (surface == NULL)
@@ -92,7 +80,7 @@ public:
         GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, texture_sampler);
         CheckGLError();
         Texture* texture = new Texture(texture_id, tex_handle);
-        path_to_tex[diffuse_path] = texture;
+        path_to_tex[key_hash] = texture;
         return texture;
     }
 private:
@@ -128,14 +116,5 @@ private:
             SDL_FreeSurface(surface);
             return true;
         }
-    }
-
-    Texture* _RegisterOrGetIfExists(string& path) {
-        auto existing = path_to_tex.find(path);
-        if (existing != path_to_tex.end()) {
-            LOG((ostringstream() << "Texture " << path << " already loaded. Returning existing tex array.").str());
-            return (*existing).second;
-        }
-        return nullptr;
     }
 };

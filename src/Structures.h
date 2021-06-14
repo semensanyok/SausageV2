@@ -83,20 +83,21 @@ float OGRE_P_L_ATT_DIST_20L = 0.22f;
 float OGRE_P_L_ATT_DIST_20Q = 0.20f;
 
 struct Light {
-    vec3 direction;
-    vec3 position;
-    float spot_max_angle;
-    vec3 color;
-    vec3 specular;
-    unsigned int type;
+    vec4 direction;
+    vec4 position;
+    vec4 color;
+    vec4 specular;
+    
+    int type;
+    float spot_inner_cone_cos;
+    float spot_outer_cone_cos;
     float constant_attenuation;
+
     float linear_attenuation;
     float quadratic_attenuation;
+    float padding[2] = {0,0};
 };
-struct Lights {
-    int num_lights;
-    Light lights[];
-};
+
 enum ShaderType {
     BlinnPhong,
     BRDF
@@ -123,4 +124,7 @@ struct DrawCall {
     Shader* shader;
     unsigned int command_count;
     unsigned int command_offset; // offset in BufferStorage command buffer
+    
+    // custom data
+    int num_lights;
 };

@@ -17,6 +17,11 @@ class Texture {
     bool is_resident = false;
     unsigned int ref_count;
 public:
+    const string diffuse_path;
+    const string normal_path;
+    const string specular_path;
+    const string height_path;
+
     const GLuint texture_id;
     const GLuint64 texture_handle_ARB;
     Texture(GLuint texture_id, GLuint64 texture_handle_ARB) : texture_id(texture_id), texture_handle_ARB(texture_handle_ARB), is_resident(false), is_destoyed(false) {};
