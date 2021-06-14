@@ -44,7 +44,6 @@ public:
 					glUseProgram(draw->shader->id);
 					draw->shader->setMat4("projection_view", camera->projection_view);
 					draw->shader->setVec3("view_pos", camera->pos);
-					draw->shader->setInt("num_lights", draw->num_lights);
 
 					glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, draw->command_count, draw->command_offset);
 				}

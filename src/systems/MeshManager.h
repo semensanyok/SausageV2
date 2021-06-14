@@ -58,7 +58,12 @@ public:
         }
         for (unsigned int i = 0; i < scene->mNumLights; i++) {
             auto light = scene->mLights[i];
-            out_lights.push_back(FromAi(scene->mLights[i]));
+            auto node = scene->mRootNode->FindNode(light->mName);
+            auto tr = node->mTransformation;
+            auto res_light = FromAi(light);
+            // -Z forward Y up in Blender export settings
+            res_light.position = vec4(tr.a4, tr.b4, tr.c4, 0.0);
+            out_lights.push_back(res_light);
         }
     }
     static Light FromAi(aiLight* light) {
@@ -69,7 +74,7 @@ public:
         case aiLightSource_POINT:
             return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Point,0,0,light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
         case aiLightSource_SPOT:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Spot,light->mAngleInnerCone,light->mAngleOuterCone,light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
+            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Spot,cos(light->mAngleInnerCone),cos(light->mAngleOuterCone),light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
         default:
             return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0 };
         }

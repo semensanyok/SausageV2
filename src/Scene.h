@@ -82,9 +82,7 @@ private:
 		map<string, Texture*> diffuse_name_to_tex;
 
 		MeshManager::LoadMeshes(vertices, indices, scene_path, new_meshes, new_lights, mesh_id_to_tex);
-		new_lights.clear();
-		new_lights.push_back(Light{ vec4(0,-1,0,0), vec4(0,7,0,0), vec4(50,50,50,0),vec4(50,50,50,0),LightType::Spot,  0.91, 0.82, 1, OGRE_P_L_ATT_DIST_7L, OGRE_P_L_ATT_DIST_7Q });
-		new_lights.push_back(Light{ vec4(0,-1,0,0), vec4(5,5,5,0), vec4(50,50,50,0),vec4(50,50,50,0),LightType::Point,  0, 0, 1, OGRE_P_L_ATT_DIST_7L, OGRE_P_L_ATT_DIST_7Q });
+		_BlenderPostprocessLights(new_lights);
 
 		CheckGLError();
 		for (auto mesh_id_tex : mesh_id_to_tex) {
@@ -109,6 +107,17 @@ private:
 		CheckGLError();
 		all_meshes=new_meshes;
 		all_lights=new_lights;
+	}
+	void _BlenderPostprocessLights(vector<Light>& lights) {
+		for (auto& light : lights)
+		{
+			light.constant_attenuation = 1;
+			light.linear_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
+			light.quadratic_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
+			float denom = 10;
+			light.color /= denom;
+			light.specular /= denom;
+		}
 	}
 	void _LoadTerrain() {
 

@@ -66,7 +66,7 @@ private:
     DrawElementsIndirectCommand* command_ptr;
     mat4* mvp_ptr;
     GLuint64* texture_ptr;
-    Light* light_ptr;
+    Lights* light_ptr;
 public:
     int id = -1;
 
@@ -251,7 +251,8 @@ public:
             LOG((ostringstream() << "ERROR BufferLights. max lights buffer size=" << MAX_LIGHTS << " requested=" << lights.size()).str());
             return;
         }
-        memcpy(light_ptr, lights.data(), lights.size() * sizeof(Light));
+        light_ptr->num_lights = lights.size();
+        memcpy(light_ptr->lights, lights.data(), lights.size() * sizeof(Light));
         is_need_barrier = true;
     }
     void InitMeshBuffers() {
@@ -288,7 +289,7 @@ public:
         glGenBuffers(1, &light_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, LIGHT_STORAGE_SIZE, NULL, flags);
-        light_ptr = (Light*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, LIGHT_STORAGE_SIZE, flags);
+        light_ptr = (Lights*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, LIGHT_STORAGE_SIZE, flags);
     }
 
     void BindMeshVAOandBuffers() {

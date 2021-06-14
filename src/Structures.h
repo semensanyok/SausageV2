@@ -75,12 +75,14 @@ enum LightType {
     Spot
 };
 
-float OGRE_P_L_ATT_DIST_7L = 0.7f;
-float OGRE_P_L_ATT_DIST_7Q = 1.8f;
-float OGRE_P_L_ATT_DIST_13L = 0.35f;
-float OGRE_P_L_ATT_DIST_13Q = 0.44f;
-float OGRE_P_L_ATT_DIST_20L = 0.22f;
-float OGRE_P_L_ATT_DIST_20Q = 0.20f;
+namespace AttenuationConsts {
+    float OGRE_P_L_ATT_DIST_7L = 0.7f;
+    float OGRE_P_L_ATT_DIST_7Q = 1.8f;
+    float OGRE_P_L_ATT_DIST_13L = 0.35f;
+    float OGRE_P_L_ATT_DIST_13Q = 0.44f;
+    float OGRE_P_L_ATT_DIST_20L = 0.22f;
+    float OGRE_P_L_ATT_DIST_20Q = 0.20f;
+}
 
 struct Light {
     vec4 direction;
@@ -95,7 +97,14 @@ struct Light {
 
     float linear_attenuation;
     float quadratic_attenuation;
-    float padding[2] = {0,0};
+    float padding[2] = {0,0}; // OpenGL padding
+};
+
+
+struct Lights {
+    int num_lights;
+    float padding[3] = { 0,0,0 };
+    Light lights[];
 };
 
 enum ShaderType {
