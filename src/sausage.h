@@ -16,6 +16,8 @@
 #include <assimp/mesh.h>
 #include <assimp/postprocess.h>
 
+#include <btBulletDynamicsCommon.h>
+
 #include <optional>
 #include <list>
 #include <vector>

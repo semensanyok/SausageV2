@@ -114,12 +114,12 @@ enum ShaderType {
 struct MeshData {
     // draw id.
     unsigned int id;
-    //MeshType type;
-    mat4 model;
+    mat4 transform;
+    string name;
     DrawElementsIndirectCommand command;
     BufferStorage* buffer;
-    // aabb params
-    // 
+    vec3 max_AABB;
+    vec3 min_AABB;
 };
 
 struct MeshLoadData {

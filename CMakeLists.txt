@@ -10,6 +10,7 @@ set (CMAKE_CXX_STANDARD 20)
 set(BUILD_SHARED_LIBS false)
 
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
+
 # ASSIMP
 option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 option(ASSIMP_BUILD_SAMPLES OFF)
@@ -33,6 +34,7 @@ option(BUILD_CPU_DEMOS OFF)
 option(BUILD_EXTRAS OFF)
 option(BUILD_OPENGL3_DEMOS OFF)
 option(BUILD_UNIT_TESTS OFF)
+
 add_subdirectory(dependencies/bullet3)
 
 set(SDL2_DIR "lib/SDL")
@@ -45,6 +47,7 @@ set(FREETYPE_INCLUDE_DIRS "lib/freetype/include/freetype2")
 set(IMGUI_INC_PATH "dependencies/imgui/" "dependencies/imgui/backends/")
 
 include_directories(dependencies/assimp/include/
+                    dependencies/bullet3/src/
                     # dependencies/zlib/
                     dependencies/glm/
                     ${SDL2_DIR}/include/
@@ -52,12 +55,6 @@ include_directories(dependencies/assimp/include/
                     # ${LIBROCKET_INCLUDE_DIRS}/
                     ${IMGUI_INC_PATH}
                     )
-find_library(Freetype
-    NAMES freetype.lib # what to look for
-    HINTS "${CMAKE_SOURCE_DIR}/lib/freetype/lib/" # where to look
-    NO_DEFAULT_PATH # do not search system default paths
-    )
-
 find_library(Freetype
     NAMES freetype.lib # what to look for
     HINTS "${CMAKE_SOURCE_DIR}/lib/freetype/lib/" # where to look
@@ -126,10 +123,11 @@ set(sources ${sources} "src/systems/Gui.h" )
 set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/systems/MeshManager.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/utils/AssetUtils.h" "src/Logging.h" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h" "src/OpenGLHelpers.cpp"  )
 
 #"src/main.cpp" "src/sausage.cpp"
-add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h" "src/systems/SystemsManager.h" "src/Scene.h" "src/systems/Controller.h" "src/systems/Physics.h" "src/systems/TextureManager.h"  "src/FileWatcher.h")
+add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h" "src/systems/SystemsManager.h" "src/Scene.h" "src/systems/Controller.h" "src/systems/Physics.h" "src/systems/TextureManager.h"  "src/FileWatcher.h"  "src/systems/BulletDebugDrawer.h")
 
 # RocketCore RocketDebugger RocketControls 
 # ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2}
+
 target_link_libraries(${CMAKE_PROJECT_NAME} assimp glad glm SDL2::Main 
-Bullet3Collision Bullet3Dynamics Bullet3Common Bullet3Geometry 
+Bullet3Common BulletCollision BulletDynamics LinearMath
 ${SDL2_IMAGE_LIBRARIES} ${Freetype})

@@ -7,6 +7,7 @@
 #include "systems/BufferStorage.h"
 #include "systems/Controller.h"
 #include "TextureManager.h"
+#include "systems/Physics.h"
 
 class SystemsManager {
 public:
@@ -15,6 +16,10 @@ public:
 	Renderer* renderer;
 	TextureManager* texture_manager;
 	FileWatcher* file_watcher;
+	PhysicsManager* physics_manager;
+	
+	float delta_time = 0;
+	float last_ticks = 0;
 
 	SystemsManager() {};
 	~SystemsManager() {};
@@ -26,10 +31,12 @@ public:
 	void InitSystems() {
 		texture_manager = new TextureManager();
 		file_watcher = new FileWatcher();
-		camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
+		//camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
+		camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
 		renderer = new Renderer();
 		renderer->InitContext();
 		InitBuffer();
+		physics_manager = new PhysicsManager();
 	}
 
 	void ReloadBuffer() {
@@ -50,6 +57,11 @@ public:
 		renderer->ClearContext();
 		delete renderer;
 		delete camera;
+	}
+	void UpdateDeltaTime() {
+		float this_ticks = SDL_GetTicks();
+		delta_time = this_ticks - last_ticks;
+		last_ticks = this_ticks;
 	}
 private:
 	void InitBuffer() {

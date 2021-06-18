@@ -119,7 +119,5 @@ void main(void) {
   vec3 view_dir = normalize(view_pos - In.frag_pos);
   vec3 res = mat_diffuse * ambient_const;
   AddLightColor(mat_normal, res, view_dir, mat_diffuse, mat_specular);
-  vec2 mipmapLevel = textureQueryLod(textures[In.draw_id_arb], In.uv);
-  color = vec4(mipmapLevel,0,1);
-  //color = vec4(res, 1.0);
+  color = vec4(res, 1.0);
 }

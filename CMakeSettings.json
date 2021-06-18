@@ -10,7 +10,23 @@
 			"cmakeCommandArgs": "",
 			"buildCommandArgs": "",
 			"ctestCommandArgs": "",
-			"variables": []
+			"variables": [
+				{
+					"name": "Bullet3_DIR",
+					"value": "D:/___amyengine/sausage/dependencies/bullet3",
+					"type": "PATH"
+				},
+				{
+					"name": "USE_MSVC_RELEASE_RUNTIME_ALWAYS",
+					"value": "False",
+					"type": "BOOL"
+				},
+				{
+					"name": "USE_MSVC_RUNTIME_LIBRARY_DLL",
+					"value": "True",
+					"type": "BOOL"
+				}
+			]
 		},
 		{
 			"name": "x64-Release",
@@ -21,8 +37,7 @@
 			"cmakeCommandArgs": "",
 			"buildCommandArgs": "-v",
 			"ctestCommandArgs": "",
-			"inheritEnvironments": [ "msvc_x64_x64" ],
-			"variables": []
+			"inheritEnvironments": [ "msvc_x64_x64" ]
 		},
 		{
 			"name": "x86-Debug",
@@ -33,8 +48,7 @@
 			"cmakeCommandArgs": "",
 			"buildCommandArgs": "-v",
 			"ctestCommandArgs": "",
-			"inheritEnvironments": [ "msvc_x86" ],
-			"variables": []
+			"inheritEnvironments": [ "msvc_x86" ]
 		},
 		{
 			"name": "x86-Release",
@@ -45,8 +59,7 @@
 			"cmakeCommandArgs": "",
 			"buildCommandArgs": "-v",
 			"ctestCommandArgs": "",
-			"inheritEnvironments": [ "msvc_x86" ],
-			"variables": []
+			"inheritEnvironments": [ "msvc_x86" ]
 		}
 	]
 }

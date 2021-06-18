@@ -24,8 +24,7 @@ public:
         bool is_obj = file_name.ends_with(".obj");
         Assimp::Importer assimp_importer;
 
-        //const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-        const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+        const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_GenBoundingBoxes | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
@@ -36,7 +35,7 @@ public:
         for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
             auto child = scene->mRootNode->mChildren[i];
             auto ai_t = child->mTransformation;
-            auto model = mat4(
+            auto transform = mat4(
                 ai_t.a1, ai_t.b1, ai_t.c1, ai_t.d1,
                 ai_t.a2, ai_t.b2, ai_t.c2, ai_t.d2,
                 ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
@@ -51,7 +50,10 @@ public:
                 auto data = ProcessMesh(mesh, scene);
                 vertices.push_back(data.vertices);
                 indices.push_back(data.indices);
-                MeshData mesh_data = MeshData(data.draw_id, model);
+                MeshData mesh_data = MeshData(data.draw_id, transform);
+                mesh_data.max_AABB = mat3(transform) * FromAi(mesh->mAABB.mMax);
+                mesh_data.min_AABB = mat3(transform) * FromAi(mesh->mAABB.mMin);
+                mesh_data.name = string(mesh->mName.C_Str());
                 out_mesh_data.push_back(mesh_data);
                 out_mesh_id_to_tex[mesh_data.id] = tex_names;
             }

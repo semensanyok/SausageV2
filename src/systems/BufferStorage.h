@@ -10,24 +10,18 @@ using namespace glm;
 
 class BufferStorage {
 private:
-    const int MAX_VERTEX = 1000000;
     const int VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
     
-    const int MAX_INDEX = 100000;
     const int INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
     
-    const int MAX_COMMAND = 1000;
     const int COMMAND_STORAGE_SIZE = MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
     
-    const int MAX_LIGHTS = 1000;
     const int LIGHT_STORAGE_SIZE = MAX_LIGHTS * sizeof(Light);
     ///////////
     // UNIFORMS
     ///////////
-    const int MAX_MVP = MAX_COMMAND;
     const int MVP_STORAGE_SIZE = MAX_MVP * sizeof(mat4);
 
-    const int MAX_TEXTURES = 100;
     const int TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
     
     const GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
@@ -44,16 +38,15 @@ private:
 	unsigned int mesh_VAO;
     
     GLuint vertex_buffer;
-    unsigned int vertex_total = 0;
+    int vertex_total = 0;
     
     GLuint index_buffer;
-    unsigned index_total = 0;
+    int index_total = 0;
     /////////////////////
     // UNIFORMS AND SSBO
     /////////////////////
     GLuint mvp_buffer;
     GLuint command_buffer;
-    unsigned int command_total = 0;
 
     GLuint texture_buffer;
     unsigned int textures_total = 0;
@@ -67,13 +60,21 @@ private:
     mat4* mvp_ptr;
     GLuint64* texture_ptr;
     Lights* light_ptr;
+
 public:
+    static const int MAX_VERTEX = 1000000;
+    static const int MAX_INDEX = 100000;
+    static const int MAX_COMMAND = 1000;
+    static const int MAX_MVP = MAX_COMMAND;
+    static const int MAX_TEXTURES = MAX_COMMAND;
+    static const int MAX_LIGHTS = 1000;
+    
     int id = -1;
 
     GLsync fence_sync = 0;
 
     vector<DrawElementsIndirectCommand> active_commands;
-    unsigned int active_commands_to_render = 0;
+    int active_commands_to_render = 0;
 	
     bool bind_draw_buffer = true;
     BufferStorage() {
@@ -86,8 +87,6 @@ public:
         active_commands_to_render = 0;
         vertex_total = 0;
         index_total = 0;
-        command_total = 0;
-        textures_total = 0;
     };
     bool operator<(const BufferStorage& other)
     {
@@ -145,102 +144,94 @@ public:
         vector<vector<Vertex>>& vertices,
         vector<vector<unsigned int>>& indices,
         vector<MeshData>& mesh_data,
-        vector<GLuint64>& texture_handles) {
-        assert(vertices.size() == indices.size() && vertices.size() == mesh_data.size() && vertices.size() == texture_handles.size());
+        vector<GLuint64>& texture_handles,
+        int vertex_offset = -1,
+        int index_offset = -1)
+    {
+        assert(vertices.size() == indices.size() && vertices.size() == mesh_data.size());
         WaitGPU(fence_sync);
-        for (int i = 0; i < vertices.size(); i++) {
-            if (vertices[i].size() + vertex_total > MAX_VERTEX) {
-                LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices[i].size() << "max=" << MAX_VERTEX).str());
-                return;
-            }
-            if (indices[i].size() + index_total > MAX_INDEX) {
-                LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices[i].size() << "max=" << MAX_INDEX).str());
-                return;
-            }
-            if (command_total >= MAX_COMMAND) {
-                LOG((ostringstream() << "ERROR BufferMeshData allocation. commands total=" << command_total << "max=" << MAX_COMMAND).str());
-                return;
-            }
-            if (textures_total >= MAX_TEXTURES) {
-                LOG((ostringstream() << "ERROR BufferMeshData allocation. textures total=" << textures_total << "max=" << MAX_TEXTURES).str());
-                return;
-            }
-            //***Return commands. perform hierarchical occlusion culling and then call multidraw with array of commands. (or buffer gpu for several frames, till camera exits 'view cell'
-            //DrawElementsIndirectCommand command; = &command_ptr[command_total];
-            //command->count = indices[i].size();
-            //command->instanceCount = 1;
-            //command->firstIndex = 0;
-            //command->baseVertex = vertex_total;
-            //command->baseInstance = mesh_data[i].id;
 
-            DrawElementsIndirectCommand command;
+        int& vertex_start = vertex_offset == -1 ? vertex_total : vertex_offset;
+        int& index_start = index_offset == -1 ? index_total : index_offset;
+
+        if (textures_total + texture_handles.size() >= MAX_TEXTURES) {
+            LOG((ostringstream() << "ERROR BufferMeshData allocation. textures total=" << textures_total << "max=" << MAX_TEXTURES).str());
+            return;
+        }
+        bool is_textures = texture_handles.size() == mesh_data.size();
+        for (int i = 0; i < vertices.size(); i++) {
+            if (vertices[i].size() + vertex_start > MAX_VERTEX) {
+                LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices[i].size()
+                    << "max=" << MAX_VERTEX << " vertex offset=" << vertex_offset).str());
+                return;
+            }
+            if (indices[i].size() + index_start > MAX_INDEX) {
+                LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices[i].size()
+                    << "max=" << MAX_INDEX << " index offset=" << index_offset).str());
+                return;
+            }
+            DrawElementsIndirectCommand& command = mesh_data[i].command;
             command.count = indices[i].size();
             command.instanceCount = 1;
             command.firstIndex = index_total;
             command.baseVertex = vertex_total;
-            command.baseInstance = command_total;
-            mesh_data[i].command = command;
+            command.baseInstance = mesh_data[i].id;
 
             // copy to GPU
-            memcpy(&vertex_ptr[vertex_total], vertices[i].data(), vertices[i].size() * sizeof(Vertex));
-            memcpy(&index_ptr[index_total], indices[i].data(), indices[i].size() * sizeof(unsigned int));
-            auto handle = texture_handles[i];
-            if (handle != 0) {
-                texture_ptr[textures_total] = handle;
+            memcpy(&vertex_ptr[vertex_start], vertices[i].data(), vertices[i].size() * sizeof(Vertex));
+            memcpy(&index_ptr[index_start], indices[i].data(), indices[i].size() * sizeof(unsigned int));
+            if (is_textures) {
+                texture_ptr[mesh_data[i].id] = texture_handles[i];
             }
-            vertex_total += vertices[i].size();
-            index_total += indices[i].size();
-            textures_total++;
-            command_total++;
+            vertex_start += vertices[i].size();
+            index_start += indices[i].size();
         }
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
         is_need_barrier = true;
         CheckGLError();
     }
-    int AddCommands(vector<DrawElementsIndirectCommand>& active_commands) {
-    // todo: compare two
-    //  to render for several frames, till camera exits 'view cell'
+    int AddCommands(vector<DrawElementsIndirectCommand>& active_commands, int command_offset = -1) {
+        // todo: compare two
+        //  to render for several frames, till camera exits 'view cell'
+        int& command_start = command_offset == -1 ? active_commands_to_render : command_offset;
         if (bind_draw_buffer) {
+            if (command_offset > active_commands_to_render) {
+                LOG((ostringstream() << "ERROR AddCommands. command_offset="<<command_offset<<" must be less or eq to active commands="<<active_commands_to_render).str());
+                return 0;
+            }
+            if (command_start + active_commands.size() > MAX_COMMAND) {
+                LOG((ostringstream() << "ERROR AddCommands. resuested=" << active_commands.size() << "max=" << MAX_COMMAND << "offset=" << command_start).str());
+                return 0;
+            }
             WaitGPU(fence_sync);
             if (!is_cmd_buffer_mapped) {
                 // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
                 glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-                command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, active_commands.size() * sizeof(DrawElementsIndirectCommand), flags);
+                command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, COMMAND_STORAGE_SIZE, flags);
                 CheckGLError();
                 is_cmd_buffer_mapped = true;
             }
-            memcpy(command_ptr, active_commands.data(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
+            memcpy(&command_ptr[command_start], active_commands.data(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
         }
-    // to call multidraw with array of commands each frame.
+        // to call multidraw with array of commands each frame.
         else {
             this->active_commands = active_commands;
         }
-        int command_sequence_start_offset = active_commands_to_render;
-        active_commands_to_render += active_commands.size();
-        return command_sequence_start_offset;
+        if (command_offset == -1) {
+            active_commands_to_render += active_commands.size();
+        }
+        return command_start;
     }
     
-    void BufferTransform(MeshData& mesh_data, mat4& transform) {
+    void BufferTransform(MeshData& mesh_data) {
         WaitGPU(fence_sync);
-        if (mesh_data.id > command_total) {
-            LOG((ostringstream() << "ERROR BufferMvp. offset=" << mesh_data.id << " not valid. expected less then command_total=" << command_total).str());
-            return;
-        }
-        mvp_ptr[mesh_data.id] = transform;
+        mvp_ptr[mesh_data.id] = mesh_data.transform;
         is_need_barrier = true;
     }
-    void BufferTransform(vector<MeshData>& mesh_data, vector<mat4>& transform) {
+    void BufferTransform(vector<MeshData>& mesh_data) {
         WaitGPU(fence_sync);
-        if (transform.size() != mesh_data.size()) {
-            LOG((ostringstream() << "ERROR BufferMvps. mesh_data param size=" << mesh_data.size() << "must be equal to mvps param size=" << transform.size()).str());
-            return;
-        }
-        if (mesh_data.size() != command_total) {
-            LOG((ostringstream() << "ERROR BufferMvps. mesh_data size=" << mesh_data.size() <<"must be equal to draws size=" << command_total).str());
-            return;
-        }
-        for (int i = 0; i < transform.size(); i++) {
-            mvp_ptr[mesh_data[i].id] = transform[i];
+        for (int i = 0; i < mesh_data.size(); i++) {
+            mvp_ptr[mesh_data[i].id] = mesh_data[i].transform;
         }
         //memcpy(&mvp_ptr[command_total], mvps.data(), mvps.size() * sizeof(mat4));
         is_need_barrier = true;
