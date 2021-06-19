@@ -14,8 +14,8 @@ public:
     // Structure of arrays style for multidraw.
     static void LoadMeshes(
         const string& file_name,
-        vector<Light>& out_lights,
-        vector<MeshLoadData>& out_mesh_load_data
+        vector<Light*>& out_lights,
+        vector<MeshLoadData*>& out_mesh_load_data
     )
     {
         bool is_obj = file_name.ends_with(".obj");
@@ -44,11 +44,11 @@ public:
                 aiMesh* mesh = scene->mMeshes[child->mMeshes[j]];
 
                 auto data = ProcessMesh(mesh, scene);
-                data.mesh_data.transform = transform;
-                data.mesh_data.max_AABB = mat3(transform) * FromAi(mesh->mAABB.mMax);
-                data.mesh_data.min_AABB = mat3(transform) * FromAi(mesh->mAABB.mMin);
-                data.mesh_data.name = string(mesh->mName.C_Str());
-                data.tex_names = _GetTexNames(mesh, scene, is_obj);
+                data->mesh_data->transform = transform;
+                data->mesh_data->max_AABB = mat3(transform) * FromAi(mesh->mAABB.mMax);
+                data->mesh_data->min_AABB = mat3(transform) * FromAi(mesh->mAABB.mMin);
+                data->mesh_data->name = string(mesh->mName.C_Str());
+                data->tex_names = _GetTexNames(mesh, scene, is_obj);
                 out_mesh_load_data.push_back(data);
             }
         }
@@ -58,21 +58,21 @@ public:
             auto tr = node->mTransformation;
             auto res_light = FromAi(light);
             // -Z forward Y up in Blender export settings
-            res_light.position = vec4(tr.a4, tr.b4, tr.c4, 0.0);
+            res_light->position = vec4(tr.a4, tr.b4, tr.c4, 0.0);
             out_lights.push_back(res_light);
         }
     }
-    static Light FromAi(aiLight* light) {
+    static Light* FromAi(aiLight* light) {
         switch (light->mType)
         {
         case aiLightSource_DIRECTIONAL:
-            return Light{FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0};
+            return new Light{FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0};
         case aiLightSource_POINT:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Point,0,0,light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
+            return new Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Point,0,0,light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
         case aiLightSource_SPOT:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Spot,cos(light->mAngleInnerCone),cos(light->mAngleOuterCone),light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
+            return new Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Spot,cos(light->mAngleInnerCone),cos(light->mAngleOuterCone),light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
         default:
-            return Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0 };
+            return new Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0 };
         }
     }
     static vec4 FromAi(aiVector3D& aivec) {
@@ -81,14 +81,14 @@ public:
     static vec4 FromAi(aiColor3D& aivec) {
         return vec4(aivec.r, aivec.g, aivec.b, 0);
     }
-    static MeshLoadData CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
-        MeshData mesh_data;
-        mesh_data.id = mesh_count++;
-        mesh_data.instance_id = 0;
-        return MeshLoadData{ mesh_data, vertices, indices, MaterialTexNames(), 1 };
+    static MeshLoadData* CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
+        MeshData* mesh_data = new MeshData();
+        mesh_data->id = mesh_count++;
+        mesh_data->instance_id = 0;
+        return new MeshLoadData{ mesh_data, vertices, indices, MaterialTexNames(), 1 };
     };
 
-    static MeshLoadData CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
+    static MeshLoadData* CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
         vector<Vertex> positions;
         for (int i = 0; i < vertices.size(); i += 3) {
             Vertex vert;
@@ -99,7 +99,7 @@ public:
     };
 private:
 
-    static MeshLoadData ProcessMesh(aiMesh* mesh, const aiScene* scene)
+    static MeshLoadData* ProcessMesh(aiMesh* mesh, const aiScene* scene)
     {
         // data to fill
         vector<Vertex> vertices;

@@ -133,7 +133,7 @@ struct MeshData {
 };
 
 struct MeshLoadData {
-    MeshData mesh_data;
+    MeshData* mesh_data;
     vector<Vertex> vertices;
     vector<unsigned int> indices;
     MaterialTexNames tex_names;

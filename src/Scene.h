@@ -15,12 +15,12 @@ public:
 
 	Shader* blinn_phong;
 	// custom draws per shader
-	vector<MeshData> all_meshes;
-	vector<MeshData> draw_meshes;
-	vector<Light> all_lights;
-	vector<Light> draw_lights;
+	vector<MeshData*> all_meshes;
+	vector<MeshData*> draw_meshes;
+	vector<Light*> all_lights;
+	vector<Light*> draw_lights;
 	map<ShaderType, DrawCall*> draw_calls;
-	
+
 	string scene_path = GetModelPath("frog.fbx");
 	Scene(SystemsManager* systems_manager) :
 		systems_manager{ systems_manager } {
@@ -29,7 +29,7 @@ public:
 	void Init() {
 		_LoadData();
 		blinn_phong = systems_manager->RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl");
-		
+
 		function<void()> scene_reload_callback = bind(&Scene::ResetBuffer, this);
 		scene_reload_callback = bind(&Renderer::AddGlCommand, systems_manager->renderer, scene_reload_callback);
 		systems_manager->file_watcher->AddCallback(scene_path, scene_reload_callback);
@@ -38,10 +38,10 @@ public:
 	}
 	void PrepareDraws() {
 		_OcclusionGather();
-		
+
 		vector<DrawElementsIndirectCommand> commands(draw_meshes.size());
 		for (int i = 0; i < draw_meshes.size(); i++) {
-			commands[i] = draw_meshes[i].command;
+			commands[i] = draw_meshes[i]->command;
 		}
 		systems_manager->buffer->BufferTransform(draw_meshes);
 		systems_manager->buffer->AddCommands(commands);
@@ -64,24 +64,33 @@ private:
 		_LoadMeshes();
 	}
 	void _LoadMeshes() {
-		vector<MeshLoadData> new_meshes;
-		vector<Light> new_lights;
-		vector<DrawElementsIndirectCommand> new_commands;
+		vector<MeshLoadData*> new_meshes;
+		vector<Light*> new_lights;
+		vector<DrawElementsIndirectCommand*> new_commands;
 
 		MeshManager::LoadMeshes(scene_path, new_lights, new_meshes);
 		CheckGLError();
 		_BlenderPostprocessLights(new_lights);
 
 		// optimization - merge same vertex count + texture as instanced draw.
-		//map<size_t, vector<MeshData>> instanced_data;
+		//vector<MeshLoadData*> instance_data;
+		//map<size_t, MeshLoadData*> instanced_data_lookup;
 		//for (auto& mesh : new_meshes) {
-		//	auto tex_names = mesh_id_to_tex[mesh.mesh_data.id];
-		//	instanced_data[tex_names.Hash() + ].push_back(mesh);
+		//	auto key = mesh->tex_names.Hash() + mesh->vertices.size() + mesh->indices.size();
+		//	auto base_mesh = instanced_data_lookup.find(key);
+		//	if (base_mesh == instanced_data_lookup.end()) {
+		//		instanced_data_lookup[key] = mesh;
+		//		instance_data.push_back(mesh);
+		//		continue;
+		//	}
+		//	(*base_mesh).second->instance_count++;
+		//	mesh->mesh_data.instance_id++;
 		//}
 		for (auto& mesh : new_meshes) {
-			mesh.mesh_data.texture = systems_manager->texture_manager->LoadTextureArray(mesh.tex_names);
-			if (mesh.mesh_data.texture != nullptr) {
-				mesh.mesh_data.texture->MakeResident();
+			//auto& mesh = kv->second;
+			mesh->mesh_data->texture = systems_manager->texture_manager->LoadTextureArray(mesh->tex_names);
+			if (mesh->mesh_data->texture != nullptr) {
+				mesh->mesh_data->texture->MakeResident();
 			}
 		}
 		CheckGLError();
@@ -91,7 +100,7 @@ private:
 
 		all_meshes.clear();
 		for (auto& mesh : new_meshes) {
-			all_meshes.push_back(mesh.mesh_data);
+			all_meshes.push_back(mesh->mesh_data);
 		}
 
 		//for (auto& mesh : all_meshes) {
@@ -108,16 +117,19 @@ private:
 		//		//systems_manager->physics_manager->AddBoxRigidBody(mesh.min_AABB, mesh.max_AABB, 10.0f, &mesh, mesh.transform);
 		//	}
 		//}
+		for (auto& mesh : new_meshes) {
+			delete mesh;
+		}
 	}
-	void _BlenderPostprocessLights(vector<Light>& lights) {
+	void _BlenderPostprocessLights(vector<Light*>& lights) {
 		for (auto& light : lights)
 		{
-			light.constant_attenuation = 1;
-			light.linear_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
-			light.quadratic_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
+			light->constant_attenuation = 1;
+			light->linear_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
+			light->quadratic_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
 			float denom = 10;
-			light.color /= denom;
-			light.specular /= denom;
+			light->color /= denom;
+			light->specular /= denom;
 		}
 	}
 	void _LoadTerrain() {

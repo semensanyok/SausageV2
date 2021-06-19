@@ -45,7 +45,7 @@ public:
 			rigidBody->getMotionState()->getWorldTransform(btTrans);
 			MeshData* mesh_data = (MeshData*)rigidBody->getUserPointer();
 			btTrans.getOpenGLMatrix(&(mesh_data->transform[0][0]));
-			mesh_data->buffer->BufferTransform(*mesh_data);
+			mesh_data->buffer->BufferTransform(mesh_data);
 		}
 	}
 	void AddBoxRigidBody(vec3 min_AABB, vec3 max_AABB, float mass, void* user_pointer, mat4& model_transform) {

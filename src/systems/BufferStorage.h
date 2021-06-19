@@ -141,42 +141,42 @@ public:
     * fence_sync created after all render ops issued for these buffers.
     * 
     */
-    void BufferMeshData(vector<MeshLoadData>& load_data)
+    void BufferMeshData(vector<MeshLoadData*>& load_data)
     {
         WaitGPU(fence_sync);
 
         for (int i = 0; i < load_data.size(); i++) {
-            auto& mesh_data = load_data[i].mesh_data;
-            mesh_data.buffer = this;
-            auto& vertices = load_data[i].vertices;
-            auto& indices = load_data[i].indices;
+            auto& mesh_data = load_data[i]->mesh_data;
+            mesh_data->buffer = this;
+            auto& vertices = load_data[i]->vertices;
+            auto& indices = load_data[i]->indices;
             // if offset initialized - reload data. (if vertices/indices size > existing - will corrupt other meshes)
-            mesh_data.vertex_offset = mesh_data.vertex_offset == -1 ? vertex_total : mesh_data.vertex_offset;
-            mesh_data.index_offset = mesh_data.index_offset == -1 ? index_total : mesh_data.index_offset;
-            if (vertices.size() + mesh_data.vertex_offset > MAX_VERTEX) {
+            mesh_data->vertex_offset = mesh_data->vertex_offset == -1 ? vertex_total : mesh_data->vertex_offset;
+            mesh_data->index_offset = mesh_data->index_offset == -1 ? index_total : mesh_data->index_offset;
+            if (vertices.size() + mesh_data->vertex_offset > MAX_VERTEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices.size()
-                    << "max=" << MAX_VERTEX << " vertex offset=" << mesh_data.vertex_offset).str());
+                    << "max=" << MAX_VERTEX << " vertex offset=" << mesh_data->vertex_offset).str());
                 return;
             }
-            if (indices.size() + mesh_data.index_offset > MAX_INDEX) {
+            if (indices.size() + mesh_data->index_offset > MAX_INDEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices.size()
-                    << "max=" << MAX_INDEX << " index offset=" << mesh_data.index_offset).str());
+                    << "max=" << MAX_INDEX << " index offset=" << mesh_data->index_offset).str());
                 return;
             }
-            DrawElementsIndirectCommand& command = mesh_data.command;
+            DrawElementsIndirectCommand& command = mesh_data->command;
             command.count = indices.size();
-            command.instanceCount = load_data[i].instance_count;
+            command.instanceCount = load_data[i]->instance_count;
             command.firstIndex = index_total;
             command.baseVertex = vertex_total;
-            command.baseInstance = mesh_data.id;
+            command.baseInstance = mesh_data->id;
 
             // copy to GPU
-            memcpy(&vertex_ptr[mesh_data.vertex_offset], vertices.data(), vertices.size() * sizeof(Vertex));
-            memcpy(&index_ptr[mesh_data.index_offset], indices.data(), indices.size() * sizeof(unsigned int));
-            if (mesh_data.texture != nullptr) {
-                texture_ptr[mesh_data.id] = mesh_data.texture->texture_handle_ARB;
+            memcpy(&vertex_ptr[mesh_data->vertex_offset], vertices.data(), vertices.size() * sizeof(Vertex));
+            memcpy(&index_ptr[mesh_data->index_offset], indices.data(), indices.size() * sizeof(unsigned int));
+            if (mesh_data->texture != nullptr) {
+                texture_ptr[mesh_data->id] = mesh_data->texture->texture_handle_ARB;
             }
-            if (mesh_data.vertex_offset == vertex_total) {
+            if (mesh_data->vertex_offset == vertex_total) {
                 vertex_total += vertices.size();
                 index_total += indices.size();
             }
@@ -217,28 +217,63 @@ public:
         }
         return command_start;
     }
+    int AddCommand(DrawElementsIndirectCommand* command, int command_offset = -1) {
+        // todo: compare two
+        //  to render for several frames, till camera exits 'view cell'
+        int& command_start = command_offset == -1 ? active_commands_to_render : command_offset;
+        if (bind_draw_buffer) {
+            if (command_offset > active_commands_to_render) {
+                LOG((ostringstream() << "ERROR AddCommands. command_offset=" << command_offset << " must be less or eq to active commands=" << active_commands_to_render).str());
+                return 0;
+            }
+            if (command_start > MAX_COMMAND) {
+                LOG((ostringstream() << "ERROR AddCommand. max=" << MAX_COMMAND << "offset=" << command_start << "allocated=" << active_commands_to_render).str());
+                return 0;
+            }
+            WaitGPU(fence_sync);
+            if (!is_cmd_buffer_mapped) {
+                // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
+                glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+                command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, COMMAND_STORAGE_SIZE, flags);
+                CheckGLError();
+                is_cmd_buffer_mapped = true;
+            }
+            command_ptr[command_start] = *command;
+        }
+        // to call multidraw with array of commands each frame.
+        else {
+            this->active_commands = active_commands;
+        }
+        if (command_offset == -1) {
+            active_commands_to_render += active_commands.size();
+        }
+        return command_start;
+    }
     
-    void BufferTransform(MeshData& mesh_data) {
+    void BufferTransform(MeshData* mesh_data) {
         WaitGPU(fence_sync);
-        mvp_ptr[mesh_data.id] = mesh_data.transform;
+        mvp_ptr[mesh_data->id + mesh_data->instance_id] = mesh_data->transform;
         is_need_barrier = true;
     }
-    void BufferTransform(vector<MeshData>& mesh_data) {
+    void BufferTransform(vector<MeshData*>& mesh_data) {
         WaitGPU(fence_sync);
         for (int i = 0; i < mesh_data.size(); i++) {
-            mvp_ptr[mesh_data[i].id] = mesh_data[i].transform;
+            mvp_ptr[mesh_data[i]->id + mesh_data[i]->instance_id] = mesh_data[i]->transform;
         }
         //memcpy(&mvp_ptr[command_total], mvps.data(), mvps.size() * sizeof(mat4));
         is_need_barrier = true;
     }
-    void BufferLights(vector<Light>& lights) {
+    void BufferLights(vector<Light*>& lights) {
         WaitGPU(fence_sync);
         if (lights.size() > MAX_LIGHTS) {
             LOG((ostringstream() << "ERROR BufferLights. max lights buffer size=" << MAX_LIGHTS << " requested=" << lights.size()).str());
             return;
         }
         light_ptr->num_lights = lights.size();
-        memcpy(light_ptr->lights, lights.data(), lights.size() * sizeof(Light));
+        for (int i = 0; i < lights.size();i++) {
+            light_ptr->lights[i] = *lights[i];
+            //memcpy(light_ptr->lights, lights.data(), lights.size() * sizeof(Light));
+        }
         is_need_barrier = true;
     }
     void InitMeshBuffers() {

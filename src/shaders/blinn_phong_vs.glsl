@@ -25,8 +25,8 @@ out vs_out {
 } Out;
 
 void main(void) {
-  mat4 model = models[gl_DrawIDARB];
-  Out.frag_pos = vec3(model * vec4(position + vec3(gl_InstanceID * 10, 0, 0), 1.0));
+  mat4 model = models[gl_DrawIDARB + gl_InstanceID];
+  Out.frag_pos = vec3(model * vec4(position, 1.0));
   gl_Position = projection_view * vec4(Out.frag_pos, 1.0);
   Out.draw_id_arb = gl_DrawIDARB;
   Out.uv = uv;
