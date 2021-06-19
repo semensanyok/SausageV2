@@ -39,6 +39,8 @@ struct DrawElementsIndirectCommand
     GLuint firstIndex;
     GLuint baseVertex;
     GLuint baseInstance;
+    // if randomly initialized and used - hardware crash
+    DrawElementsIndirectCommand() : count{ 0 }, instanceCount{ 0 }, firstIndex{ 0 }, baseVertex{ 0 }, baseInstance{ 0 } {};
 };
 // Indirect structures end
 // --------------------------------------------------------------------------------------------------------------------
@@ -118,8 +120,10 @@ enum ShaderType {
 };
 struct MeshData {
     // draw id.
-    unsigned int id;
-    unsigned int instance_id;
+    unsigned long id;
+    unsigned long buffer_id;
+    unsigned long instance_id;
+    unsigned long transform_offset;
     mat4 transform;
     string name;
     DrawElementsIndirectCommand command;
@@ -138,6 +142,7 @@ struct MeshLoadData {
     vector<unsigned int> indices;
     MaterialTexNames tex_names;
     unsigned int instance_count;
+    //~MeshLoadData() { cout << "MeshLoadData deleted: " << (mesh_data == nullptr ? "no mesh_data" : mesh_data->name) << endl; }
 };
 
 struct DrawCall {

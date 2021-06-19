@@ -45,12 +45,12 @@ in vs_out {
     mat3 TBN;
 } In;
 
-layout (std430, binding = 1) buffer TextureArray
+layout (std430, binding = 2) buffer TextureArray
 {
     sampler2DArray textures[];
 };
 
-layout (std430, binding = 2) buffer Lights
+layout (std430, binding = 3) buffer Lights
 {
 	int num_lights;
 	float padding0;

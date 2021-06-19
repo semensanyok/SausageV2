@@ -10,12 +10,12 @@ using namespace glm;
 
 class MeshManager {
 public:
-    inline static atomic<unsigned int> mesh_count{ 0 };
+    inline static atomic<unsigned long> mesh_count{ 0 };
     // Structure of arrays style for multidraw.
     static void LoadMeshes(
         const string& file_name,
         vector<Light*>& out_lights,
-        vector<MeshLoadData*>& out_mesh_load_data
+        vector<shared_ptr<MeshLoadData>>& out_mesh_load_data
     )
     {
         bool is_obj = file_name.ends_with(".obj");
@@ -81,14 +81,15 @@ public:
     static vec4 FromAi(aiColor3D& aivec) {
         return vec4(aivec.r, aivec.g, aivec.b, 0);
     }
-    static MeshLoadData* CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
+    static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
         MeshData* mesh_data = new MeshData();
         mesh_data->id = mesh_count++;
+        mesh_data->buffer_id = 0;
         mesh_data->instance_id = 0;
-        return new MeshLoadData{ mesh_data, vertices, indices, MaterialTexNames(), 1 };
+        return make_shared<MeshLoadData>( mesh_data, vertices, indices, MaterialTexNames(), 1 );
     };
 
-    static MeshLoadData* CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
+    static shared_ptr<MeshLoadData> CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
         vector<Vertex> positions;
         for (int i = 0; i < vertices.size(); i += 3) {
             Vertex vert;
@@ -99,7 +100,7 @@ public:
     };
 private:
 
-    static MeshLoadData* ProcessMesh(aiMesh* mesh, const aiScene* scene)
+    static shared_ptr<MeshLoadData> ProcessMesh(aiMesh* mesh, const aiScene* scene)
     {
         // data to fill
         vector<Vertex> vertices;

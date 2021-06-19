@@ -59,6 +59,7 @@ public:
 		if (buf != buffer_shaders.end()) {
 			for (auto draw : (*buf).second) {
 				buf_shad_ids.erase(pair(draw->buffer->id, draw->shader->id));
+				delete draw;
 			}
 			buffer_shaders.erase(buf);
 		}
