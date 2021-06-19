@@ -39,16 +39,21 @@ public:
 		physics_manager = new PhysicsManager();
 	}
 
-	void ReloadBuffer() {
+	void ResetBuffer() {
 		renderer->RemoveBuffer(buffer);
 		buffer->Reset();
 	}
 
 	Shader* RegisterShader(const char* vs_name, const char* fs_name) {
 		auto shader = renderer->RegisterShader(vs_name, fs_name);
-		function<void()> shader_reload_callback = bind(&Shader::InitOrReload, shader);
-		shader_reload_callback = bind(&Renderer::AddGlCommand, renderer, shader_reload_callback);
-		file_watcher->AddCallback(shader->fragment_path, shader_reload_callback);
+		function<void()> fs_reload_callback = bind(&Shader::ReloadFS, shader);
+		fs_reload_callback = bind(&Renderer::AddGlCommand, renderer, fs_reload_callback);
+		file_watcher->AddCallback(shader->fragment_path, fs_reload_callback);
+		
+		function<void()> vs_reload_callback = bind(&Shader::ReloadVS, shader);
+		vs_reload_callback = bind(&Renderer::AddGlCommand, renderer, vs_reload_callback);
+		file_watcher->AddCallback(shader->vertex_path, vs_reload_callback);
+
 		return shader;
 	}
 

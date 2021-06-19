@@ -4,6 +4,7 @@
 #include "Structures.h"
 #include "Logging.h"
 #include "OpenGLHelpers.h"
+#include "Texture.h"
 
 using namespace std;
 using namespace glm;
@@ -38,10 +39,10 @@ private:
 	unsigned int mesh_VAO;
     
     GLuint vertex_buffer;
-    int vertex_total = 0;
+    long vertex_total = 0;
     
     GLuint index_buffer;
-    int index_total = 0;
+    long index_total = 0;
     /////////////////////
     // UNIFORMS AND SSBO
     /////////////////////
@@ -140,51 +141,45 @@ public:
     * fence_sync created after all render ops issued for these buffers.
     * 
     */
-    void BufferMeshData(
-        vector<vector<Vertex>>& vertices,
-        vector<vector<unsigned int>>& indices,
-        vector<MeshData>& mesh_data,
-        vector<GLuint64>& texture_handles,
-        int vertex_offset = -1,
-        int index_offset = -1)
+    void BufferMeshData(vector<MeshLoadData>& load_data)
     {
-        assert(vertices.size() == indices.size() && vertices.size() == mesh_data.size());
         WaitGPU(fence_sync);
 
-        int& vertex_start = vertex_offset == -1 ? vertex_total : vertex_offset;
-        int& index_start = index_offset == -1 ? index_total : index_offset;
-
-        if (textures_total + texture_handles.size() >= MAX_TEXTURES) {
-            LOG((ostringstream() << "ERROR BufferMeshData allocation. textures total=" << textures_total << "max=" << MAX_TEXTURES).str());
-            return;
-        }
-        bool is_textures = texture_handles.size() == mesh_data.size();
-        for (int i = 0; i < vertices.size(); i++) {
-            if (vertices[i].size() + vertex_start > MAX_VERTEX) {
-                LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices[i].size()
-                    << "max=" << MAX_VERTEX << " vertex offset=" << vertex_offset).str());
+        for (int i = 0; i < load_data.size(); i++) {
+            auto& mesh_data = load_data[i].mesh_data;
+            mesh_data.buffer = this;
+            auto& vertices = load_data[i].vertices;
+            auto& indices = load_data[i].indices;
+            // if offset initialized - reload data. (if vertices/indices size > existing - will corrupt other meshes)
+            mesh_data.vertex_offset = mesh_data.vertex_offset == -1 ? vertex_total : mesh_data.vertex_offset;
+            mesh_data.index_offset = mesh_data.index_offset == -1 ? index_total : mesh_data.index_offset;
+            if (vertices.size() + mesh_data.vertex_offset > MAX_VERTEX) {
+                LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices.size()
+                    << "max=" << MAX_VERTEX << " vertex offset=" << mesh_data.vertex_offset).str());
                 return;
             }
-            if (indices[i].size() + index_start > MAX_INDEX) {
-                LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices[i].size()
-                    << "max=" << MAX_INDEX << " index offset=" << index_offset).str());
+            if (indices.size() + mesh_data.index_offset > MAX_INDEX) {
+                LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices.size()
+                    << "max=" << MAX_INDEX << " index offset=" << mesh_data.index_offset).str());
                 return;
             }
-            DrawElementsIndirectCommand& command = mesh_data[i].command;
-            command.count = indices[i].size();
-            command.instanceCount = 1;
+            DrawElementsIndirectCommand& command = mesh_data.command;
+            command.count = indices.size();
+            command.instanceCount = load_data[i].instance_count;
             command.firstIndex = index_total;
             command.baseVertex = vertex_total;
-            command.baseInstance = mesh_data[i].id;
+            command.baseInstance = mesh_data.id;
 
             // copy to GPU
-            memcpy(&vertex_ptr[vertex_start], vertices[i].data(), vertices[i].size() * sizeof(Vertex));
-            memcpy(&index_ptr[index_start], indices[i].data(), indices[i].size() * sizeof(unsigned int));
-            if (is_textures) {
-                texture_ptr[mesh_data[i].id] = texture_handles[i];
+            memcpy(&vertex_ptr[mesh_data.vertex_offset], vertices.data(), vertices.size() * sizeof(Vertex));
+            memcpy(&index_ptr[mesh_data.index_offset], indices.data(), indices.size() * sizeof(unsigned int));
+            if (mesh_data.texture != nullptr) {
+                texture_ptr[mesh_data.id] = mesh_data.texture->texture_handle_ARB;
             }
-            vertex_start += vertices[i].size();
-            index_start += indices[i].size();
+            if (mesh_data.vertex_offset == vertex_total) {
+                vertex_total += vertices.size();
+                index_total += indices.size();
+            }
         }
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
         is_need_barrier = true;

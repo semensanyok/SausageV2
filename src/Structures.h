@@ -2,11 +2,13 @@
 
 #include "sausage.h"
 
+
 using namespace std;
 using namespace glm;
 
 class BufferStorage;
 class Shader;
+class Texture;
 
 struct Vertex {
     // position
@@ -63,6 +65,9 @@ struct MaterialTexNames
     string metal;
     string ao;
     string opacity;
+    size_t Hash() {
+        return hash<string>{}(string(diffuse).append(normal).append(specular).append(height).append(metal).append(ao).append(opacity));
+    }
 };
 struct Samplers {
     GLuint basic_repeat;
@@ -114,18 +119,25 @@ enum ShaderType {
 struct MeshData {
     // draw id.
     unsigned int id;
+    unsigned int instance_id;
     mat4 transform;
     string name;
     DrawElementsIndirectCommand command;
     BufferStorage* buffer;
     vec3 max_AABB;
     vec3 min_AABB;
+    long vertex_offset;
+    long index_offset;
+    Texture* texture;
+    MeshData() : vertex_offset{ -1 }, index_offset{ -1 } {};
 };
 
 struct MeshLoadData {
+    MeshData mesh_data;
     vector<Vertex> vertices;
     vector<unsigned int> indices;
-    unsigned int draw_id;
+    MaterialTexNames tex_names;
+    unsigned int instance_count;
 };
 
 struct DrawCall {

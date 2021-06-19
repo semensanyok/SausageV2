@@ -16,6 +16,7 @@ public:
     Texture* LoadTextureArray(MaterialTexNames& tex_names) {
         if (!is_samplers_init) {
             InitSamplers();
+            is_samplers_init = true;
         }
         GLuint texture_id;
         if (tex_names.diffuse.empty()) {
@@ -27,8 +28,7 @@ public:
         string normal_path = GetTexturePath(tex_names.normal);
         string specular_path = GetTexturePath(tex_names.specular);
         string height_path = GetTexturePath(tex_names.height);
-        auto key = diffuse_path + normal_path + specular_path + height_path;
-        auto key_hash = hash<string>{}(key);
+        auto key_hash = tex_names.Hash();
 
         auto existing = path_to_tex.find(key_hash);
         if (existing != path_to_tex.end()) {
@@ -42,18 +42,14 @@ public:
             LOG((ostringstream() << "Error on IMG_Load: " << SDL_GetError()).str());
             return nullptr;
         }
-
         glGenTextures(1, &texture_id);
-        CheckGLError();
         glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
-        CheckGLError();
         glTexStorage3D(GL_TEXTURE_2D_ARRAY,
             8,                    //mipmaps. 1 == no mipmaps.
             GetTexFormat(surface->format->BytesPerPixel, true),              //Internal format
             surface->w, surface->h,//width,height
             4            //Number of layers
         );
-        CheckGLError();
         glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
             0,                     //Mipmap number
             0, 0, (int)TextureType::Diffuse,               //xoffset, yoffset, zoffset
@@ -62,7 +58,6 @@ public:
             GL_UNSIGNED_BYTE,      //type
             surface->pixels);
         
-        CheckGLError();
         SDL_FreeSurface(surface);
         if (!tex_names.normal.empty()) {
             LoadLayer(tex_names.normal, TextureType::Normal);
@@ -86,7 +81,7 @@ public:
         glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
         GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers.basic_repeat);
         CheckGLError();
-        Texture* texture = new Texture(texture_id, tex_handle);
+        Texture* texture = new Texture(texture_id, tex_handle, tex_names);
         path_to_tex[key_hash] = texture;
         return texture;
     }
@@ -97,13 +92,13 @@ public:
         glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-        glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST); // bilinear
-        //glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR); // trilinear
-        glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        // glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); // bilinear
+        glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // trilinear
         samplers.basic_repeat = basic_repeat;
         is_samplers_init = true;
+        CheckGLError();
     }
 
 private:

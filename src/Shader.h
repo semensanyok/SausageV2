@@ -15,6 +15,8 @@ public:
 	string fragment_path;
 	GLuint vs = 0, fs = 0;
 	GLuint vs_in_use = 0, fs_in_use = 0;
+	bool is_vs_updated = false;
+	bool is_fs_updated = false;
 
 	bool operator==(Shader& other) {
 		return id == other.id;
@@ -27,29 +29,41 @@ public:
 	Shader(string vertex_path, string fragment_path): vertex_path{ vertex_path }, fragment_path{ fragment_path }
 	{
 	}
-
 	void InitOrReload() {
-		CompileShaders();
+		CompileVS();
+		CompileFS();
+		CheckGLError();
+		CreateProgram();
+		CheckGLError();
+	}
+	void ReloadVS() {
+		CompileVS();
+		CheckGLError();
+		CreateProgram();
+		CheckGLError();
+	}
+	void ReloadFS() {
+		CompileFS();
 		CheckGLError();
 		CreateProgram();
 		CheckGLError();
 	}
 	void CreateProgram() {
-		if (id != 0 && fs_in_use != 0) {
-			glDetachShader(id, fs_in_use);
-		}
-		if (id != 0 && vs_in_use != 0) {
-			glDetachShader(id, vs_in_use);
-		}
-		vs_in_use = vs;
-		fs_in_use = fs;
 		// shader Program
 		if (id == 0) {
 			id = glCreateProgram();
 		}
-		glAttachShader(id, vs_in_use);
+		if (is_vs_updated) {
+			glAttachShader(id, vs);
+			vs_in_use = vs;
+			is_vs_updated = false;
+		}
 		CheckGLError();
-		glAttachShader(id, fs_in_use);
+		if (is_fs_updated) {
+			glAttachShader(id, fs);
+			fs_in_use = fs;
+			is_fs_updated = false;
+		}
 		CheckGLError();
 		glLinkProgram(id);
 		CheckGLError();
@@ -59,33 +73,11 @@ public:
 		glDeleteShader(fs_in_use);
 		CheckGLError();
 	}
-	void CompileShaders() {
-		//static map<string, GLuint> path_to_shader_id;
-		//
-		//auto existing_vs = path_to_shader_id.find(vertex_path);
-		//if (existing_vs != path_to_shader_id.end()) {
-		//	vs = (*existing_vs).second;
-		//}
-		//else {
-		CheckGLError();
-		auto code = _LoadCode(vertex_path);
-		if (!code.empty()) {
-			auto code_c = code.c_str();
-			vs = glCreateShader(GL_VERTEX_SHADER);
-			CheckGLError();
-			glShaderSource(vs, 1, &code_c, NULL);
-			CheckGLError();
-			glCompileShader(vs);
-			CheckGLError();
-			checkCompileErrors(vs, "VERTEX");
+	void CompileFS() {
+		if (id != 0 && fs_in_use != 0) {
+			glDetachShader(id, fs_in_use);
 		}
-
-		//auto existing_fs = path_to_shader_id.find(fragment_path);
-		//if (existing_fs != path_to_shader_id.end()) {
-		//	fs = (*existing_fs).second;
-		//}
-		//else {
-		code = _LoadCode(fragment_path);
+		auto code = _LoadCode(fragment_path);
 		if (!code.empty()) {
 			auto code_c = code.c_str();
 			fs = glCreateShader(GL_FRAGMENT_SHADER);
@@ -93,8 +85,26 @@ public:
 			glCompileShader(fs);
 			checkCompileErrors(fs, "FRAGMENT");
 		}
-
+		if (CheckGLError() == false) {
+			is_fs_updated = true;
+		}
+	}
+	void CompileVS() {
+		if (id != 0 && vs_in_use != 0) {
+			glDetachShader(id, vs_in_use);
+		}
+		auto code = _LoadCode(vertex_path);
+		if (!code.empty()) {
+			auto code_c = code.c_str();
+			vs = glCreateShader(GL_VERTEX_SHADER);
+			glShaderSource(vs, 1, &code_c, NULL);
+			glCompileShader(vs);
+			checkCompileErrors(vs, "VERTEX");
+		}
 		CheckGLError();
+		if (CheckGLError() == false) {
+			is_vs_updated = true;
+		}
 	}
 	void _Dispose() {
 		glDeleteProgram(id);

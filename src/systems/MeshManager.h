@@ -13,12 +13,9 @@ public:
     inline static atomic<unsigned int> mesh_count{ 0 };
     // Structure of arrays style for multidraw.
     static void LoadMeshes(
-        vector<vector<Vertex>>& vertices,
-        vector<vector<unsigned int>>& indices,
         const string& file_name,
-        vector<MeshData>& out_mesh_data,
         vector<Light>& out_lights,
-        map<unsigned int, MaterialTexNames>& out_mesh_id_to_tex
+        vector<MeshLoadData>& out_mesh_load_data
     )
     {
         bool is_obj = file_name.ends_with(".obj");
@@ -45,17 +42,14 @@ public:
                 // the node object only contains indices to index the actual objects in the scene. 
                 // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
                 aiMesh* mesh = scene->mMeshes[child->mMeshes[j]];
-                MaterialTexNames tex_names = _GetTexNames(mesh, scene, is_obj);
 
                 auto data = ProcessMesh(mesh, scene);
-                vertices.push_back(data.vertices);
-                indices.push_back(data.indices);
-                MeshData mesh_data = MeshData(data.draw_id, transform);
-                mesh_data.max_AABB = mat3(transform) * FromAi(mesh->mAABB.mMax);
-                mesh_data.min_AABB = mat3(transform) * FromAi(mesh->mAABB.mMin);
-                mesh_data.name = string(mesh->mName.C_Str());
-                out_mesh_data.push_back(mesh_data);
-                out_mesh_id_to_tex[mesh_data.id] = tex_names;
+                data.mesh_data.transform = transform;
+                data.mesh_data.max_AABB = mat3(transform) * FromAi(mesh->mAABB.mMax);
+                data.mesh_data.min_AABB = mat3(transform) * FromAi(mesh->mAABB.mMin);
+                data.mesh_data.name = string(mesh->mName.C_Str());
+                data.tex_names = _GetTexNames(mesh, scene, is_obj);
+                out_mesh_load_data.push_back(data);
             }
         }
         for (unsigned int i = 0; i < scene->mNumLights; i++) {
@@ -88,7 +82,10 @@ public:
         return vec4(aivec.r, aivec.g, aivec.b, 0);
     }
     static MeshLoadData CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
-        return MeshLoadData{ vertices, indices, mesh_count++ };
+        MeshData mesh_data;
+        mesh_data.id = mesh_count++;
+        mesh_data.instance_id = 0;
+        return MeshLoadData{ mesh_data, vertices, indices, MaterialTexNames(), 1 };
     };
 
     static MeshLoadData CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
