@@ -85,6 +85,7 @@ public:
     };
 	~BufferStorage() {};
     void Reset() {
+        BarrierIfChangeAndUnmap();
         fence_sync = 0;
         vertex_total = 0;
         index_total = 0;

@@ -49,7 +49,7 @@ public:
 		}
 	}
 	void AddBoxRigidBody(vec3 min_AABB, vec3 max_AABB, float mass, void* user_pointer, mat4& model_transform) {
-		vec3 half_extents = abs(max_AABB - min_AABB);
+		vec3 half_extents = max_AABB - min_AABB;
 		half_extents.x /= 2;
 		half_extents.y /= 2;
 		half_extents.z /= 2;
@@ -87,6 +87,19 @@ public:
 		dynamicsWorld->removeCollisionObject(body);
 		delete body;
 	}
+	void Reset() {
+		for (auto& body : rigidBodies) {
+			delete body->getMotionState();
+			dynamicsWorld->removeCollisionObject(body);
+			delete body;
+		}
+		for (auto& shape : collisionShapes)
+		{
+			delete shape;
+		}
+		collisionShapes.clear();
+		rigidBodies.clear();
+	}
 
 	~PhysicsManager() {
 		for (auto& body : rigidBodies) {
@@ -104,7 +117,5 @@ public:
 		delete overlappingPairCache;
 		delete dispatcher;
 		delete collisionConfiguration;
-		//next line is optional: it will be cleared by the destructor when the array goes out of scope
-		collisionShapes.clear();
 	};
 };

@@ -51,7 +51,6 @@ public:
 	}
 
 	void ResetBuffer() {
-		renderer->RemoveBuffer(buffer);
 		buffer->Reset();
 	}
 

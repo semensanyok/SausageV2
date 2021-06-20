@@ -25,7 +25,7 @@ public:
     BulletDebugDrawer(Renderer* renderer, BufferStorage* buffer, Shader* debug_shader) : renderer{ renderer }, buffer{ buffer }, debug_shader{ debug_shader }, mesh_data{ nullptr } {
         draw_call = new DrawCall();
         draw_call->shader = debug_shader;
-        draw_call->mode = GL_LINE_STRIP;
+        draw_call->mode = GL_LINES;
         draw_call->buffer = buffer;
         draw_call->command_buffer = buffer->CreateCommandBuffer(command_buffer_size);
         renderer->AddDraw(draw_call);

@@ -132,6 +132,7 @@ private:
 	}
 	void _CleanupScene() {
 		systems_manager->ResetBuffer();
+		systems_manager->physics_manager->Reset();
 		for (auto mesh : all_meshes) {
 			delete mesh;
 		}
