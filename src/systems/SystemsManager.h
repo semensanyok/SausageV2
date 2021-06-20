@@ -46,7 +46,8 @@ public:
 		blinn_phong = RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl");
 		bullet_debug = RegisterShader("debug_vs.glsl", "debug_fs.glsl");
 		bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer, bullet_debug);
-		physics_manager = new PhysicsManager(nullptr);
+		bullet_debug_drawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+		physics_manager = new PhysicsManager(bullet_debug_drawer);
 	}
 
 	void ResetBuffer() {
@@ -56,12 +57,13 @@ public:
 
 	Shader* RegisterShader(const char* vs_name, const char* fs_name) {
 		auto shader = renderer->RegisterShader(vs_name, fs_name);
+		bool is_persistent_command = false;
 		function<void()> fs_reload_callback = bind(&Shader::ReloadFS, shader);
-		fs_reload_callback = bind(&Renderer::AddGlCommand, renderer, fs_reload_callback);
+		fs_reload_callback = bind(&Renderer::AddGlCommand, renderer, fs_reload_callback, is_persistent_command);
 		file_watcher->AddCallback(shader->fragment_path, fs_reload_callback);
 		
 		function<void()> vs_reload_callback = bind(&Shader::ReloadVS, shader);
-		vs_reload_callback = bind(&Renderer::AddGlCommand, renderer, vs_reload_callback);
+		vs_reload_callback = bind(&Renderer::AddGlCommand, renderer, vs_reload_callback, is_persistent_command);
 		file_watcher->AddCallback(shader->vertex_path, vs_reload_callback);
 
 		return shader;

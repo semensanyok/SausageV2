@@ -30,11 +30,11 @@ public:
 		dynamicsWorld->setGravity(btVector3(0, -9.8, 0));
 		if (debugDrawer != nullptr) {
 			dynamicsWorld->setDebugDrawer(debugDrawer);
-			dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe + btIDebugDraw::DBG_DrawContactPoints);
 		}
 	}
 	void Simulate(float deltatime) {
 		dynamicsWorld->stepSimulation(deltatime);
+		dynamicsWorld->debugDrawWorld();
 	}
 	void UpdateTransforms() {
 		auto nonStatic = dynamicsWorld->getNonStaticRigidBodies();

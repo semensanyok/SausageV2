@@ -13,10 +13,10 @@
 
 class Renderer {
 private:
-	ThreadSafeQueue<function<void()>> gl_commands;
+	ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;
 
 	map<unsigned int, Shader*> shaders;
-	map<unsigned int, vector<DrawCall*>> buffer_shaders;
+	map<unsigned int, vector<DrawCall*>> buffer_to_draw_call;
 	set<pair<int, int>> buf_shad_ids;
 public:
 	SDL_Window* window;
@@ -31,7 +31,7 @@ public:
 		_ExecuteCommands();
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		for (auto buffer_shader : buffer_shaders) {
+		for (auto buffer_shader : buffer_to_draw_call) {
 			if (buffer_shader.second.empty()) {
 				continue;
 			}
@@ -39,13 +39,16 @@ public:
 			buffer->BarrierIfChangeAndUnmap();
 			buffer->BindMeshVAOandBuffers(); // TODO: one buffer, no rebind
 			for (auto draw : buffer_shader.second) {
-				if (draw->buffer->active_commands_to_render > 0) {
+				if (draw->command_count > 0) {
 					glUseProgram(draw->shader->id);
+					glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer);
+					CheckGLError();
 					draw->shader->setMat4("projection_view", camera->projection_view);
+					CheckGLError();
 					draw->shader->setVec3("view_pos", camera->pos);
-
-					glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr, draw->command_count, draw->command_offset);
-					//glMultiDrawArraysIndirect(draw->mode, nullptr, draw->command_count, draw->command_offset);
+					CheckGLError();
+					glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr, draw->command_count, 0);
+					CheckGLError();
 				}
 			}
 			buffer->fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
@@ -56,27 +59,27 @@ public:
 	}
 
 	void RemoveBuffer(BufferStorage* buffer) {
-		auto buf = buffer_shaders.find(buffer->id);
-		if (buf != buffer_shaders.end()) {
+		auto buf = buffer_to_draw_call.find(buffer->id);
+		if (buf != buffer_to_draw_call.end()) {
 			for (auto draw : (*buf).second) {
 				buf_shad_ids.erase(pair(draw->buffer->id, draw->shader->id));
 				delete draw;
 			}
-			buffer_shaders.erase(buf);
+			buffer_to_draw_call.erase(buf);
 		}
 	}
 
-	void AddGlCommand(function<void()>& f)
+	void AddGlCommand(function<void()>& f, bool is_persistent)
 	{
-		gl_commands.Push(f);
+		gl_commands.Push(pair(f, is_persistent));
 	}
 
 	Shader* RegisterShader(const char* vs_name, const char* fs_name) {
 		for (auto shader : shaders) {
 			if (shader.second->vertex_path.ends_with(vs_name) || shader.second->fragment_path.ends_with(fs_name)) {
 				LOG((ostringstream() << "Shader with vs_name=" << string(vs_name) << " fs_name=" << string(fs_name) << " already registered").str());
+				return shader.second;
 			}
-			return shader.second;
 		}
 		Shader* shader = new Shader(GetShaderPath(vs_name), GetShaderPath(fs_name));
 		shader->InitOrReload();
@@ -94,7 +97,7 @@ public:
 			LOG((ostringstream() << "Draw for shader: " << draw->shader->id << " buffer:" << draw->buffer->id << "already exists").str());
 			return false;
 		}
-		buffer_shaders[draw->buffer->id].push_back(draw);
+		buffer_to_draw_call[draw->buffer->id].push_back(draw);
 		buf_shad_ids.insert(buf_shad_id);
 		return true;
 	}
@@ -171,7 +174,10 @@ private:
 		auto commands = gl_commands.PopAll();
 		while (!commands.empty()) {
 			auto& command = commands.front();
-			command();
+			command.first();
+			if (command.second) {
+				gl_commands.Push(command);
+			}
 			commands.pop();
 		}
 	}

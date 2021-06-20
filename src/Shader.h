@@ -9,7 +9,7 @@ using namespace std;
 class Shader
 {
 public:
-	GLuint id = 0;
+	GLuint	id = 0;
 	bool is_active = true;
 	string vertex_path;
 	string fragment_path;
@@ -48,6 +48,7 @@ public:
 		CreateProgram();
 		CheckGLError();
 	}
+private:
 	void CreateProgram() {
 		// shader Program
 		if (id == 0) {
@@ -107,9 +108,12 @@ public:
 		}
 	}
 	void _Dispose() {
+		glDetachShader(id, vs_in_use);
+		glDetachShader(id, fs_in_use);
 		glDeleteProgram(id);
 		is_active = false;
 	}
+public:
 	void use() {
 		glUseProgram(id);
 	}

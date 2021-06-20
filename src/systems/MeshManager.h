@@ -103,10 +103,17 @@ public:
         return CreateMesh(positions, indices, is_new_mesh_data);
     };
     static shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices, vector<unsigned int>& indices, bool is_new_mesh_data = true) {
+        vector<vec3> empty;
+        return CreateMesh(vertices, indices, empty, is_new_mesh_data);
+    };
+    static shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices, vector<unsigned int>& indices, vector<vec3>& normals, bool is_new_mesh_data = true) {
         vector<Vertex> positions;
         for (int i = 0; i < vertices.size(); i ++) {
             Vertex vert;
             vert.Position = vertices[i];
+            if (!normals.empty()) {
+                vert.Normal = normals[i];
+            }
             positions.push_back(vert);
         }
         return CreateMesh(positions, indices, is_new_mesh_data);

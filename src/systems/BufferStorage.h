@@ -29,7 +29,6 @@ private:
     const int LIGHTS_UNIFORM_LOC = 3;
     
     bool is_need_barrier = false;
-    bool is_cmd_buffer_mapped = false;
 
     unsigned long vertex_total = 0;
     unsigned long index_total = 0;
@@ -46,15 +45,15 @@ private:
     /////////////////////
     GLuint transform_buffer;
     GLuint transform_offset_buffer;
-    GLuint command_buffer;
     GLuint texture_buffer;
     GLuint light_buffer;
+    vector<GLuint> command_buffers;
+    map<GLuint, DrawElementsIndirectCommand*> mapped_command_buffers;
     //////////////////////////
     // Mapped buffers pointers
     //////////////////////////
     Vertex* vertex_ptr;
     unsigned int* index_ptr;
-    DrawElementsIndirectCommand* command_ptr;
     mat4* transform_ptr;
     unsigned int* transform_offset_ptr;
     GLuint64* texture_ptr;
@@ -76,9 +75,6 @@ public:
 
     GLsync fence_sync = 0;
 
-    vector<DrawElementsIndirectCommand> active_commands;
-    int active_commands_to_render = 0;
-	
     bool bind_draw_buffer = true;
     BufferStorage() {
         static int count = 0;
@@ -90,7 +86,6 @@ public:
 	~BufferStorage() {};
     void Reset() {
         fence_sync = 0;
-        active_commands_to_render = 0;
         vertex_total = 0;
         index_total = 0;
         meshes_total = 0;
@@ -136,19 +131,19 @@ public:
             glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
             is_need_barrier = false;
         }
-        if (is_cmd_buffer_mapped) {
+        for (auto& mapped_command_buffer : mapped_command_buffers) {
             // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
-            if (!glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER)) {
+            if (!glUnmapNamedBuffer(mapped_command_buffer.first)) {
                 CheckGLError();
             }
-            is_cmd_buffer_mapped = false;
         }
+        mapped_command_buffers.clear();
     }
     /**
     * fence_sync created after all render ops issued for these buffers.
     * 
     */
-    void BufferMeshData(vector<shared_ptr<MeshLoadData>>& load_data)
+    void BufferMeshData(vector<shared_ptr<MeshLoadData>>& load_data, bool is_transform_used = true)
     {
         WaitGPU(fence_sync);
         vector<MeshData*> instances;
@@ -164,8 +159,17 @@ public:
             auto& vertices = raw->vertices;
             auto& indices = raw->indices;
             // if offset initialized - reload data. (if vertices/indices size > existing - will corrupt other meshes)
-            mesh_data->vertex_offset = mesh_data->vertex_offset == -1 ? vertex_total : mesh_data->vertex_offset;
-            mesh_data->index_offset = mesh_data->index_offset == -1 ? index_total : mesh_data->index_offset;
+            bool is_new_mesh = mesh_data->buffer_id >= 0;
+
+            bool is_vertex_offset_provided = mesh_data->vertex_offset >= 0;
+            bool is_index_offset_provided = mesh_data->index_offset >= 0;
+            if (!is_vertex_offset_provided) {
+                mesh_data->vertex_offset = vertex_total;
+            }
+            if (!is_index_offset_provided) {
+                mesh_data->index_offset = index_total;
+            }
+
             if (vertices.size() + mesh_data->vertex_offset > MAX_VERTEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices.size()
                     << "max=" << MAX_VERTEX << " vertex offset=" << mesh_data->vertex_offset).str());
@@ -176,25 +180,33 @@ public:
                     << "max=" << MAX_INDEX << " index offset=" << mesh_data->index_offset).str());
                 return;
             }
-            mesh_data->buffer_id = meshes_total++;
-            mesh_data->transform_offset = transforms_total;
+            if (is_new_mesh) {
+                mesh_data->buffer_id = meshes_total++;
+            }
             DrawElementsIndirectCommand& command = mesh_data->command;
             command.count = indices.size();
             command.instanceCount = raw->instance_count;
-            command.firstIndex = index_total;
-            command.baseVertex = vertex_total;
+            command.firstIndex = mesh_data->index_offset;
+            command.baseVertex = mesh_data->vertex_offset;
             command.baseInstance = mesh_data->buffer_id;
-            transforms_total += command.instanceCount;
-
             // copy to GPU
             memcpy(&vertex_ptr[mesh_data->vertex_offset], vertices.data(), vertices.size() * sizeof(Vertex));
             memcpy(&index_ptr[mesh_data->index_offset], indices.data(), indices.size() * sizeof(unsigned int));
             if (mesh_data->texture != nullptr) {
                 texture_ptr[mesh_data->buffer_id] = mesh_data->texture->texture_handle_ARB;
             }
-            if (mesh_data->vertex_offset == vertex_total) {
+
+            if (!is_vertex_offset_provided) {
                 vertex_total += vertices.size();
+            }
+            if (!is_index_offset_provided) {
                 index_total += indices.size();
+            }
+            if (is_transform_used) {
+                mesh_data->transform_offset = transforms_total;
+                if (is_new_mesh) {
+                    transforms_total += command.instanceCount;
+                }
             }
         }
         for (auto& instance : instances) {
@@ -205,68 +217,40 @@ public:
         is_need_barrier = true;
         CheckGLError();
     }
-    int AddCommands(vector<DrawElementsIndirectCommand>& active_commands, int command_offset = -1) {
-        // todo: compare two
-        //  to render for several frames, till camera exits 'view cell'
-        int& command_start = command_offset == -1 ? active_commands_to_render : command_offset;
-        if (bind_draw_buffer) {
-            if (command_offset > active_commands_to_render) {
-                LOG((ostringstream() << "ERROR AddCommands. command_offset="<<command_offset<<" must be less or eq to active commands="<<active_commands_to_render).str());
-                return 0;
-            }
-            if (command_start + active_commands.size() > MAX_COMMAND) {
-                LOG((ostringstream() << "ERROR AddCommands. resuested=" << active_commands.size() << "max=" << MAX_COMMAND << "offset=" << command_start).str());
-                return 0;
-            }
-            WaitGPU(fence_sync);
-            if (!is_cmd_buffer_mapped) {
-                // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-                glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-                command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, COMMAND_STORAGE_SIZE, flags);
-                CheckGLError();
-                is_cmd_buffer_mapped = true;
-            }
-            memcpy(&command_ptr[command_start], active_commands.data(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
+    GLuint CreateCommandBuffer(unsigned int size) {
+        GLuint command_buffer;
+        // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
+        glGenBuffers(1, &command_buffer);
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+        glBufferStorage(GL_DRAW_INDIRECT_BUFFER, size * sizeof(DrawElementsIndirectCommand), NULL, flags);
+        command_buffers.push_back(command_buffer);
+        CheckGLError();
+        return command_buffer;
+    }
+    int AddCommands(vector<DrawElementsIndirectCommand>& active_commands, GLuint command_buffer, unsigned int size, int command_offset = -1) {
+        WaitGPU(fence_sync);
+        int command_start = command_offset == -1 ? 0 : command_offset;
+        auto command_ptr_iter = mapped_command_buffers.find(command_buffer);
+        if (command_ptr_iter == mapped_command_buffers.end()) {
+            // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
+            auto command_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(command_buffer, 0, size * sizeof(DrawElementsIndirectCommand), flags);
+            CheckGLError();
+            mapped_command_buffers[command_buffer] = command_ptr;
         }
-        // to call multidraw with array of commands each frame.
-        else {
-            this->active_commands = active_commands;
-        }
-        if (command_offset == -1) {
-            active_commands_to_render += active_commands.size();
-        }
+        memcpy(&(mapped_command_buffers[command_buffer][command_start]), active_commands.data(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
         return command_start;
     }
-    int AddCommand(DrawElementsIndirectCommand command, int command_offset = -1) {
-        // todo: compare two
-        //  to render for several frames, till camera exits 'view cell'
-        int& command_start = command_offset == -1 ? active_commands_to_render : command_offset;
-        if (bind_draw_buffer) {
-            if (command_offset > active_commands_to_render) {
-                LOG((ostringstream() << "ERROR AddCommand. command_offset=" << command_offset << " must be less or eq to active commands=" << active_commands_to_render).str());
-                return 0;
-            }
-            if (command_start > MAX_COMMAND) {
-                LOG((ostringstream() << "ERROR AddCommand. MAX COMMAND reached=" << MAX_COMMAND << " command_start=" << command_start).str());
-                return 0;
-            }
-            WaitGPU(fence_sync);
-            if (!is_cmd_buffer_mapped) {
-                // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-                glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-                command_ptr = (DrawElementsIndirectCommand*)glMapBufferRange(GL_DRAW_INDIRECT_BUFFER, 0, COMMAND_STORAGE_SIZE, flags);
-                CheckGLError();
-                is_cmd_buffer_mapped = true;
-            }
-            command_ptr[command_start] = command;
+    int AddCommand(DrawElementsIndirectCommand& command, GLuint command_buffer, unsigned int size, int command_offset = -1) {
+        WaitGPU(fence_sync);
+        int command_start = command_offset == -1 ? 0 : command_offset;
+        auto command_ptr_iter = mapped_command_buffers.find(command_buffer);
+        if (command_ptr_iter == mapped_command_buffers.end()) {
+            // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
+            auto command_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(command_buffer, 0, size * sizeof(DrawElementsIndirectCommand), flags);
+            CheckGLError();
+            mapped_command_buffers[command_buffer] = command_ptr;
         }
-        // to call multidraw with array of commands each frame.
-        else {
-            this->active_commands = active_commands;
-        }
-        if (command_offset == -1) {
-            active_commands_to_render += active_commands.size();
-        }
+        mapped_command_buffers[command_buffer][command_start] = command;
         return command_start;
     }
     
@@ -301,13 +285,6 @@ public:
     void InitMeshBuffers() {
         glGenVertexArrays(1, &mesh_VAO);
         glBindVertexArray(mesh_VAO); // MUST be bound before glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer).
-
-        // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-        if (bind_draw_buffer) {
-            glGenBuffers(1, &command_buffer);
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-            glBufferStorage(GL_DRAW_INDIRECT_BUFFER, COMMAND_STORAGE_SIZE, NULL, flags);
-        }
 
         glGenBuffers(1, &index_buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
@@ -348,10 +325,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-        if (bind_draw_buffer) {
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-        }
-        
+
         glBindVertexArray(mesh_VAO);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -370,7 +344,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC, light_buffer);
     }
     void Dispose() {
-        WaitGPU(fence_sync);
+        BarrierIfChangeAndUnmap();
         glDisableVertexAttribArray(0);
         glDeleteVertexArrays(1, &mesh_VAO);
         CheckGLError();
@@ -386,14 +360,6 @@ public:
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         glDeleteBuffers(1, &transform_buffer);
         CheckGLError();
-        if (bind_draw_buffer) {
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
-            if (is_cmd_buffer_mapped) {
-                glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
-            }
-            glDeleteBuffers(1, &command_buffer);
-        }
-        CheckGLError();
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         glDeleteBuffers(1, &texture_buffer);
@@ -401,6 +367,10 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         glDeleteBuffers(1, &light_buffer);
+        CheckGLError();
+        for (auto command_buffer : command_buffers) {
+            glDeleteBuffers(1, &command_buffer);
+        }
         CheckGLError();
     }
 };

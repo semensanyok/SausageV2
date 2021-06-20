@@ -148,12 +148,11 @@ struct MeshLoadData {
 };
 
 struct DrawCall {
-    int mode; // GL_TRIANGLES GL_LINES
+    int mode = GL_TRIANGLES; // GL_TRIANGLES GL_LINES
     BufferStorage* buffer = nullptr;
     Shader* shader = nullptr;
-    unsigned int command_count;
-    int command_offset = -1; // offset in BufferStorage command buffer
+    GLuint command_buffer;
+    unsigned int command_count = 0;
     // custom data
-    int num_lights;
-    //DrawCall() : buffer{ nullptr }, shader{ nullptr }, command_offset{ -1 } {};
+    int num_lights = 0;
 };

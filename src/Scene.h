@@ -13,6 +13,8 @@ class Scene {
 public:
 	SystemsManager* systems_manager;
 
+	DrawCall* draw_call;
+	const unsigned int command_buffer_size;
 	Shader* blinn_phong;
 	// custom draws per shader
 	vector<MeshData*> all_meshes;
@@ -22,14 +24,22 @@ public:
 
 	string scene_path = GetModelPath("frog.fbx");
 	Scene(SystemsManager* systems_manager) :
-		systems_manager{ systems_manager }, blinn_phong{ systems_manager->blinn_phong } {
+		systems_manager{ systems_manager }, blinn_phong{ systems_manager->blinn_phong }, command_buffer_size{ systems_manager->buffer->MAX_COMMAND }{
+		draw_call = new DrawCall();
+		draw_call->shader = blinn_phong;
+		draw_call->mode = GL_TRIANGLES;
+		draw_call->buffer = systems_manager->buffer;
+		draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(command_buffer_size);
+		
+		systems_manager->renderer->AddDraw(draw_call);
 	}
 	~Scene() {};
 	void Init() {
 		_LoadData();
 
 		function<void()> scene_reload_callback = bind(&Scene::_ReloadScene, this);
-		scene_reload_callback = bind(&Renderer::AddGlCommand, systems_manager->renderer, scene_reload_callback);
+		bool is_persistent_command = false;
+		scene_reload_callback = bind(&Renderer::AddGlCommand, systems_manager->renderer, scene_reload_callback, is_persistent_command);
 		systems_manager->file_watcher->AddCallback(scene_path, scene_reload_callback);
 
 		CheckGLError();
@@ -44,12 +54,12 @@ public:
 			}
 		}
 		systems_manager->buffer->BufferTransform(draw_meshes);
-		systems_manager->buffer->AddCommands(commands);
+		systems_manager->buffer->AddCommands(commands, draw_call->command_buffer, command_buffer_size);
 		CheckGLError();
 		systems_manager->buffer->BufferLights(draw_lights);
 		CheckGLError();
-		auto draw = new DrawCall{ GL_TRIANGLES, systems_manager->buffer, blinn_phong, (unsigned int)commands.size(), 0, (int)draw_lights.size() };
-		systems_manager->renderer->AddDraw(draw);
+		draw_call->command_count = (unsigned int)commands.size();
+		draw_call->num_lights = (int)draw_lights.size();
 	}
 private:
 	void _LoadData() {
@@ -71,13 +81,13 @@ private:
 		_BlenderPostprocessLights(out_new_lights);
 	}
 	void _AddRigidBodies(vector<shared_ptr<MeshLoadData>>& new_meshes) {
-		for (auto& mesh : new_meshes) {
-			if (mesh->mesh_data->name.starts_with("Terrain")) {
-				//systems_manager->buffer->BufferMeshData(v1, i1, m1, t1, 0);
-				//systems_manager->physics_manager->AddBoxRigidBody(mesh.min_AABB, mesh.max_AABB, 0.0f, &mesh, mesh.transform);
+		for (auto& mesh_ptr : new_meshes) {
+			auto& mesh = mesh_ptr.get()->mesh_data;
+			if (mesh->name.starts_with("Terrain")) {
+				systems_manager->physics_manager->AddBoxRigidBody(mesh->min_AABB, mesh->max_AABB, 0.0f, mesh, mesh->transform);
 			}
 			else {
-				//systems_manager->physics_manager->AddBoxRigidBody(mesh.min_AABB, mesh.max_AABB, 10.0f, &mesh, mesh.transform);
+				systems_manager->physics_manager->AddBoxRigidBody(mesh->min_AABB, mesh->max_AABB, 0.0f, mesh, mesh->transform);
 			}
 		}
 	}
