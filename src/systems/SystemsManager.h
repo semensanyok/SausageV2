@@ -8,6 +8,7 @@
 #include "systems/Controller.h"
 #include "TextureManager.h"
 #include "systems/Physics.h"
+#include "systems/BulletDebugDrawer.h"
 
 class SystemsManager {
 public:
@@ -16,8 +17,13 @@ public:
 	Renderer* renderer;
 	TextureManager* texture_manager;
 	FileWatcher* file_watcher;
-	PhysicsManager* physics_manager;
 	
+	PhysicsManager* physics_manager;
+	BulletDebugDrawer* bullet_debug_drawer;
+	
+	Shader* blinn_phong;
+	Shader* bullet_debug;
+
 	float delta_time = 0;
 	float last_ticks = 0;
 
@@ -36,7 +42,11 @@ public:
 		renderer = new Renderer();
 		renderer->InitContext();
 		InitBuffer();
-		physics_manager = new PhysicsManager();
+
+		blinn_phong = RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl");
+		bullet_debug = RegisterShader("debug_vs.glsl", "debug_fs.glsl");
+		bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer, bullet_debug);
+		physics_manager = new PhysicsManager(nullptr);
 	}
 
 	void ResetBuffer() {

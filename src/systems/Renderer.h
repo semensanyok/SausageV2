@@ -44,7 +44,8 @@ public:
 					draw->shader->setMat4("projection_view", camera->projection_view);
 					draw->shader->setVec3("view_pos", camera->pos);
 
-					glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, draw->command_count, draw->command_offset);
+					glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr, draw->command_count, draw->command_offset);
+					//glMultiDrawArraysIndirect(draw->mode, nullptr, draw->command_count, draw->command_offset);
 				}
 			}
 			buffer->fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);

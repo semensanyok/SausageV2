@@ -1,7 +1,5 @@
 ﻿#include "sausage.h"
 
-#include "sausage.h"
-
 #include "Settings.h"
 #include "Shader.h"
 #include "utils/AssetUtils.h"
@@ -39,10 +37,10 @@ void Init() {
 int SDL_main(int argc, char** argv)
 {
 	auto log_thread = LogIO(quit);
-
+	
 	Init();
 	systems_manager->file_watcher->Start(quit);
-
+	
 	while (!quit) {
 		systems_manager->UpdateDeltaTime();
 		SDL_Event e;
@@ -51,14 +49,14 @@ int SDL_main(int argc, char** argv)
 			controller->ProcessEvent(&e, systems_manager->delta_time, quit);
 		}
 		systems_manager->Render();
-
+	
 		systems_manager->physics_manager->Simulate(systems_manager->delta_time);
 		systems_manager->physics_manager->UpdateTransforms();
 		
 		CheckGLError();
 	}
 	systems_manager->Clear();
-
+	
 	log_thread.join();
 	systems_manager->file_watcher->Join();
 	return 0;

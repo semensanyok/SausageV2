@@ -22,12 +22,11 @@ public:
 
 	string scene_path = GetModelPath("frog.fbx");
 	Scene(SystemsManager* systems_manager) :
-		systems_manager{ systems_manager } {
+		systems_manager{ systems_manager }, blinn_phong{ systems_manager->blinn_phong } {
 	}
 	~Scene() {};
 	void Init() {
 		_LoadData();
-		blinn_phong = systems_manager->RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl");
 
 		function<void()> scene_reload_callback = bind(&Scene::_ReloadScene, this);
 		scene_reload_callback = bind(&Renderer::AddGlCommand, systems_manager->renderer, scene_reload_callback);
@@ -40,7 +39,7 @@ public:
 
 		vector<DrawElementsIndirectCommand> commands;
 		for (int i = 0; i < draw_meshes.size(); i++) {
-			if (draw_meshes[i]->command.count != 0) {
+			if (draw_meshes[i]->base_mesh == nullptr) {
 				commands.push_back(draw_meshes[i]->command);
 			}
 		}
@@ -49,41 +48,45 @@ public:
 		CheckGLError();
 		systems_manager->buffer->BufferLights(draw_lights);
 		CheckGLError();
-		auto draw = new DrawCall{ systems_manager->buffer, blinn_phong, (unsigned int)commands.size(), 0, (int)draw_lights.size() };
+		auto draw = new DrawCall{ GL_TRIANGLES, systems_manager->buffer, blinn_phong, (unsigned int)commands.size(), 0, (int)draw_lights.size() };
 		systems_manager->renderer->AddDraw(draw);
 	}
 private:
 	void _LoadData() {
-		_LoadMeshes();
-	}
-	void _LoadMeshes() {
 		vector<shared_ptr<MeshLoadData>> new_meshes;
 		vector<Light*> new_lights;
-
-		MeshManager::LoadMeshes(scene_path, new_lights, new_meshes);
-		CheckGLError();
-		_BlenderPostprocessLights(new_lights);
-
-		// optimization - merge same vertex count + texture as instanced draw.
-		vector<shared_ptr<MeshLoadData>> instance_data;
-		map<size_t, shared_ptr<MeshLoadData>> instanced_data_lookup;
-		map<MeshData*, vector<MeshData*>> base_mesh_to_instances;
-		for (auto& mesh_ptr : new_meshes) {
-			auto mesh = mesh_ptr.get();
+		_LoadMeshes(new_meshes, new_lights);
+		_SetBaseMeshForInstancedCommand(new_meshes);
+		_BufferMeshes(new_meshes);
+		_AddRigidBodies(new_meshes);
+		
+		for (auto& mesh : new_meshes) {
 			all_meshes.push_back(mesh->mesh_data);
-			auto key = mesh->tex_names.Hash() + mesh->vertices.size() + mesh->indices.size();
-			auto base_mesh_ptr = instanced_data_lookup.find(key);
-			if (base_mesh_ptr == instanced_data_lookup.end()) {
-				instanced_data_lookup[key] = mesh_ptr;
-				instance_data.push_back(mesh_ptr);
+		}
+		all_lights=new_lights;
+	}
+	void _LoadMeshes(vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
+		MeshManager::LoadMeshes(scene_path, out_new_lights, out_new_meshes);
+		CheckGLError();
+		_BlenderPostprocessLights(out_new_lights);
+	}
+	void _AddRigidBodies(vector<shared_ptr<MeshLoadData>>& new_meshes) {
+		for (auto& mesh : new_meshes) {
+			if (mesh->mesh_data->name.starts_with("Terrain")) {
+				//systems_manager->buffer->BufferMeshData(v1, i1, m1, t1, 0);
+				//systems_manager->physics_manager->AddBoxRigidBody(mesh.min_AABB, mesh.max_AABB, 0.0f, &mesh, mesh.transform);
+			}
+			else {
+				//systems_manager->physics_manager->AddBoxRigidBody(mesh.min_AABB, mesh.max_AABB, 10.0f, &mesh, mesh.transform);
+			}
+		}
+	}
+	void _BufferMeshes(vector<shared_ptr<MeshLoadData>>& new_meshes) {
+		// optimization - merge same vertex count + texture as instanced draw.
+		for (auto& mesh_ptr : new_meshes) {
+			if (mesh_ptr->mesh_data->base_mesh != nullptr) {
 				continue;
 			}
-			auto base_mesh = (*base_mesh_ptr).second.get();
-			auto& instance_count = base_mesh->instance_count;
-			mesh->mesh_data->instance_id = instance_count++;
-			base_mesh_to_instances[base_mesh->mesh_data].push_back(mesh->mesh_data);
-		}
-		for (auto& mesh_ptr : instance_data) {
 			auto mesh = mesh_ptr.get();
 			mesh->mesh_data->texture = systems_manager->texture_manager->LoadTextureArray(mesh->tex_names);
 			if (mesh->mesh_data->texture != nullptr) {
@@ -91,31 +94,26 @@ private:
 			}
 		}
 		CheckGLError();
-		systems_manager->buffer->BufferMeshData(instance_data);
-		for (auto& kv : base_mesh_to_instances) {
-			auto& base = kv.first;
-			for (auto& instance : kv.second) {
-				instance->buffer_id = base->buffer_id;
-				instance->transform_offset = base->transform_offset;
-			}
-		}
+		systems_manager->buffer->BufferMeshData(new_meshes);
 		CheckGLError();
-		all_lights=new_lights;
-
-		//for (auto& mesh : all_meshes) {
-		//	mesh.buffer = systems_manager->buffer;
-		//	if (mesh.name.starts_with("Terrain")) {
-		//		vector<vector<Vertex>> v1 = { vertices[0] };
-		//		vector<vector<unsigned int>> i1 = { indices[0] };
-		//		vector<MeshData> m1 = { all_meshes[0] };
-		//		vector<GLuint64> t1 = {tex_handles[mesh.id]};
-		//		systems_manager->buffer->BufferMeshData(v1, i1, m1, t1, 0);
-		//		//systems_manager->physics_manager->AddBoxRigidBody(mesh.min_AABB, mesh.max_AABB, 0.0f, &mesh, mesh.transform);
-		//	}
-		//	else {
-		//		//systems_manager->physics_manager->AddBoxRigidBody(mesh.min_AABB, mesh.max_AABB, 10.0f, &mesh, mesh.transform);
-		//	}
-		//}
+	}
+	void _SetBaseMeshForInstancedCommand(vector<shared_ptr<MeshLoadData>>& new_meshes) {
+		map<size_t, shared_ptr<MeshLoadData>> instanced_data_lookup;
+		for (auto& mesh_ptr : new_meshes) {
+			auto mesh = mesh_ptr.get();
+			auto key = mesh->tex_names.Hash() + mesh->vertices.size() + mesh->indices.size();
+			auto base_mesh_ptr = instanced_data_lookup.find(key);
+			if (base_mesh_ptr == instanced_data_lookup.end()) {
+				instanced_data_lookup[key] = mesh_ptr;
+				continue;
+			}
+			auto base_mesh = (*base_mesh_ptr).second.get();
+			auto& instance_count = base_mesh->instance_count;
+			mesh->mesh_data->instance_id = instance_count++;
+			mesh->mesh_data->base_mesh = base_mesh->mesh_data;
+			cout << mesh->mesh_data->id << endl;
+			cout << mesh->mesh_data->base_mesh->id << endl;
+		}
 	}
 	void _ReloadScene() {
 		_CleanupScene();

@@ -43,13 +43,14 @@ public:
                 // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
                 aiMesh* mesh = scene->mMeshes[child->mMeshes[j]];
 
-                auto data = ProcessMesh(mesh, scene);
+                auto data_ptr = ProcessMesh(mesh, scene);
+                auto data = data_ptr.get();
                 data->mesh_data->transform = transform;
                 data->mesh_data->max_AABB = mat3(transform) * FromAi(mesh->mAABB.mMax);
                 data->mesh_data->min_AABB = mat3(transform) * FromAi(mesh->mAABB.mMin);
                 data->mesh_data->name = string(mesh->mName.C_Str());
                 data->tex_names = _GetTexNames(mesh, scene, is_obj);
-                out_mesh_load_data.push_back(data);
+                out_mesh_load_data.push_back(data_ptr);
             }
         }
         for (unsigned int i = 0; i < scene->mNumLights; i++) {
@@ -81,22 +82,34 @@ public:
     static vec4 FromAi(aiColor3D& aivec) {
         return vec4(aivec.r, aivec.g, aivec.b, 0);
     }
-    static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices) {
-        MeshData* mesh_data = new MeshData();
-        mesh_data->id = mesh_count++;
-        mesh_data->buffer_id = 0;
-        mesh_data->instance_id = 0;
+    static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices, bool is_new_mesh_data = true) {
+        MeshData* mesh_data = nullptr;
+        if (is_new_mesh_data) {
+            mesh_data = new MeshData();
+            mesh_data->id = mesh_count++;
+            mesh_data->buffer_id = 0;
+            mesh_data->instance_id = 0;
+        }
         return make_shared<MeshLoadData>( mesh_data, vertices, indices, MaterialTexNames(), 1 );
     };
 
-    static shared_ptr<MeshLoadData> CreateMesh(vector<float>& vertices, vector<unsigned int>& indices) {
+    static shared_ptr<MeshLoadData> CreateMesh(vector<float>& vertices, vector<unsigned int>& indices, bool is_new_mesh_data = true) {
         vector<Vertex> positions;
         for (int i = 0; i < vertices.size(); i += 3) {
             Vertex vert;
             vert.Position = vec3(vertices[i], vertices[i + 1], vertices[i + 2]);
             positions.push_back(vert);
         }
-        return CreateMesh(positions, indices);
+        return CreateMesh(positions, indices, is_new_mesh_data);
+    };
+    static shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices, vector<unsigned int>& indices, bool is_new_mesh_data = true) {
+        vector<Vertex> positions;
+        for (int i = 0; i < vertices.size(); i ++) {
+            Vertex vert;
+            vert.Position = vertices[i];
+            positions.push_back(vert);
+        }
+        return CreateMesh(positions, indices, is_new_mesh_data);
     };
 private:
 

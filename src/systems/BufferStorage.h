@@ -64,13 +64,13 @@ public:
     unsigned long meshes_total;
     unsigned long transforms_total;
 
-    static const unsigned long MAX_VERTEX = 1000000;
-    static const unsigned long MAX_INDEX = 100000;
-    static const unsigned long MAX_COMMAND = 1000;
-    static const unsigned long MAX_TRANSFORM = MAX_COMMAND;
-    static const unsigned long MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
-    static const unsigned long MAX_TEXTURES = MAX_COMMAND;
-    static const unsigned long MAX_LIGHTS = 1000;
+    const unsigned long MAX_VERTEX = 1000000;
+    const unsigned long MAX_INDEX = 100000;
+    const unsigned long MAX_COMMAND = 1000;
+    const unsigned long MAX_TRANSFORM = MAX_COMMAND;
+    const unsigned long MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
+    const unsigned long MAX_TEXTURES = MAX_COMMAND;
+    const unsigned long MAX_LIGHTS = 1000;
     
     int id = -1;
 
@@ -151,10 +151,15 @@ public:
     void BufferMeshData(vector<shared_ptr<MeshLoadData>>& load_data)
     {
         WaitGPU(fence_sync);
-
+        vector<MeshData*> instances;
         for (int i = 0; i < load_data.size(); i++) {
             auto raw = load_data[i].get();
             auto& mesh_data = raw->mesh_data;
+            bool is_instance = mesh_data->base_mesh != nullptr;
+            if (is_instance) {
+                instances.push_back(mesh_data);
+                continue;
+            }
             mesh_data->buffer = this;
             auto& vertices = raw->vertices;
             auto& indices = raw->indices;
@@ -192,6 +197,10 @@ public:
                 index_total += indices.size();
             }
         }
+        for (auto& instance : instances) {
+            instance->buffer_id = instance->base_mesh->buffer_id;
+            instance->transform_offset = instance->base_mesh->transform_offset;
+        }
         // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
         is_need_barrier = true;
         CheckGLError();
@@ -228,17 +237,17 @@ public:
         }
         return command_start;
     }
-    int AddCommand(DrawElementsIndirectCommand* command, int command_offset = -1) {
+    int AddCommand(DrawElementsIndirectCommand command, int command_offset = -1) {
         // todo: compare two
         //  to render for several frames, till camera exits 'view cell'
         int& command_start = command_offset == -1 ? active_commands_to_render : command_offset;
         if (bind_draw_buffer) {
             if (command_offset > active_commands_to_render) {
-                LOG((ostringstream() << "ERROR AddCommands. command_offset=" << command_offset << " must be less or eq to active commands=" << active_commands_to_render).str());
+                LOG((ostringstream() << "ERROR AddCommand. command_offset=" << command_offset << " must be less or eq to active commands=" << active_commands_to_render).str());
                 return 0;
             }
             if (command_start > MAX_COMMAND) {
-                LOG((ostringstream() << "ERROR AddCommand. max=" << MAX_COMMAND << "offset=" << command_start << "allocated=" << active_commands_to_render).str());
+                LOG((ostringstream() << "ERROR AddCommand. MAX COMMAND reached=" << MAX_COMMAND << " command_start=" << command_start).str());
                 return 0;
             }
             WaitGPU(fence_sync);
@@ -249,7 +258,7 @@ public:
                 CheckGLError();
                 is_cmd_buffer_mapped = true;
             }
-            command_ptr[command_start] = *command;
+            command_ptr[command_start] = command;
         }
         // to call multidraw with array of commands each frame.
         else {

@@ -121,7 +121,7 @@ enum ShaderType {
 struct MeshData {
     // draw id.
     unsigned long id;
-    unsigned long buffer_id;
+    long buffer_id;
     unsigned long instance_id;
     unsigned long transform_offset;
     mat4 transform;
@@ -133,8 +133,10 @@ struct MeshData {
     long vertex_offset;
     long index_offset;
     Texture* texture;
-    MeshData() : vertex_offset{ -1 }, index_offset{ -1 } {};
+    MeshData* base_mesh;
+    MeshData() : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, base_mesh{ nullptr }, texture{ nullptr } {};
 };
+
 
 struct MeshLoadData {
     MeshData* mesh_data;
@@ -146,11 +148,12 @@ struct MeshLoadData {
 };
 
 struct DrawCall {
-    BufferStorage* buffer;
-    Shader* shader;
+    int mode; // GL_TRIANGLES GL_LINES
+    BufferStorage* buffer = nullptr;
+    Shader* shader = nullptr;
     unsigned int command_count;
-    unsigned int command_offset; // offset in BufferStorage command buffer
-    
+    int command_offset = -1; // offset in BufferStorage command buffer
     // custom data
     int num_lights;
+    //DrawCall() : buffer{ nullptr }, shader{ nullptr }, command_offset{ -1 } {};
 };
