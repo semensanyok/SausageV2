@@ -46,8 +46,11 @@ public:
                 auto data_ptr = ProcessMesh(mesh, scene);
                 auto data = data_ptr.get();
                 data->mesh_data->transform = transform;
-                data->mesh_data->max_AABB = mat3(transform) * FromAi(mesh->mAABB.mMax);
-                data->mesh_data->min_AABB = mat3(transform) * FromAi(mesh->mAABB.mMin);
+                //data->mesh_data->max_AABB = mat3(transform) * FromAi(mesh->mAABB.mMax);
+                //data->mesh_data->min_AABB = mat3(transform) * FromAi(mesh->mAABB.mMin);
+                data->mesh_data->max_AABB = FromAi(mesh->mAABB.mMax);
+                data->mesh_data->min_AABB = FromAi(mesh->mAABB.mMin);
+
                 data->mesh_data->name = string(mesh->mName.C_Str());
                 data->tex_names = _GetTexNames(mesh, scene, is_obj);
                 out_mesh_load_data.push_back(data_ptr);

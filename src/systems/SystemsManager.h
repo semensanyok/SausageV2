@@ -38,7 +38,7 @@ public:
 		texture_manager = new TextureManager();
 		file_watcher = new FileWatcher();
 		//camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
-		camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
+		camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
 		renderer = new Renderer();
 		renderer->InitContext();
 		InitBuffer();
@@ -78,6 +78,7 @@ public:
 		float this_ticks = SDL_GetTicks();
 		delta_time = this_ticks - last_ticks;
 		last_ticks = this_ticks;
+		delta_time = 6;
 	}
 private:
 	void InitBuffer() {

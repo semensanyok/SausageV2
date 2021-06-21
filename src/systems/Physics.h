@@ -4,6 +4,7 @@
 #include "Structures.h"
 #include "BufferStorage.h"
 #include "BulletDebugDrawer.h"
+#include "Settings.h"
 
 using namespace std;
 
@@ -33,7 +34,7 @@ public:
 		}
 	}
 	void Simulate(float deltatime) {
-		dynamicsWorld->stepSimulation(deltatime);
+		dynamicsWorld->stepSimulation(deltatime * GameSettings::physics_step_multiplier, 1000);
 		dynamicsWorld->debugDrawWorld();
 	}
 	void UpdateTransforms() {
@@ -44,15 +45,16 @@ public:
 			auto rigidBody = nonStatic[i];
 			rigidBody->getMotionState()->getWorldTransform(btTrans);
 			MeshData* mesh_data = (MeshData*)rigidBody->getUserPointer();
-			btTrans.getOpenGLMatrix(&(mesh_data->transform[0][0]));
+			auto& gl_transform = mesh_data->transform[0][0];
+			btTrans.getOpenGLMatrix(&gl_transform);
 			mesh_data->buffer->BufferTransform(mesh_data);
 		}
 	}
 	void AddBoxRigidBody(vec3 min_AABB, vec3 max_AABB, float mass, void* user_pointer, mat4& model_transform) {
 		vec3 half_extents = max_AABB - min_AABB;
-		half_extents.x /= 2;
-		half_extents.y /= 2;
-		half_extents.z /= 2;
+		half_extents.x = half_extents.x / 2;
+		half_extents.y = half_extents.y / 2;
+		half_extents.z = half_extents.x / 2;
 		auto datam = ((MeshData*)user_pointer);
 
 		btBoxShape* shape = new btBoxShape(btVector3(half_extents.x, half_extents.y, half_extents.x));
@@ -60,7 +62,13 @@ public:
 		auto transform = btTransform();
 		transform.setFromOpenGLMatrix(&model_transform[0][0]);
 		btDefaultMotionState* motionstate = new btDefaultMotionState(transform);
+
+		//auto gl_transform = mat4(0);
+		//transform.getOpenGLMatrix(&(gl_transform[0][0]));
+		//transform.setOrigin()
 		
+		MeshData up = *((MeshData*)user_pointer);
+
 		bool isDynamic = (mass != 0.f);
 		btVector3 localInertia(0, 0, 0);
 		if (isDynamic)

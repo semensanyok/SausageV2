@@ -43,6 +43,8 @@ int SDL_main(int argc, char** argv)
 	
 	while (!quit) {
 		systems_manager->UpdateDeltaTime();
+		systems_manager->physics_manager->Simulate(systems_manager->delta_time);
+		systems_manager->physics_manager->UpdateTransforms();
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
 			ImGui_ImplSDL2_ProcessEvent(&e);
@@ -50,9 +52,7 @@ int SDL_main(int argc, char** argv)
 		}
 		systems_manager->Render();
 	
-		systems_manager->physics_manager->Simulate(systems_manager->delta_time);
-		systems_manager->physics_manager->UpdateTransforms();
-		
+		//this_thread::sleep_for(std::chrono::milliseconds(1000));
 		CheckGLError();
 	}
 	systems_manager->Clear();

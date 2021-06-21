@@ -30,10 +30,10 @@ public:
 		case SDL_WINDOWEVENT:
 			switch (e->window.event) {
 			case SDL_WINDOWEVENT_SIZE_CHANGED:
-				SCR_WIDTH = e->window.data1;
-				SCR_HEIGHT = e->window.data2;
-				glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-				camera->ResizeCallback(SCR_WIDTH, SCR_HEIGHT);
+				GameSettings::SCR_WIDTH = e->window.data1;
+				GameSettings::SCR_HEIGHT = e->window.data2;
+				glViewport(0, 0, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT);
+				camera->ResizeCallback(GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT);
 				break;
 			}
 			break;

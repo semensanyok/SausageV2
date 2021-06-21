@@ -87,7 +87,7 @@ private:
 				systems_manager->physics_manager->AddBoxRigidBody(mesh->min_AABB, mesh->max_AABB, 0.0f, mesh, mesh->transform);
 			}
 			else {
-				systems_manager->physics_manager->AddBoxRigidBody(mesh->min_AABB, mesh->max_AABB, 0.0f, mesh, mesh->transform);
+				systems_manager->physics_manager->AddBoxRigidBody(mesh->min_AABB, mesh->max_AABB, 10.0f, mesh, mesh->transform);
 			}
 		}
 	}
@@ -121,8 +121,6 @@ private:
 			auto& instance_count = base_mesh->instance_count;
 			mesh->mesh_data->instance_id = instance_count++;
 			mesh->mesh_data->base_mesh = base_mesh->mesh_data;
-			cout << mesh->mesh_data->id << endl;
-			cout << mesh->mesh_data->base_mesh->id << endl;
 		}
 	}
 	void _ReloadScene() {

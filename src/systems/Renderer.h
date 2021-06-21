@@ -54,7 +54,7 @@ public:
 			buffer->fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 			CheckGLError();
 		}
-		RenderGui(window, camera);
+		Gui::RenderGui(window, camera);
 		SDL_GL_SwapWindow(window);
 	}
 
@@ -125,7 +125,7 @@ public:
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
 		window = SDL_CreateWindow("caveview", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-			SCR_WIDTH, SCR_HEIGHT,
+			GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT,
 			SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI // SDL_WINDOW_VULKAN
 		);
 		if (!window) LOG("Couldn't create window");
@@ -151,16 +151,16 @@ public:
 		}
 
 		glEnable(GL_DEPTH_TEST);
-		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		glViewport(0, 0, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT);
 		// debug
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 		
-		InitGuiContext(window, context);
+		Gui::InitGuiContext(window, context);
 	}
 
 	void ClearContext() {
-		CleanupGui();
+		Gui::CleanupGui();
 
 		WriteShaderMsgsToLogFile();
 		SDL_GL_DeleteContext(context);

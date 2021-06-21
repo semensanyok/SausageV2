@@ -152,11 +152,11 @@ public:
             auto raw = load_data[i].get();
             auto& mesh_data = raw->mesh_data;
             bool is_instance = mesh_data->base_mesh != nullptr;
+            mesh_data->buffer = this;
             if (is_instance) {
                 instances.push_back(mesh_data);
                 continue;
             }
-            mesh_data->buffer = this;
             auto& vertices = raw->vertices;
             auto& indices = raw->indices;
             // if offset initialized - reload data. (if vertices/indices size > existing - will corrupt other meshes)
@@ -258,14 +258,18 @@ public:
     void BufferTransform(MeshData* mesh_data) {
         WaitGPU(fence_sync);
         transform_ptr[mesh_data->transform_offset + mesh_data->instance_id] = mesh_data->transform;
-        transform_offset_ptr[mesh_data->buffer_id + mesh_data->instance_id] = mesh_data->transform_offset;
+        if (mesh_data->instance_id == 0) {
+            transform_offset_ptr[mesh_data->buffer_id + mesh_data->instance_id] = mesh_data->transform_offset;
+        }
         is_need_barrier = true;
     }
     void BufferTransform(vector<MeshData*>& mesh_data) {
         WaitGPU(fence_sync);
         for (int i = 0; i < mesh_data.size(); i++) {
             transform_ptr[mesh_data[i]->transform_offset + mesh_data[i]->instance_id] = mesh_data[i]->transform;
-            transform_offset_ptr[mesh_data[i]->buffer_id + mesh_data[i]->instance_id] = mesh_data[i]->transform_offset;
+            if (mesh_data[i]->instance_id == 0) {
+                transform_offset_ptr[mesh_data[i]->buffer_id] = mesh_data[i]->transform_offset;
+            }
         }
         //memcpy(&mvp_ptr[command_total], mvps.data(), mvps.size() * sizeof(mat4));
         is_need_barrier = true;
