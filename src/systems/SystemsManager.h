@@ -13,6 +13,7 @@
 class SystemsManager {
 public:
 	Camera* camera;
+	Controller* controller;
 	BufferStorage* buffer;
 	Renderer* renderer;
 	TextureManager* texture_manager;
@@ -45,9 +46,14 @@ public:
 
 		blinn_phong = RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl");
 		bullet_debug = RegisterShader("debug_vs.glsl", "debug_fs.glsl");
+
 		bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer, bullet_debug);
-		bullet_debug_drawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+		//int debug_mask = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints;
+		int debug_mask = btIDebugDraw::DBG_DrawWireframe;
+		bullet_debug_drawer->setDebugMode(debug_mask);
 		physics_manager = new PhysicsManager(bullet_debug_drawer);
+
+		controller = new Controller(camera, physics_manager);
 	}
 
 	void ResetBuffer() {

@@ -6,7 +6,6 @@
 #include "BufferStorage.h"
 #include "Renderer.h"
 
-
 class BulletDebugDrawer : public btIDebugDraw
 {
     MeshData* mesh_data;
@@ -19,6 +18,11 @@ class BulletDebugDrawer : public btIDebugDraw
     vector<vec3> vertices;
     vector<unsigned int> indices;
     vector<vec3> colors;
+
+    vector<vec3> vertices2;
+    vector<unsigned int> indices2;
+    vector<vec3> colors2;
+
     const unsigned int command_buffer_size = 1;
 public:
 
@@ -49,11 +53,20 @@ public:
 
     virtual int    getDebugMode() const { return m_debugMode; }
 
+    void   drawLinePersist(const btVector3& from, const btVector3& to, const btVector3& color);
+
+    void clearPersist();
+
 private:
     void _BufferDataCallback() {
         if (vertices.size() > 0) {
             draw_call->command_count = 1;
             bool is_new_mesh_data = mesh_data == nullptr;
+            for (int i = 0; i < vertices2.size(); i++) {
+                indices.push_back(vertices.size());
+                vertices.push_back(vertices2[i]);
+                colors.push_back(colors2[i]);
+            }
             {
                 shared_ptr<MeshLoadData> load_data = MeshManager::CreateMesh(vertices, indices, colors, is_new_mesh_data);
                 if (is_new_mesh_data) {
@@ -74,6 +87,12 @@ private:
 
             vertices.clear();
             indices.clear();
+            colors.clear();
+            if (GameSettings::clear_persist_debug_data) {
+                vertices2.clear();
+                indices2.clear();
+                colors2.clear();
+            }
         }
         else {
             draw_call->command_count = 0;
@@ -117,7 +136,35 @@ void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, con
     indices.push_back(index_from);
     indices.push_back(index_to);
 };
+void BulletDebugDrawer::drawLinePersist(const btVector3& from, const btVector3& to, const btVector3& color) {
+    vec3 from3;
+    vec3 to3;
+    vec3 color3;
+    memcpy(&color3[0], &color[0], 3 * sizeof(float));
+    memcpy(&from3[0], &from[0], 3 * sizeof(float));
+    memcpy(&to3[0], &to[0], 3 * sizeof(float));
+    vertices2.push_back(from3);
+    vertices2.push_back(to3);
+    colors2.push_back(color3);
+    colors2.push_back(color3);
+}
+void BulletDebugDrawer::clearPersist() {
+    vertices2.clear();
+    indices2.clear();
+    colors2.clear();
+}
 void   BulletDebugDrawer::drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) {
+    vec3 from3;
+    vec3 to3;
+    vec3 color3;
+    btVector3 to = PointOnB + normalOnB * distance;
+    memcpy(&from3[0], &PointOnB[0], 3 * sizeof(float));
+    memcpy(&to3[0], &to[0], 3 * sizeof(float));
+    memcpy(&color3[0], &color[0], 3 * sizeof(float));
+
+    indices.push_back(vertices.size());
+    vertices.push_back(to3);
+    colors.push_back(color3);
 };
 void   BulletDebugDrawer::reportErrorWarning(const char* warningString) {
 };

@@ -30,7 +30,6 @@ void Init() {
 	scene = new Scene(systems_manager);
 	scene->Init();
 	scene->PrepareDraws();
-	controller = new Controller(systems_manager->camera);
 	CheckGLError();
 }
 
@@ -43,21 +42,21 @@ int SDL_main(int argc, char** argv)
 	
 	while (!quit) {
 		systems_manager->UpdateDeltaTime();
-		systems_manager->physics_manager->Simulate(systems_manager->delta_time);
-		systems_manager->physics_manager->UpdateTransforms();
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
 			ImGui_ImplSDL2_ProcessEvent(&e);
-			controller->ProcessEvent(&e, systems_manager->delta_time, quit);
+			systems_manager->controller->ProcessEvent(&e, systems_manager->delta_time, quit);
 		}
 		systems_manager->Render();
 	
-		//this_thread::sleep_for(std::chrono::milliseconds(1000));
+		systems_manager->physics_manager->Simulate(systems_manager->delta_time);
+		systems_manager->physics_manager->UpdateTransforms();		
 		CheckGLError();
 	}
 	systems_manager->Clear();
 	
 	log_thread.join();
 	systems_manager->file_watcher->Join();
+	delete systems_manager;
 	return 0;
 }

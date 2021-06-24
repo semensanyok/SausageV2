@@ -3,12 +3,14 @@
 #include "sausage.h"
 #include "Camera.h"
 #include "Settings.h"
+#include "Physics.h"
 
 class Controller {
 public:
 	Camera* camera;
+	PhysicsManager* physics_manager;
 
-	Controller(Camera* camera) : camera{ camera } {};
+	Controller(Camera* camera, PhysicsManager* physics_manager) : camera{ camera }, physics_manager{ physics_manager } {};
 
 	void ProcessEvent(SDL_Event* e, float delta_time, bool& quit)
 	{
@@ -17,6 +19,7 @@ public:
 			// camera->MouseMotionCallback(e);
 			break;
 		case SDL_MOUSEBUTTONDOWN:
+			physics_manager->ClickRayTest(e->button.x, e->button.y, camera->pos, camera->far_plane - camera->near_plane, camera->projection_view_inverse);
 			break;
 		case SDL_MOUSEBUTTONUP:
 			break;

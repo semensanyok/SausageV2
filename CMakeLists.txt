@@ -129,5 +129,5 @@ add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/
 # ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2}
 
 target_link_libraries(${CMAKE_PROJECT_NAME} assimp glad glm SDL2::Main 
-Bullet3Common BulletCollision BulletDynamics LinearMath
+Bullet3Common BulletCollision BulletDynamics Bullet3Geometry Bullet3Collision Bullet3Dynamics LinearMath
 ${SDL2_IMAGE_LIBRARIES} ${Freetype})

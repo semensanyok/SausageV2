@@ -12,6 +12,7 @@ private:
 	void _UpdateMatrices() {
 		this->view_matrix = lookAt(this->pos, this->pos + this->direction, this->up);
 		this->projection_view = projection_matrix * view_matrix;
+		this->projection_view_inverse = inverse(view_matrix) * inverse(projection_matrix);
 	}
 public:
 
@@ -37,7 +38,6 @@ public:
 		this->world_up = world_up;
 		this->up = up;
 		this->projection_matrix = perspective(radians(this->FOV), (float)this->width / (float)this->height, this->near_plane, this->far_plane);
-
 		UpdateCameraFrontUpRight();
 		_UpdateMatrices();
 	};
@@ -66,8 +66,6 @@ public:
 		this->width = new_width;
 		this->height = new_height;
 		this->projection_matrix = perspective(radians(this->FOV), (float)this->width / (float)this->height, this->near_plane, this->far_plane);
-		this->projection_view = projection_matrix * view_matrix;
-
 		_UpdateMatrices();
 	}
 	void MouseMotionCallbackRTS(SDL_Event* e)
@@ -121,6 +119,7 @@ public:
 	mat4 view_matrix;
 	mat4 projection_matrix;
 	mat4 projection_view;
+	mat4 projection_view_inverse;
 	vec3 pos;
 	vec3 up;
 	vec3 world_up;

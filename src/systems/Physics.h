@@ -5,6 +5,7 @@
 #include "BufferStorage.h"
 #include "BulletDebugDrawer.h"
 #include "Settings.h"
+#include "../utils/AssetUtils.h"
 
 using namespace std;
 
@@ -20,7 +21,10 @@ class PhysicsManager {
 
 	btSequentialImpulseConstraintSolver* solver;
 	btDiscreteDynamicsWorld* dynamicsWorld;
+
+	const char* save_name = "./testFile.bullet";
 public:
+
 	PhysicsManager(BulletDebugDrawer* debugDrawer = nullptr) : debugDrawer{ debugDrawer } {
 		collisionConfiguration = new btDefaultCollisionConfiguration();
 		dispatcher = new btCollisionDispatcher(collisionConfiguration);
@@ -36,6 +40,38 @@ public:
 	void Simulate(float deltatime) {
 		dynamicsWorld->stepSimulation(deltatime * GameSettings::physics_step_multiplier, 1000);
 		dynamicsWorld->debugDrawWorld();
+	}
+	void ClickRayTest(float screen_x, float screen_y, const vec3& position, float distance, const mat4& camera_projection_view_inverse) {
+		auto screen_x_normalized = (screen_x / GameSettings::SCR_WIDTH - 0.5f) * 2.0;
+		auto screen_y_normalized = -((screen_y) / GameSettings::SCR_HEIGHT - 0.5f) * 2.0;
+		vec4 world_end = camera_projection_view_inverse * vec4(screen_x_normalized, screen_y_normalized, 1, 1);
+		world_end = world_end * distance;
+
+		btVector3 btStart(position.x, position.y, position.z);
+		btVector3 btEnd(world_end.x, world_end.y, world_end.z);
+
+		btCollisionWorld::ClosestRayResultCallback RayCallback(
+			btStart,
+			btEnd
+		);
+
+		dynamicsWorld->rayTest(
+			btStart,
+			btEnd,
+			RayCallback
+		);
+
+		string message;
+		if (RayCallback.hasHit()) {
+			std::ostringstream oss;
+			oss << "mesh " << ((MeshData*)RayCallback.m_collisionObject->getUserPointer())->name;
+			message = oss.str();
+		}
+		else {
+			message = "background";
+		}
+		//debugDrawer->drawLinePersist(btStart, btEnd, { 255,0,0 });
+		cout << message << endl;
 	}
 	void UpdateTransforms() {
 		auto nonStatic = dynamicsWorld->getNonStaticRigidBodies();
@@ -62,10 +98,6 @@ public:
 		auto transform = btTransform();
 		transform.setFromOpenGLMatrix(&model_transform[0][0]);
 		btDefaultMotionState* motionstate = new btDefaultMotionState(transform);
-
-		//auto gl_transform = mat4(0);
-		//transform.getOpenGLMatrix(&(gl_transform[0][0]));
-		//transform.setOrigin()
 		
 		MeshData up = *((MeshData*)user_pointer);
 
@@ -107,6 +139,13 @@ public:
 		}
 		collisionShapes.clear();
 		rigidBodies.clear();
+	}
+	void Serialize() {
+		btDefaultSerializer* serializer = new btDefaultSerializer();
+		dynamicsWorld->serialize(serializer);
+		FILE* file = fopen(save_name, "wb");
+		fwrite(serializer->getBufferPointer(), serializer->getCurrentBufferSize(), 1, file);
+		fclose(file);
 	}
 
 	~PhysicsManager() {

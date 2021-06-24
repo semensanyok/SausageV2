@@ -40,6 +40,7 @@ public:
 			ImGui::SetNextWindowPos(ImVec2(0, 100));
 			ImGui::Begin("Physics");
 			ImGui::InputFloat("physics step multiplier", &GameSettings::physics_step_multiplier, 0.0001f, 1.0f, "%.4f");
+			ImGui::Checkbox("clear persist debug data", &GameSettings::clear_persist_debug_data);
 			ImGui::End();
 		}
 
