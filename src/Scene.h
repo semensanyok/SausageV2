@@ -18,7 +18,11 @@ public:
 	Shader* blinn_phong;
 	// custom draws per shader
 	vector<MeshData*> all_meshes;
+	vector<MeshData*> all_transparent_meshes;
+
 	vector<MeshData*> draw_meshes;
+	vector<MeshData*> draw_transparent_meshes;
+
 	vector<Light*> all_lights;
 	vector<Light*> draw_lights;
 
@@ -80,6 +84,12 @@ private:
 		CheckGLError();
 		_BlenderPostprocessLights(out_new_lights);
 	}
+	void _LoadTransparentMeshes(vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
+		MeshManager::LoadMeshes(scene_path, out_new_lights, out_new_meshes);
+		CheckGLError();
+		_BlenderPostprocessLights(out_new_lights);
+	}
+
 	void _AddRigidBodies(vector<shared_ptr<MeshLoadData>>& new_meshes) {
 		for (auto& mesh_ptr : new_meshes) {
 			auto& mesh = mesh_ptr.get()->mesh_data;
@@ -107,7 +117,7 @@ private:
 		systems_manager->buffer->BufferMeshData(new_meshes);
 		CheckGLError();
 	}
-	void _SetBaseMeshForInstancedCommand(vector<shared_ptr<MeshLoadData>>& new_meshes) {
+	void _SetBaseMeshForInstancedCommand(vector<shared_ptr<MeshLoadData>>& new_meshes, bool is_transparent = false) {
 		map<size_t, shared_ptr<MeshLoadData>> instanced_data_lookup;
 		for (auto& mesh_ptr : new_meshes) {
 			auto mesh = mesh_ptr.get();
@@ -135,6 +145,10 @@ private:
 			delete mesh;
 		}
 		all_meshes.clear();
+		for (auto mesh : all_transparent_meshes) {
+			delete mesh;
+		}
+		all_transparent_meshes.clear();
 		for (auto light : all_lights) {
 			delete light;
 		}
@@ -157,5 +171,6 @@ private:
 	void _OcclusionGather() {
 		draw_meshes = all_meshes;
 		draw_lights = all_lights;
+		draw_transparent_meshes = all_transparent_meshes;
 	}
 };

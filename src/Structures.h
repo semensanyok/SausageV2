@@ -55,7 +55,7 @@ enum TextureType
     AO,      //                        3
     Height,  //                        4 PBR
     Metal,   //                        5 PBR
-    Opacity, //                        6 PBR
+    //Opacity, //                        6 use Diffuse alpha
 };
 
 struct MaterialTexNames
@@ -118,9 +118,11 @@ enum ShaderType {
     BlinnPhong,
     BRDF
 };
+
 struct MeshData {
-    // draw id.
     unsigned long id;
+    bool is_transparent;
+    // draw id.
     long buffer_id;
     unsigned long instance_id;
     unsigned long transform_offset;

@@ -6,8 +6,14 @@
 #include "BufferStorage.h"
 #include "Renderer.h"
 
+static struct PersistDrawRay {
+    uint32_t remove_time_millis;
+    vec3 vertices[2];
+    vec3 color;
+};
 class BulletDebugDrawer : public btIDebugDraw
 {
+
     MeshData* mesh_data;
     DrawCall* draw_call;
     Shader* debug_shader;
@@ -19,9 +25,7 @@ class BulletDebugDrawer : public btIDebugDraw
     vector<unsigned int> indices;
     vector<vec3> colors;
 
-    vector<vec3> vertices2;
-    vector<unsigned int> indices2;
-    vector<vec3> colors2;
+    vector<PersistDrawRay> persist_draws;
 
     const unsigned int command_buffer_size = 1;
 public:
@@ -62,11 +66,19 @@ private:
         if (vertices.size() > 0) {
             draw_call->command_count = 1;
             bool is_new_mesh_data = mesh_data == nullptr;
-            for (int i = 0; i < vertices2.size(); i++) {
+            vector<PersistDrawRay> keep_persist;
+            for (auto& persist_draw : persist_draws) {
                 indices.push_back(vertices.size());
-                vertices.push_back(vertices2[i]);
-                colors.push_back(colors2[i]);
+                vertices.push_back(persist_draw.vertices[0]);
+                indices.push_back(vertices.size());
+                vertices.push_back(persist_draw.vertices[1]);
+                colors.push_back(persist_draw.color);
+                colors.push_back(persist_draw.color);
+                if (GameSettings::milliseconds_since_start <= persist_draw.remove_time_millis) {
+                    keep_persist.push_back(persist_draw);
+                }
             }
+            persist_draws = keep_persist;
             {
                 shared_ptr<MeshLoadData> load_data = MeshManager::CreateMesh(vertices, indices, colors, is_new_mesh_data);
                 if (is_new_mesh_data) {
@@ -88,11 +100,6 @@ private:
             vertices.clear();
             indices.clear();
             colors.clear();
-            if (GameSettings::clear_persist_debug_data) {
-                vertices2.clear();
-                indices2.clear();
-                colors2.clear();
-            }
         }
         else {
             draw_call->command_count = 0;
@@ -143,15 +150,11 @@ void BulletDebugDrawer::drawLinePersist(const btVector3& from, const btVector3& 
     memcpy(&color3[0], &color[0], 3 * sizeof(float));
     memcpy(&from3[0], &from[0], 3 * sizeof(float));
     memcpy(&to3[0], &to[0], 3 * sizeof(float));
-    vertices2.push_back(from3);
-    vertices2.push_back(to3);
-    colors2.push_back(color3);
-    colors2.push_back(color3);
+
+    persist_draws.push_back({ GameSettings::milliseconds_since_start + GameSettings::ray_debug_draw_lifetime_milliseconds, {from3, to3}, color3 });
 }
 void BulletDebugDrawer::clearPersist() {
-    vertices2.clear();
-    indices2.clear();
-    colors2.clear();
+    persist_draws.clear();
 }
 void   BulletDebugDrawer::drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) {
     vec3 from3;

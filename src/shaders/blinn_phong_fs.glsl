@@ -3,6 +3,10 @@
 #extension GL_ARB_bindless_texture : require
 #extension GL_ARB_shader_storage_buffer_object : require
 
+const int DIFFUSE_TEX = 0;
+const int NORMAL_TEX = 1;
+const int SPECULAR_TEX = 2;
+
 const int POINT_LIGHT = 0;
 const int DIRECTIONAL_LIGHT = 1;
 const int SPOT_LIGHT = 2;
@@ -112,12 +116,13 @@ void AddLightColor(in vec3 mat_normal, inout vec3 res, in vec3 view_dir, in vec3
 }
 
 void main(void) {
-  vec3 mat_diffuse = texture(textures[In.draw_id_arb], vec3(In.uv, 0)).rgb;
-  vec3 mat_specular = texture(textures[In.draw_id_arb], vec3(In.uv,2)).rgb;
-  vec3 mat_normal = texture(textures[In.draw_id_arb], vec3(In.uv,1)).rgb * 2.0 - 1.0;
+  vec4 mat_diffuse_with_opacity = texture(textures[In.draw_id_arb], vec3(In.uv, DIFFUSE_TEX)).rgba;
+  vec3 mat_diffuse = mat_diffuse_with_opacity.rgb;
+  vec3 mat_specular = texture(textures[In.draw_id_arb], vec3(In.uv, SPECULAR_TEX)).rgb;
+  vec3 mat_normal = texture(textures[In.draw_id_arb], vec3(In.uv, NORMAL_TEX)).rgb * 2.0 - 1.0;
   mat_normal = normalize(In.TBN * mat_normal);
   vec3 view_dir = normalize(view_pos - In.frag_pos);
   vec3 res = mat_diffuse * ambient_const;
   AddLightColor(mat_normal, res, view_dir, mat_diffuse, mat_specular);
-  color = vec4(res, 1.0);
+  color = vec4(res, mat_diffuse_with_opacity.a);
 }

@@ -12,7 +12,7 @@ layout (location = 4) in vec3 bitangent;
 
 uniform mat4 projection_view;
 
-layout (std430, binding = 1) buffer TransformOffset
+layout (std430, binding = 1) buffer UniformData
 {
     unsigned int transform_offset[];
 };

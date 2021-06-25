@@ -70,7 +70,7 @@ public:
 		else {
 			message = "background";
 		}
-		//debugDrawer->drawLinePersist(btStart, btEnd, { 255,0,0 });
+		debugDrawer->drawLinePersist(btStart, btEnd, { 255,0,0 });
 		cout << message << endl;
 	}
 	void UpdateTransforms() {

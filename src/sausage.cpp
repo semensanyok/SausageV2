@@ -52,6 +52,7 @@ int SDL_main(int argc, char** argv)
 		systems_manager->physics_manager->Simulate(systems_manager->delta_time);
 		systems_manager->physics_manager->UpdateTransforms();		
 		CheckGLError();
+		GameSettings::milliseconds_since_start = SDL_GetTicks();
 	}
 	systems_manager->Clear();
 	

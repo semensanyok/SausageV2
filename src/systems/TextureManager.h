@@ -75,9 +75,9 @@ public:
         if (!tex_names.ao.empty()) {
             LoadLayer(tex_names.ao, TextureType::AO);
         }
-        if (!tex_names.opacity.empty()) {
-            LoadLayer(tex_names.opacity, TextureType::Opacity);
-        }
+        //if (!tex_names.opacity.empty()) {
+        //    LoadLayer(tex_names.opacity, TextureType::Opacity);
+        //}
         glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
         GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers.basic_repeat);
         CheckGLError();
