@@ -14,8 +14,11 @@ public:
 	SystemsManager* systems_manager;
 
 	DrawCall* draw_call;
+	DrawCall* draw_call2;
+	DrawCall* draw_call3;
+
 	const unsigned int command_buffer_size;
-	Shader* blinn_phong;
+	Shaders shaders;
 	// custom draws per shader
 	vector<MeshData*> all_meshes;
 	vector<MeshData*> all_transparent_meshes;
@@ -28,14 +31,19 @@ public:
 
 	string scene_path = GetModelPath("frog.fbx");
 	Scene(SystemsManager* systems_manager) :
-		systems_manager{ systems_manager }, blinn_phong{ systems_manager->blinn_phong }, command_buffer_size{ systems_manager->buffer->MAX_COMMAND }{
+		systems_manager{ systems_manager }, shaders{ systems_manager->shaders }, command_buffer_size{ systems_manager->buffer->MAX_COMMAND }{
 		draw_call = new DrawCall();
-		draw_call->shader = blinn_phong;
+		draw_call->shader = shaders.blinn_phong;
 		draw_call->mode = GL_TRIANGLES;
 		draw_call->buffer = systems_manager->buffer;
 		draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(command_buffer_size);
-		
+
+		//draw_call2 = new DrawCall(*draw_call);
+		////draw_call2->shader = shaders.stencil;
+		//draw_call2->command_buffer = draw_call2->buffer->CreateCommandBuffer(command_buffer_size);
+
 		systems_manager->renderer->AddDraw(draw_call);
+		//systems_manager->renderer->AddDraw(draw_call2);
 	}
 	~Scene() {};
 	void Init() {
@@ -50,26 +58,26 @@ public:
 	}
 	void PrepareDraws() {
 		_OcclusionGather();
-
+		_SortByDistance();
 		vector<DrawElementsIndirectCommand> commands;
 		for (int i = 0; i < draw_meshes.size(); i++) {
 			if (draw_meshes[i]->base_mesh == nullptr) {
 				commands.push_back(draw_meshes[i]->command);
 			}
 		}
-		systems_manager->buffer->BufferTransform(draw_meshes);
-		systems_manager->buffer->AddCommands(commands, draw_call->command_buffer, command_buffer_size);
-		CheckGLError();
-		systems_manager->buffer->BufferLights(draw_lights);
+		draw_call->buffer->AddCommands(commands, draw_call->command_buffer, command_buffer_size);
 		CheckGLError();
 		draw_call->command_count = (unsigned int)commands.size();
 		draw_call->num_lights = (int)draw_lights.size();
+
+		systems_manager->buffer->BufferLights(draw_lights);
+		CheckGLError();
 	}
 private:
 	void _LoadData() {
 		vector<shared_ptr<MeshLoadData>> new_meshes;
 		vector<Light*> new_lights;
-		_LoadMeshes(new_meshes, new_lights);
+		_LoadMeshes(scene_path, new_meshes, new_lights);
 		_SetBaseMeshForInstancedCommand(new_meshes);
 		_BufferMeshes(new_meshes);
 		_AddRigidBodies(new_meshes);
@@ -77,15 +85,18 @@ private:
 		for (auto& mesh : new_meshes) {
 			all_meshes.push_back(mesh->mesh_data);
 		}
-		all_lights=new_lights;
+		for (auto& light : new_lights) {
+			all_lights.push_back(light);
+		}
+		systems_manager->buffer->BufferTransform(all_meshes);
 	}
-	void _LoadMeshes(vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
-		MeshManager::LoadMeshes(scene_path, out_new_lights, out_new_meshes);
+	void _LoadMeshes(string& path, vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
+		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes);
 		CheckGLError();
 		_BlenderPostprocessLights(out_new_lights);
 	}
-	void _LoadTransparentMeshes(vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
-		MeshManager::LoadMeshes(scene_path, out_new_lights, out_new_meshes);
+	void _LoadTransparentMeshes(string& path, vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
+		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes);
 		CheckGLError();
 		_BlenderPostprocessLights(out_new_lights);
 	}
@@ -136,7 +147,6 @@ private:
 	void _ReloadScene() {
 		_CleanupScene();
 		_LoadData();
-		PrepareDraws();
 	}
 	void _CleanupScene() {
 		systems_manager->ResetBuffer();
@@ -165,12 +175,24 @@ private:
 			light->specular /= denom;
 		}
 	}
+	void _SortByDistance() {
+		set <pair<float, MeshData*>, decltype([](const pair<float, MeshData*>& lhs, const pair<float, MeshData*>& rhs) {
+			return lhs.first > rhs.first;
+			}) > back_to_front;
+		for (auto mesh : draw_meshes) {
+			pair<float, MeshData*> distance_mesh = { distance(systems_manager->camera->pos, vec3(mesh->transform[3])) , mesh };
+			back_to_front.insert(distance_mesh);
+		}
+		draw_meshes.clear();
+		for (auto& mesh_dist : back_to_front) {
+			draw_meshes.push_back(mesh_dist.second);
+		}
+	}
 	void _LoadTerrain() {
 
 	}
 	void _OcclusionGather() {
-		draw_meshes = all_meshes;
 		draw_lights = all_lights;
-		draw_transparent_meshes = all_transparent_meshes;
+		draw_meshes = all_meshes;
 	}
 };

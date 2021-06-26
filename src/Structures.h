@@ -158,3 +158,9 @@ struct DrawCall {
     // custom data
     int num_lights = 0;
 };
+
+struct Shaders {
+    Shader* blinn_phong;
+    Shader* bullet_debug;
+    Shader* stencil;
+};

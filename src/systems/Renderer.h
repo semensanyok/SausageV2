@@ -29,10 +29,14 @@ public:
 	void Render(Camera* camera)
 	{
 		_ExecuteCommands();
-		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		//glStencilFunc(GL_NOT, 1, 0xFF);
+		//glStencilMask(0xFF);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		for (auto buffer_shader : buffer_to_draw_call) {
 			if (buffer_shader.second.empty()) {
 				continue;
@@ -92,10 +96,10 @@ public:
 			return false;
 		}
 		pair<int, int> buf_shad_id{ draw->buffer->id, draw->shader->id };
-		if (buf_shad_ids.contains(buf_shad_id)) {
-			LOG((ostringstream() << "Draw for shader: " << draw->shader->id << " buffer:" << draw->buffer->id << "already exists").str());
-			return false;
-		}
+		//if (buf_shad_ids.contains(buf_shad_id)) {
+		//	LOG((ostringstream() << "Draw for shader: " << draw->shader->id << " buffer:" << draw->buffer->id << "already exists").str());
+		//	return false;
+		//}
 		buffer_to_draw_call[draw->buffer->id].push_back(draw);
 		buf_shad_ids.insert(buf_shad_id);
 		return true;
@@ -149,7 +153,9 @@ public:
 			LOG("[INFO] glad initialized\n");
 		}
 
+		glEnable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_STENCIL_TEST);
 		glViewport(0, 0, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT);
 		// debug
 		glEnable(GL_DEBUG_OUTPUT);

@@ -22,8 +22,7 @@ public:
 	PhysicsManager* physics_manager;
 	BulletDebugDrawer* bullet_debug_drawer;
 	
-	Shader* blinn_phong;
-	Shader* bullet_debug;
+	Shaders shaders;
 
 	float delta_time = 0;
 	float last_ticks = 0;
@@ -44,10 +43,13 @@ public:
 		renderer->InitContext();
 		InitBuffer();
 
-		blinn_phong = RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl");
-		bullet_debug = RegisterShader("debug_vs.glsl", "debug_fs.glsl");
+		shaders = {
+			RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl"),
+			RegisterShader("debug_vs.glsl", "debug_fs.glsl"),
+			RegisterShader("stencil_vs.glsl", "stencil_fs.glsl")
+		};
 
-		bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer, bullet_debug);
+		bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer, shaders.bullet_debug);
 		//int debug_mask = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints;
 		int debug_mask = btIDebugDraw::DBG_DrawWireframe;
 		bullet_debug_drawer->setDebugMode(debug_mask);

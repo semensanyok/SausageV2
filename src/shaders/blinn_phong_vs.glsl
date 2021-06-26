@@ -23,17 +23,17 @@ layout (std430, binding = 0) buffer Transforms
 };
 
 out vs_out {
-    int draw_id_arb;
+    int base_instance;
     vec2 uv;
     vec3 frag_pos;
     mat3 TBN;
 } Out;
 
 void main(void) {
-  mat4 transform = transforms[transform_offset[gl_DrawIDARB] + gl_InstanceID];
+  mat4 transform = transforms[transform_offset[gl_BaseInstanceARB] + gl_InstanceID];
   Out.frag_pos = vec3(transform * vec4(position, 1.0));
   gl_Position = projection_view * vec4(Out.frag_pos, 1.0);
-  Out.draw_id_arb = gl_DrawIDARB;
+  Out.base_instance = gl_BaseInstanceARB;
   Out.uv = uv;
   vec3 T = normalize(vec3(transform * vec4(tangent, 0.0)));
   vec3 B = normalize(vec3(transform * vec4(bitangent, 0.0)));

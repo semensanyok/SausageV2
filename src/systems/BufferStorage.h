@@ -160,7 +160,7 @@ public:
             auto& vertices = raw->vertices;
             auto& indices = raw->indices;
             // if offset initialized - reload data. (if vertices/indices size > existing - will corrupt other meshes)
-            bool is_new_mesh = mesh_data->buffer_id >= 0;
+            bool is_new_mesh = mesh_data->buffer_id < 0;
 
             bool is_vertex_offset_provided = mesh_data->vertex_offset >= 0;
             bool is_index_offset_provided = mesh_data->index_offset >= 0;
@@ -235,7 +235,6 @@ public:
         if (command_ptr_iter == mapped_command_buffers.end()) {
             // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
             auto command_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(command_buffer, 0, size * sizeof(DrawElementsIndirectCommand), flags);
-            CheckGLError();
             mapped_command_buffers[command_buffer] = command_ptr;
         }
         memcpy(&(mapped_command_buffers[command_buffer][command_start]), active_commands.data(), active_commands.size() * sizeof(DrawElementsIndirectCommand));

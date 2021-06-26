@@ -29,7 +29,6 @@ void Init() {
 	CheckGLError();
 	scene = new Scene(systems_manager);
 	scene->Init();
-	scene->PrepareDraws();
 	CheckGLError();
 }
 
@@ -42,6 +41,7 @@ int SDL_main(int argc, char** argv)
 	
 	while (!quit) {
 		systems_manager->UpdateDeltaTime();
+		scene->PrepareDraws();
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
 			ImGui_ImplSDL2_ProcessEvent(&e);

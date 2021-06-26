@@ -69,7 +69,7 @@ public:
         {
         case aiLightSource_DIRECTIONAL:
             return new Light{FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0};
-        case aiLightSource_POINT:
+            case aiLightSource_POINT:
             return new Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Point,0,0,light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
         case aiLightSource_SPOT:
             return new Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Spot,cos(light->mAngleInnerCone),cos(light->mAngleOuterCone),light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
@@ -88,7 +88,7 @@ public:
         if (is_new_mesh_data) {
             mesh_data = new MeshData();
             mesh_data->id = mesh_count++;
-            mesh_data->buffer_id = 0;
+            mesh_data->buffer_id = -1;
             mesh_data->instance_id = 0;
         }
         return make_shared<MeshLoadData>( mesh_data, vertices, indices, MaterialTexNames(), 1 );

@@ -43,7 +43,7 @@ struct Light {
 };
 
 in vs_out {
-    flat int draw_id_arb;
+    flat int base_instance;
     vec2 uv;
     vec3 frag_pos;
     mat3 TBN;
@@ -116,13 +116,14 @@ void AddLightColor(in vec3 mat_normal, inout vec3 res, in vec3 view_dir, in vec3
 }
 
 void main(void) {
-  vec4 mat_diffuse_with_opacity = texture(textures[In.draw_id_arb], vec3(In.uv, DIFFUSE_TEX)).rgba;
+  vec4 mat_diffuse_with_opacity = texture(textures[In.base_instance], vec3(In.uv, DIFFUSE_TEX)).rgba;
   vec3 mat_diffuse = mat_diffuse_with_opacity.rgb;
-  vec3 mat_specular = texture(textures[In.draw_id_arb], vec3(In.uv, SPECULAR_TEX)).rgb;
-  vec3 mat_normal = texture(textures[In.draw_id_arb], vec3(In.uv, NORMAL_TEX)).rgb * 2.0 - 1.0;
+  vec3 mat_specular = texture(textures[In.base_instance], vec3(In.uv, SPECULAR_TEX)).rgb;
+  vec3 mat_normal = texture(textures[In.base_instance], vec3(In.uv, NORMAL_TEX)).rgb * 2.0 - 1.0;
   mat_normal = normalize(In.TBN * mat_normal);
   vec3 view_dir = normalize(view_pos - In.frag_pos);
   vec3 res = mat_diffuse * ambient_const;
   AddLightColor(mat_normal, res, view_dir, mat_diffuse, mat_specular);
-  color = vec4(res, mat_diffuse_with_opacity.a);
+  //color = vec4(res, mat_diffuse_with_opacity.a);
+  color = vec4(res, 0.04 + clamp(In.base_instance - 4, 0, 1)*0.5);
 }
