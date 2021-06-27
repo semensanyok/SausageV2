@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sausage.h"
-
+#include "Settings.h"
 
 using namespace std;
 using namespace glm;
@@ -11,16 +11,13 @@ class Shader;
 class Texture;
 
 struct Vertex {
-    // position
     vec3 Position;
-    // normal
     vec3 Normal;
-    // texCoords
     vec2 TexCoords;
-    // tangent
     vec3 Tangent;
-    // bitangent
     vec3 Bitangent;
+    ivec4 BoneIds;
+    vec4 BoneWeights;
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -119,10 +116,26 @@ enum ShaderType {
     BRDF
 };
 
+struct Bone {
+    unsigned int id;
+    string name;
+    /** Matrix that transforms from bone space to mesh space in bind pose.
+      *
+      * This matrix describes the position of the mesh
+      * in the local space of this bone when the skeleton was bound.
+      * Thus it can be used directly to determine a desired vertex position,
+      * given the world-space transform of the bone when animated,
+      * and the position of the vertex in mesh space.
+      *
+      * It is sometimes called an inverse-bind matrix,
+      * or inverse bind pose matrix.
+      */
+    mat4 offset; 
+};
+
 struct MeshData {
     unsigned long id;
     bool is_transparent;
-    // draw id.
     long buffer_id;
     unsigned long instance_id;
     unsigned long transform_offset;
@@ -136,6 +149,9 @@ struct MeshData {
     long index_offset;
     Texture* texture;
     MeshData* base_mesh;
+    
+    Bone* bones;
+    unsigned int num_bones;
     MeshData() : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, base_mesh{ nullptr }, texture{ nullptr } {};
 };
 
@@ -146,6 +162,7 @@ struct MeshLoadData {
     vector<unsigned int> indices;
     MaterialTexNames tex_names;
     unsigned int instance_count;
+    vector<Bone> bones;
     //~MeshLoadData() { cout << "MeshLoadData deleted: " << (mesh_data == nullptr ? "no mesh_data" : mesh_data->name) << endl; }
 };
 
@@ -163,4 +180,10 @@ struct Shaders {
     Shader* blinn_phong;
     Shader* bullet_debug;
     Shader* stencil;
+};
+
+struct UniformData {
+    mat4 bones_transforms[MAX_BONES];
+    mat4 transforms[MAX_TRANSFORM];
+    unsigned int transform_offset[MAX_TRANSFORM_OFFSET];
 };

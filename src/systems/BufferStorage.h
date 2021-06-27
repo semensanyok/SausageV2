@@ -5,9 +5,12 @@
 #include "Logging.h"
 #include "OpenGLHelpers.h"
 #include "Texture.h"
+#include "Settings.h"
 
 using namespace std;
 using namespace glm;
+using namespace BufferSettings;
+
 
 class BufferStorage {
 private:
@@ -18,15 +21,14 @@ private:
     ///////////
     // UNIFORMS
     ///////////
-    const unsigned long TRANSFORM_STORAGE_SIZE = MAX_TRANSFORM * sizeof(mat4);
+    const unsigned long UNIFORMS_STORAGE_SIZE = sizeof(UniformData);
     const unsigned long TRANSFORM_OFFSET_STORAGE_SIZE = MAX_TRANSFORM_OFFSET * sizeof(unsigned int);
     const unsigned long TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
     
     const GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-    const int TRANSFORM_UNIFORM_LOC = 0;
-    const int TRANSFORM_OFFSET_UNIFORM_LOC = 1;
-    const int TEXTURE_UNIFORM_LOC = 2;
-    const int LIGHTS_UNIFORM_LOC = 3;
+    const int UNIFORMS_LOC = 0;
+    const int TEXTURE_UNIFORM_LOC = 1;
+    const int LIGHTS_UNIFORM_LOC = 2;
     
     bool is_need_barrier = false;
 
@@ -43,8 +45,7 @@ private:
     /////////////////////
     // UNIFORMS AND SSBO
     /////////////////////
-    GLuint transform_buffer;
-    GLuint transform_offset_buffer;
+    GLuint uniforms_buffer;
     GLuint texture_buffer;
     GLuint light_buffer;
     vector<GLuint> command_buffers;
@@ -54,8 +55,7 @@ private:
     //////////////////////////
     Vertex* vertex_ptr;
     unsigned int* index_ptr;
-    mat4* transform_ptr;
-    unsigned int* transform_offset_ptr;
+    UniformData* uniforms_ptr;
     GLuint64* texture_ptr;
     Lights* light_ptr;
 
@@ -63,14 +63,6 @@ public:
     unsigned long meshes_total;
     unsigned long transforms_total;
 
-    const unsigned long MAX_VERTEX = 1000000;
-    const unsigned long MAX_INDEX = 100000;
-    const unsigned long MAX_COMMAND = 1000;
-    const unsigned long MAX_TRANSFORM = MAX_COMMAND;
-    const unsigned long MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
-    const unsigned long MAX_TEXTURES = MAX_COMMAND;
-    const unsigned long MAX_LIGHTS = 1000;
-    
     int id = -1;
 
     GLsync fence_sync = 0;
@@ -256,19 +248,16 @@ public:
     
     void BufferTransform(MeshData* mesh_data) {
         WaitGPU(fence_sync);
-        transform_ptr[mesh_data->transform_offset + mesh_data->instance_id] = mesh_data->transform;
+        uniforms_ptr->transforms[mesh_data->transform_offset + mesh_data->instance_id] = mesh_data->transform;
         if (mesh_data->instance_id == 0) {
-            transform_offset_ptr[mesh_data->buffer_id + mesh_data->instance_id] = mesh_data->transform_offset;
+            uniforms_ptr->transform_offset[mesh_data->buffer_id + mesh_data->instance_id] = mesh_data->transform_offset;
         }
         is_need_barrier = true;
     }
     void BufferTransform(vector<MeshData*>& mesh_data) {
         WaitGPU(fence_sync);
         for (int i = 0; i < mesh_data.size(); i++) {
-            transform_ptr[mesh_data[i]->transform_offset + mesh_data[i]->instance_id] = mesh_data[i]->transform;
-            if (mesh_data[i]->instance_id == 0) {
-                transform_offset_ptr[mesh_data[i]->buffer_id] = mesh_data[i]->transform_offset;
-            }
+            BufferTransform(mesh_data);
         }
         //memcpy(&mvp_ptr[command_total], mvps.data(), mvps.size() * sizeof(mat4));
         is_need_barrier = true;
@@ -300,15 +289,10 @@ public:
         glBufferStorage(GL_ARRAY_BUFFER, VERTEX_STORAGE_SIZE, NULL, flags);
         vertex_ptr = (Vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, VERTEX_STORAGE_SIZE, flags);
 
-        glGenBuffers(1, &transform_buffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, TRANSFORM_STORAGE_SIZE, NULL, flags);
-        transform_ptr = (mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, TRANSFORM_STORAGE_SIZE, flags);
-
-        glGenBuffers(1, &transform_offset_buffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_offset_buffer);
-        glBufferStorage(GL_SHADER_STORAGE_BUFFER, TRANSFORM_OFFSET_STORAGE_SIZE, NULL, flags);
-        transform_offset_ptr = (unsigned int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, TRANSFORM_OFFSET_STORAGE_SIZE, flags);
+        glGenBuffers(1, &uniforms_buffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, UNIFORMS_STORAGE_SIZE, NULL, flags);
+        uniforms_ptr = (UniformData*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, UNIFORMS_STORAGE_SIZE, flags);
 
         glGenBuffers(1, &texture_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
@@ -324,8 +308,7 @@ public:
     void BindMeshVAOandBuffers() {
         // !WARNING. binding buffer after glVertexAttribPointer lead to hardware crash.
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_offset_buffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
@@ -341,9 +324,12 @@ public:
         glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_INT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, BoneIds));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, BoneWeights));
         
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TRANSFORM_UNIFORM_LOC, transform_buffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TRANSFORM_OFFSET_UNIFORM_LOC, transform_offset_buffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, uniforms_buffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_UNIFORM_LOC, texture_buffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC, light_buffer);
     }
@@ -360,9 +346,9 @@ public:
         glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
         glDeleteBuffers(1, &index_buffer);
         CheckGLError();
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        glDeleteBuffers(1, &transform_buffer);
+        glDeleteBuffers(1, &uniforms_buffer);
         CheckGLError();
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);

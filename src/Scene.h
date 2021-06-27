@@ -176,9 +176,9 @@ private:
 		}
 	}
 	void _SortByDistance() {
-		set <pair<float, MeshData*>, decltype([](const pair<float, MeshData*>& lhs, const pair<float, MeshData*>& rhs) {
+		set<pair<float, MeshData*>, decltype([](const auto& lhs, const auto& rhs) {
 			return lhs.first > rhs.first;
-			}) > back_to_front;
+		}) > back_to_front;
 		for (auto mesh : draw_meshes) {
 			pair<float, MeshData*> distance_mesh = { distance(systems_manager->camera->pos, vec3(mesh->transform[3])) , mesh };
 			back_to_front.insert(distance_mesh);

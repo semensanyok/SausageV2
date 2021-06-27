@@ -11,6 +11,7 @@ using namespace glm;
 class MeshManager {
 public:
     inline static atomic<unsigned long> mesh_count{ 0 };
+    inline static atomic<unsigned long> bone_count{ 0 };
     // Structure of arrays style for multidraw.
     static void LoadMeshes(
         const string& file_name,
@@ -28,7 +29,6 @@ public:
             LOG((ostringstream() << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString()).str());
             return;
         }
-
         for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
             auto child = scene->mRootNode->mChildren[i];
             auto ai_t = child->mTransformation;
@@ -42,7 +42,6 @@ public:
                 // the node object only contains indices to index the actual objects in the scene. 
                 // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
                 aiMesh* mesh = scene->mMeshes[child->mMeshes[j]];
-
                 auto data_ptr = ProcessMesh(mesh, scene);
                 auto data = data_ptr.get();
                 data->mesh_data->transform = transform;
@@ -83,13 +82,18 @@ public:
     static vec4 FromAi(aiColor3D& aivec) {
         return vec4(aivec.r, aivec.g, aivec.b, 0);
     }
-    static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices, bool is_new_mesh_data = true) {
+    static Bone CreateBone(const char* bone_name, mat4& offset) {
+        return { bone_count++, bone_name, offset };
+    }
+    static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices, bool is_new_mesh_data = true, Bone* bones, unsigned int num_bones) {
         MeshData* mesh_data = nullptr;
         if (is_new_mesh_data) {
             mesh_data = new MeshData();
             mesh_data->id = mesh_count++;
             mesh_data->buffer_id = -1;
             mesh_data->instance_id = 0;
+            mesh_data->bones = bones;
+            mesh_data->num_bones = num_bones;
         }
         return make_shared<MeshLoadData>( mesh_data, vertices, indices, MaterialTexNames(), 1 );
     };
@@ -120,48 +124,72 @@ public:
         return CreateMesh(positions, indices, is_new_mesh_data);
     };
 private:
-
     static shared_ptr<MeshLoadData> ProcessMesh(aiMesh* mesh, const aiScene* scene)
     {
         // data to fill
         vector<Vertex> vertices;
         vector<unsigned int> indices;
+        Bone* bones = mesh->mNumBones > 0 ? new Bone[mesh->mNumBones] : nullptr;
+
+        map<unsigned int, set<pair<Bone*, aiVertexWeight>, decltype([](const pair<Bone*, aiVertexWeight>& lhs, const pair<Bone*, aiVertexWeight>& rhs) {
+            return lhs.second.mWeight > rhs.second.mWeight;
+        })>> vertex_index_to_weights;
+
+        for (size_t i = 0; i < mesh->mNumBones; i++)
+        {
+            auto aibone = mesh->mBones[i];
+            auto& ai_t = aibone->mOffsetMatrix;
+            auto offset = mat4(
+                ai_t.a1, ai_t.b1, ai_t.c1, ai_t.d1,
+                ai_t.a2, ai_t.b2, ai_t.c2, ai_t.d2,
+                ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
+                ai_t.a4, ai_t.b4, ai_t.c4, ai_t.d4);
+            bones[i] = CreateBone(aibone->mName.C_Str(), offset);
+            for (int i = 0; i < aibone->mNumWeights; i++) {
+                auto& weight = aibone->mWeights[i];
+                vertex_index_to_weights[weight.mVertexId].insert({ &bones[i], weight });
+            }
+        }
 
         // walk through each of the mesh's vertices
         for (unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
             Vertex vertex;
-            vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder vec3 first.
-            vector.x = mesh->mVertices[i].x;
-            vector.y = mesh->mVertices[i].y;
-            vector.z = mesh->mVertices[i].z;
-            vertex.Position = vector;
+            vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
             if (mesh->HasNormals())
             {
-                vector.x = mesh->mNormals[i].x;
-                vector.y = mesh->mNormals[i].y;
-                vector.z = mesh->mNormals[i].z;
-                vertex.Normal = vector;
+                vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
             }
-            if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
-            {
-                vec2 vec;
-                // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
-                // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-                vec.x = mesh->mTextureCoords[0][i].x;
-                vec.y = mesh->mTextureCoords[0][i].y;
-                vertex.TexCoords = vec;
-                vector.x = mesh->mTangents[i].x;
-                vector.y = mesh->mTangents[i].y;
-                vector.z = mesh->mTangents[i].z;
-                vertex.Tangent = vector;
-                vertex.Bitangent = vec3(
-                    mesh->mBitangents[i].x,
-                    mesh->mBitangents[i].y,
-                    mesh->mBitangents[i].z);
+            vertex.TexCoords = mesh->mTextureCoords[0] ? vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y) : vec2(0, 0);
+            vertex.Tangent = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
+            vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
+            // init animation data
+            vertex.BoneIds = ivec4(-1);
+            vertex.BoneWeights = vec4(0.0);
+            if (!vertex_index_to_weights.empty()) {
+                auto& weights_v = vertex_index_to_weights[i];
+                auto weight = weights_v.begin();
+                if (weight != weights_v.end()) {
+                    vertex.BoneIds.x = (*weight).first->id;
+                    vertex.BoneWeights.x = (*weight).second.mWeight;
+                    weight++;
+                    if (weight != weights_v.end()) {
+                        vertex.BoneIds.y = (*weight).first->id;
+                        vertex.BoneWeights.y = (*weight).second.mWeight;
+                        weight++;
+                        if (weight != weights_v.end()) {
+                            vertex.BoneIds.z = (*weight).first->id;
+                            vertex.BoneWeights.z = (*weight).second.mWeight;
+                            weight++;
+                            if (weight != weights_v.end()) {
+                                vertex.BoneIds.w = (*weight).first->id;
+                                vertex.BoneWeights.w = (*weight).second.mWeight;
+                                weight++;
+                            }
+                        }
+                    }
+                }
             }
-            else
-                vertex.TexCoords = vec2(0.0f, 0.0f);
             vertices.push_back(vertex);
         }
         for (unsigned int i = 0; i < mesh->mNumFaces; i++)
@@ -170,7 +198,7 @@ private:
             for (unsigned int j = 0; j < face.mNumIndices; j++)
                 indices.push_back(face.mIndices[j]);
         }
-        return CreateMesh(vertices, indices);
+        return CreateMesh(vertices, indices, bones, mesh->mNumBones);
     }
 
     static MaterialTexNames _GetTexNames(const aiMesh* mesh, const aiScene* scene, bool is_obj = false) {

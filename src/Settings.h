@@ -12,3 +12,14 @@ namespace GameSettings {
 	int ray_debug_draw_lifetime_milliseconds = 2000;
 	float physics_step_multiplier = 0.0001f;
 }
+
+namespace BufferSettings {
+	const unsigned long MAX_VERTEX = 1000000;
+	const unsigned long MAX_INDEX = 100000;
+	const unsigned long MAX_COMMAND = 1000;
+	const unsigned long MAX_TRANSFORM = 4000;
+	const unsigned long MAX_BONES = 100000;
+	const unsigned long MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
+	const unsigned long MAX_TEXTURES = MAX_COMMAND;
+	const unsigned long MAX_LIGHTS = 1000;
+}
