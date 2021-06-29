@@ -22,4 +22,7 @@ namespace BufferSettings {
 	const unsigned long MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
 	const unsigned long MAX_TEXTURES = MAX_COMMAND;
 	const unsigned long MAX_LIGHTS = 1000;
+	// reserve last 1/4 of buffer for debug vertices;
+	const unsigned long DEBUG_VERTEX_OFFSET = MAX_VERTEX - MAX_VERTEX * 0.25;
+	const unsigned long DEBUG_INDEX_OFFSET = MAX_INDEX - MAX_INDEX * 0.25;
 }

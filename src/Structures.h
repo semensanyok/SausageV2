@@ -5,6 +5,7 @@
 
 using namespace std;
 using namespace glm;
+using namespace BufferSettings;
 
 class BufferStorage;
 class Shader;
@@ -130,7 +131,15 @@ struct Bone {
       * It is sometimes called an inverse-bind matrix,
       * or inverse bind pose matrix.
       */
-    mat4 offset; 
+    mat4 offset;
+    vector<Bone*> children;
+};
+
+struct Armature {
+    string name;
+    unsigned int num_bones;
+    Bone* bones;
+    map<string, Bone*> name_to_bone;
 };
 
 struct MeshData {
@@ -148,13 +157,12 @@ struct MeshData {
     long vertex_offset;
     long index_offset;
     Texture* texture;
-    MeshData* base_mesh;
-    
-    Bone* bones;
-    unsigned int num_bones;
-    MeshData() : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, base_mesh{ nullptr }, texture{ nullptr } {};
-};
 
+    MeshData* base_mesh;
+    Armature* armature;
+
+    MeshData() : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, base_mesh{ nullptr }, texture{ nullptr }, armature{ nullptr } {};
+};
 
 struct MeshLoadData {
     MeshData* mesh_data;
@@ -162,9 +170,9 @@ struct MeshLoadData {
     vector<unsigned int> indices;
     MaterialTexNames tex_names;
     unsigned int instance_count;
-    vector<Bone> bones;
     //~MeshLoadData() { cout << "MeshLoadData deleted: " << (mesh_data == nullptr ? "no mesh_data" : mesh_data->name) << endl; }
 };
+
 
 struct DrawCall {
     int mode = GL_TRIANGLES; // GL_TRIANGLES GL_LINES

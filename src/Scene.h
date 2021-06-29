@@ -8,6 +8,7 @@
 #include "systems/TextureManager.h"
 #include "FileWatcher.h"
 #include "systems/SystemsManager.h"
+#include "Settings.h"
 
 class Scene {
 public:
@@ -17,7 +18,6 @@ public:
 	DrawCall* draw_call2;
 	DrawCall* draw_call3;
 
-	const unsigned int command_buffer_size;
 	Shaders shaders;
 	// custom draws per shader
 	vector<MeshData*> all_meshes;
@@ -31,12 +31,12 @@ public:
 
 	string scene_path = GetModelPath("frog.fbx");
 	Scene(SystemsManager* systems_manager) :
-		systems_manager{ systems_manager }, shaders{ systems_manager->shaders }, command_buffer_size{ systems_manager->buffer->MAX_COMMAND }{
+		systems_manager{ systems_manager }, shaders{ systems_manager->shaders }{
 		draw_call = new DrawCall();
 		draw_call->shader = shaders.blinn_phong;
 		draw_call->mode = GL_TRIANGLES;
 		draw_call->buffer = systems_manager->buffer;
-		draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(command_buffer_size);
+		draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND);
 
 		//draw_call2 = new DrawCall(*draw_call);
 		////draw_call2->shader = shaders.stencil;
@@ -65,7 +65,7 @@ public:
 				commands.push_back(draw_meshes[i]->command);
 			}
 		}
-		draw_call->buffer->AddCommands(commands, draw_call->command_buffer, command_buffer_size);
+		draw_call->buffer->AddCommands(commands, draw_call->command_buffer, BufferSettings::MAX_COMMAND);
 		CheckGLError();
 		draw_call->command_count = (unsigned int)commands.size();
 		draw_call->num_lights = (int)draw_lights.size();
@@ -113,7 +113,6 @@ private:
 		}
 	}
 	void _BufferMeshes(vector<shared_ptr<MeshLoadData>>& new_meshes) {
-		// optimization - merge same vertex count + texture as instanced draw.
 		for (auto& mesh_ptr : new_meshes) {
 			if (mesh_ptr->mesh_data->base_mesh != nullptr) {
 				continue;

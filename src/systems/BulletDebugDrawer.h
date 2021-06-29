@@ -5,6 +5,9 @@
 #include "Shader.h"
 #include "BufferStorage.h"
 #include "Renderer.h"
+#include "Settings.h"
+
+using namespace BufferSettings;
 
 static struct PersistDrawRay {
     uint32_t remove_time_millis;
@@ -84,9 +87,8 @@ private:
                 if (is_new_mesh_data) {
                     mesh_data = load_data.get()->mesh_data;
                     mesh_data->name = "BulletDebugDrawerData";
-                    // reserve last 1/4 of buffer for debug vertices;
-                    mesh_data->vertex_offset = buffer->MAX_VERTEX - buffer->MAX_VERTEX * 0.25;
-                    mesh_data->index_offset = buffer->MAX_INDEX - buffer->MAX_INDEX * 0.25;
+                    mesh_data->vertex_offset = DEBUG_VERTEX_OFFSET;
+                    mesh_data->index_offset = DEBUG_INDEX_OFFSET;
                 }
                 else {
                     load_data.get()->mesh_data = mesh_data;

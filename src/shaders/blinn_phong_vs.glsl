@@ -10,7 +10,7 @@ layout (location = 2) in vec2 uv;
 layout (location = 3) in vec3 tangent;
 layout (location = 4) in vec3 bitangent;
 layout (location = 5) in ivec4 bone_ids; 
-layout (location = 6) in ivec4 bone_weights; 
+layout (location = 6) in vec4 bone_weights; 
 
 const uint MAX_COMMAND = 1000;
 const uint MAX_TRANSFORM = 4000;

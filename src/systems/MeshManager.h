@@ -8,6 +8,11 @@
 using namespace std;
 using namespace glm;
 
+ostream& operator<<(ostream& in, const aiString& aistring) {
+    in << string(aistring.C_Str());
+    return in;
+}
+
 class MeshManager {
 public:
     inline static atomic<unsigned long> mesh_count{ 0 };
@@ -22,13 +27,19 @@ public:
         bool is_obj = file_name.ends_with(".obj");
         Assimp::Importer assimp_importer;
 
-        const aiScene* scene = assimp_importer.ReadFile(file_name, aiProcess_GenBoundingBoxes | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+        const aiScene *scene = assimp_importer.ReadFile(
+            file_name, aiProcess_PopulateArmatureData |
+                           aiProcess_GenBoundingBoxes | aiProcess_Triangulate |
+                           aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
+                           aiProcess_CalcTangentSpace);
 
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
             LOG((ostringstream() << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString()).str());
             return;
         }
+        map<string, MeshData*> name_to_mesh;
+        map<string, MeshData*> armature_name_to_mesh;
         for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
             auto child = scene->mRootNode->mChildren[i];
             auto ai_t = child->mTransformation;
@@ -37,11 +48,13 @@ public:
                 ai_t.a2, ai_t.b2, ai_t.c2, ai_t.d2,
                 ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
                 ai_t.a4, ai_t.b4, ai_t.c4, ai_t.d4);
+
             for (unsigned int j = 0; j < child->mNumMeshes; j++)
             {
                 // the node object only contains indices to index the actual objects in the scene. 
                 // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
                 aiMesh* mesh = scene->mMeshes[child->mMeshes[j]];
+
                 auto data_ptr = ProcessMesh(mesh, scene);
                 auto data = data_ptr.get();
                 data->mesh_data->transform = transform;
@@ -51,8 +64,27 @@ public:
                 data->mesh_data->name = string(mesh->mName.C_Str());
                 data->tex_names = _GetTexNames(mesh, scene, is_obj);
                 out_mesh_load_data.push_back(data_ptr);
+                name_to_mesh[data->mesh_data->name] = data->mesh_data;
+                if (data->mesh_data->armature != nullptr) {
+                    armature_name_to_mesh[data->mesh_data->armature->name] = data->mesh_data;
+                }
             }
         }
+
+        //for (size_t i = 0; i < scene->mNumAnimations; i++)
+        //{
+        //    auto& anim = scene->mAnimations[i];
+        //    MeshData* mesh = nullptr;
+        //    for (size_t j = 0; j < anim->mNumChannels; j++)
+        //    {
+        //        auto channel = anim->mChannels[j];
+        //        if (j == 0) {
+        //            mesh = armature_name_to_mesh[channel->mNodeName.C_Str()];
+        //        }
+        //        cout << channel->mNodeName << endl;
+        //    }
+
+        //}
         for (unsigned int i = 0; i < scene->mNumLights; i++) {
             auto light = scene->mLights[i];
             auto node = scene->mRootNode->FindNode(light->mName);
@@ -67,13 +99,49 @@ public:
         switch (light->mType)
         {
         case aiLightSource_DIRECTIONAL:
-            return new Light{FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0};
-            case aiLightSource_POINT:
-            return new Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Point,0,0,light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
+            return new Light{ FromAi(light->mDirection),
+                             FromAi(light->mPosition),
+                             FromAi(light->mColorDiffuse),
+                             FromAi(light->mColorSpecular),
+                             LightType::Directional,
+                             0,
+                             0,
+                             0,
+                             0,
+                             0 };
+        case aiLightSource_POINT:
+            return new Light{ FromAi(light->mDirection),
+                             FromAi(light->mPosition),
+                             FromAi(light->mColorDiffuse),
+                             FromAi(light->mColorSpecular),
+                             LightType::Point,
+                             0,
+                             0,
+                             light->mAttenuationConstant,
+                             light->mAttenuationLinear,
+                             light->mAttenuationQuadratic };
         case aiLightSource_SPOT:
-            return new Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Spot,cos(light->mAngleInnerCone),cos(light->mAngleOuterCone),light->mAttenuationConstant,light->mAttenuationLinear,light->mAttenuationQuadratic };
+            return new Light{ FromAi(light->mDirection),
+                             FromAi(light->mPosition),
+                             FromAi(light->mColorDiffuse),
+                             FromAi(light->mColorSpecular),
+                             LightType::Spot,
+                             cos(light->mAngleInnerCone),
+                             cos(light->mAngleOuterCone),
+                             light->mAttenuationConstant,
+                             light->mAttenuationLinear,
+                             light->mAttenuationQuadratic };
         default:
-            return new Light{ FromAi(light->mDirection),FromAi(light->mPosition),FromAi(light->mColorDiffuse), FromAi(light->mColorSpecular),LightType::Directional,0,0,0,0,0 };
+            return new Light{ FromAi(light->mDirection),
+                             FromAi(light->mPosition),
+                             FromAi(light->mColorDiffuse),
+                             FromAi(light->mColorSpecular),
+                             LightType::Directional,
+                             0,
+                             0,
+                             0,
+                             0,
+                             0 };
         }
     }
     static vec4 FromAi(aiVector3D& aivec) {
@@ -85,59 +153,81 @@ public:
     static Bone CreateBone(const char* bone_name, mat4& offset) {
         return { bone_count++, bone_name, offset };
     }
-    static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex>& vertices, vector<unsigned int>& indices, bool is_new_mesh_data = true, Bone* bones, unsigned int num_bones) {
-        MeshData* mesh_data = nullptr;
-        if (is_new_mesh_data) {
-            mesh_data = new MeshData();
-            mesh_data->id = mesh_count++;
-            mesh_data->buffer_id = -1;
-            mesh_data->instance_id = 0;
-            mesh_data->bones = bones;
-            mesh_data->num_bones = num_bones;
+    static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex> &vertices,
+                                               vector<unsigned int> &indices,
+                                               Armature *armature = nullptr,
+                                               bool is_new_mesh_data = true) {
+      MeshData *mesh_data = nullptr;
+      if (is_new_mesh_data) {
+        mesh_data = new MeshData();
+        mesh_data->id = mesh_count++;
+        mesh_data->buffer_id = -1;
+        mesh_data->instance_id = 0;
+        if (armature != nullptr) {
+            mesh_data->armature = armature;
         }
-        return make_shared<MeshLoadData>( mesh_data, vertices, indices, MaterialTexNames(), 1 );
+      }
+      return make_shared<MeshLoadData>(mesh_data, vertices, indices,
+                                       MaterialTexNames(), 1);
     };
 
-    static shared_ptr<MeshLoadData> CreateMesh(vector<float>& vertices, vector<unsigned int>& indices, bool is_new_mesh_data = true) {
-        vector<Vertex> positions;
-        for (int i = 0; i < vertices.size(); i += 3) {
-            Vertex vert;
-            vert.Position = vec3(vertices[i], vertices[i + 1], vertices[i + 2]);
-            positions.push_back(vert);
+    static shared_ptr<MeshLoadData> CreateMesh(vector<float> &vertices,
+                                               vector<unsigned int> &indices,
+                                               bool is_new_mesh_data = true) {
+      vector<Vertex> positions;
+      for (int i = 0; i < vertices.size(); i += 3) {
+        Vertex vert;
+        vert.Position = vec3(vertices[i], vertices[i + 1], vertices[i + 2]);
+        positions.push_back(vert);
+      }
+      return CreateMesh(positions, indices, nullptr, is_new_mesh_data);
+    };
+    static shared_ptr<MeshLoadData> CreateMesh(vector<vec3> &vertices,
+                                               vector<unsigned int> &indices,
+                                               bool is_new_mesh_data = true) {
+      vector<vec3> empty;
+      return CreateMesh(vertices, indices, empty, is_new_mesh_data);
+    };
+    static shared_ptr<MeshLoadData> CreateMesh(vector<vec3> &vertices,
+                                               vector<unsigned int> &indices,
+                                               vector<vec3> &normals,
+                                               bool is_new_mesh_data = true) {
+      vector<Vertex> positions;
+      for (int i = 0; i < vertices.size(); i++) {
+        Vertex vert;
+        vert.Position = vertices[i];
+        if (!normals.empty()) {
+          vert.Normal = normals[i];
         }
-        return CreateMesh(positions, indices, is_new_mesh_data);
+        positions.push_back(vert);
+      }
+      return CreateMesh(positions, indices, nullptr, is_new_mesh_data);
     };
-    static shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices, vector<unsigned int>& indices, bool is_new_mesh_data = true) {
-        vector<vec3> empty;
-        return CreateMesh(vertices, indices, empty, is_new_mesh_data);
-    };
-    static shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices, vector<unsigned int>& indices, vector<vec3>& normals, bool is_new_mesh_data = true) {
-        vector<Vertex> positions;
-        for (int i = 0; i < vertices.size(); i ++) {
-            Vertex vert;
-            vert.Position = vertices[i];
-            if (!normals.empty()) {
-                vert.Normal = normals[i];
-            }
-            positions.push_back(vert);
-        }
-        return CreateMesh(positions, indices, is_new_mesh_data);
-    };
+
 private:
     static shared_ptr<MeshLoadData> ProcessMesh(aiMesh* mesh, const aiScene* scene)
     {
         // data to fill
         vector<Vertex> vertices;
         vector<unsigned int> indices;
-        Bone* bones = mesh->mNumBones > 0 ? new Bone[mesh->mNumBones] : nullptr;
+        Bone* bones = new Bone[mesh->mNumBones];
+        Armature* armature = mesh->mNumBones > 0 ? new Armature{ {}, mesh->mNumBones, bones, {} } : nullptr;
 
-        map<unsigned int, set<pair<Bone*, aiVertexWeight>, decltype([](const pair<Bone*, aiVertexWeight>& lhs, const pair<Bone*, aiVertexWeight>& rhs) {
-            return lhs.second.mWeight > rhs.second.mWeight;
-        })>> vertex_index_to_weights;
+        map<unsigned int,
+            set<pair<Bone *, aiVertexWeight>,
+                decltype([](const pair<Bone *, aiVertexWeight> &lhs,
+                            const pair<Bone *, aiVertexWeight> &rhs) {
+                  return lhs.second.mWeight > rhs.second.mWeight;
+                })>>
+            vertex_index_to_weights;
+
 
         for (size_t i = 0; i < mesh->mNumBones; i++)
         {
             auto aibone = mesh->mBones[i];
+            if (i == 0) {
+                armature->name = aibone->mArmature->mName.C_Str();
+            }
             auto& ai_t = aibone->mOffsetMatrix;
             auto offset = mat4(
                 ai_t.a1, ai_t.b1, ai_t.c1, ai_t.d1,
@@ -145,13 +235,20 @@ private:
                 ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
                 ai_t.a4, ai_t.b4, ai_t.c4, ai_t.d4);
             bones[i] = CreateBone(aibone->mName.C_Str(), offset);
-            for (int i = 0; i < aibone->mNumWeights; i++) {
-                auto& weight = aibone->mWeights[i];
+            armature->name_to_bone[bones[i].name] = &bones[i];
+            for (int j = 0; j < aibone->mNumWeights; j++) {
+                auto& weight = aibone->mWeights[j];
                 vertex_index_to_weights[weight.mVertexId].insert({ &bones[i], weight });
             }
         }
 
-        // walk through each of the mesh's vertices
+        for (size_t i = 0; i < mesh->mNumBones; i++)
+        {
+            auto aibone = mesh->mBones[i];
+            if (aibone->mNode->mNumChildren > 0) {
+                SetBoneHierarchy(armature, aibone->mNode, armature->name_to_bone[aibone->mName.C_Str()]);
+            }
+        }
         for (unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
             Vertex vertex;
@@ -198,7 +295,21 @@ private:
             for (unsigned int j = 0; j < face.mNumIndices; j++)
                 indices.push_back(face.mIndices[j]);
         }
-        return CreateMesh(vertices, indices, bones, mesh->mNumBones);
+        return CreateMesh(vertices, indices, armature);
+    }
+    static void SetBoneHierarchy(Armature* armature, aiNode* parent_node, Bone* parent) {
+        for (size_t j = 0; j < parent_node->mNumChildren; j++)
+        {
+            if (j == 0) {
+                parent->children.reserve(parent_node->mNumChildren);
+            }
+            auto child_node = parent_node->mChildren[j];
+            auto child_bone = armature->name_to_bone.find(child_node->mName.C_Str());
+            if (child_bone != armature->name_to_bone.end()) {
+                parent->children.push_back((*child_bone).second);
+                SetBoneHierarchy(armature, child_node, (*child_bone).second);
+            }
+        }
     }
 
     static MaterialTexNames _GetTexNames(const aiMesh* mesh, const aiScene* scene, bool is_obj = false) {
@@ -213,19 +324,15 @@ private:
         aiString Path;
         auto mat = scene->mMaterials[mesh->mMaterialIndex];
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << filesystem::path(Path.C_Str()).filename() << endl;
             diffuse_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_NORMALS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << filesystem::path(Path.C_Str()).filename() << endl;
             normal_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_SPECULAR, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << filesystem::path(Path.C_Str()).filename() << endl;
             specular_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_HEIGHT, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << filesystem::path(Path.C_Str()).filename() << endl;
             // Blender obj export saves .mtl with normal tex as bump tex.
             if (is_obj) {
                 normal_name = filesystem::path(Path.C_Str()).filename().string();
@@ -235,15 +342,12 @@ private:
             }
         }
         if (mat->GetTexture(aiTextureType_METALNESS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << filesystem::path(Path.C_Str()).filename() << endl;
             metal_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << filesystem::path(Path.C_Str()).filename() << endl;
             ao_name = filesystem::path(Path.C_Str()).filename().string();
         }
         if (mat->GetTexture(aiTextureType_OPACITY, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-            cout << filesystem::path(Path.C_Str()).filename() << endl;
             opacity_name = filesystem::path(Path.C_Str()).filename().string();
         }
         return MaterialTexNames(diffuse_name, normal_name, specular_name, height_name, metal_name, ao_name, opacity_name);

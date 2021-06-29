@@ -77,7 +77,6 @@ public:
     };
 	~BufferStorage() {};
     void Reset() {
-        BarrierIfChangeAndUnmap();
         fence_sync = 0;
         vertex_total = 0;
         index_total = 0;
@@ -118,6 +117,7 @@ public:
             waitDuration = 1000000000; // one second in nanoseconds
         }
         glDeleteSync(fence_sync);
+        fence_sync = 0;
     }
     void BarrierIfChangeAndUnmap() {
         if (is_need_barrier) {
@@ -201,6 +201,11 @@ public:
                     transforms_total += command.instanceCount;
                 }
             }
+            if (mesh_data->armature != nullptr) {
+                int num_bones = mesh_data->armature->num_bones;
+                auto identity = mat4(1.0);
+                BufferBoneTransform(mesh_data->armature->bones, identity, mesh_data->armature->num_bones);
+            }
         }
         for (auto& instance : instances) {
             instance->buffer_id = instance->base_mesh->buffer_id;
@@ -245,7 +250,22 @@ public:
         mapped_command_buffers[command_buffer][command_start] = command;
         return command_start;
     }
-    
+    void BufferBoneTransform(Bone* bone, vector<mat4>& transforms, unsigned int num_bones = 1) {
+        WaitGPU(fence_sync);
+        for (size_t i = 0; i < num_bones; i++)
+        {
+            BufferBoneTransform(&bone[i], transforms[i], 1);
+        }
+        is_need_barrier = true;
+    }
+    void BufferBoneTransform(Bone* bone, mat4& transform, unsigned int num_bones = 1) {
+        WaitGPU(fence_sync);
+        for (size_t i = 0; i < num_bones; i++)
+        {
+          uniforms_ptr->bones_transforms[bone[i].id] = transform;
+        }
+        is_need_barrier = true;
+    }
     void BufferTransform(MeshData* mesh_data) {
         WaitGPU(fence_sync);
         uniforms_ptr->transforms[mesh_data->transform_offset + mesh_data->instance_id] = mesh_data->transform;
@@ -257,7 +277,7 @@ public:
     void BufferTransform(vector<MeshData*>& mesh_data) {
         WaitGPU(fence_sync);
         for (int i = 0; i < mesh_data.size(); i++) {
-            BufferTransform(mesh_data);
+            BufferTransform(mesh_data[i]);
         }
         //memcpy(&mvp_ptr[command_total], mvps.data(), mvps.size() * sizeof(mat4));
         is_need_barrier = true;
@@ -325,7 +345,7 @@ public:
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
         glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 4, GL_INT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, BoneIds));
+        glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, BoneIds));
         glEnableVertexAttribArray(6);
         glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, BoneWeights));
         

@@ -123,7 +123,7 @@ set(sources ${sources} "src/systems/Gui.h" )
 set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/systems/MeshManager.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/utils/AssetUtils.h" "src/Logging.h" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h" "src/OpenGLHelpers.cpp"  )
 
 #"src/main.cpp" "src/sausage.cpp"
-add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h" "src/systems/SystemsManager.h" "src/Scene.h" "src/systems/Controller.h" "src/systems/Physics.h" "src/systems/TextureManager.h"  "src/FileWatcher.h"  "src/systems/BulletDebugDrawer.h")
+add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h" "src/systems/SystemsManager.h" "src/Scene.h" "src/systems/Controller.h" "src/systems/Physics.h" "src/systems/TextureManager.h"  "src/FileWatcher.h"  "src/systems/BulletDebugDrawer.h" "src/systems/AnimationManager.h")
 
 # RocketCore RocketDebugger RocketControls 
 # ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2}
