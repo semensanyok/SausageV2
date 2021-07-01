@@ -3,21 +3,19 @@
 #include "sausage.h"
 
 using namespace std;
-mutex shader_mutex;
+static mutex shader_mutex;
 
 class FileWatcher
 {
 public:
 	void AddCallback(string& path, function<void()>& file_change_callback);
 	void RemoveCallback(string& path);
-	void Start(bool& quit);
-	void Join();
+	void Watch();
 	FileWatcher();
 	~FileWatcher();
 
 private:
 	map<string, pair<chrono::system_clock::duration, vector<function<void()>>>> watchers;
-	thread t;
 };
 
 void FileWatcher::RemoveCallback(string& path)
@@ -36,32 +34,19 @@ void FileWatcher::AddCallback(string& path, function<void()>& file_change_callba
 	watcher.second.push_back(file_change_callback);
 };
 
-void FileWatcher::Join() {
-	if (t.joinable()) {
-		t.join();
-	}
-}
-
-void FileWatcher::Start(bool& quit)
+void FileWatcher::Watch()
 {
-	if (t.joinable()) {
-		return;
-	}
-	t = thread([&] {
-		while (!quit) {
-			this_thread::sleep_for(std::chrono::milliseconds(500));
-			lock_guard lock_shader(shader_mutex);
-			for (auto &watcher : watchers) {
-				auto wtime_dur = filesystem::last_write_time(watcher.first);
-				auto wtime = wtime_dur.time_since_epoch();
-				if (wtime > watcher.second.first) {
-					for (auto callback : watcher.second.second) {
-						callback();
-					}
-					watcher.second.first = wtime;
-				}
+	lock_guard lock_shader(shader_mutex);
+	for (auto& watcher : watchers) {
+		auto wtime_dur = filesystem::last_write_time(watcher.first);
+		auto wtime = wtime_dur.time_since_epoch();
+		if (wtime > watcher.second.first) {
+			for (auto callback : watcher.second.second) {
+				callback();
 			}
-		}});
+			watcher.second.first = wtime;
+		}
+	}
 }
 
 FileWatcher::FileWatcher()

@@ -6,6 +6,8 @@
 #include "imgui_impl_opengl3.h"
 #include "Settings.h"
 
+using namespace std;
+
 class Gui {
 public:
 	static void InitGuiContext(SDL_Window* window, SDL_GLContext& context) {
@@ -44,6 +46,14 @@ public:
 
 			ImGui::End();
 		}
+#ifdef SAUSAGE_PROFILE_ENABLE
+		ImGui::Text("prepare draws ms: %i", std::chrono::duration_cast<std::chrono::milliseconds>(ProfTime::prepare_draws_ns));
+		ImGui::Text("render ms: %i", std::chrono::duration_cast<std::chrono::milliseconds>(ProfTime::render_ns));
+		ImGui::Text("simulate physics draws ms: %i", std::chrono::duration_cast<std::chrono::milliseconds>(ProfTime::physics_sym_ns));
+		ImGui::Text("update physics transforms ms: %i", std::chrono::duration_cast<std::chrono::milliseconds>(ProfTime::physics_buf_trans_ns));
+		ImGui::Text("total ms: %i", std::chrono::duration_cast<std::chrono::milliseconds>(ProfTime::total_frame_ns));
+
+#endif
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

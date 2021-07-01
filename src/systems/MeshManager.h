@@ -3,7 +3,8 @@
 #include "sausage.h"
 #include "Texture.h"
 #include "Structures.h"
-#include "systems/Camera.h"
+#include "Camera.h"
+#include "Animation.h"
 
 using namespace std;
 using namespace glm;
@@ -17,7 +18,76 @@ class MeshManager {
 public:
     inline static atomic<unsigned long> mesh_count{ 0 };
     inline static atomic<unsigned long> bone_count{ 0 };
-    // Structure of arrays style for multidraw.
+    inline static map<string, MeshData*> name_to_mesh;
+    inline static map<string, MeshData*> armature_name_to_mesh;
+
+    // note: 1 animation per file. (cant parse multiple anims via assimp)
+    static void LoadAnimationForMesh(
+        const string& file_name,
+        MeshData* mesh
+    ) {
+        Assimp::Importer assimp_importer;
+        const aiScene* scene = assimp_importer.ReadFile(
+            file_name, aiProcess_PopulateArmatureData);
+
+        if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+        {
+            LOG((ostringstream() << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString()).str());
+            return;
+        }
+
+        for (size_t i = 0; i < scene->mNumAnimations; i++)
+        {
+            auto& aianim = scene->mAnimations[i];
+            string anim_name = string(aianim->mName.C_Str());
+            if (aianim->mNumChannels < 1) {
+                continue;
+            }
+            Animation* anim = new Animation{ anim_name, aianim->mDuration, aianim->mTicksPerSecond };
+            for (size_t j = 0; j < aianim->mNumChannels; j++)
+            {
+                auto channel = aianim->mChannels[j];
+                auto bone_name = string(channel->mNodeName.C_Str());
+                auto& bone_frames = anim->bone_frames[bone_name];
+                // bone at 0 index is armature name
+                if (j == 0) {
+                    //auto mesh_ptr = armature_name_to_mesh.find(bone_name);
+                    //if (mesh_ptr == armature_name_to_mesh.end()) {
+                    //    LOG((ostringstream() << "mesh with armature '" << bone_name << "' not found for animation '" << anim_name << "'").str());
+                    //    break;
+                    //}
+                    //mesh = mesh_ptr->second;
+
+                    if (mesh->armature->name != bone_name) {
+                      LOG((ostringstream()
+                           << "armature name '" << mesh->armature->name
+                           << "' for mesh '" << mesh->name
+                           << "' not matching animation armature name'"
+                           << bone_name << "'")
+                              .str());
+                    };
+                }
+                for (size_t k = 0; k < channel->mNumPositionKeys; k++)
+                {
+                    auto& key = channel->mPositionKeys[k];
+                    bone_frames.time_position.push_back({ key.mTime, FromAi(key.mValue) });
+                }
+                for (size_t k = 0; k < channel->mNumScalingKeys; k++)
+                {
+                    auto& key = channel->mScalingKeys[k];
+                    bone_frames.time_scale.push_back({ key.mTime, FromAi(key.mValue) });
+                }
+                for (size_t k = 0; k < channel->mNumRotationKeys; k++)
+                {
+                    auto& key = channel->mRotationKeys[k];
+                    bone_frames.time_rotation.push_back({ key.mTime, FromAi(key.mValue) });
+                }
+            }
+            if (mesh != nullptr) {
+                mesh->armature->name_to_anim[anim_name] = anim;
+            }
+        }
+    }
     static void LoadMeshes(
         const string& file_name,
         vector<Light*>& out_lights,
@@ -38,8 +108,7 @@ public:
             LOG((ostringstream() << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString()).str());
             return;
         }
-        map<string, MeshData*> name_to_mesh;
-        map<string, MeshData*> armature_name_to_mesh;
+
         for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
             auto child = scene->mRootNode->mChildren[i];
             auto ai_t = child->mTransformation;
@@ -70,21 +139,7 @@ public:
                 }
             }
         }
-
-        //for (size_t i = 0; i < scene->mNumAnimations; i++)
-        //{
-        //    auto& anim = scene->mAnimations[i];
-        //    MeshData* mesh = nullptr;
-        //    for (size_t j = 0; j < anim->mNumChannels; j++)
-        //    {
-        //        auto channel = anim->mChannels[j];
-        //        if (j == 0) {
-        //            mesh = armature_name_to_mesh[channel->mNodeName.C_Str()];
-        //        }
-        //        cout << channel->mNodeName << endl;
-        //    }
-
-        //}
+        
         for (unsigned int i = 0; i < scene->mNumLights; i++) {
             auto light = scene->mLights[i];
             auto node = scene->mRootNode->FindNode(light->mName);
@@ -143,6 +198,9 @@ public:
                              0,
                              0 };
         }
+    }
+    static vec4 FromAi(aiQuaternion& aivec) {
+        return vec4(aivec.x, aivec.y, aivec.z, aivec.w);
     }
     static vec4 FromAi(aiVector3D& aivec) {
         return vec4(aivec.x, aivec.y, aivec.z, 0);

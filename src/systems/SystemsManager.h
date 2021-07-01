@@ -9,6 +9,9 @@
 #include "TextureManager.h"
 #include "systems/Physics.h"
 #include "systems/BulletDebugDrawer.h"
+#include "systems/AsyncTaskManager.h"
+#include "Logging.h"
+#include "FileWatcher.h"
 
 class SystemsManager {
 public:
@@ -18,14 +21,12 @@ public:
 	Renderer* renderer;
 	TextureManager* texture_manager;
 	FileWatcher* file_watcher;
-	
+	AsyncTaskManager* async_manager;
+
 	PhysicsManager* physics_manager;
-	BulletDebugDrawer* bullet_debug_drawer;
+	BulletDebugDrawer* bullet_debug_drawer = nullptr;
 	
 	Shaders shaders;
-
-	float delta_time = 0;
-	float last_ticks = 0;
 
 	SystemsManager() {};
 	~SystemsManager() {};
@@ -49,13 +50,24 @@ public:
 			RegisterShader("stencil_vs.glsl", "stencil_fs.glsl")
 		};
 
+#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
 		bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer, shaders.bullet_debug);
 		//int debug_mask = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints;
 		int debug_mask = btIDebugDraw::DBG_DrawWireframe;
 		bullet_debug_drawer->setDebugMode(debug_mask);
+#endif
 		physics_manager = new PhysicsManager(bullet_debug_drawer);
-
 		controller = new Controller(camera, physics_manager);
+
+		async_manager = new AsyncTaskManager();
+		function<void()> log_io_task = bind(&Sausage::LogIO);
+		function<void()> file_watcher_task = bind(&FileWatcher::Watch, file_watcher);
+		function<void()> phys_sym_task = bind(&PhysicsManager::Simulate, physics_manager);
+		function<void()> phys_update_task = bind(&PhysicsManager::UpdateTransforms, physics_manager);
+		async_manager->SubmitMiscTask(log_io_task, true);
+		async_manager->SubmitMiscTask(file_watcher_task, true);
+		async_manager->SubmitPhysTask(phys_sym_task, true);
+		async_manager->SubmitPhysTask(phys_update_task, true);
 	}
 
 	void ResetBuffer() {
@@ -81,12 +93,12 @@ public:
 		renderer->ClearContext();
 		delete renderer;
 		delete camera;
+		delete async_manager;
 	}
 	void UpdateDeltaTime() {
 		float this_ticks = SDL_GetTicks();
-		delta_time = this_ticks - last_ticks;
-		last_ticks = this_ticks;
-		delta_time = 6;
+		GameSettings::delta_time = this_ticks - GameSettings::last_ticks;
+		GameSettings::last_ticks = this_ticks;
 	}
 private:
 	void InitBuffer() {

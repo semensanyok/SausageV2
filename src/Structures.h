@@ -135,11 +135,27 @@ struct Bone {
     vector<Bone*> children;
 };
 
+struct BoneKeyFrames {
+    vector<pair<double, vec3>> time_position;
+    // quaternions
+    vector<pair<double, vec4>> time_rotation;
+    vector<pair<double, vec3>> time_scale;
+};
+
+struct Animation {
+    string name;
+    double duration;
+    double ticks_per_second;
+
+    map<string, BoneKeyFrames> bone_frames;
+};
+
 struct Armature {
     string name;
     unsigned int num_bones;
     Bone* bones;
     map<string, Bone*> name_to_bone;
+    map<string, Animation*> name_to_anim;
 };
 
 struct MeshData {

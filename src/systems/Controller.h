@@ -12,7 +12,7 @@ public:
 
 	Controller(Camera* camera, PhysicsManager* physics_manager) : camera{ camera }, physics_manager{ physics_manager } {};
 
-	void ProcessEvent(SDL_Event* e, float delta_time, bool& quit)
+	void ProcessEvent(SDL_Event* e)
 	{
 		switch (e->type) {
 		case SDL_MOUSEMOTION:
@@ -24,10 +24,10 @@ public:
 		case SDL_MOUSEBUTTONUP:
 			break;
 		case SDL_MOUSEWHEEL:
-			camera->MouseWheelCallbackRTS(e->wheel, delta_time);
+			camera->MouseWheelCallbackRTS(e->wheel, GameSettings::delta_time);
 			break;
 		case SDL_QUIT:
-			quit = 1;
+			GameSettings::quit = true;
 			break;
 
 		case SDL_WINDOWEVENT:
@@ -56,8 +56,8 @@ public:
 			SDL_Keymod mod;
 			mod = SDL_GetModState();
 			if (k == SDLK_ESCAPE)
-				quit = 1;
-			camera->KeyCallbackRTS(s, delta_time);
+				GameSettings::quit = 1;
+			camera->KeyCallbackRTS(s, GameSettings::delta_time);
 			break;
 		}
 		case SDL_KEYUP: {

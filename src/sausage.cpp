@@ -13,14 +13,10 @@
 using namespace std;
 using namespace glm;
 
+
 SystemsManager* systems_manager;
 Scene* scene;
 Controller* controller;
-
-// Game state
-Samplers samplers;
-bool quit = false;
-
 
 void Init() {
 	// create systems
@@ -32,32 +28,43 @@ void Init() {
 	CheckGLError();
 }
 
+
 int SDL_main(int argc, char** argv)
 {
-	auto log_thread = LogIO(quit);
-	
 	Init();
-	systems_manager->file_watcher->Start(quit);
-	
-	while (!quit) {
+	systems_manager->async_manager->Run();
+	while (!GameSettings::quit) {
 		systems_manager->UpdateDeltaTime();
+		
+#ifdef SAUSAGE_PROFILE_ENABLE
+		auto proft1 = chrono::steady_clock::now();
+#endif
 		scene->PrepareDraws();
+#ifdef SAUSAGE_PROFILE_ENABLE
+		ProfTime::prepare_draws_ns = chrono::steady_clock::now() - proft1;
+#endif
+
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
 			ImGui_ImplSDL2_ProcessEvent(&e);
-			systems_manager->controller->ProcessEvent(&e, systems_manager->delta_time, quit);
+			systems_manager->controller->ProcessEvent(&e);
 		}
+
+#ifdef SAUSAGE_PROFILE_ENABLE
+		auto proft2 = chrono::steady_clock::now();
+#endif
 		systems_manager->Render();
-	
-		systems_manager->physics_manager->Simulate(systems_manager->delta_time);
-		systems_manager->physics_manager->UpdateTransforms();		
+#ifdef SAUSAGE_PROFILE_ENABLE
+		ProfTime::render_ns = chrono::steady_clock::now() - proft2;
+#endif
+
+#ifdef SAUSAGE_PROFILE_ENABLE
+		ProfTime::total_frame_ns = chrono::steady_clock::now() - proft1;
+#endif
 		CheckGLError();
 		GameSettings::milliseconds_since_start = SDL_GetTicks();
 	}
 	systems_manager->Clear();
-	
-	log_thread.join();
-	systems_manager->file_watcher->Join();
 	delete systems_manager;
 	return 0;
 }

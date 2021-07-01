@@ -29,7 +29,7 @@ public:
 	vector<Light*> all_lights;
 	vector<Light*> draw_lights;
 
-	string scene_path = GetModelPath("frog.fbx");
+	string scene_path = GetModelPath("load.fbx");
 	Scene(SystemsManager* systems_manager) :
 		systems_manager{ systems_manager }, shaders{ systems_manager->shaders }{
 		draw_call = new DrawCall();
@@ -89,12 +89,23 @@ private:
 			all_lights.push_back(light);
 		}
 		systems_manager->buffer->BufferTransform(all_meshes);
+		
+		_LoadAnimations();
 	}
 	void _LoadMeshes(string& path, vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
 		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes);
 		CheckGLError();
 		_BlenderPostprocessLights(out_new_lights);
 	}
+	void _LoadAnimations() {
+		for (auto& mesh : all_meshes) {
+			for (auto& path : GetAnimationsPathsForModel(mesh->name)) {
+				MeshManager::LoadAnimationForMesh(path.string(), mesh);
+			}
+		}
+		CheckGLError();
+	}
+
 	void _LoadTransparentMeshes(string& path, vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
 		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes);
 		CheckGLError();

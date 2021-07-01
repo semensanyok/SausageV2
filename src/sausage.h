@@ -30,6 +30,7 @@
 #include <numeric>
 #include <chrono>
 #include <functional>
+#include <regex>
 
 #include <memory>
 #include <iostream>

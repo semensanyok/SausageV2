@@ -8,6 +8,8 @@ using namespace std;
 
 void LOG(const string& s);
 
-thread LogIO(bool& quit);
+namespace Sausage {
+	void LogIO();
 
-void WriteShaderMsgsToLogFile();
+	void WriteShaderMsgsToLogFile();
+}

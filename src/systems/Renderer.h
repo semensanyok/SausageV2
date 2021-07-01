@@ -11,6 +11,8 @@
 #include "TestShapes.h"
 #include "utils/ThreadSafeQueue.h"
 
+using namespace std;
+
 class Renderer {
 private:
 	ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;
@@ -28,37 +30,41 @@ public:
 
 	void Render(Camera* camera)
 	{
-		_ExecuteCommands();
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		
-		//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		//glStencilFunc(GL_NOT, 1, 0xFF);
-		//glStencilMask(0xFF);
+			_ExecuteCommands();
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		for (auto buffer_shader : buffer_to_draw_call) {
-			if (buffer_shader.second.empty()) {
-				continue;
-			}
-			auto buffer = (*buffer_shader.second.begin())->buffer;
-			buffer->BarrierIfChangeAndUnmap();
-			buffer->BindMeshVAOandBuffers(); // TODO: one buffer, no rebind
-			for (auto draw : buffer_shader.second) {
-				if (draw->command_count > 0) {
-					glUseProgram(draw->shader->id);
-					glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer);
-					draw->shader->setMat4("projection_view", camera->projection_view);
-					draw->shader->setVec3("view_pos", camera->pos);
-					glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr, draw->command_count, 0);
-					CheckGLError();
+			//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+			//glStencilFunc(GL_NOT, 1, 0xFF);
+			//glStencilMask(0xFF);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		{
+			lock_guard<mutex> end_render_frame_lock(GameSettings::end_render_frame_mtx);
+			for (auto buffer_shader : buffer_to_draw_call) {
+				if (buffer_shader.second.empty()) {
+					continue;
 				}
+				auto buffer = (*buffer_shader.second.begin())->buffer;
+				buffer->SyncGPUBufAndUnmap();
+				buffer->BindMeshVAOandBuffers(); // TODO: one buffer, no rebind
+				for (auto draw : buffer_shader.second) {
+					if (draw->command_count > 0) {
+						glUseProgram(draw->shader->id);
+						glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer);
+						draw->shader->setMat4("projection_view", camera->projection_view);
+						draw->shader->setVec3("view_pos", camera->pos);
+						glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr, draw->command_count, 0);
+						CheckGLError();
+					}
+				}
+				buffer->fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+				CheckGLError();
 			}
-			buffer->fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-			CheckGLError();
+			Gui::RenderGui(window, camera);
+			SDL_GL_SwapWindow(window);
 		}
-		Gui::RenderGui(window, camera);
-		SDL_GL_SwapWindow(window);
+		GameSettings::end_render_frame_event.notify_all();
 	}
 
 	void RemoveBuffer(BufferStorage* buffer) {
@@ -167,7 +173,7 @@ public:
 	void ClearContext() {
 		Gui::CleanupGui();
 
-		WriteShaderMsgsToLogFile();
+		Sausage::WriteShaderMsgsToLogFile();
 		SDL_GL_DeleteContext(context);
 		SDL_DestroyWindow(window);
 		SDL_Quit();

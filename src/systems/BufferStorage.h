@@ -119,7 +119,8 @@ public:
         glDeleteSync(fence_sync);
         fence_sync = 0;
     }
-    void BarrierIfChangeAndUnmap() {
+    void SyncGPUBufAndUnmap() {
+        WaitGPU(fence_sync);
         if (is_need_barrier) {
             glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
             is_need_barrier = false;
@@ -138,7 +139,7 @@ public:
     */
     void BufferMeshData(vector<shared_ptr<MeshLoadData>>& load_data, bool is_transform_used = true)
     {
-        WaitGPU(fence_sync);
+        
         vector<MeshData*> instances;
         for (int i = 0; i < load_data.size(); i++) {
             auto raw = load_data[i].get();
@@ -226,7 +227,7 @@ public:
         return command_buffer;
     }
     int AddCommands(vector<DrawElementsIndirectCommand>& active_commands, GLuint command_buffer, unsigned int size, int command_offset = -1) {
-        WaitGPU(fence_sync);
+        
         int command_start = command_offset == -1 ? 0 : command_offset;
         auto command_ptr_iter = mapped_command_buffers.find(command_buffer);
         if (command_ptr_iter == mapped_command_buffers.end()) {
@@ -238,7 +239,7 @@ public:
         return command_start;
     }
     int AddCommand(DrawElementsIndirectCommand& command, GLuint command_buffer, unsigned int size, int command_offset = -1) {
-        WaitGPU(fence_sync);
+        
         int command_start = command_offset == -1 ? 0 : command_offset;
         auto command_ptr_iter = mapped_command_buffers.find(command_buffer);
         if (command_ptr_iter == mapped_command_buffers.end()) {
@@ -251,7 +252,7 @@ public:
         return command_start;
     }
     void BufferBoneTransform(Bone* bone, vector<mat4>& transforms, unsigned int num_bones = 1) {
-        WaitGPU(fence_sync);
+        
         for (size_t i = 0; i < num_bones; i++)
         {
             BufferBoneTransform(&bone[i], transforms[i], 1);
@@ -259,7 +260,7 @@ public:
         is_need_barrier = true;
     }
     void BufferBoneTransform(Bone* bone, mat4& transform, unsigned int num_bones = 1) {
-        WaitGPU(fence_sync);
+        
         for (size_t i = 0; i < num_bones; i++)
         {
           uniforms_ptr->bones_transforms[bone[i].id] = transform;
@@ -267,7 +268,7 @@ public:
         is_need_barrier = true;
     }
     void BufferTransform(MeshData* mesh_data) {
-        WaitGPU(fence_sync);
+        
         uniforms_ptr->transforms[mesh_data->transform_offset + mesh_data->instance_id] = mesh_data->transform;
         if (mesh_data->instance_id == 0) {
             uniforms_ptr->transform_offset[mesh_data->buffer_id + mesh_data->instance_id] = mesh_data->transform_offset;
@@ -275,7 +276,7 @@ public:
         is_need_barrier = true;
     }
     void BufferTransform(vector<MeshData*>& mesh_data) {
-        WaitGPU(fence_sync);
+        
         for (int i = 0; i < mesh_data.size(); i++) {
             BufferTransform(mesh_data[i]);
         }
@@ -283,7 +284,7 @@ public:
         is_need_barrier = true;
     }
     void BufferLights(vector<Light*>& lights) {
-        WaitGPU(fence_sync);
+        
         if (lights.size() > MAX_LIGHTS) {
             LOG((ostringstream() << "ERROR BufferLights. max lights buffer size=" << MAX_LIGHTS << " requested=" << lights.size()).str());
             return;
@@ -354,7 +355,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC, light_buffer);
     }
     void Dispose() {
-        BarrierIfChangeAndUnmap();
+        SyncGPUBufAndUnmap();
         glDisableVertexAttribArray(0);
         glDeleteVertexArrays(1, &mesh_VAO);
         CheckGLError();

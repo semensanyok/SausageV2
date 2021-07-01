@@ -25,6 +25,16 @@
 					"name": "USE_MSVC_RUNTIME_LIBRARY_DLL",
 					"value": "True",
 					"type": "BOOL"
+				},
+				{
+					"name": "SAUSAGE_PROFILE_ENABLE",
+					"value": "True",
+					"type": "BOOL"
+				},
+				{
+					"name": "SAUSAGE_DEBUG_DRAW_PHYSICS",
+					"value": "True",
+					"type": "BOOL"
 				}
 			]
 		},

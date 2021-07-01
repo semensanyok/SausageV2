@@ -7,6 +7,7 @@
 #include "Renderer.h"
 #include "Settings.h"
 
+using namespace std;
 using namespace BufferSettings;
 
 static struct PersistDrawRay {
@@ -16,6 +17,7 @@ static struct PersistDrawRay {
 };
 class BulletDebugDrawer : public btIDebugDraw
 {
+    mutex data_mutex;
 
     MeshData* mesh_data;
     DrawCall* draw_call;
@@ -67,6 +69,7 @@ public:
 private:
     void _BufferDataCallback() {
         if (vertices.size() > 0) {
+            lock_guard<mutex> data_lock(data_mutex);
             draw_call->command_count = 1;
             bool is_new_mesh_data = mesh_data == nullptr;
             vector<PersistDrawRay> keep_persist;
@@ -118,6 +121,8 @@ void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, con
     bool is_new_to = true;
     long index_from = -1;
     long index_to = -1;
+
+    lock_guard<mutex> data_lock(data_mutex);
     for (int i = 0; i < vertices.size(); i++) {
         if (vertices[i] == from3) {
             is_new_from = false;
@@ -153,6 +158,7 @@ void BulletDebugDrawer::drawLinePersist(const btVector3& from, const btVector3& 
     memcpy(&from3[0], &from[0], 3 * sizeof(float));
     memcpy(&to3[0], &to[0], 3 * sizeof(float));
 
+    lock_guard<mutex> data_lock(data_mutex);
     persist_draws.push_back({ GameSettings::milliseconds_since_start + GameSettings::ray_debug_draw_lifetime_milliseconds, {from3, to3}, color3 });
 }
 void BulletDebugDrawer::clearPersist() {
@@ -167,6 +173,7 @@ void   BulletDebugDrawer::drawContactPoint(const btVector3& PointOnB, const btVe
     memcpy(&to3[0], &to[0], 3 * sizeof(float));
     memcpy(&color3[0], &color[0], 3 * sizeof(float));
 
+    lock_guard<mutex> data_lock(data_mutex);
     indices.push_back(vertices.size());
     vertices.push_back(to3);
     colors.push_back(color3);

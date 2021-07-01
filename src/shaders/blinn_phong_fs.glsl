@@ -124,6 +124,6 @@ void main(void) {
   vec3 view_dir = normalize(view_pos - In.frag_pos);
   vec3 res = mat_diffuse * ambient_const;
   AddLightColor(mat_normal, res, view_dir, mat_diffuse, mat_specular);
-  //color = vec4(res, mat_diffuse_with_opacity.a);
-  color = vec4(res, 0.04 + clamp(In.base_instance - 4, 0, 1)*0.5);
+  color = vec4(res, mat_diffuse_with_opacity.a);
+  //color = vec4(res, 0.04 + clamp(In.base_instance - 4, 0, 1)*0.5); //test transparency back to front sorting
 }

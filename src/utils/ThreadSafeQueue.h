@@ -19,6 +19,17 @@ public:
 		container = queue<T>();
 		return res;
 	}
+	queue<T> WaitPopAll(bool& quit)
+	{
+		std::unique_lock<std::mutex> mlock(log_mutex);
+		while (container.empty() && !quit)
+		{
+			is_log_event.wait(mlock);
+		}
+		auto res = queue<T>(container);
+		container = queue<T>();
+		return res;
+	}
 	T WaitPop(bool &quit)
 	{
 		std::unique_lock<std::mutex> mlock(log_mutex);
@@ -36,7 +47,7 @@ public:
 		std::unique_lock<std::mutex> mlock(log_mutex);
 		container.push(message);
 		mlock.unlock();
-		is_log_event.notify_one();
+		is_log_event.notify_all();
 	}
 
 };

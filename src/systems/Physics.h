@@ -37,9 +37,18 @@ public:
 			dynamicsWorld->setDebugDrawer(debugDrawer);
 		}
 	}
-	void Simulate(float deltatime) {
-		dynamicsWorld->stepSimulation(deltatime * GameSettings::physics_step_multiplier, 1000);
+	void Simulate() {
+		//dynamicsWorld->stepSimulation(GameSettings::delta_time, 1);
+#ifdef SAUSAGE_PROFILE_ENABLE
+		auto proft3 = chrono::steady_clock::now();
+#endif
+		dynamicsWorld->stepSimulation(GameSettings::delta_time * GameSettings::physics_step_multiplier, 1000);
+#ifdef SAUSAGE_PROFILE_ENABLE
+		ProfTime::physics_sym_ns = chrono::steady_clock::now() - proft3;
+#endif
+#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
 		dynamicsWorld->debugDrawWorld();
+#endif
 	}
 	void ClickRayTest(float screen_x, float screen_y, const vec3& position, float distance, const mat4& camera_projection_view_inverse) {
 		auto screen_x_normalized = (screen_x / GameSettings::SCR_WIDTH - 0.5f) * 2.0;
@@ -74,6 +83,9 @@ public:
 		cout << message << endl;
 	}
 	void UpdateTransforms() {
+#ifdef SAUSAGE_PROFILE_ENABLE
+		auto proft4 = chrono::steady_clock::now();
+#endif
 		auto nonStatic = dynamicsWorld->getNonStaticRigidBodies();
 		btTransform btTrans;
 		for (size_t i = 0; i < nonStatic.size(); i++)
@@ -85,6 +97,9 @@ public:
 			btTrans.getOpenGLMatrix(&gl_transform);
 			mesh_data->buffer->BufferTransform(mesh_data);
 		}
+#ifdef SAUSAGE_PROFILE_ENABLE
+		ProfTime::physics_buf_trans_ns = chrono::steady_clock::now() - proft4;
+#endif
 	}
 	void AddBoxRigidBody(vec3 min_AABB, vec3 max_AABB, float mass, void* user_pointer, mat4& model_transform) {
 		vec3 half_extents = max_AABB - min_AABB;
