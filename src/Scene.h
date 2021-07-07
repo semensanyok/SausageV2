@@ -9,14 +9,15 @@
 #include "FileWatcher.h"
 #include "systems/SystemsManager.h"
 #include "Settings.h"
+#include "systems/Gui.h"
+
+using namespace std;
 
 class Scene {
 public:
 	SystemsManager* systems_manager;
 
 	DrawCall* draw_call;
-	DrawCall* draw_call2;
-	DrawCall* draw_call3;
 
 	Shaders shaders;
 	// custom draws per shader
@@ -29,7 +30,7 @@ public:
 	vector<Light*> all_lights;
 	vector<Light*> draw_lights;
 
-	string scene_path = GetModelPath("load.fbx");
+	string scene_path = GetModelPath("frog.fbx");
 	Scene(SystemsManager* systems_manager) :
 		systems_manager{ systems_manager }, shaders{ systems_manager->shaders }{
 		draw_call = new DrawCall();
@@ -37,6 +38,7 @@ public:
 		draw_call->mode = GL_TRIANGLES;
 		draw_call->buffer = systems_manager->buffer;
 		draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND);
+		draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
 
 		//draw_call2 = new DrawCall(*draw_call);
 		////draw_call2->shader = shaders.stencil;
@@ -50,10 +52,9 @@ public:
 		_LoadData();
 
 		function<void()> scene_reload_callback = bind(&Scene::_ReloadScene, this);
-		bool is_persistent_command = false;
-		scene_reload_callback = bind(&Renderer::AddGlCommand, systems_manager->renderer, scene_reload_callback, is_persistent_command);
 		systems_manager->file_watcher->AddCallback(scene_path, scene_reload_callback);
 
+		Gui::AddButton({ "Reload scene", scene_reload_callback });
 		CheckGLError();
 	}
 	void PrepareDraws() {
@@ -65,7 +66,7 @@ public:
 				commands.push_back(draw_meshes[i]->command);
 			}
 		}
-		draw_call->buffer->AddCommands(commands, draw_call->command_buffer, BufferSettings::MAX_COMMAND);
+		draw_call->buffer->AddCommands(commands, draw_call->command_buffer);
 		CheckGLError();
 		draw_call->command_count = (unsigned int)commands.size();
 		draw_call->num_lights = (int)draw_lights.size();
@@ -78,7 +79,7 @@ private:
 		vector<shared_ptr<MeshLoadData>> new_meshes;
 		vector<Light*> new_lights;
 		_LoadMeshes(scene_path, new_meshes, new_lights);
-		_SetBaseMeshForInstancedCommand(new_meshes);
+		systems_manager->buffer->SetBaseMeshForInstancedCommand(new_meshes);
 		_BufferMeshes(new_meshes);
 		_AddRigidBodies(new_meshes);
 		
@@ -100,7 +101,7 @@ private:
 	void _LoadAnimations() {
 		for (auto& mesh : all_meshes) {
 			for (auto& path : GetAnimationsPathsForModel(mesh->name)) {
-				MeshManager::LoadAnimationForMesh(path.string(), mesh);
+				systems_manager->anim_manager->LoadAnimationForMesh(path.string(), mesh);
 			}
 		}
 		CheckGLError();
@@ -137,22 +138,6 @@ private:
 		CheckGLError();
 		systems_manager->buffer->BufferMeshData(new_meshes);
 		CheckGLError();
-	}
-	void _SetBaseMeshForInstancedCommand(vector<shared_ptr<MeshLoadData>>& new_meshes, bool is_transparent = false) {
-		map<size_t, shared_ptr<MeshLoadData>> instanced_data_lookup;
-		for (auto& mesh_ptr : new_meshes) {
-			auto mesh = mesh_ptr.get();
-			auto key = mesh->tex_names.Hash() + mesh->vertices.size() + mesh->indices.size();
-			auto base_mesh_ptr = instanced_data_lookup.find(key);
-			if (base_mesh_ptr == instanced_data_lookup.end()) {
-				instanced_data_lookup[key] = mesh_ptr;
-				continue;
-			}
-			auto base_mesh = (*base_mesh_ptr).second.get();
-			auto& instance_count = base_mesh->instance_count;
-			mesh->mesh_data->instance_id = instance_count++;
-			mesh->mesh_data->base_mesh = base_mesh->mesh_data;
-		}
 	}
 	void _ReloadScene() {
 		_CleanupScene();

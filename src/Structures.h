@@ -143,6 +143,7 @@ struct BoneKeyFrames {
 };
 
 struct Animation {
+    unsigned int id;
     string name;
     double duration;
     double ticks_per_second;
@@ -177,7 +178,7 @@ struct MeshData {
     MeshData* base_mesh;
     Armature* armature;
 
-    MeshData() : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, base_mesh{ nullptr }, texture{ nullptr }, armature{ nullptr } {};
+    MeshData() : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, base_mesh{ nullptr }, texture{ nullptr }, armature{ nullptr }, is_transparent{ false } {};
 };
 
 struct MeshLoadData {
@@ -189,12 +190,31 @@ struct MeshLoadData {
     //~MeshLoadData() { cout << "MeshLoadData deleted: " << (mesh_data == nullptr ? "no mesh_data" : mesh_data->name) << endl; }
 };
 
+struct BufferLock {
+    mutex data_mutex;
+    condition_variable is_mapped_cv;
+    bool is_mapped;
+    void Wait(unique_lock<mutex>& data_lock) {
+        is_mapped_cv.wait(data_lock);
+    }
+};
+
+struct CommandBuffer {
+    GLuint id;
+    DrawElementsIndirectCommand* ptr;
+    unsigned int size;
+    BufferLock* buffer_lock;
+    bool operator==(const CommandBuffer& other)
+    {
+        return id == other.id;
+    }
+};
 
 struct DrawCall {
     int mode = GL_TRIANGLES; // GL_TRIANGLES GL_LINES
     BufferStorage* buffer = nullptr;
     Shader* shader = nullptr;
-    GLuint command_buffer;
+    CommandBuffer* command_buffer;
     unsigned int command_count = 0;
     // custom data
     int num_lights = 0;

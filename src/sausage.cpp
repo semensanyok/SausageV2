@@ -1,11 +1,11 @@
 ﻿#include "sausage.h"
 
+#include "OpenGLHelpers.h"
 #include "Settings.h"
 #include "Shader.h"
 #include "utils/AssetUtils.h"
 #include "Logging.h"
 #include "Texture.h"
-#include "OpenGLHelpers.h"
 #include "FileWatcher.h"
 #include "Scene.h"
 #include "systems/SystemsManager.h"
@@ -26,6 +26,7 @@ void Init() {
 	scene = new Scene(systems_manager);
 	scene->Init();
 	CheckGLError();
+	main_thread_id = this_thread::get_id();
 }
 
 
@@ -49,14 +50,7 @@ int SDL_main(int argc, char** argv)
 			ImGui_ImplSDL2_ProcessEvent(&e);
 			systems_manager->controller->ProcessEvent(&e);
 		}
-
-#ifdef SAUSAGE_PROFILE_ENABLE
-		auto proft2 = chrono::steady_clock::now();
-#endif
 		systems_manager->Render();
-#ifdef SAUSAGE_PROFILE_ENABLE
-		ProfTime::render_ns = chrono::steady_clock::now() - proft2;
-#endif
 
 #ifdef SAUSAGE_PROFILE_ENABLE
 		ProfTime::total_frame_ns = chrono::steady_clock::now() - proft1;

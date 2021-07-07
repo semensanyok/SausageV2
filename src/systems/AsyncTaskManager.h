@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "utils/ThreadSafeQueue.h"
+#include "Settings.h"
 
 using namespace std;
 
@@ -55,8 +56,10 @@ private:
 			}
 			tasks.pop();
 		}
-		unique_lock<mutex> end_render_frame_lock(GameSettings::end_render_frame_mtx);
-		GameSettings::end_render_frame_event.wait(end_render_frame_lock);
+		{
+			unique_lock<mutex> end_render_frame_lock(Events::end_render_frame_mtx);
+			Events::end_render_frame_event.wait(end_render_frame_lock);
+		}
 	}
 	void RunMiscTasks(bool& quit) {
 		auto tasks = misc_tasks.WaitPopAll(quit);
@@ -64,7 +67,7 @@ private:
 			auto& task = tasks.front();
 			task.first();
 			if (task.second) {
-				physics_tasks.Push(task);
+				misc_tasks.Push(task);
 			}
 			tasks.pop();
 		}

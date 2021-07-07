@@ -117,13 +117,18 @@ set(IMGUI_HEADERS
 )
 ####### IMGUI ##################
 
-# libs
 set(sources ${sources} ${IMGUI_HEADERS} ${IMGUI_SOURCES} )
 # "src/gui/RenderInterfaceSDL2.cpp" "src/gui/RenderInterfaceSDL2.h" "src/gui/SystemInterfaceSDL2.cpp" "src/gui/SystemInterfaceSDL2.h" "src/gui/ShellFileInterface.h" "src/gui/ShellFileInterface.cpp"
 set(sources ${sources} "src/systems/Gui.h" )
-set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/systems/MeshManager.h" "src/Shader.h" "src/Texture.h" "src/TestShapes.h" "src/utils/AssetUtils.h" "src/Logging.h" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h" "src/OpenGLHelpers.cpp"  )
-set(sources ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" "src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h" "src/systems/SystemsManager.h" "src/Scene.h" "src/systems/Controller.h" "src/systems/Physics.h" "src/systems/TextureManager.h"  "src/FileWatcher.h"  "src/systems/BulletDebugDrawer.h" "src/systems/Animation.h" "src/utils/ColladaLoader.h")
-#"src/main.cpp" "src/sausage.cpp"
+set(sources ${sources} "src/sausage.cpp" "src/Settings.h" "src/sausage.h" "src/systems/MeshManager.h" 
+"src/Shader.h" "src/Texture.h" "src/TestShapes.h" 
+"src/utils/AssetUtils.h" "src/Logging.h" "src/Logging.cpp" "src/utils/ThreadSafeQueue.h" "src/OpenGLHelpers.cpp"  )
+set(sources ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/systems/Renderer.h" 
+"src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h" 
+"src/systems/SystemsManager.h" "src/Scene.h" "src/systems/Controller.h" 
+"src/systems/Physics.h" "src/systems/TextureManager.h"  "src/FileWatcher.h"  
+"src/systems/BulletDebugDrawer.h" "src/systems/Animation.h" "src/utils/ColladaLoader.h" "src/systems/AsyncTaskManager.h")
+
 add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/systems/AsyncTaskManager.h")
 
 # RocketCore RocketDebugger RocketControls 

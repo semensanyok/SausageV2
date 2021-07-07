@@ -1,20 +1,8 @@
 #include "OpenGLHelpers.h"
 
-bool CheckGLError(const std::source_location& location) {
-    
-	int err = glGetError();
-    if (err != GL_NO_ERROR) {
-        //LOG(glGetErrorString(err));
-        cout << "GL error: '" << glGetErrorString(err) 
-			<< "' at: "
-			<< location.file_name() << "("
-			<< location.line() << ":"
-			<< location.column() << ")#"
-			<< location.function_name() << endl;
-		return true;
-    }
-	return false;
-}
+using namespace std;
+
+void LOG(const string& s);
 
 const char* GL_type_to_string(GLenum type) {
 	switch (type) {

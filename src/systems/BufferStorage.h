@@ -1,19 +1,33 @@
 #pragma once
 
 #include "sausage.h"
+#include "Settings.h"
 #include "Structures.h"
 #include "Logging.h"
 #include "OpenGLHelpers.h"
 #include "Texture.h"
-#include "Settings.h"
 
 using namespace std;
 using namespace glm;
 using namespace BufferSettings;
 
+//struct DataRangeLock {
+//    unsigned int vertex_begin;
+//    unsigned int vertex_end;
+//    unsigned int index_begin;
+//    unsigned int index_end;
+//    unsigned int transform_begin;
+//    unsigned int transform_end;
+// 
+//    mutex data_mutex;
+//    condition_variable is_vertex_buffer_mapped;
+//    bool is_mapped;
+//};
+
 
 class BufferStorage {
 private:
+
     const unsigned long VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
     const unsigned long INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
     const unsigned long COMMAND_STORAGE_SIZE = MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
@@ -48,8 +62,8 @@ private:
     GLuint uniforms_buffer;
     GLuint texture_buffer;
     GLuint light_buffer;
-    vector<GLuint> command_buffers;
-    map<GLuint, DrawElementsIndirectCommand*> mapped_command_buffers;
+    vector<CommandBuffer*> command_buffers;
+    map<GLuint, CommandBuffer*> mapped_command_buffers;
     //////////////////////////
     // Mapped buffers pointers
     //////////////////////////
@@ -71,7 +85,6 @@ public:
     BufferStorage() {
         static int count = 0;
         id = count++;
-
         meshes_total = 0;
         transforms_total = 0;
     };
@@ -90,6 +103,24 @@ public:
     bool operator==(const BufferStorage& other)
     {
         return id == other.id;
+    }
+
+    // map buffers that updated asyncronously
+    void MapBuffers() {
+        for (auto buf : command_buffers) {
+            lock_guard<mutex> data_lock(buf->buffer_lock->data_mutex);
+            MapBuffer(buf);
+        }
+    }
+    void MapBuffer(CommandBuffer* buf) {
+        if (buf->buffer_lock->is_mapped == true) {
+            return;
+        }
+        // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
+        buf->ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(buf->id, 0, buf->size * sizeof(DrawElementsIndirectCommand), flags);
+        mapped_command_buffers[buf->id] = buf;
+        buf->buffer_lock->is_mapped = true;
+        buf->buffer_lock->is_mapped_cv.notify_all();
     }
 
     void WaitGPU(GLsync fence_sync, const source_location& location = source_location::current()) {
@@ -125,13 +156,22 @@ public:
             glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
             is_need_barrier = false;
         }
-        for (auto& mapped_command_buffer : mapped_command_buffers) {
-            // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
-            if (!glUnmapNamedBuffer(mapped_command_buffer.first)) {
-                CheckGLError();
-            }
+        for (auto& buf : mapped_command_buffers) {
+            lock_guard<mutex> data_lock(buf.second->buffer_lock->data_mutex);
+            UnmapBuffer(buf.second);
         }
         mapped_command_buffers.clear();
+    }
+    void UnmapBuffer(CommandBuffer* buf) {
+        if (buf->buffer_lock->is_mapped == false) {
+            return;
+        }
+        // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
+        if (!glUnmapNamedBuffer(buf->id)) {
+            CheckGLError();
+        }
+        buf->buffer_lock->is_mapped = false;
+        buf->buffer_lock->is_mapped_cv.notify_all();
     }
     /**
     * fence_sync created after all render ops issued for these buffers.
@@ -139,7 +179,6 @@ public:
     */
     void BufferMeshData(vector<shared_ptr<MeshLoadData>>& load_data, bool is_transform_used = true)
     {
-        
         vector<MeshData*> instances;
         for (int i = 0; i < load_data.size(); i++) {
             auto raw = load_data[i].get();
@@ -216,40 +255,96 @@ public:
         is_need_barrier = true;
         CheckGLError();
     }
-    GLuint CreateCommandBuffer(unsigned int size) {
-        GLuint command_buffer;
+    void SetBaseMeshForInstancedCommand(vector<shared_ptr<MeshLoadData>>& new_meshes) {
+        map<size_t, shared_ptr<MeshLoadData>> instanced_data_lookup;
+        for (auto& mesh_ptr : new_meshes) {
+            auto mesh = mesh_ptr.get();
+            auto key = mesh->tex_names.Hash() + mesh->vertices.size() + mesh->indices.size();
+            auto base_mesh_ptr = instanced_data_lookup.find(key);
+            if (base_mesh_ptr == instanced_data_lookup.end()) {
+                instanced_data_lookup[key] = mesh_ptr;
+                continue;
+            }
+            auto base_mesh = (*base_mesh_ptr).second.get();
+            auto& instance_count = base_mesh->instance_count;
+            mesh->mesh_data->instance_id = instance_count++;
+            mesh->mesh_data->base_mesh = base_mesh->mesh_data;
+        }
+    }
+    CommandBuffer* CreateCommandBuffer(unsigned int size) {
+        auto buf = new CommandBuffer();
+        buf->size = size;
+        buf->buffer_lock = new BufferLock();
+        buf->buffer_lock->is_mapped = false;
+        
         // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-        glGenBuffers(1, &command_buffer);
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer);
+        glGenBuffers(1, &buf->id);
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buf->id);
         glBufferStorage(GL_DRAW_INDIRECT_BUFFER, size * sizeof(DrawElementsIndirectCommand), NULL, flags);
-        command_buffers.push_back(command_buffer);
         CheckGLError();
-        return command_buffer;
+        return buf;
     }
-    int AddCommands(vector<DrawElementsIndirectCommand>& active_commands, GLuint command_buffer, unsigned int size, int command_offset = -1) {
-        
-        int command_start = command_offset == -1 ? 0 : command_offset;
-        auto command_ptr_iter = mapped_command_buffers.find(command_buffer);
-        if (command_ptr_iter == mapped_command_buffers.end()) {
-            // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-            auto command_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(command_buffer, 0, size * sizeof(DrawElementsIndirectCommand), flags);
-            mapped_command_buffers[command_buffer] = command_ptr;
-        }
-        memcpy(&(mapped_command_buffers[command_buffer][command_start]), active_commands.data(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
-        return command_start;
+    void ActivateCommandBuffer(CommandBuffer* buf) {
+        lock_guard<mutex> data_lock(buf->buffer_lock->data_mutex);
+        command_buffers.push_back(buf);
+        MapBuffer(buf);
     }
-    int AddCommand(DrawElementsIndirectCommand& command, GLuint command_buffer, unsigned int size, int command_offset = -1) {
-        
-        int command_start = command_offset == -1 ? 0 : command_offset;
-        auto command_ptr_iter = mapped_command_buffers.find(command_buffer);
-        if (command_ptr_iter == mapped_command_buffers.end()) {
-            // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-            auto command_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(command_buffer, 0, size * sizeof(DrawElementsIndirectCommand), flags);
-            CheckGLError();
-            mapped_command_buffers[command_buffer] = command_ptr;
+    void RemoveCommandBuffer(CommandBuffer* to_remove) {
+        lock_guard<mutex> data_lock(to_remove->buffer_lock->data_mutex);
+        auto cur_buf = command_buffers.begin();
+        while (cur_buf != command_buffers.end()) {
+            if (*cur_buf == to_remove) {
+                command_buffers.erase(cur_buf);
+                mapped_command_buffers.erase(to_remove->id);
+                UnmapBuffer(to_remove);
+                break;
+            }
+            cur_buf++;
         }
-        mapped_command_buffers[command_buffer][command_start] = command;
-        return command_start;
+    }
+    void DeleteCommandBuffer(CommandBuffer* to_delete) {
+        lock_guard<mutex> data_lock(to_delete->buffer_lock->data_mutex);
+        auto cur_buf = command_buffers.begin();
+        while (cur_buf != command_buffers.end()) {
+            if (*cur_buf == to_delete) {
+                command_buffers.erase(cur_buf);
+                mapped_command_buffers.erase(to_delete->id);
+                UnmapBuffer(to_delete);
+                glDeleteBuffers(1, &(to_delete->id));
+                break;
+            }
+            cur_buf++;
+        }
+        delete to_delete->buffer_lock;
+        delete to_delete;
+    }
+    int AddCommands(vector<DrawElementsIndirectCommand>& active_commands, CommandBuffer* buf, int command_offset = -1) {
+        unique_lock<mutex> data_lock(buf->buffer_lock->data_mutex);
+        if (!buf->buffer_lock->is_mapped) {
+            buf->buffer_lock->Wait(data_lock); // wait until
+        }
+        auto mapped_buffer = mapped_command_buffers.find(buf->id);
+        int command_start = command_offset == -1 ? 0 : command_offset;
+        if (mapped_buffer != mapped_command_buffers.end()) {
+            {
+                memcpy(&(mapped_buffer->second->ptr[command_start]), active_commands.data(), active_commands.size() * sizeof(DrawElementsIndirectCommand));
+            }
+            return command_start;
+        }
+        return -1;
+    }
+    int AddCommand(DrawElementsIndirectCommand& command, CommandBuffer* buf, int command_offset = -1) {
+        unique_lock<mutex> data_lock(buf->buffer_lock->data_mutex);
+        if (!buf->buffer_lock->is_mapped) {
+            buf->buffer_lock->Wait(data_lock); // wait until
+        }
+        auto mapped_buffer = mapped_command_buffers.find(buf->id);
+        if (mapped_buffer != mapped_command_buffers.end()) {
+            int command_start = command_offset == -1 ? 0 : command_offset;
+            buf->ptr[command_start] = command;
+            return command_start;
+        }
+        return -1;
     }
     void BufferBoneTransform(Bone* bone, vector<mat4>& transforms, unsigned int num_bones = 1) {
         
@@ -380,8 +475,10 @@ public:
         glDeleteBuffers(1, &light_buffer);
         CheckGLError();
         for (auto command_buffer : command_buffers) {
-            glDeleteBuffers(1, &command_buffer);
+            glDeleteBuffers(1, &(command_buffer->id));
+            delete command_buffer;
         }
+        command_buffers.clear();
         CheckGLError();
     }
 };

@@ -1,5 +1,7 @@
 #include "Logging.h"
 
+using namespace std;
+
 static ofstream logstream("LOG.log");
 
 static ThreadSafeQueue<string> log_queue;

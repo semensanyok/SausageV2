@@ -1,8 +1,8 @@
 #pragma once
 
 #include "sausage.h"
-#include "Texture.h"
 #include "Structures.h"
+#include "Texture.h"
 
 class TextureManager {
     map<size_t, Texture*> path_to_tex;

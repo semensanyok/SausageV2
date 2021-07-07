@@ -8,7 +8,6 @@
 #include "Settings.h"
 
 using namespace std;
-using namespace BufferSettings;
 
 static struct PersistDrawRay {
     uint32_t remove_time_millis;
@@ -17,8 +16,6 @@ static struct PersistDrawRay {
 };
 class BulletDebugDrawer : public btIDebugDraw
 {
-    mutex data_mutex;
-
     MeshData* mesh_data;
     DrawCall* draw_call;
     Shader* debug_shader;
@@ -41,13 +38,12 @@ public:
         draw_call->mode = GL_LINES;
         draw_call->buffer = buffer;
         draw_call->command_buffer = buffer->CreateCommandBuffer(command_buffer_size);
-        renderer->AddDraw(draw_call);
-
-        function<void()> buffer_debug_data_callback = std::bind(&BulletDebugDrawer::_BufferDataCallback, this);
-        bool is_persistent_command = true;
-        renderer->AddGlCommand(buffer_debug_data_callback, is_persistent_command);
+        Activate();
+        CheckGLError();
     };
     ~BulletDebugDrawer() {
+        renderer->RemoveDraw(draw_call);
+        buffer->DeleteCommandBuffer(draw_call->command_buffer);
     };
 
     virtual void   drawLine(const btVector3& from, const btVector3& to, const btVector3& color);
@@ -62,55 +58,66 @@ public:
 
     virtual int    getDebugMode() const { return m_debugMode; }
 
+    virtual void flushLines();
+    
+    void Activate() {
+        renderer->AddDraw(draw_call);
+        buffer->ActivateCommandBuffer(draw_call->command_buffer);
+    }
+    void Deactivate() {
+        clearPersist();
+        clear();
+        renderer->RemoveDraw(draw_call);
+        buffer->RemoveCommandBuffer(draw_call->command_buffer);
+    }
     void   drawLinePersist(const btVector3& from, const btVector3& to, const btVector3& color);
 
     void clearPersist();
-
-private:
-    void _BufferDataCallback() {
-        if (vertices.size() > 0) {
-            lock_guard<mutex> data_lock(data_mutex);
-            draw_call->command_count = 1;
-            bool is_new_mesh_data = mesh_data == nullptr;
-            vector<PersistDrawRay> keep_persist;
-            for (auto& persist_draw : persist_draws) {
-                indices.push_back(vertices.size());
-                vertices.push_back(persist_draw.vertices[0]);
-                indices.push_back(vertices.size());
-                vertices.push_back(persist_draw.vertices[1]);
-                colors.push_back(persist_draw.color);
-                colors.push_back(persist_draw.color);
-                if (GameSettings::milliseconds_since_start <= persist_draw.remove_time_millis) {
-                    keep_persist.push_back(persist_draw);
-                }
-            }
-            persist_draws = keep_persist;
-            {
-                shared_ptr<MeshLoadData> load_data = MeshManager::CreateMesh(vertices, indices, colors, is_new_mesh_data);
-                if (is_new_mesh_data) {
-                    mesh_data = load_data.get()->mesh_data;
-                    mesh_data->name = "BulletDebugDrawerData";
-                    mesh_data->vertex_offset = DEBUG_VERTEX_OFFSET;
-                    mesh_data->index_offset = DEBUG_INDEX_OFFSET;
-                }
-                else {
-                    load_data.get()->mesh_data = mesh_data;
-                }
-                vector<shared_ptr<MeshLoadData>> vec_load_data = { load_data };
-                bool is_transform_used = false;
-                buffer->BufferMeshData(vec_load_data, is_transform_used);
-            }
-            int command_offset = buffer->AddCommand(mesh_data->command, draw_call->command_buffer, command_buffer_size);
-
-            vertices.clear();
-            indices.clear();
-            colors.clear();
-        }
-        else {
-            draw_call->command_count = 0;
-        }
+    void clear() {
+        vertices.clear();
+        indices.clear();
+        colors.clear();
     }
 };
+void BulletDebugDrawer::flushLines() {
+    if (vertices.size() > 0) {
+        bool is_new_mesh_data = mesh_data == nullptr;
+        vector<PersistDrawRay> keep_persist;
+        for (auto& persist_draw : persist_draws) {
+            indices.push_back(vertices.size());
+            vertices.push_back(persist_draw.vertices[0]);
+            indices.push_back(vertices.size());
+            vertices.push_back(persist_draw.vertices[1]);
+            colors.push_back(persist_draw.color);
+            colors.push_back(persist_draw.color);
+            if (GameSettings::milliseconds_since_start <= persist_draw.remove_time_millis) {
+                keep_persist.push_back(persist_draw);
+            }
+        }
+        persist_draws = keep_persist;
+        {
+            shared_ptr<MeshLoadData> load_data = MeshManager::CreateMesh(vertices, indices, colors, is_new_mesh_data);
+            if (is_new_mesh_data) {
+                mesh_data = load_data.get()->mesh_data;
+                mesh_data->name = "BulletDebugDrawerData";
+                mesh_data->vertex_offset = DEBUG_VERTEX_OFFSET;
+                mesh_data->index_offset = DEBUG_INDEX_OFFSET;
+            }
+            else {
+                load_data.get()->mesh_data = mesh_data;
+            }
+            vector<shared_ptr<MeshLoadData>> vec_load_data = { load_data };
+            bool is_transform_used = false;
+            buffer->BufferMeshData(vec_load_data, is_transform_used);
+        }
+        draw_call->command_count = 1;
+        int command_offset = buffer->AddCommand(mesh_data->command, draw_call->command_buffer);
+        clear();
+    }
+    else {
+        draw_call->command_count = 0;
+    }
+}
 void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, const btVector3& color) {
     vec3 from3;
     vec3 to3;
@@ -122,7 +129,6 @@ void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, con
     long index_from = -1;
     long index_to = -1;
 
-    lock_guard<mutex> data_lock(data_mutex);
     for (int i = 0; i < vertices.size(); i++) {
         if (vertices[i] == from3) {
             is_new_from = false;
@@ -158,7 +164,7 @@ void BulletDebugDrawer::drawLinePersist(const btVector3& from, const btVector3& 
     memcpy(&from3[0], &from[0], 3 * sizeof(float));
     memcpy(&to3[0], &to[0], 3 * sizeof(float));
 
-    lock_guard<mutex> data_lock(data_mutex);
+    //lock_guard<mutex> data_lock(data_mutex);
     persist_draws.push_back({ GameSettings::milliseconds_since_start + GameSettings::ray_debug_draw_lifetime_milliseconds, {from3, to3}, color3 });
 }
 void BulletDebugDrawer::clearPersist() {
@@ -173,7 +179,7 @@ void   BulletDebugDrawer::drawContactPoint(const btVector3& PointOnB, const btVe
     memcpy(&to3[0], &to[0], 3 * sizeof(float));
     memcpy(&color3[0], &color[0], 3 * sizeof(float));
 
-    lock_guard<mutex> data_lock(data_mutex);
+    //lock_guard<mutex> data_lock(data_mutex);
     indices.push_back(vertices.size());
     vertices.push_back(to3);
     colors.push_back(color3);

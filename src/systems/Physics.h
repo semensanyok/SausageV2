@@ -25,17 +25,18 @@ class PhysicsManager {
 	const char* save_name = "./testFile.bullet";
 public:
 
-	PhysicsManager(BulletDebugDrawer* debugDrawer = nullptr) : debugDrawer{ debugDrawer } {
+	PhysicsManager() {
 		collisionConfiguration = new btDefaultCollisionConfiguration();
 		dispatcher = new btCollisionDispatcher(collisionConfiguration);
 		overlappingPairCache = new btDbvtBroadphase();
-		solver = new btSequentialImpulseConstraintSolver;
+		solver = new btSequentialImpulseConstraintSolver();
 
 		dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
 		dynamicsWorld->setGravity(btVector3(0, -9.8, 0));
-		if (debugDrawer != nullptr) {
-			dynamicsWorld->setDebugDrawer(debugDrawer);
-		}
+	}
+	void SetDebugDrawer(BulletDebugDrawer* debugDrawer) {
+		this->debugDrawer = debugDrawer;
+		dynamicsWorld->setDebugDrawer(debugDrawer);
 	}
 	void Simulate() {
 		//dynamicsWorld->stepSimulation(GameSettings::delta_time, 1);
@@ -46,8 +47,14 @@ public:
 #ifdef SAUSAGE_PROFILE_ENABLE
 		ProfTime::physics_sym_ns = chrono::steady_clock::now() - proft3;
 #endif
+#ifdef SAUSAGE_PROFILE_ENABLE
+		auto proft8 = chrono::steady_clock::now();
+#endif
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
 		dynamicsWorld->debugDrawWorld();
+#endif
+#ifdef SAUSAGE_PROFILE_ENABLE
+		ProfTime::physics_debug_draw_world_ns = chrono::steady_clock::now() - proft8;
 #endif
 	}
 	void ClickRayTest(float screen_x, float screen_y, const vec3& position, float distance, const mat4& camera_projection_view_inverse) {
@@ -79,7 +86,11 @@ public:
 		else {
 			message = "background";
 		}
-		debugDrawer->drawLinePersist(btStart, btEnd, { 255,0,0 });
+#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
+		if (GameSettings::phys_debug_draw) {
+			debugDrawer->drawLinePersist(btStart, btEnd, { 255,0,0 });
+		}
+#endif
 		cout << message << endl;
 	}
 	void UpdateTransforms() {

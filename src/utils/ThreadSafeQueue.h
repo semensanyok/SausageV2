@@ -1,6 +1,8 @@
 #pragma once
 #include "sausage.h"
 
+using namespace std;
+
 template <typename T>
 class ThreadSafeQueue {
 	ofstream logstream;

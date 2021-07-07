@@ -1,8 +1,8 @@
 #pragma once
 
 #include "sausage.h"
-#include "Camera.h"
 #include "Settings.h"
+#include "Camera.h"
 #include "Physics.h"
 
 class Controller {
