@@ -33,6 +33,7 @@ public:
 
 		dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
 		dynamicsWorld->setGravity(btVector3(0, -9.8, 0));
+		dynamicsWorld->setDebugDrawer(nullptr);
 	}
 	void SetDebugDrawer(BulletDebugDrawer* debugDrawer) {
 		this->debugDrawer = debugDrawer;
@@ -112,20 +113,23 @@ public:
 		ProfTime::physics_buf_trans_ns = chrono::steady_clock::now() - proft4;
 #endif
 	}
-	void AddBoxRigidBody(vec3 min_AABB, vec3 max_AABB, float mass, void* user_pointer, mat4& model_transform) {
+	void AddBoxRigidBody(vec3 min_AABB, vec3 max_AABB, float mass, MeshData* user_pointer, mat4& model_transform) {
 		vec3 half_extents = max_AABB - min_AABB;
 		half_extents.x = half_extents.x / 2;
 		half_extents.y = half_extents.y / 2;
-		half_extents.z = half_extents.x / 2;
-		auto datam = ((MeshData*)user_pointer);
+		half_extents.z = half_extents.z / 2;
 
-		btBoxShape* shape = new btBoxShape(btVector3(half_extents.x, half_extents.y, half_extents.x));
+		btBoxShape* shape = new btBoxShape(btVector3(half_extents.x, half_extents.y, half_extents.z));
 		collisionShapes.push_back(shape);
 		auto transform = btTransform();
+		if (model_transform[0].x > 1 || model_transform[1].y > 1 || model_transform[2].z > 1) {
+			LOG((ostringstream()
+				<< "model scale must be 1 for bullet rigidbody. "
+				"Incorrect collision prediction for mesh: "
+				<< (user_pointer == nullptr ? string("Unknown user pointer") : user_pointer->name)).str());
+		}
 		transform.setFromOpenGLMatrix(&model_transform[0][0]);
 		btDefaultMotionState* motionstate = new btDefaultMotionState(transform);
-		
-		MeshData up = *((MeshData*)user_pointer);
 
 		bool isDynamic = (mass != 0.f);
 		btVector3 localInertia(0, 0, 0);

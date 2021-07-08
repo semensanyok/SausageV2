@@ -85,17 +85,18 @@ public:
     static void LoadMeshes(
         const string& file_name,
         vector<Light*>& out_lights,
-        vector<shared_ptr<MeshLoadData>>& out_mesh_load_data
+        vector<shared_ptr<MeshLoadData>>& out_mesh_load_data,
+        bool is_load_armature = false
     )
     {
         bool is_obj = file_name.ends_with(".obj");
         Assimp::Importer assimp_importer;
 
-        const aiScene *scene = assimp_importer.ReadFile(
-            file_name, aiProcess_PopulateArmatureData |
-                           aiProcess_GenBoundingBoxes | aiProcess_Triangulate |
-                           aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
-                           aiProcess_CalcTangentSpace);
+        auto flags = aiProcess_GenBoundingBoxes | aiProcess_Triangulate |
+            aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
+            aiProcess_CalcTangentSpace;
+        flags = is_load_armature ? flags | aiProcess_PopulateArmatureData : flags;
+        const aiScene *scene = assimp_importer.ReadFile(file_name, flags);
 
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
@@ -118,7 +119,7 @@ public:
                 // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
                 aiMesh* mesh = scene->mMeshes[child->mMeshes[j]];
 
-                auto data_ptr = ProcessMesh(mesh, scene);
+                auto data_ptr = ProcessMesh(mesh, scene, is_load_armature);
                 auto data = data_ptr.get();
                 data->mesh_data->transform = transform;
                 data->mesh_data->max_AABB = FromAi(mesh->mAABB.mMax);
@@ -200,89 +201,52 @@ public:
     };
 
 private:
-    static shared_ptr<MeshLoadData> ProcessMesh(aiMesh* mesh, const aiScene* scene)
+    using weight_comparator = decltype([](const pair<Bone*, aiVertexWeight>& lhs, const pair<Bone*, aiVertexWeight>& rhs) {
+        return lhs.second.mWeight > rhs.second.mWeight;
+        });
+    static shared_ptr<MeshLoadData> ProcessMesh(aiMesh* mesh,
+        const aiScene* scene,
+        bool is_load_armature = false)
     {
         // data to fill
         vector<Vertex> vertices;
         vector<unsigned int> indices;
-        Bone* bones = new Bone[mesh->mNumBones];
-        Armature* armature = mesh->mNumBones > 0 ? new Armature{ {}, mesh->mNumBones, bones, {} } : nullptr;
+        Bone* bones = is_load_armature ? new Bone[mesh->mNumBones] : nullptr;
+        Armature* armature = mesh->mNumBones > 0 ? new Armature{ {}, is_load_armature ? mesh->mNumBones : 0, bones, {} } : nullptr;
 
-        map<unsigned int,
-            set<pair<Bone *, aiVertexWeight>,
-                decltype([](const pair<Bone *, aiVertexWeight> &lhs,
-                            const pair<Bone *, aiVertexWeight> &rhs) {
-                  return lhs.second.mWeight > rhs.second.mWeight;
-                })>>
-            vertex_index_to_weights;
+        map<unsigned int, set < pair<Bone*, aiVertexWeight>, weight_comparator>> vertex_index_to_weights;
 
-
-        for (size_t i = 0; i < mesh->mNumBones; i++)
-        {
-            auto aibone = mesh->mBones[i];
-            if (i == 0) {
-                armature->name = aibone->mArmature->mName.C_Str();
+        if (is_load_armature) {
+            for (size_t i = 0; i < mesh->mNumBones; i++)
+            {
+                auto aibone = mesh->mBones[i];
+                if (i == 0) {
+                    armature->name = aibone->mArmature->mName.C_Str();
+                }
+                auto& ai_t = aibone->mOffsetMatrix;
+                auto offset = mat4(
+                    ai_t.a1, ai_t.b1, ai_t.c1, ai_t.d1,
+                    ai_t.a2, ai_t.b2, ai_t.c2, ai_t.d2,
+                    ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
+                    ai_t.a4, ai_t.b4, ai_t.c4, ai_t.d4);
+                bones[i] = CreateBone(aibone->mName.C_Str(), offset);
+                armature->name_to_bone[bones[i].name] = &bones[i];
+                for (int j = 0; j < aibone->mNumWeights; j++) {
+                    auto& weight = aibone->mWeights[j];
+                    vertex_index_to_weights[weight.mVertexId].insert({ &bones[i], weight });
+                }
             }
-            auto& ai_t = aibone->mOffsetMatrix;
-            auto offset = mat4(
-                ai_t.a1, ai_t.b1, ai_t.c1, ai_t.d1,
-                ai_t.a2, ai_t.b2, ai_t.c2, ai_t.d2,
-                ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
-                ai_t.a4, ai_t.b4, ai_t.c4, ai_t.d4);
-            bones[i] = CreateBone(aibone->mName.C_Str(), offset);
-            armature->name_to_bone[bones[i].name] = &bones[i];
-            for (int j = 0; j < aibone->mNumWeights; j++) {
-                auto& weight = aibone->mWeights[j];
-                vertex_index_to_weights[weight.mVertexId].insert({ &bones[i], weight });
-            }
-        }
-
-        for (size_t i = 0; i < mesh->mNumBones; i++)
-        {
-            auto aibone = mesh->mBones[i];
-            if (aibone->mNode->mNumChildren > 0) {
-                SetBoneHierarchy(armature, aibone->mNode, armature->name_to_bone[aibone->mName.C_Str()]);
+            for (size_t i = 0; i < mesh->mNumBones; i++)
+            {
+                auto aibone = mesh->mBones[i];
+                if (aibone->mNode->mNumChildren > 0) {
+                    _SetBoneHierarchy(armature, aibone->mNode, armature->name_to_bone[aibone->mName.C_Str()]);
+                }
             }
         }
         for (unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
-            Vertex vertex;
-            vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
-            if (mesh->HasNormals())
-            {
-                vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
-            }
-            vertex.TexCoords = mesh->mTextureCoords[0] ? vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y) : vec2(0, 0);
-            vertex.Tangent = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
-            vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
-            // init animation data
-            vertex.BoneIds = ivec4(-1);
-            vertex.BoneWeights = vec4(0.0);
-            if (!vertex_index_to_weights.empty()) {
-                auto& weights_v = vertex_index_to_weights[i];
-                auto weight = weights_v.begin();
-                if (weight != weights_v.end()) {
-                    vertex.BoneIds.x = (*weight).first->id;
-                    vertex.BoneWeights.x = (*weight).second.mWeight;
-                    weight++;
-                    if (weight != weights_v.end()) {
-                        vertex.BoneIds.y = (*weight).first->id;
-                        vertex.BoneWeights.y = (*weight).second.mWeight;
-                        weight++;
-                        if (weight != weights_v.end()) {
-                            vertex.BoneIds.z = (*weight).first->id;
-                            vertex.BoneWeights.z = (*weight).second.mWeight;
-                            weight++;
-                            if (weight != weights_v.end()) {
-                                vertex.BoneIds.w = (*weight).first->id;
-                                vertex.BoneWeights.w = (*weight).second.mWeight;
-                                weight++;
-                            }
-                        }
-                    }
-                }
-            }
-            vertices.push_back(vertex);
+            _ProcessVertex(mesh, i, vertices, vertex_index_to_weights, is_load_armature);
         }
         for (unsigned int i = 0; i < mesh->mNumFaces; i++)
         {
@@ -292,7 +256,57 @@ private:
         }
         return CreateMesh(vertices, indices, armature);
     }
-    static void SetBoneHierarchy(Armature* armature, aiNode* parent_node, Bone* parent) {
+    static void _ProcessVertex(aiMesh* mesh,
+        int i,
+        vector<Vertex>& vertices,
+        map<unsigned int, set < pair<Bone*, aiVertexWeight>, weight_comparator>>& vertex_index_to_weights,
+        bool is_load_armature = false) {
+
+        Vertex vertex;
+        vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
+        if (mesh->HasNormals())
+        {
+            vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
+        }
+        vertex.TexCoords = mesh->mTextureCoords[0] ? vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y) : vec2(0, 0);
+        vertex.Tangent = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
+        vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
+        if (is_load_armature) {
+            _SetVertexBones(vertex, i, vertex_index_to_weights);
+        }
+        vertices.push_back(vertex);
+    }
+    static void _SetVertexBones(Vertex& vertex,
+        int i,
+        map<unsigned int, set < pair<Bone*, aiVertexWeight>, weight_comparator>>& vertex_index_to_weights) {
+        vertex.BoneIds = ivec4(-1);
+        vertex.BoneWeights = vec4(0.0);
+        if (!vertex_index_to_weights.empty()) {
+            auto& weights_v = vertex_index_to_weights[i];
+            auto weight = weights_v.begin();
+            if (weight != weights_v.end()) {
+                vertex.BoneIds.x = (*weight).first->id;
+                vertex.BoneWeights.x = (*weight).second.mWeight;
+                weight++;
+                if (weight != weights_v.end()) {
+                    vertex.BoneIds.y = (*weight).first->id;
+                    vertex.BoneWeights.y = (*weight).second.mWeight;
+                    weight++;
+                    if (weight != weights_v.end()) {
+                        vertex.BoneIds.z = (*weight).first->id;
+                        vertex.BoneWeights.z = (*weight).second.mWeight;
+                        weight++;
+                        if (weight != weights_v.end()) {
+                            vertex.BoneIds.w = (*weight).first->id;
+                            vertex.BoneWeights.w = (*weight).second.mWeight;
+                            weight++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    static void _SetBoneHierarchy(Armature* armature, aiNode* parent_node, Bone* parent) {
         for (size_t j = 0; j < parent_node->mNumChildren; j++)
         {
             if (j == 0) {
@@ -302,7 +316,7 @@ private:
             auto child_bone = armature->name_to_bone.find(child_node->mName.C_Str());
             if (child_bone != armature->name_to_bone.end()) {
                 parent->children.push_back((*child_bone).second);
-                SetBoneHierarchy(armature, child_node, (*child_bone).second);
+                _SetBoneHierarchy(armature, child_node, (*child_bone).second);
             }
         }
     }

@@ -241,10 +241,12 @@ public:
                     transforms_total += command.instanceCount;
                 }
             }
-            if (mesh_data->armature != nullptr) {
+            if (mesh_data->armature != nullptr && mesh_data->armature != NULL) {
                 int num_bones = mesh_data->armature->num_bones;
                 auto identity = mat4(1.0);
-                BufferBoneTransform(mesh_data->armature->bones, identity, mesh_data->armature->num_bones);
+                if (mesh_data->armature->bones != NULL) {
+                    BufferBoneTransform(mesh_data->armature->bones, identity, mesh_data->armature->num_bones);
+                }
             }
         }
         for (auto& instance : instances) {

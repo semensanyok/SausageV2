@@ -94,7 +94,8 @@ private:
 		_LoadAnimations();
 	}
 	void _LoadMeshes(string& path, vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
-		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes);
+		bool is_load_armature = true;
+		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes, is_load_armature);
 		CheckGLError();
 		_BlenderPostprocessLights(out_new_lights);
 	}

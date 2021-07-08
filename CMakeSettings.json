@@ -37,16 +37,6 @@
 					"type": "BOOL"
 				},
 				{
-					"name": "CMAKE_C_FLAGS_DEBUG",
-					"value": "/MDd /Zi /Ob0 /Od /RTC1",
-					"type": "STRING"
-				},
-				{
-					"name": "BULLET2_MULTITHREADING",
-					"value": "True",
-					"type": "BOOL"
-				},
-				{
 					"name": "BULLET2_USE_THREAD_LOCKS",
 					"value": "True",
 					"type": "BOOL"
