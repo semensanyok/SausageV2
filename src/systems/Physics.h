@@ -6,6 +6,7 @@
 #include "BulletDebugDrawer.h"
 #include "Settings.h"
 #include "../utils/AssetUtils.h"
+#include "StateManager.h"
 
 using namespace std;
 
@@ -23,9 +24,10 @@ class PhysicsManager {
 	btDiscreteDynamicsWorld* dynamicsWorld;
 
 	const char* save_name = "./testFile.bullet";
+	StateManager* state_manager;
 public:
-
-	PhysicsManager() {
+	
+	PhysicsManager(StateManager* state_manager) : state_manager{ state_manager } {
 		collisionConfiguration = new btDefaultCollisionConfiguration();
 		dispatcher = new btCollisionDispatcher(collisionConfiguration);
 		overlappingPairCache = new btDbvtBroadphase();
@@ -44,7 +46,7 @@ public:
 #ifdef SAUSAGE_PROFILE_ENABLE
 		auto proft3 = chrono::steady_clock::now();
 #endif
-		dynamicsWorld->stepSimulation(GameSettings::delta_time * GameSettings::physics_step_multiplier, 1000);
+		dynamicsWorld->stepSimulation(state_manager->delta_time * GameSettings::physics_step_multiplier, 1000);
 #ifdef SAUSAGE_PROFILE_ENABLE
 		ProfTime::physics_sym_ns = chrono::steady_clock::now() - proft3;
 #endif
@@ -105,9 +107,9 @@ public:
 			auto rigidBody = nonStatic[i];
 			rigidBody->getMotionState()->getWorldTransform(btTrans);
 			MeshData* mesh_data = (MeshData*)rigidBody->getUserPointer();
-			auto& gl_transform = mesh_data->transform[0][0];
-			btTrans.getOpenGLMatrix(&gl_transform);
-			mesh_data->buffer->BufferTransform(mesh_data);
+			auto& update = state_manager->GetPhysicsUpdate(mesh_data);
+			update.first = mesh_data;
+			btTrans.getOpenGLMatrix(&update.second[0][0]);
 		}
 #ifdef SAUSAGE_PROFILE_ENABLE
 		ProfTime::physics_buf_trans_ns = chrono::steady_clock::now() - proft4;

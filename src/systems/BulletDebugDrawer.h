@@ -6,6 +6,7 @@
 #include "BufferStorage.h"
 #include "Renderer.h"
 #include "Settings.h"
+#include "StateManager.h"
 
 using namespace std;
 
@@ -21,6 +22,7 @@ class BulletDebugDrawer : public btIDebugDraw
     Shader* debug_shader;
     BufferStorage* buffer;
     Renderer* renderer;
+    StateManager* state_manager;
     int m_debugMode;
 
     vector<vec3> vertices;
@@ -32,7 +34,15 @@ class BulletDebugDrawer : public btIDebugDraw
     const unsigned int command_buffer_size = 1;
 public:
 
-    BulletDebugDrawer(Renderer* renderer, BufferStorage* buffer, Shader* debug_shader) : renderer{ renderer }, buffer{ buffer }, debug_shader{ debug_shader }, mesh_data{ nullptr } {
+    BulletDebugDrawer(Renderer* renderer,
+        BufferStorage* buffer,
+        Shader* debug_shader,
+        StateManager* state_manager) :
+        renderer{ renderer },
+        buffer{ buffer },
+        debug_shader{ debug_shader },
+        mesh_data{ nullptr },
+        state_manager{ state_manager } {
         draw_call = new DrawCall();
         draw_call->shader = debug_shader;
         draw_call->mode = GL_LINES;
@@ -90,7 +100,7 @@ void BulletDebugDrawer::flushLines() {
             vertices.push_back(persist_draw.vertices[1]);
             colors.push_back(persist_draw.color);
             colors.push_back(persist_draw.color);
-            if (GameSettings::milliseconds_since_start <= persist_draw.remove_time_millis) {
+            if (state_manager->milliseconds_since_start <= persist_draw.remove_time_millis) {
                 keep_persist.push_back(persist_draw);
             }
         }
@@ -165,7 +175,7 @@ void BulletDebugDrawer::drawLinePersist(const btVector3& from, const btVector3& 
     memcpy(&to3[0], &to[0], 3 * sizeof(float));
 
     //lock_guard<mutex> data_lock(data_mutex);
-    persist_draws.push_back({ GameSettings::milliseconds_since_start + GameSettings::ray_debug_draw_lifetime_milliseconds, {from3, to3}, color3 });
+    persist_draws.push_back({ state_manager->milliseconds_since_start + GameSettings::ray_debug_draw_lifetime_milliseconds, {from3, to3}, color3 });
 }
 void BulletDebugDrawer::clearPersist() {
     persist_draws.clear();

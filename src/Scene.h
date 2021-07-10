@@ -84,6 +84,8 @@ private:
 		_AddRigidBodies(new_meshes);
 		
 		for (auto& mesh : new_meshes) {
+			
+			mesh->mesh_data->transform = rotate(mesh->mesh_data->transform, 45.0f, vec3(0, 0, 1));
 			all_meshes.push_back(mesh->mesh_data);
 		}
 		for (auto& light : new_lights) {
@@ -103,7 +105,10 @@ private:
 		for (auto& mesh : all_meshes) {
 			for (auto& path : GetAnimationsPathsForModel(mesh->name)) {
 				systems_manager->anim_manager->LoadAnimationForMesh(path.string(), mesh);
+				systems_manager->anim_manager->StartAnim(mesh);
 			}
+			if (mesh->armature != nullptr && !mesh->armature->name_to_anim.empty())
+				mesh->active_animations.push_back({ systems_manager->state_manager->milliseconds_since_start, 1.0, mesh->armature->name_to_anim.begin()->second });
 		}
 		CheckGLError();
 	}
@@ -141,23 +146,15 @@ private:
 		CheckGLError();
 	}
 	void _ReloadScene() {
+		lock_guard<mutex> pause_lock(Events::pause_phys_mtx);
+
 		_CleanupScene();
 		_LoadData();
 	}
 	void _CleanupScene() {
-		systems_manager->ResetBuffer();
-		systems_manager->physics_manager->Reset();
-		for (auto mesh : all_meshes) {
-			delete mesh;
-		}
+		systems_manager->Reset();
 		all_meshes.clear();
-		for (auto mesh : all_transparent_meshes) {
-			delete mesh;
-		}
 		all_transparent_meshes.clear();
-		for (auto light : all_lights) {
-			delete light;
-		}
 		all_lights.clear();
 	}
 	void _BlenderPostprocessLights(vector<Light*>& lights) {

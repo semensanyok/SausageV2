@@ -13,8 +13,8 @@ ostream& operator<<(ostream& in, const aiString& aistring) {
 }
 
 
-vec4 FromAi(aiQuaternion& aivec) {
-    return vec4(aivec.x, aivec.y, aivec.z, aivec.w);
+quat FromAi(aiQuaternion& aivec) {
+    return qua(aivec.x, aivec.y, aivec.z, aivec.w);
 }
 
 vec4 FromAi(aiVector3D& aivec) {
@@ -81,6 +81,22 @@ public:
 
     inline static map<string, MeshData*> name_to_mesh;
     inline static map<string, MeshData*> armature_name_to_mesh;
+    inline static vector<Light*> all_lights;
+
+    static void Reset() {
+        for (auto name_mesh : name_to_mesh) {
+            delete name_mesh.second->armature;
+            delete name_mesh.second;
+        }
+        name_to_mesh.clear();
+        armature_name_to_mesh.clear();
+        for (auto light : all_lights) {
+            delete light;
+        }
+        all_lights.clear();
+        mesh_count = 0;
+        bone_count = 0;
+    }
 
     static void LoadMeshes(
         const string& file_name,
@@ -142,12 +158,13 @@ public:
             auto res_light = FromAi(light);
             // -Z forward Y up in Blender export settings
             res_light->position = vec4(tr.a4, tr.b4, tr.c4, 0.0);
+            all_lights.push_back(res_light);
             out_lights.push_back(res_light);
         }
     }
     
     static Bone CreateBone(const char* bone_name, mat4& offset) {
-        return { bone_count++, bone_name, offset };
+        return { bone_count++, bone_name, offset, mat4(1.0) };
     }
     static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex> &vertices,
                                                vector<unsigned int> &indices,

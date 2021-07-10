@@ -11,6 +11,7 @@
 #include "systems/BulletDebugDrawer.h"
 #include "systems/AsyncTaskManager.h"
 #include "systems/Animation.h"
+#include "systems/StateManager.h"
 #include "Logging.h"
 #include "FileWatcher.h"
 
@@ -25,6 +26,7 @@ public:
 	AsyncTaskManager* async_manager;
 	AnimationManager* anim_manager;
 	PhysicsManager* physics_manager;
+	StateManager* state_manager;
 	BulletDebugDrawer* bullet_debug_drawer = nullptr;
 	
 	Shaders shaders;
@@ -39,7 +41,7 @@ public:
 	void InitSystems() {
 		texture_manager = new TextureManager();
 		file_watcher = new FileWatcher();
-		//camera = new Camera(60.0f, SCR_WIDTH, SCR_HEIGHT, 0.1f, 100.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
+		state_manager = new StateManager();
 		camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
 		renderer = new Renderer();
 		renderer->InitContext();
@@ -51,21 +53,26 @@ public:
 			RegisterShader("stencil_vs.glsl", "stencil_fs.glsl")
 		};
 
+		physics_manager = new PhysicsManager(state_manager);
+		controller = new Controller(camera, state_manager, physics_manager);
+		anim_manager = new AnimationManager(state_manager);
 		_CreateDebugDrawer();
-		physics_manager = new PhysicsManager();
-		controller = new Controller(camera, physics_manager);
-		anim_manager = new AnimationManager();
 
 		async_manager = new AsyncTaskManager();
 		function<void()> log_io_task = bind(&Sausage::LogIO);
 		function<void()> file_watcher_task = bind(&FileWatcher::Watch, file_watcher);
 		function<void()> phys_sym_task = bind(&PhysicsManager::Simulate, physics_manager);
 		function<void()> phys_update_task = bind(&PhysicsManager::UpdateTransforms, physics_manager);
-		
+		function<void()> play_anim = bind(&AnimationManager::PlayAnim, anim_manager);
+		function<void()> buffer_mesh_update = bind(&StateManager::BufferUpdates, state_manager);
+
 		async_manager->SubmitMiscTask(log_io_task, true);
 		async_manager->SubmitMiscTask(file_watcher_task, true);
 		async_manager->SubmitPhysTask(phys_sym_task, true);
 		async_manager->SubmitPhysTask(phys_update_task, true);
+		async_manager->SubmitPhysTask(play_anim, true);
+		async_manager->SubmitPhysTask(buffer_mesh_update, true);
+		
 
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
 		physics_manager->SetDebugDrawer(bullet_debug_drawer);
@@ -90,13 +97,17 @@ public:
 #endif
 	}
 	void _CreateDebugDrawer() {
-		bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer, shaders.bullet_debug);
+		bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer, shaders.bullet_debug, state_manager);
 		//int debug_mask = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints;
 		int debug_mask = btIDebugDraw::DBG_DrawWireframe;
 		bullet_debug_drawer->setDebugMode(debug_mask);
 	}
-	void ResetBuffer() {
+	void Reset() {
+		state_manager->Reset();
+		physics_manager->Reset();
 		buffer->Reset();
+		MeshManager::Reset();
+		anim_manager->Reset();
 	}
 
 	Shader* RegisterShader(const char* vs_name, const char* fs_name) {
@@ -119,11 +130,6 @@ public:
 		delete renderer;
 		delete camera;
 		delete async_manager;
-	}
-	void UpdateDeltaTime() {
-		float this_ticks = SDL_GetTicks();
-		GameSettings::delta_time = this_ticks - GameSettings::last_ticks;
-		GameSettings::last_ticks = this_ticks;
 	}
 private:
 	void InitBuffer() {

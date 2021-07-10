@@ -47,6 +47,7 @@ public:
 	}
 private:
 	void RunPhysicsTasks(bool& quit) {
+		lock_guard<mutex> pause_phys_lock(Events::pause_phys_mtx);
 		auto tasks = physics_tasks.WaitPopAll(quit);
 		while (!tasks.empty()) {
 			auto& task = tasks.front();
@@ -56,10 +57,10 @@ private:
 			}
 			tasks.pop();
 		}
-		{
-			unique_lock<mutex> end_render_frame_lock(Events::end_render_frame_mtx);
-			Events::end_render_frame_event.wait(end_render_frame_lock);
-		}
+		//{
+		//	unique_lock<mutex> end_render_frame_lock(Events::end_render_frame_mtx);
+		//	Events::end_render_frame_event.wait(end_render_frame_lock);
+		//}
 	}
 	void RunMiscTasks(bool& quit) {
 		auto tasks = misc_tasks.WaitPopAll(quit);

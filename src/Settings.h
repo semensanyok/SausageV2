@@ -8,15 +8,14 @@ namespace GameSettings {
 	//int SCR_WIDTH = 1920;
 	//int SCR_HEIGHT = 1080;
 
-	float delta_time = 0;
-	float last_ticks = 0;
-	uint32_t milliseconds_since_start = 0;
 	int ray_debug_draw_lifetime_milliseconds = 2000;
-	float physics_step_multiplier = 0.0001f;
+	float physics_step_multiplier = 0.00001f;
 	bool quit = false;
 	bool phys_debug_draw = true;
 }
 namespace Events {
+	std::mutex pause_phys_mtx;
+
 	std::mutex end_render_frame_mtx;
 	std::condition_variable end_render_frame_event;
 }

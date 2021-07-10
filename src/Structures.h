@@ -132,13 +132,14 @@ struct Bone {
       * or inverse bind pose matrix.
       */
     mat4 offset;
+    mat4 transform;
     vector<Bone*> children;
 };
 
 struct BoneKeyFrames {
     vector<pair<double, vec3>> time_position;
     // quaternions
-    vector<pair<double, vec4>> time_rotation;
+    vector<pair<double, quat>> time_rotation;
     vector<pair<double, vec3>> time_scale;
 };
 
@@ -147,6 +148,7 @@ struct Animation {
     string name;
     double duration;
     double ticks_per_second;
+    double duration_seconds;
 
     map<string, BoneKeyFrames> bone_frames;
 };
@@ -157,6 +159,12 @@ struct Armature {
     Bone* bones;
     map<string, Bone*> name_to_bone;
     map<string, Animation*> name_to_anim;
+};
+
+struct ActiveAnimation {
+    uint32_t start_time;
+    float blend_factor;
+    Animation* anim;
 };
 
 struct MeshData {
@@ -178,7 +186,16 @@ struct MeshData {
     MeshData* base_mesh;
     Armature* armature;
 
-    MeshData() : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, base_mesh{ nullptr }, texture{ nullptr }, armature{ nullptr }, is_transparent{ false } {};
+    vector<ActiveAnimation> active_animations;
+
+    MeshData() : 
+        vertex_offset{ -1 },
+        index_offset{ -1 },
+        buffer_id{ -1 },
+        base_mesh{ nullptr },
+        texture{ nullptr },
+        armature{ nullptr },
+        is_transparent{ false } {};
 };
 
 struct MeshLoadData {

@@ -35,7 +35,7 @@ int SDL_main(int argc, char** argv)
 	Init();
 	systems_manager->async_manager->Run();
 	while (!GameSettings::quit) {
-		systems_manager->UpdateDeltaTime();
+		systems_manager->state_manager->UpdateDeltaTimeTimings();
 		
 #ifdef SAUSAGE_PROFILE_ENABLE
 		auto proft1 = chrono::steady_clock::now();
@@ -56,7 +56,6 @@ int SDL_main(int argc, char** argv)
 		ProfTime::total_frame_ns = chrono::steady_clock::now() - proft1;
 #endif
 		CheckGLError();
-		GameSettings::milliseconds_since_start = SDL_GetTicks();
 	}
 	systems_manager->Clear();
 	delete systems_manager;

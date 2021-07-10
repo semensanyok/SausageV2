@@ -4,13 +4,17 @@
 #include "Settings.h"
 #include "Camera.h"
 #include "Physics.h"
+#include "StateManager.h"
 
 class Controller {
 public:
 	Camera* camera;
+	StateManager* state_manager;
 	PhysicsManager* physics_manager;
-
-	Controller(Camera* camera, PhysicsManager* physics_manager) : camera{ camera }, physics_manager{ physics_manager } {};
+	
+	Controller(Camera* camera,
+		StateManager* state_manager,
+		PhysicsManager* physics_manager) : camera{ camera }, state_manager{ state_manager }, physics_manager{ physics_manager } {};
 
 	void ProcessEvent(SDL_Event* e)
 	{
@@ -24,7 +28,7 @@ public:
 		case SDL_MOUSEBUTTONUP:
 			break;
 		case SDL_MOUSEWHEEL:
-			camera->MouseWheelCallbackRTS(e->wheel, GameSettings::delta_time);
+			camera->MouseWheelCallbackRTS(e->wheel, state_manager->delta_time);
 			break;
 		case SDL_QUIT:
 			GameSettings::quit = true;
@@ -57,7 +61,7 @@ public:
 			mod = SDL_GetModState();
 			if (k == SDLK_ESCAPE)
 				GameSettings::quit = 1;
-			camera->KeyCallbackRTS(s, GameSettings::delta_time);
+			camera->KeyCallbackRTS(s, state_manager->delta_time);
 			break;
 		}
 		case SDL_KEYUP: {

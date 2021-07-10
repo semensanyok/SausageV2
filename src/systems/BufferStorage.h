@@ -243,9 +243,8 @@ public:
             }
             if (mesh_data->armature != nullptr && mesh_data->armature != NULL) {
                 int num_bones = mesh_data->armature->num_bones;
-                auto identity = mat4(1.0);
                 if (mesh_data->armature->bones != NULL) {
-                    BufferBoneTransform(mesh_data->armature->bones, identity, mesh_data->armature->num_bones);
+                    BufferBoneTransform(mesh_data->armature->bones, mesh_data->armature->num_bones);
                 }
             }
         }
@@ -348,24 +347,14 @@ public:
         }
         return -1;
     }
-    void BufferBoneTransform(Bone* bone, vector<mat4>& transforms, unsigned int num_bones = 1) {
-        
+    void BufferBoneTransform(Bone* bone, unsigned int num_bones = 1) {
         for (size_t i = 0; i < num_bones; i++)
         {
-            BufferBoneTransform(&bone[i], transforms[i], 1);
-        }
-        is_need_barrier = true;
-    }
-    void BufferBoneTransform(Bone* bone, mat4& transform, unsigned int num_bones = 1) {
-        
-        for (size_t i = 0; i < num_bones; i++)
-        {
-          uniforms_ptr->bones_transforms[bone[i].id] = transform;
+          uniforms_ptr->bones_transforms[bone[i].id] = bone[i].transform;
         }
         is_need_barrier = true;
     }
     void BufferTransform(MeshData* mesh_data) {
-        
         uniforms_ptr->transforms[mesh_data->transform_offset + mesh_data->instance_id] = mesh_data->transform;
         if (mesh_data->instance_id == 0) {
             uniforms_ptr->transform_offset[mesh_data->buffer_id + mesh_data->instance_id] = mesh_data->transform_offset;
@@ -373,7 +362,6 @@ public:
         is_need_barrier = true;
     }
     void BufferTransform(vector<MeshData*>& mesh_data) {
-        
         for (int i = 0; i < mesh_data.size(); i++) {
             BufferTransform(mesh_data[i]);
         }

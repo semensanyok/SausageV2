@@ -127,9 +127,9 @@ set(sources ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/sys
 "src/systems/Camera.h" "src/systems/Gui.h" "src/OpenGLHelpers.h" 
 "src/systems/SystemsManager.h" "src/Scene.h" "src/systems/Controller.h" 
 "src/systems/Physics.h" "src/systems/TextureManager.h"  "src/FileWatcher.h"  
-"src/systems/BulletDebugDrawer.h" "src/systems/Animation.h" "src/utils/ColladaLoader.h" "src/systems/AsyncTaskManager.h")
+"src/systems/BulletDebugDrawer.h" "src/systems/Animation.h" "src/utils/ColladaLoader.h" "src/systems/AsyncTaskManager.h" "src/systems/AsyncTaskManager.h" "src/systems/StateManager.h")
 
-add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/systems/AsyncTaskManager.h")
+add_executable(${CMAKE_PROJECT_NAME} ${sources})
 
 # RocketCore RocketDebugger RocketControls 
 # ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2}

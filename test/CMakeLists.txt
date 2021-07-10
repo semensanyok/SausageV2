@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(
     ${SAUSAGE_INCLUDE_DIRS}
     "../src"
 )
-add_executable(${SAUSAGE_TEST_PROJ} "Main.cpp" "utils/ColladaLoaderTest.cpp")
+add_executable(${SAUSAGE_TEST_PROJ} "Main.cpp" "utils/Test1.cpp")
 target_link_libraries(${SAUSAGE_TEST_PROJ} ${SAUSAGE_LIBS})
 
 file(GLOB test_assets "${CMAKE_CURRENT_LIST_DIR}/test/assets/*")
