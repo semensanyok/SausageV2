@@ -6,7 +6,7 @@ using namespace glm;
 class Test1 {
 public:
 	static void run() {
-		vec4 a(0);
+		mat4 a;
 		cout << to_string(a) << endl;
 	};
 };

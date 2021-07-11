@@ -81,17 +81,14 @@ private:
 		_LoadMeshes(scene_path, new_meshes, new_lights);
 		systems_manager->buffer->SetBaseMeshForInstancedCommand(new_meshes);
 		_BufferMeshes(new_meshes);
-		_AddRigidBodies(new_meshes);
-		
 		for (auto& mesh : new_meshes) {
-			
-			mesh->mesh_data->transform = rotate(mesh->mesh_data->transform, 45.0f, vec3(0, 0, 1));
 			all_meshes.push_back(mesh->mesh_data);
 		}
 		for (auto& light : new_lights) {
 			all_lights.push_back(light);
 		}
 		systems_manager->buffer->BufferTransform(all_meshes);
+		_AddRigidBodies(new_meshes);
 		
 		_LoadAnimations();
 	}
@@ -107,8 +104,10 @@ private:
 				systems_manager->anim_manager->LoadAnimationForMesh(path.string(), mesh);
 				systems_manager->anim_manager->StartAnim(mesh);
 			}
-			if (mesh->armature != nullptr && !mesh->armature->name_to_anim.empty())
-				mesh->active_animations.push_back({ systems_manager->state_manager->milliseconds_since_start, 1.0, mesh->armature->name_to_anim.begin()->second });
+			if (mesh->armature != nullptr && !mesh->armature->name_to_anim.empty()) {
+				auto anim = mesh->armature->name_to_anim["Stretch"];
+				mesh->active_animations.push_back({ systems_manager->state_manager->seconds_since_start, 1.0, anim });
+			}
 		}
 		CheckGLError();
 	}
@@ -122,7 +121,7 @@ private:
 	void _AddRigidBodies(vector<shared_ptr<MeshLoadData>>& new_meshes) {
 		for (auto& mesh_ptr : new_meshes) {
 			auto& mesh = mesh_ptr.get()->mesh_data;
-			if (mesh->name.starts_with("Terrain")) {
+			if (mesh->name.starts_with("Terrain") || mesh->name.starts_with("Frog")) {
 				systems_manager->physics_manager->AddBoxRigidBody(mesh->min_AABB, mesh->max_AABB, 0.0f, mesh, mesh->transform);
 			}
 			else {

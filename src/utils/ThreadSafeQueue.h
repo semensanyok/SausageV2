@@ -5,7 +5,6 @@ using namespace std;
 
 template <typename T>
 class ThreadSafeQueue {
-	ofstream logstream;
 	queue<T> container;
 	mutex log_mutex;
 	condition_variable is_log_event;

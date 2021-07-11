@@ -18,13 +18,22 @@ public:
         for (auto anim : anims) {
             delete anim;
         }
+        anims.clear();
+        active_anims.clear();
+        anim_count = 0;
     }
     void StartAnim(MeshData* mesh) {
         active_anims[mesh->id] = mesh;
     }
     void PlayAnim() {
-        for (auto& id_mesh : active_anims) {
-            auto mesh = id_mesh.second;
+        auto active_anim = active_anims.begin();
+        while (active_anim != active_anims.end()) {
+            if (active_anim->second->active_animations.empty()) {
+                active_anim = active_anims.erase(active_anim);
+                continue;
+            }
+            map<unsigned int, Bone*> final_transforms;
+            auto mesh = active_anim->second;
             for (auto& anim : mesh->active_animations) {
                 uint32_t current_time = state_manager->seconds_since_start - anim.start_time;
                 double current_time_ticks = current_time * anim.anim->ticks_per_second;
@@ -38,39 +47,44 @@ public:
                     auto time_scale = frame.second.time_scale.begin();
                     auto time_rotate = frame.second.time_rotation.begin();
                     auto time_position = frame.second.time_position.begin();
-                    bone->transform = mat4(1);
+                    if (final_transforms.find(bone->id) == final_transforms.end()) {
+                        final_transforms[bone->id] = bone;
+                        bone->transform = mat4(1);
+                    }
+                    else {
+                        cout << "inited";
+                    }
                     vec3 bone_scale;
                     mat4 bone_rotation;
-                    vec4 bone_translate;
+                    vec3 bone_translate;
 
                     while (time_position != frame.second.time_position.end()) {
                         auto& cur = *time_position;
                         auto& next = ++time_position;
-                        if (next != frame.second.time_position.end()) {
-                            if ((*next).first > current_time_ticks) {
-                                auto blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
-                                //auto trans = mix(cur.second, (*next).second, blend);
-                                auto trans = cur.second;
-                                translate(bone->transform, trans);
-                            }
+                        if (next == frame.second.time_position.end()) {
+                            bone_translate = cur.second;
+                            break;
                         }
-                        else {
-                            translate(bone->transform, cur.second);
+                        if ((*next).first > current_time_ticks) {
+                            auto blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
+                            bone_translate = mix(cur.second, (*next).second, blend);
+                            //bone_translate = cur.second;
+                            break;
                         }
                     }
                     while (time_rotate != frame.second.time_rotation.end()) {
                         auto& cur = *time_rotate;
                         auto& next = ++time_rotate;
-                        if (next != frame.second.time_rotation.end()) {
-                            if ((*next).first > current_time_ticks) {
-                                auto blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
-                                //auto quat = mix(cur.second, (*next).second, blend);
-                                auto bone_quat = cur.second;
-                                bone->transform = bone->transform * mat4_cast(bone_quat);
-                            }
+                        if (next == frame.second.time_rotation.end()) {
+                            bone_rotation = mat4_cast(cur.second);
+                            break;
                         }
-                        else {
-                            bone->transform = bone->transform * mat4_cast(cur.second);
+                        if ((*next).first > current_time_ticks) {
+                            float blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
+                            //auto quat = mix(cur.second, (*next).second, blend);
+                            //bone_rotation = slerp(cur.second, (*next).second, blend);
+                            bone_rotation = mat4_cast(cur.second);
+                            break;
                         }
                     }
                     //while (time_scale != frame.second.time_scale.end()) {
@@ -88,9 +102,28 @@ public:
                     //        scale(bone->transform, cur.second);
                     //    }
                     //}
+                    bone->transform = translate(bone->transform, bone_translate);
+                    //bone->transform = bone_rotation * bone->transform;
+                    for (auto& child : bone->children) {
+                        SetTransformForHierarchy(child, bone->transform, final_transforms);
+                    }
                 }
             }
             state_manager->AddBoneTransformUpdate(mesh);
+            active_anim++;
+        }
+    }
+    void SetTransformForHierarchy(Bone* bone, mat4& transform, map<unsigned int, Bone*>& final_transforms) {
+        if (final_transforms.find(bone->id) == final_transforms.end()) {
+            final_transforms[bone->id] = bone;
+            bone->transform = mat4(1);
+            bone->transform = transform * bone->transform;
+        }
+        else {
+            bone->transform = transform * bone->transform;
+        }
+        for (auto& child : bone->children) {
+            SetTransformForHierarchy(child, child->transform, final_transforms);
         }
     }
 	Animation* CreateAnimation(string& anim_name, double duration, double ticks_per_seconds) {
@@ -125,6 +158,9 @@ public:
         {
             auto& aianim = scene->mAnimations[i];
             string anim_name = string(aianim->mName.C_Str());
+            // blender exports name as ArmatureName|AnimName
+            int delim_pos = anim_name.find("|");
+            anim_name = anim_name.substr(delim_pos + 1, anim_name.size() - delim_pos);
             if (aianim->mNumChannels < 1) {
                 continue;
             }
@@ -134,41 +170,25 @@ public:
                 {
                     auto channel = aianim->mChannels[j];
                     auto bone_name = string(channel->mNodeName.C_Str());
-                    // bone at 0 index is armature name
-                    if (j == 0) {
-                        //auto mesh_ptr = armature_name_to_mesh.find(bone_name);
-                        //if (mesh_ptr == armature_name_to_mesh.end()) {
-                        //    LOG((ostringstream() << "mesh with armature '" << bone_name << "' not found for animation '" << anim_name << "'").str());
-                        //    break;
-                        //}
-                        //mesh = mesh_ptr->second;
-
-                        if (mesh->armature->name != bone_name) {
-                            LOG((ostringstream()
-                                << "armature name '" << mesh->armature->name
-                                << "' for mesh '" << mesh->name
-                                << "' not matching animation armature name'"
-                                << bone_name << "'")
-                                .str());
-                        };
+                    // bone at 0 index is armature name. P.S. Outdated
+                    //if (j == 0) {
+                    // continue;
+                    //}
+                    auto& bone_frames = anim->bone_frames[bone_name];
+                    for (size_t k = 0; k < channel->mNumPositionKeys; k++)
+                    {
+                        auto& key = channel->mPositionKeys[k];
+                        bone_frames.time_position.push_back({ key.mTime, FromAi(key.mValue) });
                     }
-                    else {
-                        auto& bone_frames = anim->bone_frames[bone_name];
-                        for (size_t k = 0; k < channel->mNumPositionKeys; k++)
-                        {
-                            auto& key = channel->mPositionKeys[k];
-                            bone_frames.time_position.push_back({ key.mTime, FromAi(key.mValue) });
-                        }
-                        for (size_t k = 0; k < channel->mNumScalingKeys; k++)
-                        {
-                            auto& key = channel->mScalingKeys[k];
-                            bone_frames.time_scale.push_back({ key.mTime, FromAi(key.mValue) });
-                        }
-                        for (size_t k = 0; k < channel->mNumRotationKeys; k++)
-                        {
-                            auto& key = channel->mRotationKeys[k];
-                            bone_frames.time_rotation.push_back({ key.mTime, FromAi(key.mValue) });
-                        }
+                    for (size_t k = 0; k < channel->mNumScalingKeys; k++)
+                    {
+                        auto& key = channel->mScalingKeys[k];
+                        bone_frames.time_scale.push_back({ key.mTime, FromAi(key.mValue) });
+                    }
+                    for (size_t k = 0; k < channel->mNumRotationKeys; k++)
+                    {
+                        auto& key = channel->mRotationKeys[k];
+                        bone_frames.time_rotation.push_back({ key.mTime, FromAi(key.mValue) });
                     }
                 }
                 if (mesh != nullptr) {

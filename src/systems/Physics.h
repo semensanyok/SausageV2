@@ -179,17 +179,8 @@ public:
 		fwrite(serializer->getBufferPointer(), serializer->getCurrentBufferSize(), 1, file);
 		fclose(file);
 	}
-
 	~PhysicsManager() {
-		for (auto& body : rigidBodies) {
-			delete body->getMotionState();
-			dynamicsWorld->removeCollisionObject(body);
-			delete body;
-		}
-		for (auto& shape : collisionShapes)
-		{
-			delete shape;
-		}
+		Reset();
 		delete dynamicsWorld;
 		delete solver;
 		//delete broadphase

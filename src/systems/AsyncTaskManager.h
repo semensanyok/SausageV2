@@ -9,6 +9,7 @@ using namespace std;
 class AsyncTaskManager {
 	int MAX_THREADS = std::thread::hardware_concurrency();
 	thread physics_thread;
+	thread anim_thread;
 	thread misc_thread;
 
 	ThreadSafeQueue<pair<function<void()>, bool>> misc_tasks;
@@ -16,24 +17,18 @@ class AsyncTaskManager {
 public:
 
 	AsyncTaskManager() {};
+	//void Reset() {
+	//	misc_tasks.PopAll();
+	//	physics_tasks.PopAll();
+	//}
 	void Run() {
-		//if (MAX_THREADS >= 3) {
-			physics_thread = thread([&] {while (!GameSettings::quit) {
-				//this_thread::sleep_for(std::chrono::milliseconds(300));
-				RunPhysicsTasks(GameSettings::quit);
-			}});
-			misc_thread = thread([&] {while (!GameSettings::quit) {
-				//this_thread::sleep_for(std::chrono::milliseconds(300));
-				RunMiscTasks(GameSettings::quit);
-			}});
-		//}
-		//else {
-		//	misc_thread = thread([&] {while (!quit) {
-		//		//this_thread::sleep_for(std::chrono::milliseconds(300));
-		//		RunMiscTasks();
-		//		RunPhysicsTasks();
-		//	}});
-		//}
+		physics_thread = thread([&] {while (!GameSettings::quit) {
+			RunPhysicsTasks(GameSettings::quit);
+		}});
+		misc_thread = thread([&] {while (!GameSettings::quit) {
+			RunMiscTasks(GameSettings::quit);
+		}});
+		//anim_thread = 
 	}
 	void SubmitPhysTask(function<void()> task, bool is_persistent) {
 		physics_tasks.Push({ task, is_persistent });
@@ -57,10 +52,10 @@ private:
 			}
 			tasks.pop();
 		}
-		//{
-		//	unique_lock<mutex> end_render_frame_lock(Events::end_render_frame_mtx);
-		//	Events::end_render_frame_event.wait(end_render_frame_lock);
-		//}
+		{
+			unique_lock<mutex> end_render_frame_lock(Events::end_render_frame_mtx);
+			Events::end_render_frame_event.wait(end_render_frame_lock);
+		}
 	}
 	void RunMiscTasks(bool& quit) {
 		auto tasks = misc_tasks.WaitPopAll(quit);

@@ -14,7 +14,7 @@ ostream& operator<<(ostream& in, const aiString& aistring) {
 
 
 quat FromAi(aiQuaternion& aivec) {
-    return qua(aivec.x, aivec.y, aivec.z, aivec.w);
+    return quat(aivec.w, aivec.x, aivec.y, aivec.z);
 }
 
 vec4 FromAi(aiVector3D& aivec) {
