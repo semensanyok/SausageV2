@@ -15,9 +15,10 @@ namespace GameSettings {
 }
 namespace Events {
 	std::mutex pause_phys_mtx;
+	std::shared_mutex bone_data_mtx;
 
-	std::mutex end_render_frame_mtx;
-	std::condition_variable end_render_frame_event;
+	std::shared_mutex end_render_frame_mtx;
+	std::condition_variable_any end_render_frame_event;
 }
 
 namespace BufferSettings {

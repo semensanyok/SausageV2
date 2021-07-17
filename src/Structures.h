@@ -130,9 +130,15 @@ struct Bone {
       *
       * It is sometimes called an inverse-bind matrix,
       * or inverse bind pose matrix.
+      * 
+      * AKA bind_shape_matrix collada?
+      * The bind shape matrix describes how to transform the pCylinderShape1 geometry into the right
+      * coordinate system for use with the joints.  In this case we do an +90 Y transform because
+      * the pCylinderShape1 geometry was initially a 180 unit long cylinder with 0,0,0 at it's center.
+      * This moves it so 0,0,0 is at the base of the cylinder.
       */
     mat4 offset;
-    mat4 transform;
+    mat4 inverse_transform;
     vector<Bone*> children;
 };
 
@@ -157,7 +163,9 @@ struct Armature {
     string name;
     unsigned int num_bones;
     Bone* bones;
+    //mat4 transform;
     map<string, Bone*> name_to_bone;
+    map<unsigned int, Bone*> id_to_bone;
     map<string, Animation*> name_to_anim;
 };
 

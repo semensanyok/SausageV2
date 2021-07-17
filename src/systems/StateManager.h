@@ -2,10 +2,13 @@
 
 #include "sausage.h"
 #include "Structures.h"
+#include "Settings.h"
+
+using namespace std;
 
 class StateManager {
 	map<unsigned long, pair<MeshData*, mat4>> physics_update;
-	map<unsigned long, MeshData*> bone_transform_update;
+
 public:
 	float delta_time = 0;
 	float last_ticks = 0;
@@ -15,12 +18,16 @@ public:
 	pair<MeshData*, mat4>& GetPhysicsUpdate(MeshData* mesh) {
 		return physics_update[mesh->id];
 	}
-	void AddBoneTransformUpdate(MeshData* mesh) {
-		bone_transform_update[mesh->id] = mesh;
-	}
 	void BufferUpdates() {
 		_BufferTransformUpdate();
-		_BufferBoneTransformUpdate();
+		{
+			shared_lock<shared_mutex> end_render_frame_lock(Events::end_render_frame_mtx);
+			Events::end_render_frame_event.wait(end_render_frame_lock);
+		}
+	}
+	void BufferBoneTransformUpdate(MeshData* mesh, map<unsigned int, mat4>& final_transforms) {
+		//unique_lock<shared_mutex> bone_lock(Events::bone_data_mtx);
+		mesh->buffer->BufferBoneTransform(final_transforms);
 	}
 	void UpdateDeltaTimeTimings() {
 		float this_ticks = SDL_GetTicks();
@@ -31,7 +38,6 @@ public:
 	}
 	void Reset() {
 		physics_update.clear();
-		bone_transform_update.clear();
 		milliseconds_since_start = 0;
 		seconds_since_start = 0;
 	}
@@ -45,12 +51,5 @@ private:
 			mesh->buffer->BufferTransform(mesh);
 		}
 		physics_update.clear();
-	}
-	void _BufferBoneTransformUpdate() {
-		for (auto& mesh_update : bone_transform_update) {
-			auto mesh = mesh_update.second;
-			mesh->buffer->BufferBoneTransform(mesh->armature->bones, mesh->armature->num_bones);
-		}
-		bone_transform_update.clear();
 	}
 };

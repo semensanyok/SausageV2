@@ -32,7 +32,7 @@ public:
                 active_anim = active_anims.erase(active_anim);
                 continue;
             }
-            map<unsigned int, Bone*> final_transforms;
+            map<unsigned int, mat4> final_transforms;
             auto mesh = active_anim->second;
             for (auto& anim : mesh->active_animations) {
                 uint32_t current_time = state_manager->seconds_since_start - anim.start_time;
@@ -48,12 +48,9 @@ public:
                     auto time_rotate = frame.second.time_rotation.begin();
                     auto time_position = frame.second.time_position.begin();
                     if (final_transforms.find(bone->id) == final_transforms.end()) {
-                        final_transforms[bone->id] = bone;
-                        bone->transform = mat4(1);
+                        final_transforms[bone->id] = mat4(1);
                     }
-                    else {
-                        cout << "inited";
-                    }
+                    auto& final_transform = final_transforms[bone->id];
                     vec3 bone_scale;
                     mat4 bone_rotation;
                     vec3 bone_translate;
@@ -82,7 +79,7 @@ public:
                         if ((*next).first > current_time_ticks) {
                             float blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
                             //auto quat = mix(cur.second, (*next).second, blend);
-                            //bone_rotation = slerp(cur.second, (*next).second, blend);
+                            //bone_rotation = mat4_cast(slerp(cur.second, (*next).second, blend));
                             bone_rotation = mat4_cast(cur.second);
                             break;
                         }
@@ -102,28 +99,31 @@ public:
                     //        scale(bone->transform, cur.second);
                     //    }
                     //}
-                    bone->transform = translate(bone->transform, bone_translate);
-                    //bone->transform = bone_rotation * bone->transform;
+                    
+                    // bone global transform
+                    final_transform = bone_rotation * translate(final_transform, bone_translate);
                     for (auto& child : bone->children) {
-                        SetTransformForHierarchy(child, bone->transform, final_transforms);
+                        SetTransformForHierarchy(child, final_transform, final_transforms);
                     }
                 }
             }
-            state_manager->AddBoneTransformUpdate(mesh);
+            for (auto& final_transform : final_transforms) {
+                //final_transform.second = global_transform * final_transform.second * mesh->armature->id_to_bone[final_transform.first]->offset;
+                auto bone = mesh->armature->id_to_bone[final_transform.first];
+                final_transform.second = bone->inverse_transform * final_transform.second * bone->offset;
+            }
+            state_manager->BufferBoneTransformUpdate(mesh, final_transforms);
             active_anim++;
         }
     }
-    void SetTransformForHierarchy(Bone* bone, mat4& transform, map<unsigned int, Bone*>& final_transforms) {
-        if (final_transforms.find(bone->id) == final_transforms.end()) {
-            final_transforms[bone->id] = bone;
-            bone->transform = mat4(1);
-            bone->transform = transform * bone->transform;
+    void SetTransformForHierarchy(Bone* child, mat4& parent_transform, map<unsigned int, mat4>& final_transforms) {
+        if (final_transforms.find(child->id) == final_transforms.end()) {
+            final_transforms[child->id] = mat4(1);
         }
-        else {
-            bone->transform = transform * bone->transform;
-        }
-        for (auto& child : bone->children) {
-            SetTransformForHierarchy(child, child->transform, final_transforms);
+        auto& final_transform = final_transforms[child->id];
+        final_transform = parent_transform * final_transform;
+        for (auto& child_of_child : child->children) {
+            SetTransformForHierarchy(child_of_child, final_transform, final_transforms);
         }
     }
 	Animation* CreateAnimation(string& anim_name, double duration, double ticks_per_seconds) {
@@ -131,7 +131,7 @@ public:
         anims.push_back(anim);
         return anim;
 	}
-    // note: 1 animation per file. (cant parse multiple anims via assimp)
+
     void LoadAnimationForMesh(
         const string& file_name,
         MeshData* mesh

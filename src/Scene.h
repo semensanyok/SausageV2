@@ -31,6 +31,7 @@ public:
 	vector<Light*> draw_lights;
 
 	string scene_path = GetModelPath("frog.fbx");
+	//string scene_path = GetModelPath("dae/frog.dae");
 	Scene(SystemsManager* systems_manager) :
 		systems_manager{ systems_manager }, shaders{ systems_manager->shaders }{
 		draw_call = new DrawCall();
@@ -52,6 +53,8 @@ public:
 		_LoadData();
 
 		function<void()> scene_reload_callback = bind(&Scene::_ReloadScene, this);
+		bool is_persistent_command = false;
+		scene_reload_callback = bind(&Renderer::AddGlCommand, systems_manager->renderer, scene_reload_callback, is_persistent_command);
 		systems_manager->file_watcher->AddCallback(scene_path, scene_reload_callback);
 
 		Gui::AddButton({ "Reload scene", scene_reload_callback });
@@ -106,6 +109,9 @@ private:
 			}
 			if (mesh->armature != nullptr && !mesh->armature->name_to_anim.empty()) {
 				auto anim = mesh->armature->name_to_anim["Stretch"];
+				//auto anim = mesh->armature->name_to_anim["Walk"];
+				// .dae uses armature name for anim
+				//auto anim = mesh->armature->name_to_anim["Armature.001"];
 				mesh->active_animations.push_back({ systems_manager->state_manager->seconds_since_start, 1.0, anim });
 			}
 		}

@@ -244,7 +244,8 @@ public:
             if (mesh_data->armature != nullptr && mesh_data->armature != NULL) {
                 int num_bones = mesh_data->armature->num_bones;
                 if (mesh_data->armature->bones != NULL) {
-                    BufferBoneTransform(mesh_data->armature->bones, mesh_data->armature->num_bones);
+                    auto identity = mat4(1);
+                    BufferBoneTransform(mesh_data->armature->bones, identity, mesh_data->armature->num_bones);
                 }
             }
         }
@@ -322,7 +323,7 @@ public:
     int AddCommands(vector<DrawElementsIndirectCommand>& active_commands, CommandBuffer* buf, int command_offset = -1) {
         unique_lock<mutex> data_lock(buf->buffer_lock->data_mutex);
         if (!buf->buffer_lock->is_mapped) {
-            buf->buffer_lock->Wait(data_lock); // wait until
+            buf->buffer_lock->Wait(data_lock);
         }
         auto mapped_buffer = mapped_command_buffers.find(buf->id);
         int command_start = command_offset == -1 ? 0 : command_offset;
@@ -337,7 +338,7 @@ public:
     int AddCommand(DrawElementsIndirectCommand& command, CommandBuffer* buf, int command_offset = -1) {
         unique_lock<mutex> data_lock(buf->buffer_lock->data_mutex);
         if (!buf->buffer_lock->is_mapped) {
-            buf->buffer_lock->Wait(data_lock); // wait until
+            buf->buffer_lock->Wait(data_lock);
         }
         auto mapped_buffer = mapped_command_buffers.find(buf->id);
         if (mapped_buffer != mapped_command_buffers.end()) {
@@ -347,10 +348,17 @@ public:
         }
         return -1;
     }
-    void BufferBoneTransform(Bone* bone, unsigned int num_bones = 1) {
+    void BufferBoneTransform(map<unsigned int, mat4>& id_to_transform) {
+        for (auto& id_trans : id_to_transform)
+        {
+            uniforms_ptr->bones_transforms[id_trans.first] = id_trans.second;
+        }
+        is_need_barrier = true;
+    }
+    void BufferBoneTransform(Bone* bone, mat4& trans, unsigned int num_bones = 1) {
         for (size_t i = 0; i < num_bones; i++)
         {
-          uniforms_ptr->bones_transforms[bone[i].id] = bone[i].transform;
+          uniforms_ptr->bones_transforms[bone[i].id] = trans;
         }
         is_need_barrier = true;
     }

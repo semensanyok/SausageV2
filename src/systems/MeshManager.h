@@ -7,12 +7,20 @@
 using namespace std;
 using namespace glm;
 
+mat4 global_transform = mat4(1);
+
 ostream& operator<<(ostream& in, const aiString& aistring) {
     in << string(aistring.C_Str());
     return in;
 }
 
-
+mat4 FromAi(aiMatrix4x4& ai_t) {
+    return mat4(
+        ai_t.a1, ai_t.b1, ai_t.c1, ai_t.d1,
+        ai_t.a2, ai_t.b2, ai_t.c2, ai_t.d2,
+        ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
+        ai_t.a4, ai_t.b4, ai_t.c4, ai_t.d4);
+}
 quat FromAi(aiQuaternion& aivec) {
     return quat(aivec.w, aivec.x, aivec.y, aivec.z);
 }
@@ -106,6 +114,11 @@ public:
     )
     {
         bool is_obj = file_name.ends_with(".obj");
+        bool is_dae = file_name.ends_with(".dae");
+        if (is_dae) {
+            LoadMeshesDae(file_name, out_lights, out_mesh_load_data, is_load_armature);
+            return;
+        }
         Assimp::Importer assimp_importer;
 
         auto flags = aiProcess_GenBoundingBoxes | aiProcess_Triangulate |
@@ -113,7 +126,6 @@ public:
             aiProcess_CalcTangentSpace;
         flags = is_load_armature ? flags | aiProcess_PopulateArmatureData : flags;
         const aiScene *scene = assimp_importer.ReadFile(file_name, flags);
-
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
             LOG((ostringstream() << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString()).str());
@@ -123,12 +135,12 @@ public:
         for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
             auto child = scene->mRootNode->mChildren[i];
             auto ai_t = child->mTransformation;
-            auto transform = mat4(
-                ai_t.a1, ai_t.b1, ai_t.c1, ai_t.d1,
-                ai_t.a2, ai_t.b2, ai_t.c2, ai_t.d2,
-                ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
-                ai_t.a4, ai_t.b4, ai_t.c4, ai_t.d4);
-
+            auto transform = FromAi(ai_t);
+            //for (unsigned int j = 0; j < child->mNumChildren; j++) {
+            //    auto child1 = child->mChildren[j];
+            //    auto tr1 = child1->mTransformation;
+            //    cout << child1->mNumChildren << endl;
+            //}
             for (unsigned int j = 0; j < child->mNumMeshes; j++)
             {
                 // the node object only contains indices to index the actual objects in the scene. 
@@ -162,9 +174,73 @@ public:
             out_lights.push_back(res_light);
         }
     }
+
+    static void LoadMeshesDae(
+        const string& file_name,
+        vector<Light*>& out_lights,
+        vector<shared_ptr<MeshLoadData>>& out_mesh_load_data,
+        bool is_load_armature = false
+    )
+    {
+        bool is_obj = file_name.ends_with(".obj");
+        Assimp::Importer assimp_importer;
+
+        auto flags = aiProcess_GenBoundingBoxes | aiProcess_Triangulate |
+            aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
+            aiProcess_CalcTangentSpace;
+        flags = is_load_armature ? flags | aiProcess_PopulateArmatureData : flags;
+        const aiScene* scene = assimp_importer.ReadFile(file_name, flags);
+        if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+        {
+            LOG((ostringstream() << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString()).str());
+            return;
+        }
+
+        for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
+            auto child = scene->mRootNode->mChildren[i];
+            auto ai_t = child->mTransformation;
+            auto transform = FromAi(ai_t);
+            //for (unsigned int j = 0; j < child->mNumChildren; j++) {
+            //    auto child1 = child->mChildren[j];
+            //    auto tr1 = child1->mTransformation;
+            //    cout << child1->mNumChildren << endl;
+            //}
+            for (unsigned int j = 0; j < child->mNumMeshes; j++)
+            {
+                // the node object only contains indices to index the actual objects in the scene. 
+                // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
+                aiMesh* mesh = scene->mMeshes[child->mMeshes[j]];
+
+                auto data_ptr = ProcessMesh(mesh, scene, is_load_armature);
+                auto data = data_ptr.get();
+                data->mesh_data->transform = transform;
+                data->mesh_data->max_AABB = FromAi(mesh->mAABB.mMax);
+                data->mesh_data->min_AABB = FromAi(mesh->mAABB.mMin);
+
+                data->mesh_data->name = string(mesh->mName.C_Str());
+                data->tex_names = _GetTexNames(mesh, scene, is_obj);
+                out_mesh_load_data.push_back(data_ptr);
+                name_to_mesh[data->mesh_data->name] = data->mesh_data;
+                if (data->mesh_data->armature != nullptr) {
+                    armature_name_to_mesh[data->mesh_data->armature->name] = data->mesh_data;
+                }
+            }
+        }
+
+        for (unsigned int i = 0; i < scene->mNumLights; i++) {
+            auto light = scene->mLights[i];
+            auto node = scene->mRootNode->FindNode(light->mName);
+            auto tr = node->mTransformation;
+            auto res_light = FromAi(light);
+            // -Z forward Y up in Blender export settings
+            res_light->position = vec4(tr.a4, tr.b4, tr.c4, 0.0);
+            all_lights.push_back(res_light);
+            out_lights.push_back(res_light);
+        }
+    }
     
     static Bone CreateBone(const char* bone_name, mat4& offset) {
-        return { bone_count++, bone_name, offset, mat4(1.0) };
+        return { bone_count++, bone_name, offset, mat4(1), {} };
     }
     static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex> &vertices,
                                                vector<unsigned int> &indices,
@@ -229,7 +305,7 @@ private:
         vector<Vertex> vertices;
         vector<unsigned int> indices;
         Bone* bones = is_load_armature ? new Bone[mesh->mNumBones] : nullptr;
-        Armature* armature = mesh->mNumBones > 0 ? new Armature{ {}, is_load_armature ? mesh->mNumBones : 0, bones, {} } : nullptr;
+        Armature* armature = mesh->mNumBones > 0 ? new Armature{ {}, is_load_armature ? mesh->mNumBones : 0, bones } : nullptr;
 
         map<unsigned int, set < pair<Bone*, aiVertexWeight>, weight_comparator>> vertex_index_to_weights;
 
@@ -239,15 +315,16 @@ private:
                 auto aibone = mesh->mBones[i];
                 if (i == 0) {
                     armature->name = aibone->mArmature->mName.C_Str();
+                    global_transform = FromAi(aibone->mArmature->mTransformation.Inverse());
                 }
-                auto& ai_t = aibone->mOffsetMatrix;
-                auto offset = mat4(
-                    ai_t.a1, ai_t.b1, ai_t.c1, ai_t.d1,
-                    ai_t.a2, ai_t.b2, ai_t.c2, ai_t.d2,
-                    ai_t.a3, ai_t.b3, ai_t.c3, ai_t.d3,
-                    ai_t.a4, ai_t.b4, ai_t.c4, ai_t.d4);
+                auto offset = FromAi(aibone->mOffsetMatrix);
                 bones[i] = CreateBone(aibone->mName.C_Str(), offset);
+                {
+                    bones[i].inverse_transform = FromAi(scene->mRootNode->FindNode(bones[i].name.c_str())->mTransformation.Inverse());
+                }
+                //bones[i].transform = FromAi(aibone->mNode->mTransformation);
                 armature->name_to_bone[bones[i].name] = &bones[i];
+                armature->id_to_bone[bones[i].id] = &bones[i];
                 for (int j = 0; j < aibone->mNumWeights; j++) {
                     auto& weight = aibone->mWeights[j];
                     vertex_index_to_weights[weight.mVertexId].insert({ &bones[i], weight });

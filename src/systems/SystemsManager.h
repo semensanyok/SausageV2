@@ -70,7 +70,7 @@ public:
 		async_manager->SubmitMiscTask(file_watcher_task, true);
 		async_manager->SubmitPhysTask(phys_sym_task, true);
 		async_manager->SubmitPhysTask(phys_update_task, true);
-		async_manager->SubmitPhysTask(play_anim, true);
+		async_manager->SubmitAnimTask(play_anim, true);
 		async_manager->SubmitPhysTask(buffer_mesh_update, true);
 		
 
