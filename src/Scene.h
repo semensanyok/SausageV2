@@ -30,8 +30,9 @@ public:
 	vector<Light*> all_lights;
 	vector<Light*> draw_lights;
 
-	string scene_path = GetModelPath("frog.fbx");
-	//string scene_path = GetModelPath("dae/frog.dae");
+	//string scene_path = GetModelPath("Frog.fbx");
+	string scene_path = GetModelPath("dae/Frog.dae");
+	//string scene_path = GetModelPath("Frog.gltf");
 	Scene(SystemsManager* systems_manager) :
 		systems_manager{ systems_manager }, shaders{ systems_manager->shaders }{
 		draw_call = new DrawCall();
@@ -103,16 +104,23 @@ private:
 	}
 	void _LoadAnimations() {
 		for (auto& mesh : all_meshes) {
-			for (auto& path : GetAnimationsPathsForModel(mesh->name)) {
-				systems_manager->anim_manager->LoadAnimationForMesh(path.string(), mesh);
-				systems_manager->anim_manager->StartAnim(mesh);
-			}
-			if (mesh->armature != nullptr && !mesh->armature->name_to_anim.empty()) {
-				auto anim = mesh->armature->name_to_anim["Stretch"];
-				//auto anim = mesh->armature->name_to_anim["Walk"];
-				// .dae uses armature name for anim
-				//auto anim = mesh->armature->name_to_anim["Armature.001"];
-				mesh->active_animations.push_back({ systems_manager->state_manager->seconds_since_start, 1.0, anim });
+			//for (auto& path : GetAnimationsPathsForModel(mesh->name)) {
+			//	systems_manager->anim_manager->LoadAnimationForMesh(path.string(), mesh);
+			//	systems_manager->anim_manager->StartAnim(mesh);
+			//}
+			if (mesh->armature != nullptr) {
+				systems_manager->anim_manager->LoadAnimationForMesh(scene_path, mesh);
+				systems_manager->anim_manager->QueueMeshAnimUpdate(mesh);
+				if (!mesh->armature->name_to_anim.empty()) {
+					auto anim = mesh->armature->name_to_anim["Stretch"];
+					//auto anim = mesh->armature->name_to_anim["Walk"];
+					if (anim == NULL) {
+						anim = mesh->armature->name_to_anim.begin()->second;
+					}
+					// .dae uses armature name for anim
+					//auto anim = mesh->armature->name_to_anim["Armature.001"];
+					mesh->active_animations.push_back({ systems_manager->state_manager->seconds_since_start, 1.0, anim });
+				}
 			}
 		}
 		CheckGLError();

@@ -6,6 +6,12 @@
 using namespace std;
 using namespace glm;
 
+struct FinalTransform {
+    mat4 trans;
+    mat4 parent;
+    Bone* bone;
+};
+
 class AnimationManager {
 	vector<Animation*> anims;
 	map<unsigned int, MeshData*> active_anims;
@@ -22,7 +28,7 @@ public:
         active_anims.clear();
         anim_count = 0;
     }
-    void StartAnim(MeshData* mesh) {
+    void QueueMeshAnimUpdate(MeshData* mesh) {
         active_anims[mesh->id] = mesh;
     }
     void PlayAnim() {
@@ -47,12 +53,9 @@ public:
                     auto time_scale = frame.second.time_scale.begin();
                     auto time_rotate = frame.second.time_rotation.begin();
                     auto time_position = frame.second.time_position.begin();
-                    if (final_transforms.find(bone->id) == final_transforms.end()) {
-                        final_transforms[bone->id] = mat4(1);
-                    }
-                    auto& final_transform = final_transforms[bone->id];
+
                     vec3 bone_scale;
-                    mat4 bone_rotation;
+                    quat bone_rotation;
                     vec3 bone_translate;
 
                     while (time_position != frame.second.time_position.end()) {
@@ -73,14 +76,14 @@ public:
                         auto& cur = *time_rotate;
                         auto& next = ++time_rotate;
                         if (next == frame.second.time_rotation.end()) {
-                            bone_rotation = mat4_cast(cur.second);
+                            bone_rotation = cur.second;
                             break;
                         }
                         if ((*next).first > current_time_ticks) {
                             float blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
                             //auto quat = mix(cur.second, (*next).second, blend);
                             //bone_rotation = mat4_cast(slerp(cur.second, (*next).second, blend));
-                            bone_rotation = mat4_cast(cur.second);
+                            bone_rotation = cur.second;
                             break;
                         }
                     }
@@ -100,27 +103,54 @@ public:
                     //    }
                     //}
                     
-                    // bone global transform
-                    final_transform = bone_rotation * translate(final_transform, bone_translate);
+                    //auto anim_trans = bone_rotation * translate(mat4(1), bone_translate) * bone->offset;
+
+                    //auto anim_trans = rotate(translate(mat4(1), bone_translate), angle(bone_rotation), axis(bone_rotation)) * bone->offset;
+                    //bone_rotation = rotate(bone_rotation, -90.0f, { 1,0,0 });
+                    auto anim_trans = translate(mat4(1), bone_translate);
+                    
+                    auto r_angle = degrees(angle(bone_rotation));
+                    auto r_axis = axis(bone_rotation);
+                    anim_trans = rotate(anim_trans, angle(bone_rotation), axis(bone_rotation)) * bone->offset;
+                    
+                    //auto anim_trans = rotate(mat4(1), radians((float)(SDL_GetTicks() /1000 % 360)), vec3(0,1,0)) * translate(mat4(1), vec3(1,1,1));
+                    // if wasnt set as product of parents.
+                    if (final_transforms.find(bone->id) == final_transforms.end()) {
+                        final_transforms[bone->id] = anim_trans;
+                    }
+                    else {
+                        final_transforms[bone->id] = anim_trans * final_transforms[bone->id];
+                    }
                     for (auto& child : bone->children) {
-                        SetTransformForHierarchy(child, final_transform, final_transforms);
+                        SetTransformForHierarchy(child, anim_trans, final_transforms);
                     }
                 }
             }
-            for (auto& final_transform : final_transforms) {
-                //final_transform.second = global_transform * final_transform.second * mesh->armature->id_to_bone[final_transform.first]->offset;
-                auto bone = mesh->armature->id_to_bone[final_transform.first];
-                final_transform.second = bone->inverse_transform * final_transform.second * bone->offset;
-            }
+            //for (auto& final_transform : final_transforms) {
+            //    auto bone = mesh->armature->id_to_bone[final_transform.first];
+            //    //final_transform.second = mesh->armature->transform * bone->offset * final_transform.second;
+            //    //final_transform.second =  final_transform.second * bone->offset * mesh->armature->transform *;
+            //    //final_transform.second = mesh->armature->transform * * bone->offset * final_transform.second;
+            //    //final_transform.second = bone->offset * final_transform.second * mesh->armature->transform *;
+            //    //final_transform.second = mesh->armature->transform * final_transform.second * bone->offset;
+            //    //final_transform.second =  mesh->armature->transform * bone->offset;
+            //    //final_transform.second = bone->offset * mesh->armature->transform;
+            //}
             state_manager->BufferBoneTransformUpdate(mesh, final_transforms);
             active_anim++;
         }
     }
-    void SetTransformForHierarchy(Bone* child, mat4& parent_transform, map<unsigned int, mat4>& final_transforms) {
+    void SetTransformForHierarchy(
+        Bone* child,
+        mat4& parent_transform,
+        map<unsigned int, mat4>& final_transforms) {
         if (final_transforms.find(child->id) == final_transforms.end()) {
             final_transforms[child->id] = mat4(1);
         }
         auto& final_transform = final_transforms[child->id];
+        // assume child transform is not final but parent product when SetTransformForHierarchy called.
+        // when anim transform calculated - no more calls, due to top-down animation node iteration.
+        // hence the order, to multiply parents top-down.
         final_transform = parent_transform * final_transform;
         for (auto& child_of_child : child->children) {
             SetTransformForHierarchy(child_of_child, final_transform, final_transforms);
@@ -136,6 +166,9 @@ public:
         const string& file_name,
         MeshData* mesh
     ) {
+        bool is_dae = file_name.ends_with(".dae");
+        bool is_gltf = file_name.ends_with(".glb") || file_name.ends_with(".gltf");
+        
         if (mesh->armature == nullptr) {
             LOG((ostringstream()
                 << "mesh '" << mesh->name
@@ -169,7 +202,7 @@ public:
                 for (size_t j = 0; j < aianim->mNumChannels; j++)
                 {
                     auto channel = aianim->mChannels[j];
-                    auto bone_name = string(channel->mNodeName.C_Str());
+                    auto bone_name = MeshManager::GetBoneName(channel->mNodeName.C_Str(), mesh->armature, is_dae);
                     // bone at 0 index is armature name. P.S. Outdated
                     //if (j == 0) {
                     // continue;

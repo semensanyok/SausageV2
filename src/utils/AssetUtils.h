@@ -22,7 +22,7 @@ vector<path> GetAnimationsPathsForModel(T& model_name) {
 	spath /= "assets";
 	spath /= "models";
 	//auto anim_re_str = string(model_name).append("_").append("[^_]*").append("_").append("anim").append("\\.").append(".{1,5}");
-	auto anim_re_str = string(model_name).append(".{1,5}");
+	auto anim_re_str = string(model_name).append("\\.").append("[a-z]{1,5}");
 
 	try {
 		regex anim_re(anim_re_str);
