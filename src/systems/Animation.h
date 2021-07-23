@@ -2,6 +2,7 @@
 #include "sausage.h"
 #include "Structures.h"
 #include "MeshManager.h"
+#include "utils/AssimpHelper.h"
 
 using namespace std;
 using namespace glm;
@@ -42,6 +43,7 @@ public:
             auto mesh = active_anim->second;
             for (auto& anim : mesh->active_animations) {
                 uint32_t current_time = state_manager->seconds_since_start - anim.start_time;
+                // FBX time, TODO: dae/gltf time.
                 double current_time_ticks = current_time * anim.anim->ticks_per_second;
                 current_time_ticks = current_time_ticks > anim.anim->duration ? anim.anim->duration : current_time_ticks;
                 for (auto& frame : anim.anim->bone_frames) {
@@ -67,8 +69,8 @@ public:
                         }
                         if ((*next).first > current_time_ticks) {
                             auto blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
-                            bone_translate = mix(cur.second, (*next).second, blend);
-                            //bone_translate = cur.second;
+                            //bone_translate = mix(cur.second, (*next).second, blend);
+                            bone_translate = cur.second;
                             break;
                         }
                     }
@@ -103,15 +105,15 @@ public:
                     //    }
                     //}
                     
-                    //auto anim_trans = bone_rotation * translate(mat4(1), bone_translate) * bone->offset;
-
-                    //auto anim_trans = rotate(translate(mat4(1), bone_translate), angle(bone_rotation), axis(bone_rotation)) * bone->offset;
-                    //bone_rotation = rotate(bone_rotation, -90.0f, { 1,0,0 });
                     auto anim_trans = translate(mat4(1), bone_translate);
-                    
+                    // NOTE: use with FixFbxRotations enabled on load.//////////////////
+                    // otherwise - fix by mesh->armature->transform for each bone each frame. /////
                     auto r_angle = degrees(angle(bone_rotation));
                     auto r_axis = axis(bone_rotation);
-                    anim_trans = rotate(anim_trans, angle(bone_rotation), axis(bone_rotation)) * bone->offset;
+                    if (r_angle > 0.001) {
+                        anim_trans = rotate(anim_trans, r_angle, r_axis);
+                    }
+
                     
                     //auto anim_trans = rotate(mat4(1), radians((float)(SDL_GetTicks() /1000 % 360)), vec3(0,1,0)) * translate(mat4(1), vec3(1,1,1));
                     // if wasnt set as product of parents.
@@ -126,16 +128,27 @@ public:
                     }
                 }
             }
-            //for (auto& final_transform : final_transforms) {
-            //    auto bone = mesh->armature->id_to_bone[final_transform.first];
-            //    //final_transform.second = mesh->armature->transform * bone->offset * final_transform.second;
-            //    //final_transform.second =  final_transform.second * bone->offset * mesh->armature->transform *;
-            //    //final_transform.second = mesh->armature->transform * * bone->offset * final_transform.second;
-            //    //final_transform.second = bone->offset * final_transform.second * mesh->armature->transform *;
-            //    //final_transform.second = mesh->armature->transform * final_transform.second * bone->offset;
-            //    //final_transform.second =  mesh->armature->transform * bone->offset;
-            //    //final_transform.second = bone->offset * mesh->armature->transform;
-            //}
+            for (auto& final_transform : final_transforms) {
+                auto bone = mesh->armature->id_to_bone[final_transform.first];
+            
+                //final_transform.second = final_transform.second * bone->offset;
+                //final_transform.second = bone->offset * final_transform.second;
+                
+                // FBX NOTE: mesh->armature->transform transforms each bone_rotation. (xzy to xyz or whatever.)
+                // need to multiply each frame for each bone rotation.
+                // better solution - use FixFbxRotations.
+                // below most likely invalid. remove after testing.
+                ////////////////////////////////////////////////////////////////////////////////////////////
+                //final_transform.second = bone->offset * final_transform.second * mesh->armature->transform;
+                //final_transform.second = mesh->armature->transform * final_transform.second * bone->offset;
+            
+                //final_transform.second = mesh->armature->transform * bone->offset * final_transform.second;
+                //final_transform.second = final_transform.second * mesh->armature->transform * bone->offset;
+
+                //final_transform.second = bone->offset * mesh->armature->transform * final_transform.second;
+                //final_transform.second = final_transform.second * bone->offset * mesh->armature->transform;
+                /////////////////////////////////////////////////////////////////////////////////////////////
+            }
             state_manager->BufferBoneTransformUpdate(mesh, final_transforms);
             active_anim++;
         }
@@ -168,6 +181,7 @@ public:
     ) {
         bool is_dae = file_name.ends_with(".dae");
         bool is_gltf = file_name.ends_with(".glb") || file_name.ends_with(".gltf");
+        bool is_fbx = file_name.ends_with(".fbx");
         
         if (mesh->armature == nullptr) {
             LOG((ostringstream()
@@ -177,7 +191,8 @@ public:
                 .str());
             return;
         }
-        Assimp::Importer assimp_importer;
+        ConfiguredAssmipImporter
+
         const aiScene* scene = assimp_importer.ReadFile(
             file_name, aiProcess_PopulateArmatureData);
 
@@ -186,7 +201,6 @@ public:
             LOG((ostringstream() << "ERROR::ASSIMP:: " << string(assimp_importer.GetErrorString())).str());
             return;
         }
-
         for (size_t i = 0; i < scene->mNumAnimations; i++)
         {
             auto& aianim = scene->mAnimations[i];
@@ -223,11 +237,24 @@ public:
                         auto& key = channel->mRotationKeys[k];
                         bone_frames.time_rotation.push_back({ key.mTime, FromAi(key.mValue) });
                     }
+                    if (is_fbx || is_dae) {
+                        FixRotations(bone_frames.time_rotation);
+                    }
                 }
                 if (mesh != nullptr) {
                     mesh->armature->name_to_anim[anim_name] = anim;
                 }
             }
+        }
+    }
+
+    void FixRotations(vector<pair<double, quat>>& bone_rotations) {
+        auto first_rot_inversed = inverse(bone_rotations[0].second);
+        auto rangle = angle(first_rot_inversed);
+        auto raxis = axis(first_rot_inversed);
+
+        for (auto& rot : bone_rotations) {
+            rot.second = rotate(rot.second, rangle, raxis);
         }
     }
 };

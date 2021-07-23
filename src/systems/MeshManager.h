@@ -3,6 +3,7 @@
 #include "sausage.h"
 #include "Texture.h"
 #include "Structures.h"
+#include "utils/AssimpHelper.h"
 
 using namespace std;
 using namespace glm;
@@ -115,7 +116,7 @@ public:
         bool is_dae = file_name.ends_with(".dae");
         bool is_gltf = file_name.ends_with(".glb") || file_name.ends_with(".gltf");
 
-        Assimp::Importer assimp_importer;
+        ConfiguredAssmipImporter
 
         auto flags = aiProcess_GenBoundingBoxes | aiProcess_Triangulate |
             aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
@@ -127,7 +128,6 @@ public:
             LOG((ostringstream() << "ERROR::ASSIMP:: " << assimp_importer.GetErrorString()).str());
             return;
         }
-
         for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; i++) {
             auto child = scene->mRootNode->mChildren[i];
             auto ai_t = child->mTransformation;
@@ -139,7 +139,7 @@ public:
                 }
             }
             __LoadMeshesIndices(child, mMeshes_indices);
-            // if armature - no meshes, but child has meshes
+            // if armature - no meshes, but child has meshes. (.dae and .gltf)
             if (mMeshes_indices.empty()) {
                 for (unsigned int j = 0; j < child->mNumChildren; j++) {
                     __LoadMeshesIndices(child->mChildren[j], mMeshes_indices);
@@ -310,7 +310,7 @@ private:
                         LOG((ostringstream() << "Bone " << mBoneNameFixed << "for armature" << armature->name << "not found").str());
                         continue;
                     }
-                    _SetBoneHierarchy(armature, node, bone->second);
+                    _SetBoneHierarchy(armature, node, bone->second, is_dae);
                 }
             }
         }
@@ -382,14 +382,14 @@ private:
             }
         }
     }
-    static void _SetBoneHierarchy(Armature* armature, aiNode* parent_node, Bone* parent) {
+    static void _SetBoneHierarchy(Armature* armature, aiNode* parent_node, Bone* parent, bool is_dae = false) {
         for (size_t j = 0; j < parent_node->mNumChildren; j++)
         {
             //if (j == 0) {
             //    parent->children.reserve(parent_node->mNumChildren);
             //}
             auto child_node = parent_node->mChildren[j];
-            auto child_bone = armature->name_to_bone.find(child_node->mName.C_Str());
+            auto child_bone = armature->name_to_bone.find(GetBoneName(child_node->mName.C_Str(), armature, is_dae));
             if (child_bone != armature->name_to_bone.end()) {
                 parent->children.push_back((*child_bone).second);
                 _SetBoneHierarchy(armature, child_node, (*child_bone).second);

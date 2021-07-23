@@ -30,8 +30,8 @@ public:
 	vector<Light*> all_lights;
 	vector<Light*> draw_lights;
 
-	//string scene_path = GetModelPath("Frog.fbx");
-	string scene_path = GetModelPath("dae/Frog.dae");
+	string scene_path = GetModelPath("Frog.fbx");
+	//string scene_path = GetModelPath("dae/Frog.dae");
 	//string scene_path = GetModelPath("Frog.gltf");
 	Scene(SystemsManager* systems_manager) :
 		systems_manager{ systems_manager }, shaders{ systems_manager->shaders }{
@@ -112,8 +112,8 @@ private:
 				systems_manager->anim_manager->LoadAnimationForMesh(scene_path, mesh);
 				systems_manager->anim_manager->QueueMeshAnimUpdate(mesh);
 				if (!mesh->armature->name_to_anim.empty()) {
-					auto anim = mesh->armature->name_to_anim["Stretch"];
-					//auto anim = mesh->armature->name_to_anim["Walk"];
+					//auto anim = mesh->armature->name_to_anim["Stretch"];
+					auto anim = mesh->armature->name_to_anim["Walk"];
 					if (anim == NULL) {
 						anim = mesh->armature->name_to_anim.begin()->second;
 					}
@@ -149,6 +149,17 @@ private:
 				continue;
 			}
 			auto mesh = mesh_ptr.get();
+			// dae only imports albedo name. temporary fix. TODO: delete
+			{
+				if (mesh->tex_names.normal.empty()) {
+					mesh->tex_names.normal = mesh->tex_names.diffuse;
+					mesh->tex_names.specular = mesh->tex_names.diffuse;
+					auto u = mesh->tex_names.diffuse.find("_");
+					auto to_replace = mesh->tex_names.diffuse.substr(u + 1, mesh->tex_names.diffuse.find(".") - u - 1);
+					mesh->tex_names.normal.replace(u + 1, to_replace.size(), "normal");
+					mesh->tex_names.specular.replace(u + 1, to_replace.size(), "specular");
+				}
+			}
 			mesh->mesh_data->texture = systems_manager->texture_manager->LoadTextureArray(mesh->tex_names);
 			if (mesh->mesh_data->texture != nullptr) {
 				mesh->mesh_data->texture->MakeResident();
