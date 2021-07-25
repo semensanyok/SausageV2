@@ -14,13 +14,13 @@ struct FinalTransform {
 };
 
 class AnimationManager {
-	vector<Animation*> anims;
-	map<unsigned int, MeshData*> active_anims;
-	atomic<unsigned long> anim_count{ 0 };
+    vector<Animation*> anims;
+    map<unsigned int, MeshData*> active_anims;
+    atomic<unsigned long> anim_count{ 0 };
     StateManager* state_manager;
 public:
     AnimationManager(StateManager* state_manager) : state_manager{ state_manager } {};
-	~AnimationManager() {};
+    ~AnimationManager() {};
     void Reset() {
         for (auto anim : anims) {
             delete anim;
@@ -41,136 +41,96 @@ public:
             }
             map<unsigned int, mat4> final_transforms;
             auto mesh = active_anim->second;
-            for (auto& anim : mesh->active_animations) {
-                uint32_t current_time = state_manager->seconds_since_start - anim.start_time;
-                // FBX time, TODO: dae/gltf time.
-                double current_time_ticks = current_time * anim.anim->ticks_per_second;
-                current_time_ticks = current_time_ticks > anim.anim->duration ? anim.anim->duration : current_time_ticks;
-                for (auto& frame : anim.anim->bone_frames) {
-                    if (frame.first == mesh->armature->name) {
-                        continue;
-                    }
-                    auto bone = mesh->armature->name_to_bone[frame.first];
+            auto& anim = mesh->active_animations[0];
+            // FBX time, TODO: dae/gltf time.
+            uint32_t current_time = state_manager->seconds_since_start - anim.start_time;
+            double current_time_ticks = current_time * anim.anim->ticks_per_second;
+            current_time_ticks = current_time_ticks > anim.anim->duration ? anim.anim->duration : current_time_ticks;
 
-                    auto time_scale = frame.second.time_scale.begin();
-                    auto time_rotate = frame.second.time_rotation.begin();
-                    auto time_position = frame.second.time_position.begin();
-
-                    vec3 bone_scale;
-                    quat bone_rotation;
-                    vec3 bone_translate;
-
-                    while (time_position != frame.second.time_position.end()) {
-                        auto& cur = *time_position;
-                        auto& next = ++time_position;
-                        if (next == frame.second.time_position.end()) {
-                            bone_translate = cur.second;
-                            break;
-                        }
-                        if ((*next).first > current_time_ticks) {
-                            auto blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
-                            //bone_translate = mix(cur.second, (*next).second, blend);
-                            bone_translate = cur.second;
-                            break;
-                        }
-                    }
-                    while (time_rotate != frame.second.time_rotation.end()) {
-                        auto& cur = *time_rotate;
-                        auto& next = ++time_rotate;
-                        if (next == frame.second.time_rotation.end()) {
-                            bone_rotation = cur.second;
-                            break;
-                        }
-                        if ((*next).first > current_time_ticks) {
-                            float blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
-                            //auto quat = mix(cur.second, (*next).second, blend);
-                            //bone_rotation = mat4_cast(slerp(cur.second, (*next).second, blend));
-                            bone_rotation = cur.second;
-                            break;
-                        }
-                    }
-                    //while (time_scale != frame.second.time_scale.end()) {
-                    //    auto& cur = *time_scale;
-                    //    auto& next = ++time_scale;
-                    //    if (next != frame.second.time_scale.end()) {
-                    //        if ((*next).first > current_time_ticks) {
-                    //            auto blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
-                    //            //auto bone_scale = mix(cur.second, (*next).second, blend);
-                    //            auto bone_scale = cur.second;
-                    //            scale(bone->transform, bone_scale);
-                    //        }
-                    //    }
-                    //    else {
-                    //        scale(bone->transform, cur.second);
-                    //    }
-                    //}
-                    
-                    auto anim_trans = translate(mat4(1), bone_translate);
-                    // NOTE: use with FixFbxRotations enabled on load.//////////////////
-                    // otherwise - fix by mesh->armature->transform for each bone each frame. /////
-                    auto r_angle = degrees(angle(bone_rotation));
-                    auto r_axis = axis(bone_rotation);
-                    if (r_angle > 0.001) {
-                        anim_trans = rotate(anim_trans, r_angle, r_axis);
-                    }
-
-                    
-                    //auto anim_trans = rotate(mat4(1), radians((float)(SDL_GetTicks() /1000 % 360)), vec3(0,1,0)) * translate(mat4(1), vec3(1,1,1));
-                    // if wasnt set as product of parents.
-                    if (final_transforms.find(bone->id) == final_transforms.end()) {
-                        final_transforms[bone->id] = anim_trans;
-                    }
-                    else {
-                        final_transforms[bone->id] = anim_trans * final_transforms[bone->id];
-                    }
-                    for (auto& child : bone->children) {
-                        SetTransformForHierarchy(child, anim_trans, final_transforms);
-                    }
+            auto root_bone_parent = mat4(1);
+            for (int i = 0; i < mesh->armature->num_bones; i++) {
+                auto root_bone = &mesh->armature->bones[i];
+                if (root_bone->parent == nullptr) {
+                    SetTransformForHierarchy(mesh, root_bone, anim.anim, root_bone_parent, final_transforms, current_time_ticks);
                 }
-            }
-            for (auto& final_transform : final_transforms) {
-                auto bone = mesh->armature->id_to_bone[final_transform.first];
-            
-                //final_transform.second = final_transform.second * bone->offset;
-                //final_transform.second = bone->offset * final_transform.second;
-                
-                // FBX NOTE: mesh->armature->transform transforms each bone_rotation. (xzy to xyz or whatever.)
-                // need to multiply each frame for each bone rotation.
-                // better solution - use FixFbxRotations.
-                // below most likely invalid. remove after testing.
-                ////////////////////////////////////////////////////////////////////////////////////////////
-                //final_transform.second = bone->offset * final_transform.second * mesh->armature->transform;
-                //final_transform.second = mesh->armature->transform * final_transform.second * bone->offset;
-            
-                //final_transform.second = mesh->armature->transform * bone->offset * final_transform.second;
-                //final_transform.second = final_transform.second * mesh->armature->transform * bone->offset;
-
-                //final_transform.second = bone->offset * mesh->armature->transform * final_transform.second;
-                //final_transform.second = final_transform.second * bone->offset * mesh->armature->transform;
-                /////////////////////////////////////////////////////////////////////////////////////////////
             }
             state_manager->BufferBoneTransformUpdate(mesh, final_transforms);
             active_anim++;
         }
     }
     void SetTransformForHierarchy(
-        Bone* child,
+        MeshData* mesh,
+        Bone* bone,
+        Animation* anim,
         mat4& parent_transform,
-        map<unsigned int, mat4>& final_transforms) {
-        if (final_transforms.find(child->id) == final_transforms.end()) {
-            final_transforms[child->id] = mat4(1);
+        map<unsigned int, mat4>& final_transforms,
+        double current_time_ticks) {
+            auto anim_trans = bone->trans;
+        if (anim->bone_frames.find(bone->name) != anim->bone_frames.end()) {
+            auto& frame = anim->bone_frames[bone->name];
+            auto time_scale = frame.time_scale.begin();
+            auto time_rotate = frame.time_rotation.begin();
+            auto time_position = frame.time_position.begin();
+
+            vec3 bone_scale;
+            quat bone_rotation;
+            vec3 bone_translate;
+
+            while (time_position != frame.time_position.end()) {
+                auto& cur = *time_position;
+                auto& next = ++time_position;
+                if (next == frame.time_position.end()) {
+                    bone_translate = cur.second;
+                    break;
+                }
+                if ((*next).first > current_time_ticks) {
+                    auto blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
+                    bone_translate = mix(cur.second, (*next).second, blend);
+                    break;
+                }
+            }
+            while (time_rotate != frame.time_rotation.end()) {
+                auto& cur = *time_rotate;
+                auto& next = ++time_rotate;
+                if (next == frame.time_rotation.end()) {
+                    bone_rotation = cur.second;
+                    break;
+                }
+                if ((*next).first > current_time_ticks) {
+                    float blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
+                    auto quat = mix(cur.second, (*next).second, blend);
+                    bone_rotation = mat4_cast(slerp(cur.second, (*next).second, blend));
+                    break;
+                }
+            }
+            while (time_scale != frame.time_scale.end()) {
+                auto& cur = *time_scale;
+                auto& next = ++time_scale;
+                if (next == frame.time_scale.end()) {
+                    bone_scale = cur.second;
+                    break;
+                }
+                if ((*next).first > current_time_ticks) {
+                    auto blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
+                    bone_scale = mix(cur.second, (*next).second, blend);
+                }
+            }
+            
+            auto r_angle = angle(bone_rotation);
+            auto r_axis = axis(bone_rotation);
+            
+            anim_trans = translate(mat4(1), bone_translate);
+            anim_trans = rotate(anim_trans, r_angle, r_axis);
+            anim_trans = scale(anim_trans, bone_scale);
         }
-        auto& final_transform = final_transforms[child->id];
-        // assume child transform is not final but parent product when SetTransformForHierarchy called.
-        // when anim transform calculated - no more calls, due to top-down animation node iteration.
-        // hence the order, to multiply parents top-down.
-        final_transform = parent_transform * final_transform;
-        for (auto& child_of_child : child->children) {
-            SetTransformForHierarchy(child_of_child, final_transform, final_transforms);
+        anim_trans = parent_transform * anim_trans;
+        final_transforms[bone->id] = mesh->armature->transform * anim_trans * bone->offset;
+        for (auto child_of_child : bone->children) {
+            SetTransformForHierarchy(mesh, child_of_child, anim, anim_trans, final_transforms, current_time_ticks);
         }
     }
 	Animation* CreateAnimation(string& anim_name, double duration, double ticks_per_seconds) {
-		Animation * anim = new Animation{ anim_count++, anim_name, duration, ticks_per_seconds };
+        Animation* anim = new Animation{ anim_count++, anim_name, duration, ticks_per_seconds, {} };
         anims.push_back(anim);
         return anim;
 	}
@@ -238,7 +198,7 @@ public:
                         bone_frames.time_rotation.push_back({ key.mTime, FromAi(key.mValue) });
                     }
                     if (is_fbx || is_dae) {
-                        FixRotations(bone_frames.time_rotation);
+                        //FixRotations(bone_frames.time_rotation);
                     }
                 }
                 if (mesh != nullptr) {

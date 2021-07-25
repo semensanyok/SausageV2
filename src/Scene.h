@@ -117,8 +117,6 @@ private:
 					if (anim == NULL) {
 						anim = mesh->armature->name_to_anim.begin()->second;
 					}
-					// .dae uses armature name for anim
-					//auto anim = mesh->armature->name_to_anim["Armature.001"];
 					mesh->active_animations.push_back({ systems_manager->state_manager->seconds_since_start, 1.0, anim });
 				}
 			}

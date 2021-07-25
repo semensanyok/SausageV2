@@ -5,6 +5,7 @@
 #include "Structures.h"
 #include "utils/AssimpHelper.h"
 
+#define AI_MAX_BONE_WEIGHTS 4
 using namespace std;
 using namespace glm;
 
@@ -187,8 +188,8 @@ public:
          }
     }
     
-    static Bone CreateBone(string bone_name, mat4& offset) {
-        return { bone_count++, bone_name, offset, {} };
+    static Bone CreateBone(string bone_name, mat4& offset, mat4& trans) {
+        return { bone_count++, bone_name, offset, trans, nullptr, {} };
     }
     static shared_ptr<MeshLoadData> CreateMesh(vector<Vertex> &vertices,
                                                vector<unsigned int> &indices,
@@ -268,17 +269,24 @@ private:
         Armature* armature = mesh->mNumBones > 0 ? new Armature{ {}, is_load_armature ? mesh->mNumBones : 0, bones } : nullptr;
 
         map<unsigned int, set < pair<Bone*, aiVertexWeight>, weight_comparator>> vertex_index_to_weights;
-
         if (is_load_armature) {
             for (size_t i = 0; i < mesh->mNumBones; i++)
             {
                 auto aibone = mesh->mBones[i];
+                auto offset = FromAi(aibone->mOffsetMatrix);
                 if (i == 0) {
                     armature->name = aibone->mArmature->mName.C_Str();
-                    armature->transform = FromAi(aibone->mArmature->mTransformation.Inverse());
+                    if (is_dae) {
+                        armature->transform = FromAi(aibone->mArmature->mTransformation.Inverse());
+                    }
+                    else {
+                        armature->transform = FromAi(aibone->mArmature->mTransformation);
+                    }
                 }
-                auto offset = FromAi(aibone->mOffsetMatrix);
-                bones[i] = CreateBone(GetBoneName(aibone->mName.C_Str(), armature, is_dae), offset);
+                auto bone_name = GetBoneName(aibone->mName.C_Str(), armature, is_dae);
+                auto node = _GetBoneNode(armature, aibone->mName.C_Str(), scene, is_dae);
+                auto trans = FromAi(node->mTransformation);
+                bones[i] = CreateBone(bone_name.c_str(), offset, trans);
                 armature->name_to_bone[bones[i].name] = &bones[i];
                 armature->id_to_bone[bones[i].id] = &bones[i];
                 for (int j = 0; j < aibone->mNumWeights; j++) {
@@ -290,14 +298,9 @@ private:
             for (size_t i = 0; i < mesh->mNumBones; i++)
             {
                 auto aibone = mesh->mBones[i];
-                auto node = scene->mRootNode->FindNode(aibone->mName);
+                auto node = _GetBoneNode(armature, aibone->mName.C_Str(), scene, is_dae);
                 if (i == 0 && is_dae) {
                     armatureNode = node;
-                }
-                if (node == NULL && is_dae) {
-                    auto full_name = armature->name;
-                    full_name.append("_").append(aibone->mName.C_Str());
-                    node = scene->mRootNode->FindNode(full_name.c_str());
                 }
                 if (node == NULL) {
                     LOG((ostringstream() << "Bone " << string(aibone->mName.C_Str()) << " for armature " << armature->name << " aiNode not found in scene").str());
@@ -325,6 +328,15 @@ private:
                 indices.push_back(face.mIndices[j]);
         }
         return CreateMesh(vertices, indices, armature);
+    }
+    static aiNode* _GetBoneNode(Armature* armature, const char* bone_name, const aiScene* scene, bool is_dae) {
+        auto node = scene->mRootNode->FindNode(bone_name);
+        if (node == NULL && is_dae) {
+            auto full_name = armature->name;
+            full_name.append("_").append(bone_name);
+            node = scene->mRootNode->FindNode(full_name.c_str());
+        }
+        return node;
     }
     static void _IterChildren(aiNode* ainode) {
         for (size_t i = 0; i < ainode->mNumChildren; i++) {
@@ -391,6 +403,7 @@ private:
             auto child_node = parent_node->mChildren[j];
             auto child_bone = armature->name_to_bone.find(GetBoneName(child_node->mName.C_Str(), armature, is_dae));
             if (child_bone != armature->name_to_bone.end()) {
+                (*child_bone).second->parent = parent;
                 parent->children.push_back((*child_bone).second);
                 _SetBoneHierarchy(armature, child_node, (*child_bone).second);
             }

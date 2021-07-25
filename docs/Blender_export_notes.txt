@@ -1,0 +1,7 @@
+FBX settings:
+- Apply transform.
+- Scale: 0.01
+- Armature:
+	Primary Bone Axis: -Y
+- Bake Animation:
+	- All actions

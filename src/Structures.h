@@ -124,6 +124,8 @@ struct Bone {
       * Matrix that transforms from bone space to mesh space in bind pose.
       */
     mat4 offset;
+    mat4 trans;
+    Bone* parent;
     vector<Bone*> children;
 };
 
@@ -139,7 +141,6 @@ struct Animation {
     string name;
     double duration;
     double ticks_per_second;
-    double duration_seconds;
 
     map<string, BoneKeyFrames> bone_frames;
 };
