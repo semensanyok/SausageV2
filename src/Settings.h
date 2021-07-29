@@ -15,7 +15,6 @@ namespace GameSettings {
 }
 namespace Events {
 	std::mutex pause_phys_mtx;
-	std::shared_mutex bone_data_mtx;
 
 	std::shared_mutex end_render_frame_mtx;
 	std::condition_variable_any end_render_frame_event;
@@ -49,6 +48,8 @@ namespace ProfTime {
 	std::chrono::nanoseconds physics_buf_trans_ns;
 	std::chrono::nanoseconds total_frame_ns;
 	std::chrono::nanoseconds physics_debug_draw_world_ns;
+
+	std::chrono::nanoseconds anim_update_ns;
 }
 #endif
 

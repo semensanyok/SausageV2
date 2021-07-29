@@ -5,12 +5,12 @@ using namespace std;
 
 template <typename T>
 class ThreadSafeQueue {
-	queue<T> container;
 	mutex log_mutex;
 	condition_variable is_log_event;
 	bool end;
 
 public:
+	queue<T> container;
 	ThreadSafeQueue() : container{queue<T>()} {};
 	~ThreadSafeQueue() {};
 	queue<T> PopAll()

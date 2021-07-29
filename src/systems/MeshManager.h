@@ -154,16 +154,16 @@ public:
 
                 auto data_ptr = ProcessMesh(mesh, scene, is_load_armature, is_dae);
                 auto data = data_ptr.get();
-                data->mesh_data->transform = transform;
-                data->mesh_data->max_AABB = FromAi(mesh->mAABB.mMax);
-                data->mesh_data->min_AABB = FromAi(mesh->mAABB.mMin);
+                data->mesh->transform = transform;
+                data->mesh->max_AABB = FromAi(mesh->mAABB.mMax);
+                data->mesh->min_AABB = FromAi(mesh->mAABB.mMin);
 
-                data->mesh_data->name = string(mesh->mName.C_Str());
+                data->mesh->name = string(mesh->mName.C_Str());
                 data->tex_names = _GetTexNames(mesh, scene, is_obj);
                 out_mesh_load_data.push_back(data_ptr);
-                name_to_mesh[data->mesh_data->name] = data->mesh_data;
-                if (data->mesh_data->armature != nullptr) {
-                    armature_name_to_mesh[data->mesh_data->armature->name] = data->mesh_data;
+                name_to_mesh[data->mesh->name] = data->mesh;
+                if (data->mesh->armature != nullptr) {
+                    armature_name_to_mesh[data->mesh->armature->name] = data->mesh;
                 }
             }
         }
@@ -195,17 +195,17 @@ public:
                                                vector<unsigned int> &indices,
                                                Armature *armature = nullptr,
                                                bool is_new_mesh_data = true) {
-      MeshData *mesh_data = nullptr;
+      MeshData *mesh = nullptr;
       if (is_new_mesh_data) {
-        mesh_data = new MeshData();
-        mesh_data->id = mesh_count++;
-        mesh_data->buffer_id = -1;
-        mesh_data->instance_id = 0;
+        mesh = new MeshData();
+        mesh->id = mesh_count++;
+        mesh->buffer_id = -1;
+        mesh->instance_id = 0;
         if (armature != nullptr) {
-            mesh_data->armature = armature;
+            mesh->armature = armature;
         }
       }
-      return make_shared<MeshLoadData>(mesh_data, vertices, indices,
+      return make_shared<MeshLoadData>(mesh, vertices, indices,
                                        MaterialTexNames(), 1);
     };
 

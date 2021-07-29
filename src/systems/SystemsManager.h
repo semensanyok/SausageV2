@@ -70,9 +70,8 @@ public:
 		async_manager->SubmitMiscTask(file_watcher_task, true);
 		async_manager->SubmitPhysTask(phys_sym_task, true);
 		async_manager->SubmitPhysTask(phys_update_task, true);
-		async_manager->SubmitAnimTask(play_anim, true);
 		async_manager->SubmitPhysTask(buffer_mesh_update, true);
-		
+		async_manager->SubmitAnimTask(play_anim, true);
 
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
 		physics_manager->SetDebugDrawer(bullet_debug_drawer);

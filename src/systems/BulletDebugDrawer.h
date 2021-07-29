@@ -17,7 +17,7 @@ static struct PersistDrawRay {
 };
 class BulletDebugDrawer : public btIDebugDraw
 {
-    MeshData* mesh_data;
+    MeshData* mesh;
     DrawCall* draw_call;
     Shader* debug_shader;
     BufferStorage* buffer;
@@ -41,7 +41,7 @@ public:
         renderer{ renderer },
         buffer{ buffer },
         debug_shader{ debug_shader },
-        mesh_data{ nullptr },
+        mesh{ nullptr },
         state_manager{ state_manager } {
         draw_call = new DrawCall();
         draw_call->shader = debug_shader;
@@ -91,7 +91,7 @@ public:
 };
 void BulletDebugDrawer::flushLines() {
     if (vertices.size() > 0) {
-        bool is_new_mesh_data = mesh_data == nullptr;
+        bool is_new_mesh_data = mesh == nullptr;
         vector<PersistDrawRay> keep_persist;
         for (auto& persist_draw : persist_draws) {
             indices.push_back(vertices.size());
@@ -108,20 +108,20 @@ void BulletDebugDrawer::flushLines() {
         {
             shared_ptr<MeshLoadData> load_data = MeshManager::CreateMesh(vertices, indices, colors, is_new_mesh_data);
             if (is_new_mesh_data) {
-                mesh_data = load_data.get()->mesh_data;
-                mesh_data->name = "BulletDebugDrawerData";
-                mesh_data->vertex_offset = DEBUG_VERTEX_OFFSET;
-                mesh_data->index_offset = DEBUG_INDEX_OFFSET;
+                mesh = load_data.get()->mesh;
+                mesh->name = "BulletDebugDrawerData";
+                mesh->vertex_offset = DEBUG_VERTEX_OFFSET;
+                mesh->index_offset = DEBUG_INDEX_OFFSET;
             }
             else {
-                load_data.get()->mesh_data = mesh_data;
+                load_data.get()->mesh = mesh;
             }
             vector<shared_ptr<MeshLoadData>> vec_load_data = { load_data };
             bool is_transform_used = false;
             buffer->BufferMeshData(vec_load_data, is_transform_used);
         }
         draw_call->command_count = 1;
-        int command_offset = buffer->AddCommand(mesh_data->command, draw_call->command_buffer);
+        int command_offset = buffer->AddCommand(mesh->command, draw_call->command_buffer);
         clear();
     }
     else {

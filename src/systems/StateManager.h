@@ -3,6 +3,7 @@
 #include "sausage.h"
 #include "Structures.h"
 #include "Settings.h"
+#include "BufferStorage.h"
 
 using namespace std;
 
@@ -13,7 +14,7 @@ public:
 	float delta_time = 0;
 	float last_ticks = 0;
 	uint32_t milliseconds_since_start = 0;
-	uint32_t seconds_since_start = 0;
+	double seconds_since_start = 0;
 
 	pair<MeshData*, mat4>& GetPhysicsUpdate(MeshData* mesh) {
 		return physics_update[mesh->id];
@@ -25,16 +26,15 @@ public:
 			Events::end_render_frame_event.wait(end_render_frame_lock);
 		}
 	}
-	void BufferBoneTransformUpdate(MeshData* mesh, map<unsigned int, mat4>& final_transforms) {
-		//unique_lock<shared_mutex> bone_lock(Events::bone_data_mtx);
-		mesh->buffer->BufferBoneTransform(final_transforms);
+	void BufferBoneTransformUpdate(BufferStorage* buffer, map<unsigned int, mat4>& final_transforms) {
+		buffer->BufferBoneTransform(final_transforms);
 	}
 	void UpdateDeltaTimeTimings() {
 		float this_ticks = SDL_GetTicks();
 		delta_time = this_ticks - last_ticks;
 		last_ticks = this_ticks;
 		milliseconds_since_start = SDL_GetTicks();
-		seconds_since_start = milliseconds_since_start / 1000;
+		seconds_since_start = (double)milliseconds_since_start / 1000;
 	}
 	void Reset() {
 		physics_update.clear();

@@ -39,6 +39,7 @@
 #include <fstream>
 #include <filesystem>
 #include <source_location>
+#include <typeinfo>
 
 #include <thread>
 #include <mutex>

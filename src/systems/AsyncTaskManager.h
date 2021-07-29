@@ -45,6 +45,7 @@ public:
 	~AsyncTaskManager() {
 		physics_thread.join();
 		misc_thread.join();
+		anim_thread.join();
 	}
 private:
 	void RunPhysicsTasks(bool& quit) {
@@ -75,10 +76,16 @@ private:
 		}
 	}
 	void RunAnimTasks(bool& quit) {
-		auto tasks = anim_tasks.WaitPopAll(quit);
+		auto tasks = anim_tasks.PopAll();
 		while (!tasks.empty()) {
 			auto& task = tasks.front();
+#ifdef SAUSAGE_PROFILE_ENABLE
+			auto proft1 = chrono::steady_clock::now();
+#endif
 			task.first();
+#ifdef SAUSAGE_PROFILE_ENABLE
+			ProfTime::anim_update_ns = chrono::steady_clock::now() - proft1;
+#endif
 			if (task.second) {
 				anim_tasks.Push(task);
 			}

@@ -68,6 +68,7 @@ public:
 			static time_unit t8 = time_unit();
 			static time_unit t9 = time_unit();
 			static time_unit t10 = time_unit();
+			static time_unit t11 = time_unit();
 			if (is_update_time) {
 				t1 = std::chrono::duration_cast<time_unit>(ProfTime::prepare_draws_ns);
 				t2 = std::chrono::duration_cast<time_unit>(ProfTime::render_commands_ns);
@@ -79,6 +80,7 @@ public:
 				t8 = std::chrono::duration_cast<time_unit>(ProfTime::physics_sym_ns);
 				t9 = std::chrono::duration_cast<time_unit>(ProfTime::physics_buf_trans_ns);
 				t10 = std::chrono::duration_cast<time_unit>(ProfTime::physics_debug_draw_world_ns);
+				t11 = std::chrono::duration_cast<time_unit>(ProfTime::anim_update_ns);
 			}
 			if (ImGui::TreeNode("Profile"))
 			{
@@ -98,6 +100,10 @@ public:
 					ImGui::Text("simulate physics ms: %i", t8);
 					ImGui::Text("update physics transforms ms: %i", t9);
 					ImGui::Text("physics debug draw ms: %i", t10);
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNode("Anim thread:")) {
+					ImGui::Text("anim update: %i", t11);
 					ImGui::TreePop();
 				}
 				ImGui::Checkbox("Update time", &is_update_time);

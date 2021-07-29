@@ -86,7 +86,7 @@ private:
 		systems_manager->buffer->SetBaseMeshForInstancedCommand(new_meshes);
 		_BufferMeshes(new_meshes);
 		for (auto& mesh : new_meshes) {
-			all_meshes.push_back(mesh->mesh_data);
+			all_meshes.push_back(mesh->mesh);
 		}
 		for (auto& light : new_lights) {
 			all_lights.push_back(light);
@@ -109,15 +109,14 @@ private:
 			//	systems_manager->anim_manager->StartAnim(mesh);
 			//}
 			if (mesh->armature != nullptr) {
+				auto anim_mesh = systems_manager->anim_manager->CreateAnimMesh(mesh);
 				systems_manager->anim_manager->LoadAnimationForMesh(scene_path, mesh);
-				systems_manager->anim_manager->QueueMeshAnimUpdate(mesh);
+				systems_manager->anim_manager->QueueMeshAnimUpdate(anim_mesh);
 				if (!mesh->armature->name_to_anim.empty()) {
-					//auto anim = mesh->armature->name_to_anim["Stretch"];
-					auto anim = mesh->armature->name_to_anim["Walk"];
-					if (anim == NULL) {
-						anim = mesh->armature->name_to_anim.begin()->second;
-					}
-					mesh->active_animations.push_back({ systems_manager->state_manager->seconds_since_start, 1.0, anim });
+					auto anim1 = mesh->armature->name_to_anim["Stretch"];
+					auto anim2 = mesh->armature->name_to_anim["Walk"];
+					anim_mesh->AddAnim(AnimIndependentChannel::CHANNEL1, anim1);
+					anim_mesh->AddAnim(AnimIndependentChannel::CHANNEL2, anim2);
 				}
 			}
 		}
@@ -132,7 +131,7 @@ private:
 
 	void _AddRigidBodies(vector<shared_ptr<MeshLoadData>>& new_meshes) {
 		for (auto& mesh_ptr : new_meshes) {
-			auto& mesh = mesh_ptr.get()->mesh_data;
+			auto& mesh = mesh_ptr.get()->mesh;
 			if (mesh->name.starts_with("Terrain") || mesh->name.starts_with("Frog")) {
 				systems_manager->physics_manager->AddBoxRigidBody(mesh->min_AABB, mesh->max_AABB, 0.0f, mesh, mesh->transform);
 			}
@@ -143,7 +142,7 @@ private:
 	}
 	void _BufferMeshes(vector<shared_ptr<MeshLoadData>>& new_meshes) {
 		for (auto& mesh_ptr : new_meshes) {
-			if (mesh_ptr->mesh_data->base_mesh != nullptr) {
+			if (mesh_ptr->mesh->base_mesh != nullptr) {
 				continue;
 			}
 			auto mesh = mesh_ptr.get();
@@ -158,9 +157,9 @@ private:
 					mesh->tex_names.specular.replace(u + 1, to_replace.size(), "specular");
 				}
 			}
-			mesh->mesh_data->texture = systems_manager->texture_manager->LoadTextureArray(mesh->tex_names);
-			if (mesh->mesh_data->texture != nullptr) {
-				mesh->mesh_data->texture->MakeResident();
+			mesh->mesh->texture = systems_manager->texture_manager->LoadTextureArray(mesh->tex_names);
+			if (mesh->mesh->texture != nullptr) {
+				mesh->mesh->texture->MakeResident();
 			}
 		}
 		CheckGLError();

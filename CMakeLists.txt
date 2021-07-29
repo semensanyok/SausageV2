@@ -129,7 +129,7 @@ set(sources ${sources} "src/Structures.h" "src/systems/BufferStorage.h" "src/sys
 "src/systems/Physics.h" "src/systems/TextureManager.h"  "src/FileWatcher.h"  
 "src/systems/BulletDebugDrawer.h" "src/systems/Animation.h" "src/utils/ColladaLoader.h" "src/systems/AsyncTaskManager.h" "src/systems/AsyncTaskManager.h" "src/systems/StateManager.h")
 
-add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/utils/AssimpHelper.h")
+add_executable(${CMAKE_PROJECT_NAME} ${sources} "src/utils/AssimpHelper.h" )
 
 # RocketCore RocketDebugger RocketControls 
 # ${LibRocketControls2} ${LibRocketDebugger2} ${LibRocketCore2}

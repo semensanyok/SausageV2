@@ -182,51 +182,51 @@ public:
         vector<MeshData*> instances;
         for (int i = 0; i < load_data.size(); i++) {
             auto raw = load_data[i].get();
-            auto& mesh_data = raw->mesh_data;
-            bool is_instance = mesh_data->base_mesh != nullptr;
-            mesh_data->buffer = this;
+            auto& mesh = raw->mesh;
+            bool is_instance = mesh->base_mesh != nullptr;
+            mesh->buffer = this;
             if (is_instance) {
-                instances.push_back(mesh_data);
+                instances.push_back(mesh);
                 continue;
             }
             auto& vertices = raw->vertices;
             auto& indices = raw->indices;
             // if offset initialized - reload data. (if vertices/indices size > existing - will corrupt other meshes)
-            bool is_new_mesh = mesh_data->buffer_id < 0;
+            bool is_new_mesh = mesh->buffer_id < 0;
 
-            bool is_vertex_offset_provided = mesh_data->vertex_offset >= 0;
-            bool is_index_offset_provided = mesh_data->index_offset >= 0;
+            bool is_vertex_offset_provided = mesh->vertex_offset >= 0;
+            bool is_index_offset_provided = mesh->index_offset >= 0;
             if (!is_vertex_offset_provided) {
-                mesh_data->vertex_offset = vertex_total;
+                mesh->vertex_offset = vertex_total;
             }
             if (!is_index_offset_provided) {
-                mesh_data->index_offset = index_total;
+                mesh->index_offset = index_total;
             }
 
-            if (vertices.size() + mesh_data->vertex_offset > MAX_VERTEX) {
+            if (vertices.size() + mesh->vertex_offset > MAX_VERTEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices.size()
-                    << "max=" << MAX_VERTEX << " vertex offset=" << mesh_data->vertex_offset).str());
+                    << "max=" << MAX_VERTEX << " vertex offset=" << mesh->vertex_offset).str());
                 return;
             }
-            if (indices.size() + mesh_data->index_offset > MAX_INDEX) {
+            if (indices.size() + mesh->index_offset > MAX_INDEX) {
                 LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices.size()
-                    << "max=" << MAX_INDEX << " index offset=" << mesh_data->index_offset).str());
+                    << "max=" << MAX_INDEX << " index offset=" << mesh->index_offset).str());
                 return;
             }
             if (is_new_mesh) {
-                mesh_data->buffer_id = meshes_total++;
+                mesh->buffer_id = meshes_total++;
             }
-            DrawElementsIndirectCommand& command = mesh_data->command;
+            DrawElementsIndirectCommand& command = mesh->command;
             command.count = indices.size();
             command.instanceCount = raw->instance_count;
-            command.firstIndex = mesh_data->index_offset;
-            command.baseVertex = mesh_data->vertex_offset;
-            command.baseInstance = mesh_data->buffer_id;
+            command.firstIndex = mesh->index_offset;
+            command.baseVertex = mesh->vertex_offset;
+            command.baseInstance = mesh->buffer_id;
             // copy to GPU
-            memcpy(&vertex_ptr[mesh_data->vertex_offset], vertices.data(), vertices.size() * sizeof(Vertex));
-            memcpy(&index_ptr[mesh_data->index_offset], indices.data(), indices.size() * sizeof(unsigned int));
-            if (mesh_data->texture != nullptr) {
-                texture_ptr[mesh_data->buffer_id] = mesh_data->texture->texture_handle_ARB;
+            memcpy(&vertex_ptr[mesh->vertex_offset], vertices.data(), vertices.size() * sizeof(Vertex));
+            memcpy(&index_ptr[mesh->index_offset], indices.data(), indices.size() * sizeof(unsigned int));
+            if (mesh->texture != nullptr) {
+                texture_ptr[mesh->buffer_id] = mesh->texture->texture_handle_ARB;
             }
 
             if (!is_vertex_offset_provided) {
@@ -236,16 +236,16 @@ public:
                 index_total += indices.size();
             }
             if (is_transform_used) {
-                mesh_data->transform_offset = transforms_total;
+                mesh->transform_offset = transforms_total;
                 if (is_new_mesh) {
                     transforms_total += command.instanceCount;
                 }
             }
-            if (mesh_data->armature != nullptr && mesh_data->armature != NULL) {
-                int num_bones = mesh_data->armature->num_bones;
-                if (mesh_data->armature->bones != NULL) {
+            if (mesh->armature != nullptr && mesh->armature != NULL) {
+                int num_bones = mesh->armature->num_bones;
+                if (mesh->armature->bones != NULL) {
                     auto identity = mat4(1);
-                    BufferBoneTransform(mesh_data->armature->bones, identity, mesh_data->armature->num_bones);
+                    BufferBoneTransform(mesh->armature->bones, identity, mesh->armature->num_bones);
                 }
             }
         }
@@ -269,8 +269,8 @@ public:
             }
             auto base_mesh = (*base_mesh_ptr).second.get();
             auto& instance_count = base_mesh->instance_count;
-            mesh->mesh_data->instance_id = instance_count++;
-            mesh->mesh_data->base_mesh = base_mesh->mesh_data;
+            mesh->mesh->instance_id = instance_count++;
+            mesh->mesh->base_mesh = base_mesh->mesh;
         }
     }
     CommandBuffer* CreateCommandBuffer(unsigned int size) {
@@ -362,16 +362,16 @@ public:
         }
         is_need_barrier = true;
     }
-    void BufferTransform(MeshData* mesh_data) {
-        uniforms_ptr->transforms[mesh_data->transform_offset + mesh_data->instance_id] = mesh_data->transform;
-        if (mesh_data->instance_id == 0) {
-            uniforms_ptr->transform_offset[mesh_data->buffer_id + mesh_data->instance_id] = mesh_data->transform_offset;
+    void BufferTransform(MeshData* mesh) {
+        uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] = mesh->transform;
+        if (mesh->instance_id == 0) {
+            uniforms_ptr->transform_offset[mesh->buffer_id + mesh->instance_id] = mesh->transform_offset;
         }
         is_need_barrier = true;
     }
-    void BufferTransform(vector<MeshData*>& mesh_data) {
-        for (int i = 0; i < mesh_data.size(); i++) {
-            BufferTransform(mesh_data[i]);
+    void BufferTransform(vector<MeshData*>& mesh) {
+        for (int i = 0; i < mesh.size(); i++) {
+            BufferTransform(mesh[i]);
         }
         //memcpy(&mvp_ptr[command_total], mvps.data(), mvps.size() * sizeof(mat4));
         is_need_barrier = true;
