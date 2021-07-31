@@ -114,9 +114,11 @@ private:
 				systems_manager->anim_manager->QueueMeshAnimUpdate(anim_mesh);
 				if (!mesh->armature->name_to_anim.empty()) {
 					auto anim1 = mesh->armature->name_to_anim["Stretch"];
-					auto anim2 = mesh->armature->name_to_anim["Walk"];
+					auto anim2 = mesh->armature->name_to_anim["ShakeHead"];
+					auto anim3 = mesh->armature->name_to_anim["UpHead"];
 					anim_mesh->AddAnim(AnimIndependentChannel::CHANNEL1, anim1);
 					anim_mesh->AddAnim(AnimIndependentChannel::CHANNEL2, anim2);
+					anim_mesh->AddAnim(AnimIndependentChannel::CHANNEL2, anim3);
 				}
 			}
 		}

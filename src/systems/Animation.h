@@ -3,6 +3,7 @@
 #include "Structures.h"
 #include "MeshManager.h"
 #include "utils/AssimpHelper.h"
+#include "utils/GLMHelpers.h"
 
 using namespace std;
 using namespace glm;
@@ -65,25 +66,27 @@ public:
         Bone* bone,
         vector<ActiveAnimation>& blend_anims,
         mat4& parent_transform,
-        map<unsigned int, mat4>& final_transforms) {
-
-        auto anim_trans = _GetBoneAnimation(bone, blend_anims);
+        map<unsigned int, mat4>& final_transforms,
+        bool is_parent_anim = false) {
+        bool is_bone_anim = false;
+        auto anim_trans = _GetBoneAnimation(bone, blend_anims, is_bone_anim);
         anim_trans = parent_transform * anim_trans;
-        final_transforms[bone->id] = mesh->armature->transform * anim_trans * bone->offset;
+        bool is_anim = is_bone_anim || is_parent_anim;
+        if (is_anim) {
+            final_transforms[bone->id] = mesh->armature->transform * anim_trans * bone->offset;
+        }
         for (auto child_of_child : bone->children) {
-            SetTransformForHierarchy(mesh, child_of_child, blend_anims, anim_trans, final_transforms);
+            SetTransformForHierarchy(mesh, child_of_child, blend_anims, anim_trans, final_transforms, is_anim);
         }
     }
 
-    mat4 _GetBoneAnimation(Bone* bone, vector<ActiveAnimation>& blend_anims) {
+    mat4 _GetBoneAnimation(Bone* bone, vector<ActiveAnimation>& blend_anims, bool& out_is_bone_anim) {
 
         vec3 bone_scale;
         quat bone_rotation;
         vec3 bone_translate;
 
         float last_anim_blend_weight = 0;
-
-        bool is_bone_anim = false;
 
         for (auto& anim : blend_anims) {
             if (anim.anim->bone_frames.find(bone->name) == anim.anim->bone_frames.end()) {
@@ -94,21 +97,18 @@ public:
             current_time_ticks = current_time_ticks > anim.anim->duration ? anim.anim->duration : current_time_ticks;
 
             auto& frame = anim.anim->bone_frames[bone->name];
-            auto time_scale = frame.time_scale.begin();
-            auto time_rotate = frame.time_rotation.begin();
-            auto time_position = frame.time_position.begin();
             
             float blend_anims = 0;
-            if (is_bone_anim) {
+            if (out_is_bone_anim) {
                 blend_anims = anim.blend_weight / (last_anim_blend_weight + anim.blend_weight);
-                last_anim_blend_weight = std::max(anim.blend_weight, last_anim_blend_weight);
             }
-            bone_translate = _GetBlendAnim(frame, time_position, frame.time_position.end(), current_time_ticks, is_bone_anim, bone_translate, blend_anims);
-            bone_rotation = _GetBlendAnim(frame, time_rotate, frame.time_rotation.end(), current_time_ticks, is_bone_anim, bone_rotation, blend_anims);
-            bone_scale = _GetBlendAnim(frame, time_scale, frame.time_scale.end(), current_time_ticks, is_bone_anim, bone_scale, blend_anims);
-            is_bone_anim = true;
+            last_anim_blend_weight = std::max(anim.blend_weight, last_anim_blend_weight);
+            bone_translate = _GetBlendAnim(frame.time_position, current_time_ticks, out_is_bone_anim, bone_translate, blend_anims);
+            bone_rotation = _GetBlendAnim(frame.time_rotation, current_time_ticks, out_is_bone_anim, bone_rotation, blend_anims);
+            bone_scale = _GetBlendAnim(frame.time_scale, current_time_ticks, out_is_bone_anim, bone_scale, blend_anims);
+            out_is_bone_anim = true;
         }
-        if (!is_bone_anim) {
+        if (!out_is_bone_anim) {
             return bone->trans;
         }
         auto r_angle = angle(bone_rotation);
@@ -120,38 +120,68 @@ public:
 
         return anim_trans;
     }
-    template<typename T> T _GetBlendAnim(BoneKeyFrames& frame,
-        vector<pair<double, T>>::iterator frame_iter,
-        vector<pair<double, T>>::iterator frame_end,
+    vec3 _GetBlendAnim(vector<pair<double, vec3>>& frame,
         double current_time_ticks,
         bool is_bone_anim,
-        T& prev_anim,
+        vec3& prev_anim,
         float blend_anims
-        ) {
-
-        while (frame_iter != frame_end) {
-            auto& cur = *frame_iter;
-            auto& next = ++frame_iter;
-            bool is_quat = typeid(T) == typeid(quat);
-            function<T()> blend_func = is_quat ? slerp : mix;
-            bool is_end = frame_iter == frame_end;
+    ) {
+        auto frame_iter = frame.begin();
+        while (frame_iter != frame.end()) {
+            auto cur = *frame_iter;
+            auto next = ++frame_iter;
+            bool is_end = next == frame.end();
             if (is_end || (*next).first > current_time_ticks) {
                 if (is_end) {
                     if (is_bone_anim) {
-                        return blend_func(cur.second, prev_anim, blend_anims);
+                        return mix(cur.second, prev_anim, blend_anims);
                     }
                     else {
                         return cur.second;
                     }
                 }
                 else {
-                    auto blend = (current_time_ticks - cur.first) / ((*next).first - cur.first);
+                    float blend = (float)(current_time_ticks - cur.first) / ((*next).first - cur.first);
                     if (blend < 0) blend = 0;
                     if (is_bone_anim) {
-                        return blend_func(blend_func(cur.second, (*next).second, blend), prev_anim, blend_anims);
+                        return mix(mix(cur.second, (*next).second, blend), prev_anim, blend_anims);
                     }
                     else {
-                        return blend_func(cur.second, (*next).second, blend);
+                        return mix(cur.second, (*next).second, blend);
+                    }
+                }
+                break;
+            }
+        }
+    }
+    quat _GetBlendAnim(vector<pair<double, quat>>& frame,
+        double current_time_ticks,
+        bool is_bone_anim,
+        quat& prev_anim,
+        float blend_anims
+    ) {
+        auto frame_iter = frame.begin();
+        while (frame_iter != frame.end()) {
+            auto cur = *frame_iter;
+            auto next = ++frame_iter;
+            bool is_end = next == frame.end();
+            if (is_end || (*next).first > current_time_ticks) {
+                if (is_end) {
+                    if (is_bone_anim) {
+                        return slerp(cur.second, prev_anim, blend_anims);
+                    }
+                    else {
+                        return cur.second;
+                    }
+                }
+                else {
+                    float blend = (float)(current_time_ticks - cur.first) / ((*next).first - cur.first);
+                    if (blend < 0) blend = 0;
+                    if (is_bone_anim) {
+                        return slerp(slerp(cur.second, (*next).second, blend), prev_anim, blend_anims);
+                    }
+                    else {
+                        return slerp(cur.second, (*next).second, blend);
                     }
                 }
                 break;
@@ -206,36 +236,34 @@ public:
             if (aianim->mNumChannels < 1) {
                 continue;
             }
-            if (aianim->mNumChannels > 1) {
-                Animation* anim = CreateAnimation(anim_name, aianim->mDuration, aianim->mTicksPerSecond);
-                for (size_t j = 0; j < aianim->mNumChannels; j++)
+            Animation* anim = CreateAnimation(anim_name, aianim->mDuration, aianim->mTicksPerSecond);
+            for (size_t j = 0; j < aianim->mNumChannels; j++)
+            {
+                auto channel = aianim->mChannels[j];
+                auto bone_name = MeshManager::GetBoneName(channel->mNodeName.C_Str(), mesh->armature, is_dae);
+                // bone at 0 index is armature name. P.S. Outdated
+                //if (j == 0) {
+                // continue;
+                //}
+                auto& bone_frames = anim->bone_frames[bone_name];
+                for (size_t k = 0; k < channel->mNumPositionKeys; k++)
                 {
-                    auto channel = aianim->mChannels[j];
-                    auto bone_name = MeshManager::GetBoneName(channel->mNodeName.C_Str(), mesh->armature, is_dae);
-                    // bone at 0 index is armature name. P.S. Outdated
-                    //if (j == 0) {
-                    // continue;
-                    //}
-                    auto& bone_frames = anim->bone_frames[bone_name];
-                    for (size_t k = 0; k < channel->mNumPositionKeys; k++)
-                    {
-                        auto& key = channel->mPositionKeys[k];
-                        bone_frames.time_position.push_back({ key.mTime, FromAi(key.mValue) });
-                    }
-                    for (size_t k = 0; k < channel->mNumScalingKeys; k++)
-                    {
-                        auto& key = channel->mScalingKeys[k];
-                        bone_frames.time_scale.push_back({ key.mTime, FromAi(key.mValue) });
-                    }
-                    for (size_t k = 0; k < channel->mNumRotationKeys; k++)
-                    {
-                        auto& key = channel->mRotationKeys[k];
-                        bone_frames.time_rotation.push_back({ key.mTime, FromAi(key.mValue) });
-                    }
+                    auto& key = channel->mPositionKeys[k];
+                    bone_frames.time_position.push_back({ key.mTime, FromAi(key.mValue) });
                 }
-                if (mesh != nullptr) {
-                    mesh->armature->name_to_anim[anim_name] = anim;
+                for (size_t k = 0; k < channel->mNumScalingKeys; k++)
+                {
+                    auto& key = channel->mScalingKeys[k];
+                    bone_frames.time_scale.push_back({ key.mTime, FromAi(key.mValue) });
                 }
+                for (size_t k = 0; k < channel->mNumRotationKeys; k++)
+                {
+                    auto& key = channel->mRotationKeys[k];
+                    bone_frames.time_rotation.push_back({ key.mTime, FromAi(key.mValue) });
+                }
+            }
+            if (mesh != nullptr) {
+                mesh->armature->name_to_anim[anim_name] = anim;
             }
         }
     }
