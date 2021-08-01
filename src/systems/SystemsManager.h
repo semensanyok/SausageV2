@@ -122,7 +122,14 @@ public:
 
 		return shader;
 	}
-
+	void PreUpdate() {
+		state_manager->UpdateDeltaTimeTimings();
+		camera->PreUpdate(state_manager->delta_time);
+	}
+	void Update() {
+		controller->Update();
+		camera->Update();
+	}
 	void Clear() {
 		DisposeBuffer();
 		renderer->ClearContext();
