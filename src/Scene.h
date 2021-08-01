@@ -100,14 +100,9 @@ private:
 		bool is_load_armature = true;
 		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes, is_load_armature);
 		CheckGLError();
-		_BlenderPostprocessLights(out_new_lights);
 	}
 	void _LoadAnimations() {
 		for (auto& mesh : all_meshes) {
-			//for (auto& path : GetAnimationsPathsForModel(mesh->name)) {
-			//	systems_manager->anim_manager->LoadAnimationForMesh(path.string(), mesh);
-			//	systems_manager->anim_manager->StartAnim(mesh);
-			//}
 			if (mesh->armature != nullptr) {
 				auto anim_mesh = systems_manager->anim_manager->CreateAnimMesh(mesh);
 				systems_manager->anim_manager->LoadAnimationForMesh(scene_path, mesh);
@@ -128,13 +123,12 @@ private:
 	void _LoadTransparentMeshes(string& path, vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
 		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes);
 		CheckGLError();
-		_BlenderPostprocessLights(out_new_lights);
 	}
 
 	void _AddRigidBodies(vector<shared_ptr<MeshLoadData>>& new_meshes) {
 		for (auto& mesh_ptr : new_meshes) {
 			auto& mesh = mesh_ptr.get()->mesh;
-			if (mesh->name.starts_with("Terrain") || mesh->name.starts_with("Frog")) {
+			if (mesh->name.starts_with("Terrain")) {
 				systems_manager->physics_manager->AddBoxRigidBody(mesh->min_AABB, mesh->max_AABB, 0.0f, mesh, mesh->transform);
 			}
 			else {
@@ -180,24 +174,13 @@ private:
 		all_transparent_meshes.clear();
 		all_lights.clear();
 	}
-	void _BlenderPostprocessLights(vector<Light*>& lights) {
-		for (auto& light : lights)
-		{
-			light->constant_attenuation = 1;
-			light->linear_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
-			light->quadratic_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
-			float denom = 10;
-			light->color /= denom;
-			light->specular /= denom;
-		}
-	}
+	using distance_comparator = decltype([](const pair<float, MeshData*>& lhs, const pair<float, MeshData*>& rhs) {
+		return lhs.first > rhs.first;
+		});
 	void _SortByDistance() {
-		set<pair<float, MeshData*>, decltype([](const auto& lhs, const auto& rhs) {
-			return lhs.first > rhs.first;
-		}) > back_to_front;
+		set<pair<float, MeshData*>, distance_comparator> back_to_front;
 		for (auto mesh : draw_meshes) {
-			pair<float, MeshData*> distance_mesh = { distance(systems_manager->camera->pos, vec3(mesh->transform[3])) , mesh };
-			back_to_front.insert(distance_mesh);
+			back_to_front.insert({ distance(systems_manager->camera->pos, vec3(mesh->transform[3])) , mesh });
 		}
 		draw_meshes.clear();
 		for (auto& mesh_dist : back_to_front) {

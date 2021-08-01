@@ -35,9 +35,6 @@ private:
 	vec3 direction;
 	float yaw_angle;
 	float pitch_angle;
-	float sensivity = 0.1f;
-	float movement_speed = 0.1f;
-	float scroll_speed = 1.0f;
 
 	float FOV;
 	float width;
@@ -98,12 +95,12 @@ public:
 		default:
 			break;
 		}
-		this->pos.y -= (mw_event.y * scroll_speed);
+		this->pos.y -= (mw_event.y * CameraSettings::scroll_speed);
 
 		is_update_need = true;
 	};
 	void MouseWheelCallbackRTS(SDL_MouseWheelEvent& mw_event) {
-		this->pos.y -= (mw_event.y * scroll_speed);
+		this->pos.y -= (mw_event.y * CameraSettings::scroll_speed);
 		
 		is_update_need = true;
 	};
@@ -113,7 +110,7 @@ public:
 		is_update_need = true;
 	};
 	void PreUpdate(float delta_time) {
-		this->velocity = delta_time * movement_speed;
+		this->velocity = delta_time * CameraSettings::movement_speed;
 		this->delta_time = delta_time;
 	}
 	void Update() {
@@ -136,28 +133,27 @@ public:
 			KeyCallbackRTS(scan_code);
 			break;
 		}
-	}
-	void KeyCallbackRTS(int scan_code) {
-
-		if (scan_code == SDL_SCANCODE_W)   pos -= vec3(0, 0, velocity);
-		else if (scan_code == SDL_SCANCODE_A)   pos -= right * velocity;
-		else if (scan_code == SDL_SCANCODE_S)   pos += vec3(0, 0, velocity);
-		else if (scan_code == SDL_SCANCODE_D)   pos += right * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
-
-		else if (scan_code == SDL_SCANCODE_LSHIFT) {
+		if (scan_code == KeyboardLayout::ChangeCamera) {
 			camera_mode = camera_mode == CameraMode::RTS ? CameraMode::FREECAM : CameraMode::RTS;
 		}
-
-		is_update_need = true;
+	}
+	void KeyCallbackRTS(int scan_code) {
+		bool is_rts = true;
+		_CameraMove(
+			scan_code == KeyboardLayout::Left,
+			scan_code == KeyboardLayout::Right,
+			scan_code == KeyboardLayout::Up,
+			scan_code == KeyboardLayout::Down,
+			is_rts);
 	};
 	void KeyCallbackFreeCam(int scan_code) {
-
-		if (scan_code == SDL_SCANCODE_W)   pos += direction * velocity;
-		if (scan_code == SDL_SCANCODE_A)   pos -= right * velocity;
-		if (scan_code == SDL_SCANCODE_S)   pos -= direction * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
-		if (scan_code == SDL_SCANCODE_D)   pos += right * velocity; // glm::normalize(glm::cross(cameraFront, cameraUp))
-
-		is_update_need = true;
+		bool is_rts = false;
+		_CameraMove(
+			scan_code == KeyboardLayout::Left,
+			scan_code == KeyboardLayout::Right,
+			scan_code == KeyboardLayout::Up,
+			scan_code == KeyboardLayout::Down,
+			is_rts);
 	};
 	void ResizeCallback(int new_width, int new_height) {
 		this->width = new_width;
@@ -182,17 +178,18 @@ public:
 	}
 	void MouseMotionCallbackRTS(float screen_x, float screen_y)
 	{
-		if (screen_x + 1 + screen_border >= GameSettings::SCR_WIDTH)   pos += right * velocity;
-		else if (screen_x - screen_border <= 0)   pos -= right * velocity;
-		if (screen_y + 1 + screen_border >= GameSettings::SCR_HEIGHT)   pos += vec3(0, 0, velocity);
-		else if (screen_y - screen_border <= 0)   pos -= vec3(0, 0, velocity);
-		
-		is_update_need = true;
+		bool is_left = screen_x - screen_border <= 0;
+		bool is_right = screen_x + 1 + screen_border >= GameSettings::SCR_WIDTH;
+		bool is_down = screen_y + 1 + screen_border >= GameSettings::SCR_HEIGHT;
+		bool is_up = screen_y - screen_border <= 0;
+		bool is_rts = true;
+
+		_CameraMove(is_left, is_right, is_up, is_down, is_rts, CameraSettings::mouse_motion_screen_border_velocity);
 	}
 	void MouseMotionCallbackFreeCam(float motion_x, float motion_y)
 	{
-		this->yaw_angle += (motion_x * this->sensivity);
-		this->pitch_angle -= (motion_y * this->sensivity);
+		this->yaw_angle += (motion_x * CameraSettings::sensivity);
+		this->pitch_angle -= (motion_y * CameraSettings::sensivity);
 		this->pitch_angle = std::clamp(this->pitch_angle, -90.0f, 90.0f);
 		if (yaw_angle > 360.0f || yaw_angle < -360.0f) {
 			yaw_angle = 0.0f;
@@ -203,9 +200,7 @@ public:
 		if (pitch_angle < -90.0f) {
 			pitch_angle = -90.0f;
 		}
-
-		UpdateCameraFrontUpRight();
-		_UpdateMatrices();
+		is_update_need = true;
 	}
 
 	bool IsCursorOnWindowBorder(float screen_x, float screen_y) {
@@ -214,7 +209,34 @@ public:
 			|| (screen_y + 1 + screen_border >= GameSettings::SCR_HEIGHT) 
 			|| (screen_y - screen_border <= 0);
 	}
-
-
-
+private:
+	void _CameraMove(bool is_left, bool is_right, bool is_up, bool is_down, bool is_rts, float velocity_delta = 1.0f) {
+		if (is_right)
+		{
+			auto delta = right * velocity * velocity_delta;
+			pos += delta;
+		}
+		else if (is_left)
+		{
+			auto delta = right * velocity * velocity_delta;
+			pos -= delta;
+		}
+		if (is_up)
+		{
+			auto delta = direction * velocity * velocity_delta;
+			if (is_rts) {
+				delta.y = 0;
+			}
+			pos += delta;
+		}
+		else if (is_down)
+		{
+			auto delta = direction * velocity * velocity_delta;
+			if (is_rts) {
+				delta.y = 0;
+			}
+			pos -= delta;
+		}
+		is_update_need = true;
+	}
 };

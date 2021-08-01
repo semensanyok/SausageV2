@@ -8,7 +8,7 @@
 
 class Controller {
 	int screen_x, screen_y;
-	bool is_motion_callback_rts = false;
+	bool is_motion_callback_rts_continious_scroll = false;
 public:
 	Camera* camera;
 	StateManager* state_manager;
@@ -28,17 +28,18 @@ public:
 			case RTS:
 				screen_x = e->motion.x;
 				screen_y = e->motion.y;
-				is_motion_callback_rts = camera->IsCursorOnWindowBorder(screen_x, screen_y) ? true : false;
+				is_motion_callback_rts_continious_scroll = camera->IsCursorOnWindowBorder(screen_x, screen_y) ? true : false;
 				break;
 			case FREECAM:
 				screen_x = e->motion.xrel;
 				screen_y = e->motion.yrel;
-				is_motion_callback_rts = false;
+				is_motion_callback_rts_continious_scroll = false;
+				camera->MouseMotionCallback(screen_x, screen_y);
 				break;
 			default:
 				screen_x = e->motion.x;
 				screen_y = e->motion.y;
-				is_motion_callback_rts = camera->IsCursorOnWindowBorder(screen_x, screen_y) ? true : false;
+				is_motion_callback_rts_continious_scroll = camera->IsCursorOnWindowBorder(screen_x, screen_y) ? true : false;
 				break;
 			}
 			break;
@@ -90,7 +91,7 @@ public:
 	}
 	void Update()
 	{
-		if (is_motion_callback_rts) {
+		if (is_motion_callback_rts_continious_scroll) {
 			camera->MouseMotionCallback(screen_x, screen_y);
 		}
 	}

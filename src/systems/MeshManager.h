@@ -178,6 +178,7 @@ public:
             all_lights.push_back(res_light);
             out_lights.push_back(res_light);
         }
+        _BlenderPostprocessLights(out_lights);
     }
 
     static void __LoadMeshesIndices(aiNode* child, vector<unsigned int>& out_mMeshes_indices) {
@@ -449,6 +450,17 @@ private:
             opacity_name = filesystem::path(Path.C_Str()).filename().string();
         }
         return MaterialTexNames(diffuse_name, normal_name, specular_name, height_name, metal_name, ao_name, opacity_name);
+    }
+    static void _BlenderPostprocessLights(vector<Light*>& lights) {
+        for (auto& light : lights)
+        {
+            light->constant_attenuation = 1;
+            light->linear_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
+            light->quadratic_attenuation = AttenuationConsts::OGRE_P_L_ATT_DIST_7L;
+            float denom = 10;
+            light->color /= denom;
+            light->specular /= denom;
+        }
     }
     MeshManager() = delete;
     ~MeshManager() = delete;

@@ -13,6 +13,12 @@ namespace GameSettings {
 	bool quit = false;
 	bool phys_debug_draw = true;
 }
+namespace CameraSettings {
+	float sensivity = 0.1f;
+	float movement_speed = 0.1f;
+	float scroll_speed = 1.0f;
+	float mouse_motion_screen_border_velocity = 0.1f;
+}
 namespace Events {
 	std::mutex pause_phys_mtx;
 
@@ -78,4 +84,12 @@ bool CheckGLError(const std::source_location& location) {
 		return true;
 	}
 	return false;
+}
+
+namespace KeyboardLayout {
+	SDL_Scancode ChangeCamera = SDL_SCANCODE_LSHIFT;
+	SDL_Scancode Up = SDL_SCANCODE_W;
+	SDL_Scancode Left = SDL_SCANCODE_A;
+	SDL_Scancode Right = SDL_SCANCODE_D;
+	SDL_Scancode Down = SDL_SCANCODE_S;
 }
