@@ -13,7 +13,7 @@
 			"variables": [
 				{
 					"name": "Bullet3_DIR",
-					"value": "D:/___amyengine/sausage/dependencies/bullet3",
+					"value": "D:/___amyengine/sausage_copy/SausageV2/engine/dependencies/bullet3",
 					"type": "PATH"
 				},
 				{
@@ -40,6 +40,11 @@
 					"name": "BULLET2_USE_THREAD_LOCKS",
 					"value": "True",
 					"type": "BOOL"
+				},
+				{
+					"name": "SDL2_DIR",
+					"value": "D:/___amyengine/sausage_copy/SausageV2/engine/lib/SDL",
+					"type": "PATH"
 				}
 			]
 		},

@@ -1,30 +1,30 @@
 [submodule "assimp"]
-	path = dependencies/assimp
+	path = engine/dependencies/assimp
 	url = https://github.com/assimp/assimp.git
 [submodule "bullet3"]
-	path = dependencies/bullet3
+	path = engine/dependencies/bullet3
 	url = https://github.com/bulletphysics/bullet3.git
 [submodule "glad"]
-	path = dependencies/glad
+	path = engine/dependencies/glad
 	url = https://github.com/Dav1dde/glad.git
 [submodule "assimp"]
-	path = dependencies/assimp
+	path = engine/dependencies/assimp
 	url = https://github.com/assimp/assimp.git
-[submodule "dependencies/glm"]
-	path = dependencies/glm
+[submodule "glm"]
+	path = engine/dependencies/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "dependencies/stb"]
-	path = dependencies/stb
+[submodule "stb"]
+	path = engine/dependencies/stb
 	url = https://github.com/nothings/stb.git
-[submodule "dependencies/zlib"]	
-	path = dependencies/zlib
+[submodule "zlib"]	
+	path = engine/dependencies/zlib
 	url = https://github.com/madler/zlib.git
-[submodule "dependencies/freetype"]	
-	path = dependencies/freetype
+[submodule "freetype"]	
+	path = engine/dependencies/freetype
 	url = https://github.com/freetype/freetype.git
-[submodule "dependencies/libRocket"]	
-	path = dependencies/libRocket
+[submodule "libRocket"]	
+	path = engine/dependencies/libRocket
 	url = https://github.com/libRocket/libRocket.git
-[submodule "dependencies/imgui"]	
-	path = dependencies/imgui
+[submodule "imgui"]	
+	path = engine/dependencies/imgui
 	url = https://github.com/ocornut/imgui.git
