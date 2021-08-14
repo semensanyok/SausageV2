@@ -2,15 +2,18 @@ import os
 from typing import Tuple, List, IO
 import regex as re
 
-IN_DIR = "../engine/src"
-OUT_DIR = "../engine/src/testparser"
+# IN_DIR = "../engine/src"
+# OUT_DIR = "../engine/src/testparser"
+
+IN_DIR = "./test/data"
+OUT_DIR = "./out/"
 
 ignore_files = [
     "sausage.h"
 ]
 
 CLASS_NAME_PATTERN = "class ([a-zA-Z]*)[ \r\n]"
-FUNC_IMPL_START_PATTERN = "([a-zA-Z*&_0-9<>]*) ([a-zA-Z_0-9<>:]*)(\(.*\))([ \r\n]{?)"
+FUNC_IMPL_START_PATTERN = "([a-zA-Z*&_0-9<>]* )([a-zA-Z_0-9<>:]*)(\(.*\))([ \r\n]{0,2})({)"
 
 class Parser:
     def __init__(self, file_name: str, in_dir: str, out_dir: str):
@@ -36,8 +39,8 @@ class Parser:
                     if self.cur_class_name in func_start[0][1]:
                         self.header_content += line
                     else:
-                        self.header_content += f"{func_start[0][0]};{os.linesep}"
-                        self.impl_content += f"{''.join(func_start[0])}{os.linesep}"
+                        self.header_content += f"{''.join(func_start[0])};{os.linesep}"
+                        self.impl_content += f"{''.join(func_start[0][:1] + tuple(f'{self.cur_class_name}::') + func_start[0][1:])}{os.linesep}"
                         self.__write_impl(f)
                 else:
                     self.header_content += line
@@ -46,13 +49,15 @@ class Parser:
         with open(self.out_impl_file_path, 'w') as f:
             f.write(self.impl_content)
 
-    def __write_impl(self, f: IO):
-        brackets_open = 1
+    def __write_impl(self, f: IO, brackets_open: int = 1):
+        if brackets_open:
+            self.impl_content += "{"
         for line in f:
-            if brackets_open <= 0:
-                break
+            is_first = False
             brackets_open = brackets_open + line.count("{") - line.count("}")
             self.impl_content += line
+            if  brackets_open <= 0:
+                break
 
 class FuncDesc:
     def __init__(self, decl: str, impl: str):

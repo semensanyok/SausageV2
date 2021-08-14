@@ -13,19 +13,19 @@ namespace GameSettings {
 	float physics_step_multiplier = 0.00001f;
 	bool quit = false;
 	bool phys_debug_draw = true;
-}
+};
 namespace CameraSettings {
 	float sensivity = 0.1f;
 	float movement_speed = 0.1f;
 	float scroll_speed = 1.0f;
 	float mouse_motion_screen_border_velocity = 0.1f;
-}
+};
 namespace Events {
 	std::mutex pause_phys_mtx;
 
 	std::shared_mutex end_render_frame_mtx;
 	std::condition_variable_any end_render_frame_event;
-}
+};
 
 namespace BufferSettings {
 	const unsigned long MAX_VERTEX = 1000000;
@@ -50,7 +50,7 @@ namespace BufferSettings {
 		const float FONT_VERTEX_PART = 0.15;
 		const float FONT_INDEX_PART = 0.15;
 	}
-}
+};
 
 #ifdef SAUSAGE_PROFILE_ENABLE
 namespace ProfTime {
@@ -96,7 +96,7 @@ bool CheckGLError(const std::source_location& location) {
 		return true;
 	}
 	return false;
-}
+};
 
 namespace KeyboardLayout {
 	SDL_Scancode Up = SDL_SCANCODE_W;
@@ -105,9 +105,8 @@ namespace KeyboardLayout {
 	SDL_Scancode Down = SDL_SCANCODE_S;
 	SDL_Scancode LShift = SDL_SCANCODE_LSHIFT;
 	SDL_Scancode ChangeCamera = SDL_SCANCODE_Z;
-
-}
+};
 
 namespace KeyboardEvents {
 	std::set<int> keys_pressed;
-}
+};

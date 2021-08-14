@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sausage.h"
+#include "../sausage.h"
 #include "Camera.h"
-#include "Settings.h"
+#include "../Settings.h"
 
 class ControllerEventProcessor {
 protected:

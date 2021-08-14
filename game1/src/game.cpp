@@ -3,7 +3,7 @@
 #include "OpenGLHelpers.h"
 #include "Settings.h"
 #include "Shader.h"
-#include "utils/AssetUtils.h"
+#include "utils/AssetUtils.	h"
 #include "Logging.h"
 #include "Texture.h"
 #include "FileWatcher.h"

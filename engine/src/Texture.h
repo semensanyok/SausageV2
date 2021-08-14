@@ -22,7 +22,7 @@ public:
     const GLuint texture_id;
     const GLuint64 texture_handle_ARB;
     Texture(GLuint texture_id, GLuint64 texture_handle_ARB, MaterialTexNames tex_names) : texture_id(texture_id), texture_handle_ARB(texture_handle_ARB), 
-        tex_names{tex_names}, is_resident(false), is_destoyed(false) {};
+        tex_names{tex_names}, is_resident(false), is_destoyed(false), ref_count(0) {};
     void MakeResident();
     void MakeNonResident();
     void BindSingleSampler(unsigned int location);

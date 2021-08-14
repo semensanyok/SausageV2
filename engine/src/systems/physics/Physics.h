@@ -1,10 +1,10 @@
 #pragma once
 
-#include "sausage.h"
-#include "Structures.h"
-#include "BufferStorage.h"
+#include "../sausage.h"
+#include "../Structures.h"
+#include "../../buffer/BufferStorage.h"
 #include "BulletDebugDrawer.h"
-#include "Settings.h"
+#include "../Settings.h"
 #include "../utils/AssetUtils.h"
 #include "StateManager.h"
 

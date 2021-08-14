@@ -1,10 +1,10 @@
 #pragma once
 
-#include "sausage.h"
-#include "Settings.h"
+#include "../sausage.h"
+#include "../Settings.h"
 #include "MouseKeyboardEventProcessor.h"
 #include "Camera.h"
-#include "systems/physics/Physics.h"
+#include "../physics/Physics.h"
 #include "StateManager.h"
 
 class Controller {

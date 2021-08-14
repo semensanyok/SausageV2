@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Settings.h"
 #include "sausage.h"
+#include "Settings.h"
 
 using namespace std;
 using namespace glm;
@@ -270,8 +270,12 @@ struct UniformData {
 };
 
 struct BufferMargins {
-    const unsigned long start_vertex;
-    const unsigned long end_vertex;
-    const unsigned long start_index;
-    const unsigned long end_index;
+    unsigned long start_vertex;
+    unsigned long end_vertex;
+    unsigned long start_index;
+    unsigned long end_index;
+};
+
+namespace SausageDefaults {
+    vector<MeshData*> DEFAULT_MESH_DATA_VECTOR;
 };

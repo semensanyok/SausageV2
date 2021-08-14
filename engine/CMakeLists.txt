@@ -141,7 +141,7 @@ set(SAUSAGE_INCLUDE_DIRS
 PARENT_SCOPE)
 
 set(sources ${SAUSAGE_INCLUDE_DIRS} "src/systems/Camera.cpp" "src/OpenGLHelpers.cpp" "src/Logging.cpp" "src/FileWatcher.cpp" "src/Shader.cpp" "src/Texture.cpp" "src/systems/Animation.cpp" "src/systems/AsyncTaskManager.cpp")
-add_library(${CMAKE_PROJECT_NAME} ${sources})
+add_library(${CMAKE_PROJECT_NAME} ${sources} "src/buffer/BufferStorage.cpp" "src/systems/Renderer.cpp" "src/systems/SystemsManager.cpp" "src/buffer/consumers/BulletDebugDrawerBufferConsumer.cpp" "src/systems/physics/BulletDebugDrawer.cpp" "src/buffer.h" "src/physics.h" "src/systems.h" "src/buffer/consumers/MeshDataBufferConsumer.cpp")
 
 set(SAUSAGE_LIBS assimp glad glm SDL2::Main 
 Bullet3Common BulletCollision BulletDynamics Bullet3Geometry Bullet3Collision Bullet3Dynamics LinearMath
