@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sausage.h"
-#include "systems/BufferStorage.h"
+#include "buffer.h"
 #include "systems/Renderer.h"
 #include "Structures.h"
 #include "systems/MeshManager.h"
@@ -38,7 +38,7 @@ public:
 		draw_call = new DrawCall();
 		draw_call->shader = shaders.blinn_phong;
 		draw_call->mode = GL_TRIANGLES;
-		draw_call->buffer = systems_manager->buffer;
+		draw_call->buffer = systems_manager->buffer_manager->storage;
 		draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND);
 		draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
 
@@ -75,7 +75,7 @@ public:
 		draw_call->command_count = (unsigned int)commands.size();
 		draw_call->num_lights = (int)draw_lights.size();
 
-		systems_manager->buffer->BufferLights(draw_lights);
+		systems_manager->buffer_manager->storage->BufferLights(draw_lights);
 		CheckGLError();
 	}
 private:
@@ -83,7 +83,7 @@ private:
 		vector<shared_ptr<MeshLoadData>> new_meshes;
 		vector<Light*> new_lights;
 		_LoadMeshes(scene_path, new_meshes, new_lights);
-		systems_manager->buffer->SetBaseMeshForInstancedCommand(new_meshes);
+		systems_manager->buffer_manager->storage->SetBaseMeshForInstancedCommand(new_meshes);
 		_BufferMeshes(new_meshes);
 		for (auto& mesh : new_meshes) {
 			all_meshes.push_back(mesh->mesh);
@@ -91,7 +91,7 @@ private:
 		for (auto& light : new_lights) {
 			all_lights.push_back(light);
 		}
-		systems_manager->buffer->BufferTransform(all_meshes);
+		systems_manager->buffer_manager->storage->BufferTransform(all_meshes);
 		_AddRigidBodies(new_meshes);
 		
 		_LoadAnimations();
@@ -159,7 +159,7 @@ private:
 			}
 		}
 		CheckGLError();
-		systems_manager->buffer->BufferMeshData(new_meshes);
+		systems_manager->buffer_manager->storage->BufferMeshData(new_meshes);
 		CheckGLError();
 	}
 	void _ReloadScene() {

@@ -2,5 +2,14 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dependencies/assimp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dependencies/bullet3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dependencies/freetype" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dependencies/freetype/subprojects/dlg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dependencies/glad" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dependencies/glm" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dependencies/imgui" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dependencies/libRocket" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dependencies/zlib" vcs="Git" />
   </component>
 </project>

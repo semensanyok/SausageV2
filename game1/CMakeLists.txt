@@ -1,17 +1,17 @@
 cmake_minimum_required (VERSION 3.8)
 
-set(SAUSAGE_GAME_1 "game1")
+project("game1")
 
+message("AAAAAAPROJECT_NAME ${PROJECT_NAME}")
 INCLUDE_DIRECTORIES(
-    ${SAUSAGE_INCLUDE_DIRS}
-    "../src"
+    ${CMAKE_SOURCE_DIR}/engine/src/
+    "src/"
 )
-message("SAUSAGE_INC_DIRRRRRRRRRR ${SAUSAGE_INCLUDE_DIRS}")
 set(sources ${sources} ${SAUSAGE_INCLUDE_DIRS} "src/game.cpp" )
 
 add_executable(${SAUSAGE_GAME_1} ${sources})
 
-target_link_libraries(game1 engine)
+target_link_libraries(${SAUSAGE_GAME_1} engine)
 
 file(GLOB files "src/assets/*")
 foreach(file ${files})
