@@ -1,7 +1,7 @@
-#include "utils/Test1.h"
+#include "Test1.h"
 #include "utils/GLMHelpersTest.h"
 
-int main(int argc, char** argv)
+int main()
 {
 	//Test1::run();
 	GLMHelpersTest::run();

@@ -53,7 +53,7 @@
 				},
 				{
 					"name": "SDL2_LIBRARY",
-					"value": "D:/___amyengine/sausage_copy/SausageV2/lib/SDL/SDL2.lib",
+					"value": "D:/___amyengine/sausage_copy/SausageV2/engine/lib/SDL/SDL2.lib",
 					"type": "FILEPATH"
 				},
 				{

@@ -9,6 +9,6 @@ set (CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(engine)
 
-# target_link_libraries(engine ${SAUSAGE_LIBS})
+add_subdirectory(test)
 
 # add_subdirectory(game1)
