@@ -83,7 +83,7 @@ private:
 		vector<shared_ptr<MeshLoadData>> new_meshes;
 		vector<Light*> new_lights;
 		_LoadMeshes(scene_path, new_meshes, new_lights);
-		systems_manager->buffer_manager->storage->SetBaseMeshForInstancedCommand(new_meshes);
+		systems_manager->buffer_manager->mesh_data_buffer->SetBaseMeshForInstancedCommand(new_meshes);
 		_BufferMeshes(new_meshes);
 		for (auto& mesh : new_meshes) {
 			all_meshes.push_back(mesh->mesh);
@@ -159,7 +159,7 @@ private:
 			}
 		}
 		CheckGLError();
-		systems_manager->buffer_manager->storage->BufferMeshData(new_meshes);
+		systems_manager->buffer_manager->mesh_data_buffer->BufferMeshData(new_meshes);
 		CheckGLError();
 	}
 	void _ReloadScene() {
