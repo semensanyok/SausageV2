@@ -13,7 +13,7 @@
 			"variables": [
 				{
 					"name": "Bullet3_DIR",
-					"value": "D:/___amyengine/sausage_copy/SausageV2/dependencies/bullet3",
+					"value": "${projectDir}/dependencies/bullet3",
 					"type": "PATH"
 				},
 				{
@@ -43,38 +43,43 @@
 				},
 				{
 					"name": "engine_DIR",
-					"value": "D:/___amyengine/sausage_copy/SausageV2/engine",
+					"value": "${projectDir}/engine",
 					"type": "PATH"
 				},
 				{
 					"name": "Freetype",
-					"value": "D:/___amyengine/sausage_copy/SausageV2/engine/lib/freetype/lib/freetype.lib",
+					"value": "${projectDir}/engine/lib/freetype/lib/freetype.lib",
 					"type": "FILEPATH"
 				},
 				{
 					"name": "SDL2_LIBRARY",
-					"value": "D:/___amyengine/sausage_copy/SausageV2/engine/lib/SDL/SDL2.lib",
+					"value": "${projectDir}/engine/lib/SDL/SDL2.lib",
 					"type": "FILEPATH"
 				},
 				{
 					"name": "FREETYPE_INCLUDE_DIR_freetype2",
-					"value": "D:/___amyengine/sausage_copy/SausageV2/engine/lib/freetype/include/freetype2",
+					"value": "${projectDir}/engine/lib/freetype/include/freetype2",
 					"type": "PATH"
 				},
 				{
 					"name": "SDL2_INCLUDE_DIR",
-					"value": "D:/___amyengine/sausage_copy/SausageV2/engine/lib/SDL/include",
+					"value": "${projectDir}/engine/lib/SDL/include",
 					"type": "PATH"
 				},
 				{
 					"name": "SDL2_IMAGE_LIBRARY",
-					"value": "D:/___amyengine/sausage_copy/SausageV2/engine/lib/SDL/SDL2_image.lib",
+					"value": "${projectDir}/engine/lib/SDL/SDL2_image.lib",
 					"type": "FILEPATH"
 				},
 				{
 					"name": "SDL2_IMAGE_INCLUDE_DIR",
-					"value": "D:/___amyengine/sausage_copy/SausageV2/engine/lib/SDL/include",
+					"value": "${projectDir}/engine/lib/SDL/include",
 					"type": "PATH"
+				},
+				{
+					"name": "SDL2MAIN_LIBRARY",
+					"value": "${projectDir}/engine/lib/SDL/SDL2main.lib",
+					"type": "FILEPATH"
 				}
 			]
 		},

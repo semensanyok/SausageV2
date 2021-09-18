@@ -1,5 +1,6 @@
 #include "Test1.h"
 #include "utils/GLMHelpersTest.h"
+#undef main
 
 int main()
 {

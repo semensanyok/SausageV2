@@ -55,7 +55,7 @@ find_library(Freetype
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(freetype REQUIRED)
-message ("src/src/src/src/src/src/ ${ENGINE_DEP_DIR}/bullet3/src/")
+
 set(DEPENDENCIES_INCLUDE_DIRS 
                     "${ENGINE_DEP_DIR}/assimp/include/"
                     "${ENGINE_DEP_DIR}/bullet3/src/"
@@ -119,6 +119,8 @@ CACHE INTERNAL "${PROJECT_NAME} libraries" FORCE)
 add_library(${PROJECT_NAME} STATIC ${sources})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${SAUSAGE_LIBS})
+
+target_compile_options(assimp PRIVATE /w)
 
 ###### ENGINE OPTIONS ########################
 option(SAUSAGE_PROFILE_ENABLE "Enable profiling info" ON)
