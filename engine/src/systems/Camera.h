@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../sausage.h"
-#include "../Logging.h"
-#include "../Settings.h"
+#include "sausage.h"
+#include "Logging.h"
+#include "Settings.h"
 
 using namespace std;
 using namespace glm;

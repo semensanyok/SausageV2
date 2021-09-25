@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Logging.h"
-#include "../OpenGLHelpers.h"
-#include "../Settings.h"
-#include "../Structures.h"
-#include "../Texture.h"
-#include "../sausage.h"
+#include "sausage.h"
+#include "Logging.h"
+#include "OpenGLHelpers.h"
+#include "Settings.h"
+#include "Structures.h"
+#include "Texture.h"
 
 using namespace std;
 using namespace glm;

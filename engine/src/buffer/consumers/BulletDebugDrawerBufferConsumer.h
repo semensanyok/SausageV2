@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../sausage.h"
-#include "../../Settings.h"
-#include "../../Structures.h"
-#include "../../systems/MeshManager.h"
-#include "../BufferStorage.h"
+#include "sausage.h"
+#include "Settings.h"
+#include "Structures.h"
+#include "MeshManager.h"
+#include "BufferStorage.h"
 
 class BulletDebugDrawerBufferConsumer {
     BufferMargins margins;
@@ -13,10 +13,11 @@ class BulletDebugDrawerBufferConsumer {
     unsigned long meshes_total = 1;
 public:
     MeshData* mesh = nullptr;
+    MeshManager* mesh_manager;
     BufferStorage* buffer;
-    BulletDebugDrawerBufferConsumer(BufferStorage* buffer) : buffer{ buffer } {
+    inline BulletDebugDrawerBufferConsumer(BufferStorage* buffer, MeshManager* mesh_manager) : buffer{ buffer }, mesh_manager{ mesh_manager }{
     };
-    ~BulletDebugDrawerBufferConsumer() {
+    inline ~BulletDebugDrawerBufferConsumer() {
     };
     void BufferMeshData(vector<vec3>& vertices,
         vector<unsigned int>& indices,

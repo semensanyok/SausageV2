@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "sausage.h"
-#include "utils/ThreadSafeQueue.h"
+#include "ThreadSafeQueue.h"
 #include "OpenGLHelpers.h"
 
 using namespace std;

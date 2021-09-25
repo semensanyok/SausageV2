@@ -1,10 +1,14 @@
 #include "Test1.h"
-#include "utils/GLMHelpersTest.h"
+#include "GLMHelpersTest.h"
+#include <SystemsManager.h>
+
 #undef main
 
 int main()
 {
-	//Test1::run();
+	SystemsManager* m = new SystemsManager();
+	m->InitSystems();
+	Test1::run();
 	GLMHelpersTest::run();
 	return 0;
 }

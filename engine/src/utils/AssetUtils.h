@@ -7,7 +7,7 @@ using namespace std;
 using namespace filesystem;
 
 template <typename T>
-string GetModelPath(T name) {
+inline string GetModelPath(T name) {
 	path spath(".");
     spath /= "assets";
     spath /= "models";
@@ -16,7 +16,7 @@ string GetModelPath(T name) {
 }
 
 template <typename T>
-vector<path> GetAnimationsPathsForModel(T& model_name) {
+inline vector<path> GetAnimationsPathsForModel(T& model_name) {
 	vector<path> res;
 	path spath(".");
 	spath /= "assets";
@@ -45,7 +45,7 @@ vector<path> GetAnimationsPathsForModel(T& model_name) {
 
 
 template <typename T>
-string GetShaderPath(T name) {
+inline string GetShaderPath(T name) {
 	path spath(".");
 	spath /= "shaders";
 	spath /= name;
@@ -53,7 +53,7 @@ string GetShaderPath(T name) {
 }
 
 template <typename T>
-string GetTexturePath(T name) {
+inline string GetTexturePath(T name) {
 	path spath(".");
 	spath /= "assets";
 	spath /= "textures";

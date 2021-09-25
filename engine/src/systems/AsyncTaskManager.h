@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../sausage.h"
-#include "../utils/ThreadSafeQueue.h"
-#include "../Settings.h"
+#include "sausage.h"
+#include "ThreadSafeQueue.h"
+#include "Settings.h"
 
 using namespace std;
 

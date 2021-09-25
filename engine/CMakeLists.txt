@@ -92,33 +92,38 @@ set(IMGUI_HEADERS
 
 include_directories("${DEPENDENCIES_INCLUDE_DIRS}")
 
-set(sources ${sources} ${IMGUI_HEADERS} ${IMGUI_SOURCES} )
-
 set(${PROJECT_NAME}_INCLUDE_DIRS 
-"${ENGINE_SRC_DIR}" 
-"${ENGINE_SRC_DIR}/systems/"
+"${ENGINE_SRC_DIR}/" 
+"${ENGINE_SRC_DIR}/systems/" 
+"${ENGINE_SRC_DIR}/systems/controller/" 
+"${ENGINE_SRC_DIR}/systems/physics/" 
 "${ENGINE_SRC_DIR}/utils/" 
 "${ENGINE_SRC_DIR}/buffer/" 
+"${ENGINE_SRC_DIR}/buffer/consumers/" 
 "${ENGINE_SRC_DIR}/gui/"
-${DEPENDENCIES_INCLUDE_DIRS}
-CACHE INTERNAL "${PROJECT_NAME} include directories" FORCE)
-
-include_directories(${PROJECT_NAME}_INCLUDE_DIRS)
-
-set(sources "src/systems/Camera.cpp" "src/OpenGLHelpers.cpp" "src/Logging.cpp" 
-"src/FileWatcher.cpp" "src/Shader.cpp" "src/Texture.cpp" "src/systems/Animation.cpp" "src/systems/AsyncTaskManager.cpp" 
-"src/buffer/BufferStorage.cpp" "src/systems/Renderer.cpp" "src/systems/SystemsManager.cpp" 
-"src/buffer/consumers/BulletDebugDrawerBufferConsumer.cpp" "src/systems/physics/BulletDebugDrawer.cpp" 
-"src/buffer/consumers/MeshDataBufferConsumer.cpp")
+${IMGUI_HEADERS} 
+${DEPENDENCIES_INCLUDE_DIRS})
 
 set(SAUSAGE_LIBS assimp glad glm SDL2::Main 
 Bullet3Common BulletCollision BulletDynamics Bullet3Geometry Bullet3Collision Bullet3Dynamics LinearMath
 ${SDL2_IMAGE_LIBRARIES} ${Freetype}
 CACHE INTERNAL "${PROJECT_NAME} libraries" FORCE)
 
-add_library(${PROJECT_NAME} STATIC ${sources})
+add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES} 
+"src/systems/Camera.cpp" "src/OpenGLHelpers.cpp" "src/Logging.cpp" 
+"src/FileWatcher.cpp" "src/Shader.cpp" "src/Texture.cpp" "src/systems/Animation.cpp" "src/systems/AsyncTaskManager.cpp" 
+"src/buffer/BufferStorage.cpp" "src/systems/Renderer.cpp" "src/systems/SystemsManager.cpp" 
+"src/buffer/consumers/BulletDebugDrawerBufferConsumer.cpp" "src/systems/physics/BulletDebugDrawer.cpp" 
+"src/buffer/consumers/MeshDataBufferConsumer.cpp" "src/buffer/BufferManager.cpp" "src/systems/controller/MouseKeyboardEventProcessor.cpp" 
+"src/systems/TextureManager.cpp" 
+"src/utils/AnimHelpers.cpp" 
+"src/utils/GLMHelpers.cpp" 
+"src/utils/ThreadSafeQueue.cpp" 
+"src/systems/MeshManager.cpp")
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${SAUSAGE_LIBS})
+target_link_libraries(${PROJECT_NAME} ${SAUSAGE_LIBS})
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_INCLUDE_DIRS})
 
 target_compile_options(assimp PRIVATE /w)
 

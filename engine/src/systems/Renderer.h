@@ -1,15 +1,15 @@
 #pragma once
 
-#include "../sausage.h"
+#include "sausage.h"
 #include "Camera.h"
-#include "../Settings.h"
-#include "../buffer/BufferStorage.h"
-#include "../OpenGLHelpers.h"
-#include "../Shader.h"
-#include "../Structures.h"
+#include "Settings.h"
+#include "BufferStorage.h"
+#include "OpenGLHelpers.h"
+#include "Shader.h"
+#include "Structures.h"
 #include "Gui.h"
-#include "../TestShapes.h"
-#include "../utils/ThreadSafeQueue.h"
+#include "TestShapes.h"
+#include "ThreadSafeQueue.h"
 
 using namespace std;
 
@@ -24,8 +24,8 @@ public:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	SDL_GLContext context;
-	Renderer() {};
-	~Renderer() {};
+	inline Renderer() {};
+	inline ~Renderer() {};
 	void Render(Camera* camera);
 	void RemoveBuffer(BufferStorage* buffer);
 	void AddGlCommand(function<void()>& f, bool is_persistent);

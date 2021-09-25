@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../sausage.h"
-#include "../Structures.h"
+#include "sausage.h"
+#include "Structures.h"
 #include "MeshManager.h"
-#include "../utils/AssimpHelper.h"
-#include "../utils/GLMHelpers.h"
-#include "../utils/AnimHelpers.h"
+#include "AssimpHelper.h"
+#include "GLMHelpers.h"
+#include "AnimHelpers.h"
 #include "StateManager.h"
 
 
@@ -24,8 +24,9 @@ class AnimationManager {
     map<unsigned int, AnimMesh*> active_anims;
     atomic<unsigned long> anim_count{ 0 };
     StateManager* state_manager;
+    MeshManager* mesh_manager;
 public:
-    AnimationManager(StateManager* state_manager) : state_manager{ state_manager } {};
+    AnimationManager(StateManager* state_manager, MeshManager* mesh_manager) : state_manager{ state_manager }, mesh_manager{ mesh_manager } {};
     ~AnimationManager() {};
     void Reset();
     void QueueMeshAnimUpdate(AnimMesh* mesh);

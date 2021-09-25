@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../../sausage.h"
-#include "../../Structures.h"
-#include "../../Shader.h"
-#include "../Renderer.h"
-#include "../../Settings.h"
-#include "../StateManager.h"
-#include "../../buffer.h"
+#include "sausage.h"
+#include "Structures.h"
+#include "Shader.h"
+#include "Renderer.h"
+#include "Settings.h"
+#include "StateManager.h"
+#include "buffer.h"
 
 using namespace std;
 

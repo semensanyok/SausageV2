@@ -18,10 +18,10 @@ public:
 	bool is_vs_updated = false;
 	bool is_fs_updated = false;
 
-	bool operator==(Shader& other) {
+	inline bool operator==(Shader& other) {
 		return id == other.id;
 	}
-	friend ostream &operator<<(ostream& stream, const Shader& shader) {
+	inline friend ostream &operator<<(ostream& stream, const Shader& shader) {
 		stream << "Shader(id=" << shader.id << ",vertex shader name=" << shader.vertex_path << ",fragment shader name=" << shader.fragment_path << ")";
 		return stream;
 	}

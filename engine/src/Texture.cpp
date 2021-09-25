@@ -29,3 +29,9 @@ void Texture::Dispose() {
 	glDeleteTextures(1, &texture_id);
 	is_destoyed = true;
 }
+
+inline Texture::~Texture() {
+	if (!is_destoyed) {
+		Dispose();
+	};
+}

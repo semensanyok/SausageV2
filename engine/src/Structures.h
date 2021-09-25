@@ -63,7 +63,7 @@ struct MaterialTexNames {
   string metal;
   string ao;
   string opacity;
-  size_t Hash() {
+  inline size_t Hash() {
     return hash<string>{}(string(diffuse)
                               .append(normal)
                               .append(specular)
@@ -81,12 +81,12 @@ struct Samplers {
 enum LightType { Point, Directional, Spot };
 
 namespace AttenuationConsts {
-float OGRE_P_L_ATT_DIST_7L = 0.7f;
-float OGRE_P_L_ATT_DIST_7Q = 1.8f;
-float OGRE_P_L_ATT_DIST_13L = 0.35f;
-float OGRE_P_L_ATT_DIST_13Q = 0.44f;
-float OGRE_P_L_ATT_DIST_20L = 0.22f;
-float OGRE_P_L_ATT_DIST_20Q = 0.20f;
+const float OGRE_P_L_ATT_DIST_7L = 0.7f;
+const float OGRE_P_L_ATT_DIST_7Q = 1.8f;
+const float OGRE_P_L_ATT_DIST_13L = 0.35f;
+const float OGRE_P_L_ATT_DIST_13Q = 0.44f;
+const float OGRE_P_L_ATT_DIST_20L = 0.22f;
+const float OGRE_P_L_ATT_DIST_20Q = 0.20f;
 } // namespace AttenuationConsts
 
 struct Light {
@@ -161,9 +161,9 @@ enum AnimBlendType {
 };
 
 namespace AnimBlendWeights {
-float Weight1 = 1;
-float Weight2 = 2;
-float Weight10 = 10;
+inline float Weight1 = 1;
+inline float Weight2 = 2;
+inline float Weight10 = 10;
 }; // namespace AnimBlendWeights
 
 struct ActiveAnimation {
@@ -203,7 +203,7 @@ public:
   map<AnimIndependentChannel, vector<ActiveAnimation>> active_animations;
   AnimMesh(MeshData* mesh) : mesh{ mesh } {};
   ~AnimMesh() {};
-  void AddAnim(AnimIndependentChannel channel, Animation *anim,
+  inline void AddAnim(AnimIndependentChannel channel, Animation *anim,
                float blend_weight = AnimBlendWeights::Weight1,
                AnimBlendType blend_type = AnimBlendType::BLEND,
                double start_time = 0) {
@@ -236,7 +236,7 @@ struct BufferLock {
   mutex data_mutex;
   condition_variable is_mapped_cv;
   bool is_mapped;
-  void Wait(unique_lock<mutex> &data_lock) { is_mapped_cv.wait(data_lock); }
+  inline void Wait(unique_lock<mutex> &data_lock) { is_mapped_cv.wait(data_lock); }
 };
 
 struct CommandBuffer {
@@ -244,7 +244,7 @@ struct CommandBuffer {
   DrawElementsIndirectCommand *ptr;
   unsigned int size;
   BufferLock *buffer_lock;
-  bool operator==(const CommandBuffer &other) { return id == other.id; }
+  inline bool operator==(const CommandBuffer &other) { return id == other.id; }
 };
 
 struct DrawCall {
@@ -277,5 +277,5 @@ struct BufferMargins {
 };
 
 namespace SausageDefaults {
-    vector<MeshData*> DEFAULT_MESH_DATA_VECTOR;
+    inline vector<MeshData*> DEFAULT_MESH_DATA_VECTOR;
 };

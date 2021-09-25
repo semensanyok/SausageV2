@@ -5,6 +5,7 @@ void SystemsManager::Render() {
 }
 
 void SystemsManager::InitSystems() {
+	mesh_manager = new MeshManager();
 	texture_manager = new TextureManager();
 	file_watcher = new FileWatcher();
 	state_manager = new StateManager();
@@ -19,7 +20,7 @@ void SystemsManager::InitSystems() {
 	};
 
 	physics_manager = new PhysicsManager(state_manager);
-	buffer_manager = new BufferManager();
+	buffer_manager = new BufferManager(mesh_manager);
 	buffer_manager->Init();
 	_CreateDebugDrawer();
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
@@ -27,7 +28,7 @@ void SystemsManager::InitSystems() {
 #endif
 	controller_event_processor = new ControllerEventProcessorEditor(camera);
 	controller = new Controller(camera, state_manager, physics_manager, controller_event_processor);
-	anim_manager = new AnimationManager(state_manager);
+	anim_manager = new AnimationManager(state_manager, mesh_manager);
 
 	async_manager = new AsyncTaskManager();
 	_SubmitAsyncTasks();
@@ -54,7 +55,7 @@ void SystemsManager::Reset() {
 	state_manager->Reset();
 	physics_manager->Reset();
 	buffer_manager->Reset();
-	MeshManager::Reset();
+	mesh_manager->Reset();
 	anim_manager->Reset();
 }
 

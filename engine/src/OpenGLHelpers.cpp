@@ -138,3 +138,28 @@ void LogShaderFull(GLuint programme) {
 	LogShaderMessage(programme);
 	CheckGLError();
 }
+
+// note: gl.... commands are valid only in render thread.
+// any calls from other threads results in error.
+bool CheckGLError(const std::source_location& location) {
+	if (std::this_thread::get_id() != main_thread_id) {
+		return false;
+	}
+	int err = glGetError();
+	if (err != GL_NO_ERROR) {
+		//LOG((ostringstream() << "GL error: '" << glGetErrorString(err)
+		//		<< "' at: "
+		//		<< location.file_name() << "("
+		//		<< location.line() << ":"
+		//		<< location.column() << ")#"
+		//		<< location.function_name()).str());
+		std::cout << "GL error: '" << glGetErrorString(err)
+			<< "' at: "
+			<< location.file_name() << "("
+			<< location.line() << ":"
+			<< location.column() << ")#"
+			<< location.function_name() << std::endl;
+		return true;
+	}
+	return false;
+};

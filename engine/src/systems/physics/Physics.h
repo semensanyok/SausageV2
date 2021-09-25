@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../sausage.h"
-#include "../Structures.h"
-#include "../../buffer/BufferStorage.h"
+#include "sausage.h"
+#include "Structures.h"
+#include "buffer/BufferStorage.h"
 #include "BulletDebugDrawer.h"
-#include "../Settings.h"
-#include "../utils/AssetUtils.h"
+#include "Settings.h"
+#include "AssetUtils.h"
 #include "StateManager.h"
 
 using namespace std;

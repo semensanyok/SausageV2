@@ -1,23 +1,24 @@
 #pragma once
 
-#include "../sausage.h"
+#include "sausage.h"
 #include "Renderer.h"
 #include "Camera.h"
 #include "Gui.h"
-#include "../buffer.h"
-#include "controller/Controller.h"
+#include "buffer.h"
+#include "Controller.h"
 #include "TextureManager.h"
-#include "../physics.h"
+#include "physics.h"
 #include "AsyncTaskManager.h"
 #include "Animation.h"
 #include "StateManager.h"
-#include "controller/MouseKeyboardEventProcessor.h"
-#include "../Logging.h"
-#include "../FileWatcher.h"
+#include "MouseKeyboardEventProcessor.h"
+#include "Logging.h"
+#include "FileWatcher.h"
 
 class SystemsManager
 {
 public:
+	MeshManager* mesh_manager;
 	Camera* camera;
 	Controller* controller;
 	Renderer* renderer;
@@ -28,7 +29,7 @@ public:
 	PhysicsManager* physics_manager;
 	StateManager* state_manager;
 	BulletDebugDrawer* bullet_debug_drawer;
-	ControllerEventProcessor* controller_event_processor;
+	ControllerEventProcessorEditor* controller_event_processor;
 
 	BufferManager* buffer_manager;
 	

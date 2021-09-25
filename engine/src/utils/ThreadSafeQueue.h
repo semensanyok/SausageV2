@@ -1,5 +1,5 @@
 #pragma once
-#include "../sausage.h"
+#include "sausage.h"
 
 using namespace std;
 
@@ -11,16 +11,27 @@ class ThreadSafeQueue {
 
 public:
 	queue<T> container;
-	ThreadSafeQueue() : container{queue<T>()} {};
-	~ThreadSafeQueue() {};
-	queue<T> PopAll()
+	// ThreadSafeQueue();
+	// ~ThreadSafeQueue();
+	// queue<T> PopAll();
+	// queue<T> WaitPopAll(bool& quit);
+	// T WaitPop(bool& quit);
+
+	//void Push(const T& message);
+
+	inline ThreadSafeQueue() : container{ queue<T>() } {}
+
+	inline ~ThreadSafeQueue() {}
+
+	inline queue<T> PopAll()
 	{
 		std::lock_guard<std::mutex> mlock(log_mutex);
 		auto res = queue<T>(container);
 		container = queue<T>();
 		return res;
 	}
-	queue<T> WaitPopAll(bool& quit)
+
+	inline queue<T> WaitPopAll(bool& quit)
 	{
 		std::unique_lock<std::mutex> mlock(log_mutex);
 		while (container.empty() && !quit)
@@ -31,7 +42,8 @@ public:
 		container = queue<T>();
 		return res;
 	}
-	T WaitPop(bool &quit)
+
+	inline T WaitPop(bool& quit)
 	{
 		std::unique_lock<std::mutex> mlock(log_mutex);
 		while (container.empty() && !quit)
@@ -43,7 +55,7 @@ public:
 		return message;
 	}
 
-	void Push(const T& message)
+	inline void Push(const T& message)
 	{
 		std::unique_lock<std::mutex> mlock(log_mutex);
 		container.push(message);

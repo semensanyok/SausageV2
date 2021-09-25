@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../sausage.h"
-#include "../Structures.h"
-#include "../Settings.h"
-#include "../buffer/BufferStorage.h"
+#include "sausage.h"
+#include "Structures.h"
+#include "Settings.h"
+#include "BufferStorage.h"
 
 using namespace std;
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../sausage.h"
-#include "../Settings.h"
+#include "sausage.h"
+#include "Settings.h"
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"

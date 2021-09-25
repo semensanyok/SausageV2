@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sausage.h"
-#include "utils/GLMHelpers.h"
+#include <sausage.h>
+#include <GLMHelpers.h>
 #include <assert.h>
 
 using namespace std;
