@@ -6,9 +6,12 @@
 using namespace std;
 using namespace filesystem;
 
+static const char* PATH_TO_ROOT = "..";
+//static const char* PATH_TO_ROOT = ".";
+
 template <typename T>
 inline string GetModelPath(T name) {
-	path spath(".");
+	path spath(PATH_TO_ROOT);
     spath /= "assets";
     spath /= "models";
     spath /= name;
@@ -18,7 +21,7 @@ inline string GetModelPath(T name) {
 template <typename T>
 inline vector<path> GetAnimationsPathsForModel(T& model_name) {
 	vector<path> res;
-	path spath(".");
+	path spath(PATH_TO_ROOT);
 	spath /= "assets";
 	spath /= "models";
 	//auto anim_re_str = string(model_name).append("_").append("[^_]*").append("_").append("anim").append("\\.").append(".{1,5}");
@@ -46,7 +49,7 @@ inline vector<path> GetAnimationsPathsForModel(T& model_name) {
 
 template <typename T>
 inline string GetShaderPath(T name) {
-	path spath(".");
+	path spath(PATH_TO_ROOT);
 	spath /= "shaders";
 	spath /= name;
 	return spath.string(); 
@@ -54,7 +57,7 @@ inline string GetShaderPath(T name) {
 
 template <typename T>
 inline string GetTexturePath(T name) {
-	path spath(".");
+	path spath(PATH_TO_ROOT);
 	spath /= "assets";
 	spath /= "textures";
 	spath /= name;

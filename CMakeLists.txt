@@ -9,6 +9,6 @@ set (CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(engine)
 
-add_subdirectory(test)
+# add_subdirectory(test)
 
-# add_subdirectory(game1)
+add_subdirectory(game1)

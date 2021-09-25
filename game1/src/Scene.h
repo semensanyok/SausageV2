@@ -98,7 +98,7 @@ private:
 	}
 	void _LoadMeshes(string& path, vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
 		bool is_load_armature = true;
-		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes, is_load_armature);
+		systems_manager->mesh_manager->LoadMeshes(path, out_new_lights, out_new_meshes, is_load_armature);
 		CheckGLError();
 	}
 	void _LoadAnimations() {
@@ -121,7 +121,7 @@ private:
 	}
 
 	void _LoadTransparentMeshes(string& path, vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
-		MeshManager::LoadMeshes(path, out_new_lights, out_new_meshes);
+		systems_manager->mesh_manager->LoadMeshes(path, out_new_lights, out_new_meshes);
 		CheckGLError();
 	}
 

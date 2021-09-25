@@ -4,7 +4,7 @@
 * load texture array for mesh. diffuse + normal + height + specular.
 */
 
-inline Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
+Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
     if (!is_samplers_init) {
         InitSamplers();
         is_samplers_init = true;
@@ -77,7 +77,7 @@ inline Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
     return texture;
 }
 
-inline void TextureManager::InitSamplers() {
+void TextureManager::InitSamplers() {
     unsigned int basic_repeat = 0;
     glCreateSamplers(1, &basic_repeat);
     glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -92,7 +92,7 @@ inline void TextureManager::InitSamplers() {
     CheckGLError();
 }
 
-inline GLenum TextureManager::GetTexFormat(int bytes_per_pixel, bool for_storage) {
+GLenum TextureManager::GetTexFormat(int bytes_per_pixel, bool for_storage) {
     if (bytes_per_pixel == 3) {
         return for_storage ? GL_RGB8 : GL_RGB;
     }
@@ -103,7 +103,7 @@ inline GLenum TextureManager::GetTexFormat(int bytes_per_pixel, bool for_storage
     return for_storage ? GL_RGBA8 : GL_RGBA;
 }
 
-inline bool TextureManager::LoadLayer(string name, TextureType type) {
+bool TextureManager::LoadLayer(string name, TextureType type) {
     SDL_Surface* surface = IMG_Load(GetTexturePath(name).c_str());
     if (surface == NULL)
     {
