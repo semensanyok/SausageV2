@@ -119,7 +119,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/utils/AnimHelpers.cpp" 
 "src/utils/GLMHelpers.cpp" 
 "src/utils/ThreadSafeQueue.cpp" 
-"src/systems/MeshManager.cpp")
+"src/systems/MeshManager.cpp" "src/buffer/consumers/BufferConsumer.cpp")
 
 target_link_libraries(${PROJECT_NAME} ${SAUSAGE_LIBS})
 

@@ -5,8 +5,9 @@
 #include "Structures.h"
 #include "MeshManager.h"
 #include "BufferStorage.h"
+#include "BufferConsumer.h"
 
-class BulletDebugDrawerBufferConsumer {
+class BulletDebugDrawerBufferConsumer : public BufferConsumer {
     BufferMargins margins;
     unsigned long vertex_total;
     unsigned long index_total;
@@ -14,10 +15,9 @@ class BulletDebugDrawerBufferConsumer {
 public:
     MeshData* mesh = nullptr;
     MeshManager* mesh_manager;
-    BufferStorage* buffer;
-    inline BulletDebugDrawerBufferConsumer(BufferStorage* buffer, MeshManager* mesh_manager) : buffer{ buffer }, mesh_manager{ mesh_manager }{
+    BulletDebugDrawerBufferConsumer(BufferStorage* buffer, MeshManager* mesh_manager) : BufferConsumer( buffer ), mesh_manager{ mesh_manager }{
     };
-    inline ~BulletDebugDrawerBufferConsumer() {
+    ~BulletDebugDrawerBufferConsumer() {
     };
     void BufferMeshData(vector<vec3>& vertices,
         vector<unsigned int>& indices,

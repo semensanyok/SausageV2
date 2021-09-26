@@ -77,8 +77,8 @@ private:
   GLuint64 *texture_ptr;
   Lights *light_ptr;
 
-  float allocated_percent_vertex;
-  float allocated_percent_index;
+  float allocated_percent_vertex = 0.0;
+  float allocated_percent_index = 0.0;
 
 public:
   unsigned long transforms_total;
@@ -119,6 +119,8 @@ public:
   void DeleteCommandBuffer(CommandBuffer *to_delete);
   int AddCommands(vector<DrawElementsIndirectCommand> &active_commands,
                   CommandBuffer *buf, int command_offset = -1);
+  int AddCommand(DrawElementsIndirectCommand &command, CommandBuffer *buf,
+                int command_offset = -1);
   void BufferMeshData(vector<shared_ptr<MeshLoadData>>& load_data,
       unsigned long& vertex_total,
       unsigned long& index_total,
@@ -132,8 +134,6 @@ public:
       BufferMargins& margins,
       vector<MeshData*>& instances = SausageDefaults::DEFAULT_MESH_DATA_VECTOR,
       bool is_transform_used = true);
- int AddCommand(DrawElementsIndirectCommand &command, CommandBuffer *buf,
-                int command_offset = -1);
   void BufferBoneTransform(map<unsigned int, mat4> &id_to_transform);
   void BufferBoneTransform(Bone *bone, mat4 &trans, unsigned int num_bones = 1);
   void BufferTransform(MeshData *mesh);

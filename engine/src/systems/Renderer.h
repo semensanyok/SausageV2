@@ -10,6 +10,7 @@
 #include "Gui.h"
 #include "TestShapes.h"
 #include "ThreadSafeQueue.h"
+#include "BufferConsumer.h"
 
 using namespace std;
 

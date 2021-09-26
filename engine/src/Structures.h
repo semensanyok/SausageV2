@@ -8,6 +8,7 @@ using namespace glm;
 using namespace BufferSettings;
 
 class BufferStorage;
+class BufferConsumer;
 class Shader;
 class Texture;
 
@@ -193,7 +194,7 @@ public:
   Armature *armature;
 
   MeshData()
-      : vertex_offset{-1}, index_offset{-1}, buffer_id{-1}, base_mesh{nullptr},
+      : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, transform_offset{0}, base_mesh{ nullptr },
         texture{nullptr}, armature{nullptr}, is_transparent{false} {};
 };
 
@@ -249,7 +250,7 @@ struct CommandBuffer {
 
 struct DrawCall {
   int mode = GL_TRIANGLES; // GL_TRIANGLES GL_LINES
-  BufferStorage *buffer = nullptr;
+  BufferConsumer *buffer = nullptr;
   Shader *shader = nullptr;
   CommandBuffer *command_buffer;
   unsigned int command_count = 0;

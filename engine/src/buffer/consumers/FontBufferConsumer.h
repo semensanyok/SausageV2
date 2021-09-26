@@ -1,21 +1,21 @@
 #pragma once
 
-#include "../../sausage.h"
-#include "../../Settings.h"
-#include "../../Structures.h"
-#include "../../Logging.h"
-#include "../../OpenGLHelpers.h"
-#include "../BufferStorage.h"
+#include "sausage.h"
+#include "Settings.h"
+#include "Structures.h"
+#include "Logging.h"
+#include "OpenGLHelpers.h"
+#include "BufferStorage.h"
+#include "BufferConsumer.h"
 using namespace std;
 using namespace glm;
 
-class FontBufferConsumer {
+class FontBufferConsumer : BufferConsumer {
     BufferMargins margins;
-    BufferStorage* buffer;
     unsigned long vertex_total;
     unsigned long index_total;
 public:
-    FontBufferConsumer(BufferStorage* buffer) : buffer{ buffer } {}
+    FontBufferConsumer(BufferStorage* buffer) : BufferConsumer(buffer) {}
     ~FontBufferConsumer() {
     }
     void Init() {
@@ -25,5 +25,5 @@ public:
     }
     void Reset() {
         Init();
-    };
-}
+    }
+};

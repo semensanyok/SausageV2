@@ -7,9 +7,9 @@
 #include "FontBufferConsumer.h"
 ;
 class BufferManager {
-public:
-	MeshManager* mesh_manager;
 	BufferStorage* storage;
+	MeshManager* mesh_manager;
+public:
 	MeshDataBufferConsumer* mesh_data_buffer;
 	FontBufferConsumer* font_buffer;
 	BulletDebugDrawerBufferConsumer* bullet_debug_drawer_buffer;

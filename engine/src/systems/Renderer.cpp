@@ -25,8 +25,7 @@ void Renderer::Render(Camera *camera) {
       }
       auto buffer = (*buffer_shader.second.begin())->buffer;
       {
-        buffer->SyncGPUBufAndUnmap();
-        buffer->BindMeshVAOandBuffers(); // TODO: one buffer, no rebind
+        buffer->PreDraw();
         for (auto draw : buffer_shader.second) {
           if (draw->command_count > 0) {
             glUseProgram(draw->shader->id);
@@ -37,8 +36,7 @@ void Renderer::Render(Camera *camera) {
                                         draw->command_count, 0);
           }
         }
-        buffer->fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-        buffer->MapBuffers();
+        buffer->PostDraw();
       }
       // CheckGLError();
     }
@@ -66,7 +64,7 @@ void Renderer::RemoveBuffer(BufferStorage *buffer) {
   auto buf = buffer_to_draw_call.find(buffer->id);
   if (buf != buffer_to_draw_call.end()) {
     for (auto draw : (*buf).second) {
-      buf_shad_ids.erase(pair(draw->buffer->id, draw->shader->id));
+      buf_shad_ids.erase(pair(draw->buffer->GetBufferId(), draw->shader->id));
       delete draw;
     }
     buffer_to_draw_call.erase(buf);
@@ -103,18 +101,18 @@ bool Renderer::AddDraw(DrawCall *draw) {
             .str());
     return false;
   }
-  pair<int, int> buf_shad_id{draw->buffer->id, draw->shader->id};
+  pair<int, int> buf_shad_id{draw->buffer->GetBufferId(), draw->shader->id};
   // if (buf_shad_ids.contains(buf_shad_id)) {
   //	LOG((ostringstream() << "Draw for shader: " << draw->shader->id << "
   //buffer:" << draw->buffer->id << "already exists").str()); 	return false;
   //}
-  buffer_to_draw_call[draw->buffer->id].push_back(draw);
+  buffer_to_draw_call[draw->buffer->GetBufferId()].push_back(draw);
   buf_shad_ids.insert(buf_shad_id);
   return true;
 }
 
 bool Renderer::RemoveDraw(DrawCall *draw) {
-  auto btd_ptr = buffer_to_draw_call.find(draw->buffer->id);
+  auto btd_ptr = buffer_to_draw_call.find(draw->buffer->GetBufferId());
   if (btd_ptr == buffer_to_draw_call.end()) {
     LOG("Unable to remove draw, buffer not found");
     return false;

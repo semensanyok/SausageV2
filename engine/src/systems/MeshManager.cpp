@@ -93,9 +93,9 @@ void MeshManager::LoadMeshes(const string& file_name, vector<Light*>& out_lights
 
     ConfiguredAssmipImporter
 
-        auto flags = aiProcess_GenBoundingBoxes | aiProcess_Triangulate |
-        aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
-        aiProcess_CalcTangentSpace;
+    auto flags = aiProcess_GenBoundingBoxes | aiProcess_Triangulate |
+    aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
+    aiProcess_CalcTangentSpace;
     flags = is_load_armature ? flags | aiProcess_PopulateArmatureData : flags;
     const aiScene* scene = assimp_importer.ReadFile(file_name, flags);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero

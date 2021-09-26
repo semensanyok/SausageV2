@@ -1,24 +1,25 @@
 #pragma once
 
-#include "../../sausage.h"
-#include "../../Settings.h"
-#include "../../Structures.h"
-#include "../../Logging.h"
-#include "../../OpenGLHelpers.h"
-#include "../BufferStorage.h"
-
-; // TODO: fix. find in previous imports?
+#include "sausage.h"
+#include "Settings.h"
+#include "Structures.h"
+#include "Logging.h"
+#include "OpenGLHelpers.h"
+#include "BufferStorage.h"
+#include "BufferConsumer.h"
 
 using namespace std;
 
-class MeshDataBufferConsumer {
+class MeshDataBufferConsumer : BufferConsumer {
     BufferMargins margins;
-    BufferStorage* buffer;
     unsigned long vertex_total = 0;
     unsigned long index_total = 0;
     unsigned long meshes_total = 0;
 public:
-    MeshDataBufferConsumer(BufferStorage* buffer) : buffer{ buffer } {
+    MeshDataBufferConsumer(BufferStorage* buffer) : BufferConsumer(buffer) {
+        unsigned long vertex_total = 0;
+        unsigned long index_total = 0;
+        unsigned long meshes_total = 0;
     };
     ~MeshDataBufferConsumer() {
     };
@@ -26,4 +27,6 @@ public:
     void Init();
     void Reset();
     void SetBaseMeshForInstancedCommand(vector<shared_ptr<MeshLoadData>>& new_meshes);
+    void BufferTransform(vector<MeshData*>& meshes);
+    void BufferLights(vector<Light*>& lights);
 };

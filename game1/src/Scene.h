@@ -38,7 +38,7 @@ public:
 		draw_call = new DrawCall();
 		draw_call->shader = shaders.blinn_phong;
 		draw_call->mode = GL_TRIANGLES;
-		draw_call->buffer = systems_manager->buffer_manager->storage;
+		draw_call->buffer = (BufferConsumer*)systems_manager->buffer_manager->mesh_data_buffer;
 		draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND);
 		draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
 
@@ -75,7 +75,7 @@ public:
 		draw_call->command_count = (unsigned int)commands.size();
 		draw_call->num_lights = (int)draw_lights.size();
 
-		systems_manager->buffer_manager->storage->BufferLights(draw_lights);
+		systems_manager->buffer_manager->mesh_data_buffer->BufferLights(draw_lights);
 		CheckGLError();
 	}
 private:
@@ -91,7 +91,7 @@ private:
 		for (auto& light : new_lights) {
 			all_lights.push_back(light);
 		}
-		systems_manager->buffer_manager->storage->BufferTransform(all_meshes);
+		systems_manager->buffer_manager->mesh_data_buffer->BufferTransform(all_meshes);
 		_AddRigidBodies(new_meshes);
 		
 		_LoadAnimations();

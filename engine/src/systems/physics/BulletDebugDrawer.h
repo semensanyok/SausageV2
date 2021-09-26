@@ -44,8 +44,8 @@ public:
         draw_call = new DrawCall();
         draw_call->shader = debug_shader;
         draw_call->mode = GL_LINES;
-        draw_call->buffer = buffer_consumer->buffer;
-        draw_call->command_buffer = buffer_consumer->buffer->CreateCommandBuffer(command_buffer_size);
+        draw_call->buffer = (BufferConsumer*)buffer_consumer;
+        draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(command_buffer_size);
         Activate();
         CheckGLError();
     };
@@ -73,13 +73,13 @@ public:
     
     void Activate() {
         renderer->AddDraw(draw_call);
-        buffer_consumer->buffer->ActivateCommandBuffer(draw_call->command_buffer);
+        draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
     }
     void Deactivate() {
         clearPersist();
         clear();
         renderer->RemoveDraw(draw_call);
-        buffer_consumer->buffer->RemoveCommandBuffer(draw_call->command_buffer);
+        draw_call->buffer->RemoveCommandBuffer(draw_call->command_buffer);
     }
     void   drawLinePersist(const btVector3& from, const btVector3& to, const btVector3& color);
 private: 

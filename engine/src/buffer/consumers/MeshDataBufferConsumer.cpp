@@ -35,3 +35,12 @@ void MeshDataBufferConsumer::SetBaseMeshForInstancedCommand(vector<shared_ptr<Me
         mesh->mesh->base_mesh = base_mesh->mesh;
     }
 }
+
+void MeshDataBufferConsumer::BufferTransform(vector<MeshData*>& meshes)
+{
+    buffer->BufferTransform(meshes);
+}
+
+void MeshDataBufferConsumer::BufferLights(vector<Light*>& lights) {
+    buffer->BufferLights(lights);
+}
