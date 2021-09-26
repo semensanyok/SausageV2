@@ -108,11 +108,6 @@ void MeshManager::LoadMeshes(const string& file_name, vector<Light*>& out_lights
         auto ai_t = child->mTransformation;
         auto transform = FromAi(ai_t);
         vector<unsigned int> mMeshes_indices;
-        if (child->mNumMeshes > 0) {
-            for (unsigned int j = 0; j < child->mNumMeshes; j++) {
-                mMeshes_indices.push_back(child->mMeshes[j]);
-            }
-        }
         __LoadMeshesIndices(child, mMeshes_indices);
         // if armature - no meshes, but child has meshes. (.dae and .gltf)
         if (mMeshes_indices.empty()) {

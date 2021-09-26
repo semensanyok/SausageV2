@@ -56,24 +56,27 @@ void Camera::Update() {
   }
 }
 void Camera::KeyCallback(int scan_code) {
-  switch (camera_mode) {
-  case RTS:
-    KeyCallbackRTS(scan_code);
-    break;
-  case FREE:
-    KeyCallbackFreeCam(scan_code);
-    break;
-  default:
-    KeyCallbackRTS(scan_code);
-    break;
-  }
-  if (scan_code == KeyboardLayout::ChangeCamera) {
-    if (camera_mode == CameraMode::RTS) {
-      camera_mode = CameraMode::FREE;
-    } else {
-      camera_mode = CameraMode::RTS;
+    if (scan_code == KeyboardLayout::ChangeCamera) {
+        if (camera_mode == CameraMode::RTS) {
+            camera_mode = CameraMode::FREE;
+        }
+        else {
+            camera_mode = CameraMode::RTS;
+        }
     }
-  }
+    else {
+        switch (camera_mode) {
+        case RTS:
+            KeyCallbackRTS(scan_code);
+            break;
+        case FREE:
+            KeyCallbackFreeCam(scan_code);
+            break;
+        default:
+            KeyCallbackRTS(scan_code);
+            break;
+        }
+    }
 }
 void Camera::KeyCallbackRTS(int scan_code) {
   bool is_rts = true;
