@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "Renderer.h"
+#include "RendererContextManager.h"
 #include "Camera.h"
 #include "Gui.h"
 #include "buffer.h"
@@ -22,6 +23,7 @@ public:
 	Camera* camera;
 	Controller* controller;
 	Renderer* renderer;
+	RendererContextManager* renderer_context_manager;
 	TextureManager* texture_manager;
 	FileWatcher* file_watcher;
 	AsyncTaskManager* async_manager;

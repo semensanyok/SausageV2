@@ -7,8 +7,9 @@ set(SAUSAGE_TEST_PROJ "sausage_test")
 include_directories(
 	"src/" 
 	"utils/"
+	"systems/"
 )
 
-add_executable(${SAUSAGE_TEST_PROJ} "Main.cpp")
+add_executable(${SAUSAGE_TEST_PROJ} "Main.cpp" "systems/FontManagerTest.h" "systems/RendererContextManagerTest.h")
 
 target_link_libraries(${SAUSAGE_TEST_PROJ} engine)

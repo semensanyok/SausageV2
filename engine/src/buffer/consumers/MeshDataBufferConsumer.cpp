@@ -8,7 +8,7 @@ void MeshDataBufferConsumer::BufferMeshData(vector<shared_ptr<MeshLoadData>>& lo
 }
 
 void MeshDataBufferConsumer::Init() {
-    margins = buffer->RequestStorage(BufferSettings::Margins::DEBUG_PHYS_VERTEX_PART, BufferSettings::Margins::DEBUG_PHYS_INDEX_PART);
+    margins = buffer->RequestStorage(BufferSettings::Margins::MESH_DATA_VERTEX_PART, BufferSettings::Margins::MESH_DATA_INDEX_PART);
     vertex_total = margins.start_vertex;
     index_total = margins.start_index;
 }

@@ -130,7 +130,7 @@ void BufferStorage::RemoveCommandBuffer(CommandBuffer *to_remove) {
     if (*cur_buf == to_remove) {
       command_buffers.erase(cur_buf);
       mapped_command_buffers.erase(to_remove->id);
-      UnmapBuffer(to_remove);
+      //UnmapBuffer(to_remove);
       break;
     }
     cur_buf++;

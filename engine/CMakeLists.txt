@@ -62,6 +62,7 @@ set(DEPENDENCIES_INCLUDE_DIRS
                     "${ENGINE_DEP_DIR}/glm/"
                     "${ENGINE_LIB_DIR}/glad/include"
                     "${ENGINE_DEP_DIR}/assimp/include"
+                    "${ENGINE_DEP_DIR}/freetype/include"
                     "${SDL2_INCLUDE_DIR}"
                     #"${FREETYPE_INCLUDE_DIRS}/"
                     "${ENGINE_DEP_DIR}/imgui/"
@@ -114,12 +115,16 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/FileWatcher.cpp" "src/Shader.cpp" "src/Texture.cpp" "src/systems/Animation.cpp" "src/systems/AsyncTaskManager.cpp" 
 "src/buffer/BufferStorage.cpp" "src/systems/Renderer.cpp" "src/systems/SystemsManager.cpp" 
 "src/buffer/consumers/BulletDebugDrawerBufferConsumer.cpp" "src/systems/physics/BulletDebugDrawer.cpp" 
-"src/buffer/consumers/MeshDataBufferConsumer.cpp" "src/buffer/BufferManager.cpp" "src/systems/controller/MouseKeyboardEventProcessor.cpp" 
+"src/buffer/consumers/MeshDataBufferConsumer.cpp" 
+"src/buffer/BufferManager.cpp" 
+"src/systems/controller/MouseKeyboardEventProcessor.cpp" 
 "src/systems/TextureManager.cpp" 
 "src/utils/AnimHelpers.cpp" 
 "src/utils/GLMHelpers.cpp" 
 "src/utils/ThreadSafeQueue.cpp" 
-"src/systems/MeshManager.cpp" "src/buffer/consumers/BufferConsumer.cpp")
+"src/systems/MeshManager.cpp" 
+"src/buffer/consumers/BufferConsumer.cpp" 
+"src/systems/RendererContextManager.cpp")
 
 target_link_libraries(${PROJECT_NAME} ${SAUSAGE_LIBS})
 

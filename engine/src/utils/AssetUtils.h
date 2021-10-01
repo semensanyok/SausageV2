@@ -63,3 +63,12 @@ inline string GetTexturePath(T name) {
 	spath /= name;
 	return spath.string();
 }
+
+template <typename T>
+inline string GetFontPath(T name) {
+	path spath(PATH_TO_ROOT);
+	spath /= "assets";
+	spath /= "fonts";
+	spath /= name;
+	return spath.string();
+}

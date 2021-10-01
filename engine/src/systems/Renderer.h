@@ -11,30 +11,28 @@
 #include "TestShapes.h"
 #include "ThreadSafeQueue.h"
 #include "BufferConsumer.h"
+#include "RendererContextManager.h"
 
 using namespace std;
 
 class Renderer {
 private:
+	RendererContextManager* context_manager;
 	ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;
 
 	map<unsigned int, Shader*> shaders;
 	map<unsigned int, vector<DrawCall*>> buffer_to_draw_call;
 	set<pair<int, int>> buf_shad_ids;
 public:
-	SDL_Window* window;
 	SDL_Renderer* renderer;
-	SDL_GLContext context;
-	inline Renderer() {};
-	inline ~Renderer() {};
+	Renderer(RendererContextManager* context_manager) : context_manager{ context_manager } {};
+	~Renderer() {};
 	void Render(Camera* camera);
 	void RemoveBuffer(BufferStorage* buffer);
 	void AddGlCommand(function<void()>& f, bool is_persistent);
 	Shader* RegisterShader(const char* vs_name, const char* fs_name);
 	bool AddDraw(DrawCall* draw);
 	bool RemoveDraw(DrawCall* draw);
-	void InitContext();
-	void ClearContext();
 private:
 	void _ExecuteCommands();
 };

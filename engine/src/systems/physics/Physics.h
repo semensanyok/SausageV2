@@ -49,8 +49,6 @@ public:
 		dynamicsWorld->stepSimulation(state_manager->delta_time * GameSettings::physics_step_multiplier, 1000);
 #ifdef SAUSAGE_PROFILE_ENABLE
 		ProfTime::physics_sym_ns = chrono::steady_clock::now() - proft3;
-#endif
-#ifdef SAUSAGE_PROFILE_ENABLE
 		auto proft8 = chrono::steady_clock::now();
 #endif
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
@@ -89,10 +87,11 @@ public:
 		else {
 			message = "background";
 		}
-#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
 		if (GameSettings::phys_debug_draw) {
 			debugDrawer->drawLinePersist(btStart, btEnd, { 255,0,0 });
 		}
+#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
+		
 #endif
 		cout << message << endl;
 	}

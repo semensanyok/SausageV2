@@ -78,18 +78,24 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
 }
 
 void TextureManager::InitSamplers() {
-    unsigned int basic_repeat = 0;
-    glCreateSamplers(1, &basic_repeat);
-    glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glCreateSamplers(1, &samplers.basic_repeat);
+    glSamplerParameteri(samplers.basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glSamplerParameteri(samplers.basic_repeat, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glSamplerParameteri(samplers.basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); // bilinear
-    glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // trilinear
-    samplers.basic_repeat = basic_repeat;
-    is_samplers_init = true;
+    glSamplerParameteri(samplers.basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // trilinear
     CheckGLError();
+
+    glCreateSamplers(1, &samplers.font_sampler);
+    glSamplerParameteri(samplers.font_sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(samplers.font_sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(samplers.font_sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glSamplerParameteri(samplers.font_sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    CheckGLError();
+
+    is_samplers_init = true;
 }
 
 GLenum TextureManager::GetTexFormat(int bytes_per_pixel, bool for_storage) {

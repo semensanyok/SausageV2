@@ -10,8 +10,9 @@ void SystemsManager::InitSystems() {
 	file_watcher = new FileWatcher();
 	state_manager = new StateManager();
 	camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
-	renderer = new Renderer();
-	renderer->InitContext();
+	renderer_context_manager = new RendererContextManager();
+	renderer = new Renderer(renderer_context_manager);
+	renderer_context_manager->InitContext();
 
 	shaders = {
 		RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl"),
@@ -22,8 +23,9 @@ void SystemsManager::InitSystems() {
 	physics_manager = new PhysicsManager(state_manager);
 	buffer_manager = new BufferManager(mesh_manager);
 	buffer_manager->Init();
-	_CreateDebugDrawer();
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
+	_CreateDebugDrawer();
+	bullet_debug_drawer->Activate();
 	physics_manager->SetDebugDrawer(bullet_debug_drawer);
 #endif
 	controller_event_processor = new ControllerEventProcessorEditor(camera);
@@ -71,7 +73,7 @@ void SystemsManager::Update() {
 }
 
 void SystemsManager::Clear() {
-	renderer->ClearContext();
+	renderer_context_manager->ClearContext();
 	delete renderer;
 	delete camera;
 	delete async_manager;

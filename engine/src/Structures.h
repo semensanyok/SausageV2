@@ -76,6 +76,7 @@ struct MaterialTexNames {
 };
 struct Samplers {
   GLuint basic_repeat;
+  GLuint font_sampler;
 };
 // --------------------------------------------------------------------------------------------------------------------
 // Texture structures end
