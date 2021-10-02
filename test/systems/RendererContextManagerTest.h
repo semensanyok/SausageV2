@@ -29,7 +29,6 @@ public:
             std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
             return -1;
         }
-
         
         struct Character {
             unsigned int TextureID;  // ID handle of the glyph texture

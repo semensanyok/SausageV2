@@ -1,8 +1,8 @@
 #include "BufferConsumer.h"
 
-void BufferConsumer::PreDraw() {
+void BufferConsumer::PreDraw(BufferType::BufferTypeFlag used_buffers) {
     buffer->SyncGPUBufAndUnmap();
-    buffer->BindMeshVAOandBuffers(); // TODO: one buffer, no rebind
+    buffer->BindVAOandBuffers(used_buffers); // TODO: one buffer, no rebind
 }
 
 void BufferConsumer::PostDraw() {

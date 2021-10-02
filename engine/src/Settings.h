@@ -35,23 +35,27 @@ namespace BufferSettings {
 	const unsigned long MAX_INDEX = 10000000;
 	const unsigned long MAX_COMMAND = 1000;
 	const unsigned long MAX_TRANSFORM = 4000;
+	const unsigned long MAX_FONT_TRANSFORM = 4000;
 	const unsigned long MAX_BONES = 100000;
 	const unsigned long MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
+	const unsigned long MAX_FONT_TRANSFORM_OFFSET = MAX_FONT_TRANSFORM * 10;
 	const unsigned long MAX_TEXTURES = MAX_COMMAND;
+	const unsigned long TEXTURES_SINGLE_FONT = 128;
+	const unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;
 	const unsigned long MAX_LIGHTS = 1000;
 	// reserve last 1/4 of buffer for debug vertices;
 	namespace Margins {
 		const float MESH_DATA_VERTEX_PART = 0.65;
 		const float MESH_DATA_INDEX_PART = 0.65;
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
-		const float DEBUG_PHYS_VERTEX_PART = 0.2;
-		const float DEBUG_PHYS_INDEX_PART = 0.2;
+		const float DEBUG_PHYS_VERTEX_PART = 0.20;
+		const float DEBUG_PHYS_INDEX_PART = 0.20;
 #else
 		const float DEBUG_PHYS_VERTEX_PART = 0;
 		const float DEBUG_PHYS_INDEX_PART = 0;
 #endif
-		const float FONT_VERTEX_PART = 0.15;
-		const float FONT_INDEX_PART = 0.15;
+		const float FONT_VERTEX_PART = 0.05;
+		const float FONT_INDEX_PART = 0.05;
 	}
 };
 

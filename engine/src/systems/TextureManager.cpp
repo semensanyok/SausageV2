@@ -5,10 +5,6 @@
 */
 
 Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
-    if (!is_samplers_init) {
-        InitSamplers();
-        is_samplers_init = true;
-    }
     GLuint texture_id;
     if (tex_names.diffuse.empty()) {
         LOG(string("diffuse not found: ").append(tex_names.diffuse));
@@ -70,32 +66,11 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
     //    LoadLayer(tex_names.opacity, TextureType::Opacity);
     //}
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-    GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers.basic_repeat);
+    GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers->basic_repeat);
     CheckGLError();
     Texture* texture = new Texture(texture_id, tex_handle, tex_names);
     path_to_tex[key_hash] = texture;
     return texture;
-}
-
-void TextureManager::InitSamplers() {
-    glCreateSamplers(1, &samplers.basic_repeat);
-    glSamplerParameteri(samplers.basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glSamplerParameteri(samplers.basic_repeat, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glSamplerParameteri(samplers.basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); // bilinear
-    glSamplerParameteri(samplers.basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // trilinear
-    CheckGLError();
-
-    glCreateSamplers(1, &samplers.font_sampler);
-    glSamplerParameteri(samplers.font_sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glSamplerParameteri(samplers.font_sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glSamplerParameteri(samplers.font_sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glSamplerParameteri(samplers.font_sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    CheckGLError();
-
-    is_samplers_init = true;
 }
 
 GLenum TextureManager::GetTexFormat(int bytes_per_pixel, bool for_storage) {

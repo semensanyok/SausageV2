@@ -15,13 +15,17 @@ class FontBufferConsumer : BufferConsumer {
     unsigned long vertex_total;
     unsigned long index_total;
 public:
-    FontBufferConsumer(BufferStorage* buffer) : BufferConsumer(buffer) {}
+    FontBufferConsumer(BufferStorage* buffer) : BufferConsumer(buffer, BufferType::FONT_BUFFERS) {}
     ~FontBufferConsumer() {
+
     }
     void Init() {
         margins = buffer->RequestStorage(BufferSettings::Margins::FONT_VERTEX_PART, BufferSettings::Margins::FONT_INDEX_PART);
         vertex_total = margins.start_vertex;
         index_total = margins.start_index;
+    }
+    void BufferFontTextures() {
+        
     }
     void Reset() {
         Init();

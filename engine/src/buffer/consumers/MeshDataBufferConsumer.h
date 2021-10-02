@@ -16,7 +16,7 @@ class MeshDataBufferConsumer : BufferConsumer {
     unsigned long index_total = 0;
     unsigned long meshes_total = 0;
 public:
-    MeshDataBufferConsumer(BufferStorage* buffer) : BufferConsumer(buffer) {
+    MeshDataBufferConsumer(BufferStorage* buffer) : BufferConsumer(buffer, BufferType::MESH_BUFFERS) {
         unsigned long vertex_total = 0;
         unsigned long index_total = 0;
         unsigned long meshes_total = 0;

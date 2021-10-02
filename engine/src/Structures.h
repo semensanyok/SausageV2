@@ -74,9 +74,34 @@ struct MaterialTexNames {
                               .append(opacity));
   }
 };
-struct Samplers {
-  GLuint basic_repeat;
-  GLuint font_sampler;
+class Samplers {
+  bool is_samplers_init = false;
+public:
+  GLuint basic_repeat = 0;
+  GLuint font_sampler = 0;
+  Samplers() {
+  }
+  void Init() {
+      if (!is_samplers_init) {
+          glCreateSamplers(1, &basic_repeat);
+          glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
+          glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_T, GL_REPEAT);
+          glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+          // glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+          //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+          //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); // bilinear
+          glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // trilinear
+          CheckGLError();
+
+          glCreateSamplers(1, &font_sampler);
+          glSamplerParameteri(font_sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+          glSamplerParameteri(font_sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+          glSamplerParameteri(font_sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+          glSamplerParameteri(font_sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+          CheckGLError();
+          is_samplers_init = true;
+      }
+  }
 };
 // --------------------------------------------------------------------------------------------------------------------
 // Texture structures end
@@ -265,10 +290,15 @@ struct Shaders {
   Shader *stencil;
 };
 
-struct UniformData {
+struct MeshUniformData {
   mat4 bones_transforms[MAX_BONES];
   mat4 transforms[MAX_TRANSFORM];
   unsigned int transform_offset[MAX_TRANSFORM_OFFSET];
+};
+
+struct FontUniformData {
+    mat4 transforms[MAX_FONT_TRANSFORM];
+    unsigned int transform_offset[MAX_FONT_TRANSFORM_OFFSET];
 };
 
 struct BufferMargins {
@@ -276,6 +306,25 @@ struct BufferMargins {
     unsigned long end_vertex;
     unsigned long start_index;
     unsigned long end_index;
+};
+
+namespace BufferType {
+    typedef int BufferTypeFlag;
+    const BufferTypeFlag MESH_VAO = 1;
+    const BufferTypeFlag VERTEX = 1 << 1;
+    const BufferTypeFlag INDEX = 1 << 2;
+    const BufferTypeFlag UNIFORMS = 1 << 3;
+    const BufferTypeFlag TEXTURE = 1 << 4;
+    const BufferTypeFlag LIGHT = 1 << 5;
+    const BufferTypeFlag COMMAND = 1 << 6;
+
+    const BufferTypeFlag FONT_TEXTURE = 1 << 7;
+    const BufferTypeFlag FONT_UNIFORMS = 1 << 8;
+
+    // COMPOSITE FLAGS
+    const BufferTypeFlag MESH_BUFFERS = MESH_VAO | VERTEX | INDEX | UNIFORMS | TEXTURE | LIGHT | COMMAND;
+    const BufferTypeFlag PHYSICS_DEBUG_BUFFERS = MESH_VAO | VERTEX | INDEX | COMMAND;
+    const BufferTypeFlag FONT_BUFFERS = MESH_VAO | VERTEX | INDEX | COMMAND | FONT_TEXTURE | FONT_UNIFORMS;
 };
 
 namespace SausageDefaults {

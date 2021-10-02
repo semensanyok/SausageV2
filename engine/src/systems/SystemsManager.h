@@ -8,6 +8,7 @@
 #include "buffer.h"
 #include "Controller.h"
 #include "TextureManager.h"
+#include "FontManager.h"
 #include "physics.h"
 #include "AsyncTaskManager.h"
 #include "Animation.h"
@@ -24,7 +25,9 @@ public:
 	Controller* controller;
 	Renderer* renderer;
 	RendererContextManager* renderer_context_manager;
+	Samplers* samplers;
 	TextureManager* texture_manager;
+	FontManager* font_manager;
 	FileWatcher* file_watcher;
 	AsyncTaskManager* async_manager;
 	AnimationManager* anim_manager;

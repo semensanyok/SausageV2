@@ -15,7 +15,9 @@ class BulletDebugDrawerBufferConsumer : public BufferConsumer {
 public:
     MeshData* mesh = nullptr;
     MeshManager* mesh_manager;
-    BulletDebugDrawerBufferConsumer(BufferStorage* buffer, MeshManager* mesh_manager) : BufferConsumer( buffer ), mesh_manager{ mesh_manager }{
+    BulletDebugDrawerBufferConsumer(BufferStorage* buffer, MeshManager* mesh_manager) : 
+        BufferConsumer( buffer, BufferType::PHYSICS_DEBUG_BUFFERS), 
+        mesh_manager{ mesh_manager } {
     };
     ~BulletDebugDrawerBufferConsumer() {
     };

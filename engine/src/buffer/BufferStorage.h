@@ -37,22 +37,25 @@ private:
   ///////////
   // UNIFORMS
   ///////////
-  const unsigned long UNIFORMS_STORAGE_SIZE = sizeof(UniformData);
+  const unsigned long UNIFORMS_STORAGE_SIZE = sizeof(MeshUniformData);
   const unsigned long TRANSFORM_OFFSET_STORAGE_SIZE =
       MAX_TRANSFORM_OFFSET * sizeof(unsigned int);
   const unsigned long TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
-
+  
   const GLbitfield flags =
       GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
   const int UNIFORMS_LOC = 0;
   const int TEXTURE_UNIFORM_LOC = 1;
   const int LIGHTS_UNIFORM_LOC = 2;
+  const int FONT_UNIFORMS_LOC = 3;
+  const int FONT_TEXTURE_UNIFORM_LOC = 4;
 
   bool is_need_barrier = false;
 
   unsigned long vertex_start = 0;
   unsigned long index_total = 0;
   unsigned int textures_total = 0;
+
 
   ///////////
   /// Buffers
@@ -73,13 +76,23 @@ private:
   //////////////////////////
   Vertex *vertex_ptr;
   unsigned int *index_ptr;
-  UniformData *uniforms_ptr;
+  MeshUniformData *uniforms_ptr;
   GLuint64 *texture_ptr;
   Lights *light_ptr;
 
   float allocated_percent_vertex = 0.0;
   float allocated_percent_index = 0.0;
 
+  BufferType::BufferTypeFlag bound_buffers;
+  
+  // FONT buffers
+  const unsigned long FONT_UNIFORMS_STORAGE_SIZE = sizeof(FontUniformData);
+  const unsigned long FONT_TEXTURE_STORAGE_SIZE = MAX_FONT_TEXTURES * sizeof(GLuint64);
+  const unsigned long FONT_TRANSFORM_OFFSET_STORAGE_SIZE = MAX_FONT_TRANSFORM_OFFSET * sizeof(unsigned int);
+  FontUniformData* font_uniforms_ptr;
+  GLuint font_texture_buffer;
+  GLuint font_uniforms_buffer;
+  GLuint64 *font_texture_ptr;
 public:
   unsigned long transforms_total;
 
@@ -92,6 +105,7 @@ public:
     static int count = 0;
     id = count++;
     transforms_total = 0;
+    bound_buffers = 0;
   };
   ~BufferStorage(){};
   void Reset() {
@@ -99,6 +113,7 @@ public:
     vertex_start = 0;
     index_total = 0;
     transforms_total = 0;
+    bound_buffers = 0;
   };
   BufferMargins RequestStorage(float buffer_part_percent_vertex,
                                float buffer_part_percent_index);
@@ -140,6 +155,9 @@ public:
   void BufferTransform(vector<MeshData *> &mesh);
   void BufferLights(vector<Light *> &lights);
   void InitMeshBuffers();
-  void BindMeshVAOandBuffers();
+  void BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind);
   void Dispose();
+  
+  void Buffer3DFontTransform();
+  void BufferUIFontTransform();
 };

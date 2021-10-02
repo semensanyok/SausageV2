@@ -347,7 +347,7 @@ void BufferStorage::InitMeshBuffers() {
   glGenBuffers(1, &uniforms_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
   glBufferStorage(GL_SHADER_STORAGE_BUFFER, UNIFORMS_STORAGE_SIZE, NULL, flags);
-  uniforms_ptr = (UniformData *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
+  uniforms_ptr = (MeshUniformData *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
                                                  UNIFORMS_STORAGE_SIZE, flags);
 
   glGenBuffers(1, &texture_buffer);
@@ -356,48 +356,77 @@ void BufferStorage::InitMeshBuffers() {
   texture_ptr = (GLuint64 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
                                              TEXTURE_STORAGE_SIZE, flags);
 
+
   glGenBuffers(1, &light_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
   glBufferStorage(GL_SHADER_STORAGE_BUFFER, LIGHT_STORAGE_SIZE, NULL, flags);
   light_ptr = (Lights *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
                                          LIGHT_STORAGE_SIZE, flags);
+  
+  
+  // Font buffers
+  glGenBuffers(1, &font_texture_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_TEXTURE_STORAGE_SIZE, NULL, flags);
+  font_texture_ptr = (GLuint64 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
+      FONT_TEXTURE_STORAGE_SIZE, flags);
+  glGenBuffers(1, &font_uniforms_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_STORAGE_SIZE, NULL, flags);
+  font_uniforms_ptr = (FontUniformData*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
+      FONT_UNIFORMS_STORAGE_SIZE, flags);
 }
 
-void BufferStorage::BindMeshVAOandBuffers() {
-  // !WARNING. binding buffer after glVertexAttribPointer lead to hardware
-  // crash.
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-
-  glBindVertexArray(mesh_VAO);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, Normal));
-  glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, TexCoords));
-  glEnableVertexAttribArray(3);
-  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, Tangent));
-  glEnableVertexAttribArray(4);
-  glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, Bitangent));
-  glEnableVertexAttribArray(5);
-  glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex),
-                         (void *)offsetof(Vertex, BoneIds));
-  glEnableVertexAttribArray(6);
-  glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, BoneWeights));
-
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, uniforms_buffer);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_UNIFORM_LOC,
-                   texture_buffer);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC, light_buffer);
+void BufferStorage::BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind) {
+  if ((buffers_to_bind & BufferType::MESH_VAO) && !(bound_buffers & BufferType::MESH_VAO)) {
+      glBindVertexArray(mesh_VAO);
+      glEnableVertexAttribArray(0);
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+      glEnableVertexAttribArray(1);
+      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+          (void*)offsetof(Vertex, Normal));
+      glEnableVertexAttribArray(2);
+      glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+          (void*)offsetof(Vertex, TexCoords));
+      glEnableVertexAttribArray(3);
+      glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+          (void*)offsetof(Vertex, Tangent));
+      glEnableVertexAttribArray(4);
+      glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+          (void*)offsetof(Vertex, Bitangent));
+      glEnableVertexAttribArray(5);
+      glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex),
+          (void*)offsetof(Vertex, BoneIds));
+      glEnableVertexAttribArray(6);
+      glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+          (void*)offsetof(Vertex, BoneWeights));
+  }
+  if ((buffers_to_bind & BufferType::VERTEX) && !(bound_buffers & BufferType::VERTEX)) {
+      glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+  }
+  if ((buffers_to_bind & BufferType::UNIFORMS) && !(bound_buffers & BufferType::UNIFORMS)) {
+      glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, uniforms_buffer);
+  }
+  if ((buffers_to_bind & BufferType::TEXTURE) && !(bound_buffers & BufferType::TEXTURE)) {
+      glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_UNIFORM_LOC, texture_buffer);
+  }
+  if ((buffers_to_bind & BufferType::LIGHT) && !(bound_buffers & BufferType::LIGHT)) {
+      glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC, light_buffer);
+  }
+  if ((buffers_to_bind & BufferType::INDEX) && !(bound_buffers & BufferType::INDEX)) {
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+  }
+  if ((buffers_to_bind & BufferType::FONT_TEXTURE) && !(bound_buffers & BufferType::FONT_TEXTURE)) {
+      glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_TEXTURE_UNIFORM_LOC, texture_buffer);
+  }
+  if ((buffers_to_bind & BufferType::FONT_UNIFORMS) && !(bound_buffers & BufferType::FONT_UNIFORMS)) {
+      glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_LOC, uniforms_buffer);
+  }
 }
 void BufferStorage::Dispose() {
   SyncGPUBufAndUnmap();

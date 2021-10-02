@@ -6,14 +6,16 @@ void SystemsManager::Render() {
 
 void SystemsManager::InitSystems() {
 	mesh_manager = new MeshManager();
-	texture_manager = new TextureManager();
 	file_watcher = new FileWatcher();
 	state_manager = new StateManager();
 	camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
 	renderer_context_manager = new RendererContextManager();
 	renderer = new Renderer(renderer_context_manager);
 	renderer_context_manager->InitContext();
-
+	samplers = new Samplers();
+	texture_manager = new TextureManager(samplers);
+	font_manager = new FontManager(samplers);
+	font_manager->InitFontTextures();
 	shaders = {
 		RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl"),
 		RegisterShader("debug_vs.glsl", "debug_fs.glsl"),

@@ -23,9 +23,16 @@ void Renderer::Render(Camera *camera) {
       if (buffer_shader.second.empty()) {
         continue;
       }
-      auto buffer = (*buffer_shader.second.begin())->buffer;
+      auto draw_call_iter = buffer_shader.second.begin();
+      auto buffer_consumer = (*draw_call_iter)->buffer;
+      auto used_buffers = buffer_consumer->GetUsedBuffers();
+      draw_call_iter++;
+      while (draw_call_iter != buffer_shader.second.end()) {
+          used_buffers |= (*draw_call_iter)->buffer->GetUsedBuffers();
+          draw_call_iter++;
+      }
       {
-        buffer->PreDraw();
+        buffer_consumer->PreDraw(used_buffers);
         for (auto draw : buffer_shader.second) {
           if (draw->command_count > 0) {
             glUseProgram(draw->shader->id);
@@ -36,7 +43,7 @@ void Renderer::Render(Camera *camera) {
                                         draw->command_count, 0);
           }
         }
-        buffer->PostDraw();
+        buffer_consumer->PostDraw();
       }
       // CheckGLError();
     }

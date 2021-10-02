@@ -6,17 +6,13 @@
 
 class TextureManager {
     map<size_t, Texture*> path_to_tex;
+    Samplers* samplers;
 public:
-    Samplers samplers;
-    bool is_samplers_init = false;
-    inline TextureManager() {};
+    TextureManager(Samplers* samplers) : samplers{ samplers } {};
     /**
     * load texture array for mesh. diffuse + normal + height + specular.
     */
-    Texture* LoadTextureArray(MaterialTexNames& tex_names);
-
-    void InitSamplers();
-
+    Texture* LoadTextureArray(MaterialTexNames& tex_names); 
 private:
     GLenum GetTexFormat(int bytes_per_pixel, bool for_storage);
 
