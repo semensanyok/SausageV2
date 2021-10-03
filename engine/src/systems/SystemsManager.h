@@ -38,7 +38,7 @@ public:
 
 	BufferManager* buffer_manager;
 	
-	Shaders shaders;
+	Shaders* shaders;
 
 	SystemsManager() {};
 	~SystemsManager() {};

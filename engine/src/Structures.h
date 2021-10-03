@@ -199,6 +199,18 @@ struct ActiveAnimation {
   Animation *anim;
 };
 
+// TODO: REFACTOR MESH GOD
+//class Movable {
+//    mat4 transform;
+//
+//};
+//
+//class Textured {
+//public:
+//    Texture* texture;
+//    Textured() : texture{ nullptr } {};
+//};
+
 class MeshData {
 public:
   unsigned long id;
@@ -222,6 +234,13 @@ public:
   MeshData()
       : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, transform_offset{0}, base_mesh{ nullptr },
         texture{nullptr}, armature{nullptr}, is_transparent{false} {};
+};
+
+class MeshDataFontUI : MeshData {
+
+};
+class MeshDataFont3D : MeshData {
+
 };
 
 class AnimMesh {
@@ -288,6 +307,8 @@ struct Shaders {
   Shader *blinn_phong;
   Shader *bullet_debug;
   Shader *stencil;
+  Shader* font_ui;
+  Shader* font_3d;
 };
 
 struct MeshUniformData {

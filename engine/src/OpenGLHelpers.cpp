@@ -143,6 +143,12 @@ void LogShaderFull(GLuint programme) {
 // any calls from other threads results in error.
 bool CheckGLError(const std::source_location& location) {
 	if (std::this_thread::get_id() != main_thread_id) {
+		std::cout << "SKIP CheckGLError error called not inside main thread: '"
+			<< "' at: "
+			<< location.file_name() << "("
+			<< location.line() << ":"
+			<< location.column() << ")#"
+			<< location.function_name() << std::endl;
 		return false;
 	}
 	int err = glGetError();

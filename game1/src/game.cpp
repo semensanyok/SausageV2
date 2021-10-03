@@ -16,7 +16,6 @@ void Init() {
 	scene = new Scene(systems_manager);
 	scene->Init();
 	CheckGLError();
-	main_thread_id = this_thread::get_id();
 }
 
 

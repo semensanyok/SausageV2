@@ -5,7 +5,7 @@ void BufferManager::Init() {
 	storage->InitMeshBuffers();
 	mesh_data_buffer = new MeshDataBufferConsumer(storage);
 	mesh_data_buffer->Init();
-	font_buffer = new FontBufferConsumer(storage);
+	font_buffer = new FontBufferConsumer(storage, mesh_manager);
 	font_buffer->Init();
 	bullet_debug_drawer_buffer = new BulletDebugDrawerBufferConsumer(storage, mesh_manager);
 	bullet_debug_drawer_buffer->Init();

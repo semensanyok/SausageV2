@@ -19,7 +19,7 @@ public:
 
 	DrawCall* draw_call;
 
-	Shaders shaders;
+	Shaders* shaders;
 	// custom draws per shader
 	vector<MeshData*> all_meshes;
 	vector<MeshData*> all_transparent_meshes;
@@ -36,7 +36,7 @@ public:
 	Scene(SystemsManager* systems_manager) :
 		systems_manager{ systems_manager }, shaders{ systems_manager->shaders }{
 		draw_call = new DrawCall();
-		draw_call->shader = shaders.blinn_phong;
+		draw_call->shader = shaders->blinn_phong;
 		draw_call->mode = GL_TRIANGLES;
 		draw_call->buffer = (BufferConsumer*)systems_manager->buffer_manager->mesh_data_buffer;
 		draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND);

@@ -13,4 +13,8 @@ public:
 	static void run() {
 		//TestRenderFont();
 	};
+
+	static void InitContext() {
+
+	}
 };

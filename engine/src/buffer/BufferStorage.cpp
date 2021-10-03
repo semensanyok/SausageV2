@@ -378,6 +378,7 @@ void BufferStorage::InitMeshBuffers() {
 }
 
 void BufferStorage::BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind) {
+  // TODO: separate Font VAO. it needs less data.
   if ((buffers_to_bind & BufferType::MESH_VAO) && !(bound_buffers & BufferType::MESH_VAO)) {
       glBindVertexArray(mesh_VAO);
       glEnableVertexAttribArray(0);

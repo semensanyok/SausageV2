@@ -5,6 +5,7 @@ void SystemsManager::Render() {
 }
 
 void SystemsManager::InitSystems() {
+	main_thread_id = this_thread::get_id();
 	mesh_manager = new MeshManager();
 	file_watcher = new FileWatcher();
 	state_manager = new StateManager();
@@ -12,19 +13,21 @@ void SystemsManager::InitSystems() {
 	renderer_context_manager = new RendererContextManager();
 	renderer = new Renderer(renderer_context_manager);
 	renderer_context_manager->InitContext();
-	samplers = new Samplers();
-	texture_manager = new TextureManager(samplers);
-	font_manager = new FontManager(samplers);
-	font_manager->InitFontTextures();
-	shaders = {
-		RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl"),
-		RegisterShader("debug_vs.glsl", "debug_fs.glsl"),
-		RegisterShader("stencil_vs.glsl", "stencil_fs.glsl")
-	};
-
-	physics_manager = new PhysicsManager(state_manager);
 	buffer_manager = new BufferManager(mesh_manager);
 	buffer_manager->Init();
+	samplers = new Samplers();
+	samplers->Init();
+	texture_manager = new TextureManager(samplers);
+	shaders = new Shaders{
+		RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl"),
+		RegisterShader("debug_vs.glsl", "debug_fs.glsl"),
+		RegisterShader("stencil_vs.glsl", "stencil_fs.glsl"),
+		RegisterShader("3d_font_vs.glsl", "3d_font_fs.glsl"),
+		RegisterShader("ui_font_vs.glsl", "ui_font_fs.glsl")
+	};
+	font_manager = new FontManager(samplers, buffer_manager->font_buffer, shaders);
+	font_manager->InitFontTextures();
+	physics_manager = new PhysicsManager(state_manager);
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
 	_CreateDebugDrawer();
 	bullet_debug_drawer->Activate();
@@ -114,7 +117,7 @@ void SystemsManager::_SubmitAsyncTasks() {
 }
 
 void SystemsManager::_CreateDebugDrawer() {
-	bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer_manager->bullet_debug_drawer_buffer, shaders.bullet_debug, state_manager);
+	bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer_manager->bullet_debug_drawer_buffer, shaders->bullet_debug, state_manager);
 	//int debug_mask = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints;
 	int debug_mask = btIDebugDraw::DBG_DrawWireframe;
 	bullet_debug_drawer->setDebugMode(debug_mask);
