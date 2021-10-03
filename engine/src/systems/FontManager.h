@@ -51,7 +51,7 @@ public:
     };
 	~FontManager() {};
     void Init() {
-        InitFontTextures();
+        _InitFontTextures();
         renderer->AddDraw(draw_call_ui);
         draw_call_ui->buffer->ActivateCommandBuffer(draw_call_ui->command_buffer);
         
@@ -72,7 +72,7 @@ public:
         vector<vec3> vertices;
         vector<vec3> colors;
         vector<unsigned int> indices;
-        auto charmap = this->size_chars.begin();
+        auto charmap = this->size_chars.begin()->second;
         for (auto chr : text) {
             auto character = charmap['A'];
             auto u = character.size.x;
@@ -98,7 +98,8 @@ public:
         }
         buffer->BufferMeshDataUI(vertices, indices, colors, { 0,0,0 }, handle);
     }
-    void InitFontTextures() {
+private:
+    void _InitFontTextures() {
         this->size_chars.insert(pair<int, map<char, Character>>(FontSizes::STANDART, {}));
 
         GLuint texture_id;

@@ -11,7 +11,7 @@ int main()
 	//Test1::run();
 	//GLMHelpersTest::run();
 	//AssetUtilsTest::run();
-	//FontManagerTest::run();
-	RendererContextManagerTest::run();
+	//RendererContextManagerTest::run();
+	FontManagerTest().run();
 	return 0;
 }
