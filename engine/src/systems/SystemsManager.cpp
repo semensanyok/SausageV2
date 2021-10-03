@@ -25,7 +25,7 @@ void SystemsManager::InitSystems() {
 		RegisterShader("3d_font_vs.glsl", "3d_font_fs.glsl"),
 		RegisterShader("ui_font_vs.glsl", "ui_font_fs.glsl")
 	};
-	font_manager = new FontManager(samplers, buffer_manager->font_buffer, shaders);
+	font_manager = new FontManager(samplers, buffer_manager->font_buffer, renderer, shaders);
 	font_manager->Init();
 	physics_manager = new PhysicsManager(state_manager);
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS

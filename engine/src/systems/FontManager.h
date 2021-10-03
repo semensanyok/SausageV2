@@ -35,7 +35,8 @@ public:
 	
     FontManager(Samplers* samplers,
         FontBufferConsumer* buffer,
-        Shaders* shaders) : samplers{ samplers }, buffer{ buffer } {
+        Renderer* renderer,
+        Shaders* shaders) : samplers{ samplers }, buffer{ buffer }, renderer{ renderer } {
         draw_call_ui = new DrawCall();
         draw_call_ui->shader = shaders->font_ui;
         draw_call_ui->mode = GL_TRIANGLES;
