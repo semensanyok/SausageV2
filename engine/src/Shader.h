@@ -17,6 +17,8 @@ public:
 	GLuint vs_in_use = 0, fs_in_use = 0;
 	bool is_vs_updated = false;
 	bool is_fs_updated = false;
+	map<string, mat4*> mat4_uniforms;
+	map<string, vec3*> vec3_uniforms;
 
 	inline bool operator==(Shader& other) {
 		return id == other.id;
@@ -32,6 +34,20 @@ public:
 	void InitOrReload();
 	void ReloadVS();
 	void ReloadFS();
+	void SetMat4Uniform(string name, mat4* uniform) {
+		mat4_uniforms[name] = uniform;
+	}
+	void SetVec3Uniform(string name, vec3* uniform) {
+		vec3_uniforms[name] = uniform;
+	}
+	void SetUniforms() {
+		for (auto& name_uni : mat4_uniforms) {
+			setMat4(name_uni.first, *(name_uni.second));
+		}
+		for (auto& name_uni : vec3_uniforms) {
+			setVec3(name_uni.first, *(name_uni.second));
+		}
+	}
 private:
 	void CreateProgram();
 	void CompileFS();

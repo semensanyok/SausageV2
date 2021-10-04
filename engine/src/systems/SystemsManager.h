@@ -55,4 +55,5 @@ public:
 private:
 	void _SubmitAsyncTasks();
 	void _CreateDebugDrawer();
+	void _SetupShaders();
 };

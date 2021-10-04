@@ -18,13 +18,7 @@ void SystemsManager::InitSystems() {
 	samplers = new Samplers();
 	samplers->Init();
 	texture_manager = new TextureManager(samplers);
-	shaders = new Shaders{
-		RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl"),
-		RegisterShader("debug_vs.glsl", "debug_fs.glsl"),
-		RegisterShader("stencil_vs.glsl", "stencil_fs.glsl"),
-		RegisterShader("3d_font_vs.glsl", "3d_font_fs.glsl"),
-		RegisterShader("ui_font_vs.glsl", "ui_font_fs.glsl")
-	};
+	_SetupShaders();
 	font_manager = new FontManager(samplers, buffer_manager->font_buffer, renderer, shaders);
 	font_manager->Init();
 	physics_manager = new PhysicsManager(state_manager);
@@ -117,8 +111,22 @@ void SystemsManager::_SubmitAsyncTasks() {
 }
 
 void SystemsManager::_CreateDebugDrawer() {
-	bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer_manager->bullet_debug_drawer_buffer, shaders->bullet_debug, state_manager);
+	bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer_manager->bullet_debug_drawer_buffer, shaders, state_manager);
 	//int debug_mask = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints;
 	int debug_mask = btIDebugDraw::DBG_DrawWireframe;
 	bullet_debug_drawer->setDebugMode(debug_mask);
 }
+
+void SystemsManager::_SetupShaders() {
+	shaders = new Shaders{
+		RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl"),
+		RegisterShader("debug_vs.glsl", "debug_fs.glsl"),
+		RegisterShader("stencil_vs.glsl", "stencil_fs.glsl"),
+		RegisterShader("ui_font_vs.glsl", "ui_font_fs.glsl"),
+		RegisterShader("3d_font_vs.glsl", "3d_font_fs.glsl"),
+	};
+	shaders->blinn_phong->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
+	shaders->blinn_phong->SetVec3Uniform(string("view_pos"), &(camera->pos));
+	shaders->bullet_debug->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
+}
+

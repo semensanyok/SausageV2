@@ -25,7 +25,9 @@ private:
 	set<pair<int, int>> buf_shad_ids;
 public:
 	SDL_Renderer* renderer;
-	Renderer(RendererContextManager* context_manager) : context_manager{ context_manager } {};
+	Renderer(
+		RendererContextManager* context_manager
+	) : context_manager{ context_manager } {};
 	~Renderer() {};
 	void Render(Camera* camera);
 	void RemoveBuffer(BufferStorage* buffer);

@@ -5,6 +5,7 @@
 #include <AssetUtils.h>
 #include <SystemsManager.h>
 #include <FontManager.h>
+#include <Gui.h>
 
 using namespace std;
 using namespace glm;
@@ -15,6 +16,7 @@ class FontManagerTest {
 	string teststr1 = "qwe";
 public:
 	void run() {
+		Gui::enable = false;
 		SDL_main2();
 	};
 	void SubmitTextDraw() {
@@ -23,7 +25,7 @@ public:
 	int SDL_main2()
 	{
 		Init();
-
+		SubmitTextDraw();
 		systems_manager->async_manager->Run();
 		while (!GameSettings::quit) {
 			systems_manager->PreUpdate();
@@ -38,7 +40,9 @@ public:
 
 			SDL_Event e;
 			while (SDL_PollEvent(&e)) {
-				ImGui_ImplSDL2_ProcessEvent(&e);
+				if (Gui::enable) {
+					ImGui_ImplSDL2_ProcessEvent(&e);
+				}
 				systems_manager->controller->ProcessEvent(&e);
 			}
 			systems_manager->Render();

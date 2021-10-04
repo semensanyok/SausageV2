@@ -37,8 +37,9 @@ void Renderer::Render(Camera *camera) {
           if (draw->command_count > 0) {
             glUseProgram(draw->shader->id);
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer->id);
-            draw->shader->setMat4("projection_view", camera->projection_view);
-            draw->shader->setVec3("view_pos", camera->pos);
+            draw->shader->SetUniforms();
+            // draw->shader->setMat4("projection_view", camera->projection_view);
+            // draw->shader->setVec3("view_pos", camera->pos);
             glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
                                         draw->command_count, 0);
           }

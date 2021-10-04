@@ -19,6 +19,7 @@ private:
 	friend class Renderer;
 	friend class Controller;
 	friend class Scene;
+	friend class SystemsManager;
 
 	mat4 view_matrix;
 	mat4 projection_matrix;

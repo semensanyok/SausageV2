@@ -17,7 +17,12 @@ struct ButtonGui {
 class Gui {
 	static inline vector<ButtonGui> buttons_callbacks;
 public:
+	static inline bool enable = true;
+
 	static void InitGuiContext(SDL_Window* window, SDL_GLContext& context) {
+		if (!enable) {
+			return;
+		}
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO();
@@ -27,9 +32,15 @@ public:
 		ImGui_ImplOpenGL3_Init(glsl_version);
 	}
 	static void AddButton(ButtonGui button) {
+		if (!enable) {
+			return;
+		}
 		buttons_callbacks.push_back(button);
 	}
 	static void RenderGui(SDL_Window* window, Camera* camera) {
+		if (!enable) {
+			return;
+		}
 		static bool show_demo_window = true;
 		static bool show_another_window = true;
 
@@ -124,6 +135,9 @@ public:
 	}
 
 	static void CleanupGui() {
+		if (!enable) {
+			return;
+		}
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplSDL2_Shutdown();
 		ImGui::DestroyContext();
