@@ -236,10 +236,10 @@ public:
         texture{nullptr}, armature{nullptr}, is_transparent{false} {};
 };
 
-class MeshDataFontUI : MeshData {
+class MeshDataFontUI : public MeshData {
 
 };
-class MeshDataFont3D : MeshData {
+class MeshDataFont3D : public MeshData {
 
 };
 

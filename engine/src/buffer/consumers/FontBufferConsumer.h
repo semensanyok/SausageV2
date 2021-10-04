@@ -11,7 +11,7 @@
 using namespace std;
 using namespace glm;
 
-class FontBufferConsumer : BufferConsumer {
+class FontBufferConsumer : public BufferConsumer {
     MeshManager* mesh_manager;
     BufferMargins margins;
     unsigned long vertex_total;
@@ -30,11 +30,12 @@ public:
         vector<vec3>& vertices,
         vector<unsigned int>& indices,
         vector<vec3>& colors,
+        vector<vec2>& uvs,
         vec3 relative_position,
         Texture* font_data,
         bool is_transform_used = true)
     {
-        shared_ptr<MeshLoadData> load_data = mesh_manager->CreateMesh(vertices, indices, colors);
+        shared_ptr<MeshLoadData> load_data = mesh_manager->CreateMesh(vertices, indices, colors, uvs);
         auto mesh = load_data.get()->mesh;
         mesh->name = "TextUI";
         mesh->vertex_offset = margins.start_vertex;

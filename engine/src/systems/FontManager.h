@@ -31,6 +31,11 @@ class FontManager {
     map<int, map<char, Character>> size_chars;
 
     const unsigned int command_buffer_size = 1;
+
+    vector<vec3> vertices;
+    vector<vec3> colors;
+    vector<vec2> uvs;
+    vector<unsigned int> indices;
 public:
 	
     FontManager(Samplers* samplers,
@@ -70,9 +75,6 @@ public:
     }
     void WriteTextUI(string& text, int screen_x, int screen_y) {
         // TODO: make each font letter instanced mesh.
-        vector<vec3> vertices;
-        vector<vec3> colors;
-        vector<unsigned int> indices;
         auto charmap = this->size_chars.begin()->second;
         for (auto chr : text) {
             auto character = charmap['A'];
@@ -82,12 +84,15 @@ public:
             vertices.push_back({0,v,'A'});
             vertices.push_back({u,0,'A'});
             vertices.push_back({u,v,'A'});
-            
             colors.push_back({ 255, 0, 0 });
             colors.push_back({ 255, 0, 0 });
             colors.push_back({ 255, 0, 0 });
             colors.push_back({ 255, 0, 0 });
-
+            // TODO: fix uv order?
+            uvs.push_back({0,0});
+            uvs.push_back({0,1});
+            uvs.push_back({1,0});
+            uvs.push_back({1,1});
 
             indices.push_back(1);
             indices.push_back(0);
@@ -97,7 +102,17 @@ public:
             indices.push_back(3);
             break;  
         }
-        buffer->BufferMeshDataUI(vertices, indices, colors, { 0,0,0 }, handle);
+    }
+    void Update() {
+        flush();
+    }
+    void flush() {
+        auto mesh_data = buffer->BufferMeshDataUI(vertices, indices, colors, uvs, { 0,0,0 }, handle);
+        buffer->AddCommand(mesh_data->command, draw_call_ui->command_buffer);
+        vertices.clear();
+        indices.clear();
+        colors.clear();
+        uvs.clear();
     }
 private:
     void _InitFontTextures() {

@@ -61,6 +61,12 @@ public:
                                                vector<vec3> &normals,
         bool is_new_mesh_data = true);
 
+    shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices,
+                                        vector<unsigned int>& indices,
+                                        vector<vec3>& normals,
+                                        vector<vec2>& uvs,
+        bool is_new_mesh_data = true);
+
     string GetBoneName(const char* bone, Armature* armature, bool is_dae = false);
 private:
     using weight_comparator = decltype([](const pair<Bone*, aiVertexWeight>& lhs, const pair<Bone*, aiVertexWeight>& rhs) {

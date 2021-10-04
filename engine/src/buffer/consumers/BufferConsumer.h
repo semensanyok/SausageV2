@@ -21,6 +21,5 @@ public:
 	CommandBuffer* CreateCommandBuffer(unsigned int size);
 	void RemoveCommandBuffer(CommandBuffer* to_remove);
 	int AddCommands(vector<DrawElementsIndirectCommand>& active_commands, CommandBuffer* buf, int command_offset = -1);
-	int AddCommand(DrawElementsIndirectCommand& command, CommandBuffer* buf,
-		int command_offset = -1);
+	int AddCommand(DrawElementsIndirectCommand& command, CommandBuffer* buf, int command_offset = -1);
 };

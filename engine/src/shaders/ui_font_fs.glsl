@@ -4,10 +4,10 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 
 in vs_out {
-    vec2 uv;
     flat int base_instance;
     flat int glyph_id;
-    vec3 glyph_color;
+    vec3 color;
+    vec2 uv;
 } In;
 
 layout (std430, binding = 4) buffer FontTextureArray
@@ -18,5 +18,5 @@ layout (std430, binding = 4) buffer FontTextureArray
 out vec4 color;
 
 void main(void) {
-  color = vec4(In.glyph_color, texture(glyphs, vec3(In.uv, In.glyph_id)).r);
+  color = vec4(In.color, texture(glyphs, vec3(In.uv, In.glyph_id)).r);
 }

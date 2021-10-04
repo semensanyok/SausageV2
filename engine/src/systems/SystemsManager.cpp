@@ -69,6 +69,7 @@ void SystemsManager::Update() {
 	controller->Update();
 	camera->Update();
 	controller_event_processor->Update();
+	font_manager->Update();
 }
 
 void SystemsManager::Clear() {

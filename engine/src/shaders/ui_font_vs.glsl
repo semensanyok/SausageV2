@@ -6,7 +6,8 @@
 
 layout (location = 0) in vec3 position_glyph_id;
 // for ui font shader = (glyph_id, screen_x, screen_y)
-layout (location = 1) in vec3 glyph_color;
+layout (location = 1) in vec3 color;
+layout (location = 2) in vec2 uv;
 
 const uint MAX_TRANSFORM = 4000;
 const uint MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
@@ -22,13 +23,15 @@ layout (std430, binding = 3) buffer FontUniformData
 out vs_out {
     int base_instance;
     int glyph_id;
-    vec3 glyph_color;
+    vec3 color;
+    vec2 uv;
 } Out;
 
 void main()
 {
     mat4 transform = transforms[transform_offset[gl_BaseInstanceARB] + gl_InstanceID];
     gl_Position = transform * vec4(position_glyph_id.xy, 0.0 , 1.0);
-    Out.glyph_color = glyph_color;
+    Out.color = color;
     Out.glyph_id = int(position_glyph_id.z);
+    Out.uv = uv.xy;
 }

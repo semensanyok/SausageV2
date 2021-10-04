@@ -5,9 +5,10 @@
 #extension GL_ARB_shader_draw_parameters : require
 
 layout (location = 0) in vec3 position;
+layout (location = 1) in vec3 color;
 // for font shader use normal attrib pointer as glyph_id
-layout (location = 1) in vec3 glyph_id;
-layout (location = 2) in vec3 glyph_color;
+layout (location = 2) in vec2 uv;
+layout (location = 3) in vec3 glyph_id;
 
 const uint MAX_TRANSFORM = 4000;
 const uint MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
@@ -25,13 +26,14 @@ layout (std430, binding = 3) buffer FontUniformData
 out vs_out {
     int base_instance;
     int glyph_id;
-    vec3 glyph_color;
+    vec3 color;
+    vec2 uv;
 } Out;
 
 void main()
 {
     mat4 transform = transforms[transform_offset[gl_BaseInstanceARB] + gl_InstanceID];
     gl_Position = projection_view * transform * vec4(position, 1.0);
-    Out.glyph_color = glyph_color;
+    Out.color = color;
     Out.glyph_id = int(glyph_id.x);
 }

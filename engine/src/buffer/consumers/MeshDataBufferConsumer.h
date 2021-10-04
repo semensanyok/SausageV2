@@ -10,7 +10,7 @@
 
 using namespace std;
 
-class MeshDataBufferConsumer : BufferConsumer {
+class MeshDataBufferConsumer : public BufferConsumer {
     BufferMargins margins;
     unsigned long vertex_total = 0;
     unsigned long index_total = 0;

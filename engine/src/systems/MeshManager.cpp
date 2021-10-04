@@ -195,6 +195,27 @@ shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<vec3>& vertices, vector<
     return CreateMesh(positions, indices, nullptr, is_new_mesh_data);
 }
 
+shared_ptr<MeshLoadData> MeshManager::CreateMesh(
+    vector<vec3>& vertices,
+    vector<unsigned int>& indices,
+    vector<vec3>& normals,
+    vector<vec2>& uvs,
+    bool is_new_mesh_data) {
+    vector<Vertex> positions;
+    for (int i = 0; i < vertices.size(); i++) {
+        Vertex vert;
+        vert.Position = vertices[i];
+        if (!normals.empty()) {
+            vert.Normal = normals[i];
+        }
+        if (!uvs.empty()) {
+            vert.TexCoords = uvs[i];
+        }
+        positions.push_back(vert);
+    }
+    return CreateMesh(positions, indices, nullptr, is_new_mesh_data);
+}
+
 string MeshManager::GetBoneName(const char* bone, Armature* armature, bool is_dae) {
     string name = string(bone);
     if (is_dae) {
