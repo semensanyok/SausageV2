@@ -160,4 +160,7 @@ public:
   
   void Buffer3DFontTransform();
   void BufferUIFontTransform();
+  void BufferFontTextureHandle(Texture* texture) {
+      font_texture_ptr[0] = texture->texture_handle_ARB;
+  };
 };

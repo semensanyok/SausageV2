@@ -4,8 +4,8 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 
 in vs_out {
-    int base_instance;
-    int glyph_id;
+    flat int base_instance;
+    flat int glyph_id;
     vec3 color;
     vec2 uv;
 } In;

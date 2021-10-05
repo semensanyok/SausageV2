@@ -14,9 +14,9 @@ using namespace glm;
 class FontBufferConsumer : public BufferConsumer {
     MeshManager* mesh_manager;
     BufferMargins margins;
-    unsigned long vertex_total;
-    unsigned long index_total;
-    unsigned long meshes_total;
+    unsigned long vertex_total = 0;
+    unsigned long index_total = 0;
+    unsigned long meshes_total = 0;
 public:
     FontBufferConsumer(BufferStorage* buffer, MeshManager* mesh_manager) : 
         BufferConsumer(buffer, BufferType::FONT_BUFFERS),
@@ -51,6 +51,9 @@ public:
     }
     void BufferTransform() {
 
+    }
+    void BufferFontTextureHandle(Texture* texture) {
+        buffer->BufferFontTextureHandle(texture);
     }
     void Init() {
         margins = buffer->RequestStorage(BufferSettings::Margins::FONT_VERTEX_PART, BufferSettings::Margins::FONT_INDEX_PART);

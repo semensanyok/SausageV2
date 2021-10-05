@@ -63,13 +63,13 @@ void SystemsManager::Reset() {
 void SystemsManager::PreUpdate() {
 	state_manager->UpdateDeltaTimeTimings();
 	camera->PreUpdate(state_manager->delta_time);
+	font_manager->PreUpdate();
 }
 
 void SystemsManager::Update() {
 	controller->Update();
 	camera->Update();
 	controller_event_processor->Update();
-	font_manager->Update();
 }
 
 void SystemsManager::Clear() {
@@ -124,10 +124,11 @@ void SystemsManager::_SetupShaders() {
 		RegisterShader("debug_vs.glsl", "debug_fs.glsl"),
 		RegisterShader("stencil_vs.glsl", "stencil_fs.glsl"),
 		RegisterShader("ui_font_vs.glsl", "ui_font_fs.glsl"),
-		RegisterShader("3d_font_vs.glsl", "3d_font_fs.glsl"),
+		//RegisterShader("3d_font_vs.glsl", "3d_font_fs.glsl"),
 	};
 	shaders->blinn_phong->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
 	shaders->blinn_phong->SetVec3Uniform(string("view_pos"), &(camera->pos));
 	shaders->bullet_debug->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
+	shaders->font_ui->SetMat4Uniform(string("projection_ortho"), &(camera->projection_matrix_ortho));
 }
 

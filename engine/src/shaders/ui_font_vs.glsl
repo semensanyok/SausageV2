@@ -14,6 +14,8 @@ const uint MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
 
 out vec2 TexCoords;
 
+uniform mat4 projection_ortho;
+
 layout (std430, binding = 3) buffer FontUniformData
 {
     mat4 transforms[MAX_TRANSFORM];
@@ -21,8 +23,8 @@ layout (std430, binding = 3) buffer FontUniformData
 };
 
 out vs_out {
-    int base_instance;
-    int glyph_id;
+    flat int base_instance;
+    flat int glyph_id;
     vec3 color;
     vec2 uv;
 } Out;
@@ -30,8 +32,9 @@ out vs_out {
 void main()
 {
     mat4 transform = transforms[transform_offset[gl_BaseInstanceARB] + gl_InstanceID];
-    gl_Position = transform * vec4(position_glyph_id.xy, 0.0 , 1.0);
+    gl_Position = projection_ortho * transform * vec4(position_glyph_id.xy, 0.0 , 1.0);
     Out.color = color;
     Out.glyph_id = int(position_glyph_id.z);
     Out.uv = uv.xy;
+    Out.base_instance = gl_BaseInstanceARB;
 }

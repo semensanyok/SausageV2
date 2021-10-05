@@ -23,6 +23,7 @@ private:
 
 	mat4 view_matrix;
 	mat4 projection_matrix;
+	mat4 projection_matrix_ortho;
 	mat4 projection_view;
 	mat4 projection_view_inverse;
 	vec3 pos;
@@ -70,6 +71,7 @@ public:
 		this->world_up = world_up;
 		this->up = up;
 		this->projection_matrix = perspective(radians(this->FOV), (float)this->width / (float)this->height, this->near_plane, this->far_plane);
+		this->projection_matrix_ortho = ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
 		UpdateCameraFrontUpRight();
 		_UpdateMatrices();
 	};

@@ -98,6 +98,7 @@ void Camera::ResizeCallback(int new_width, int new_height) {
   this->projection_matrix =
       perspective(radians(this->FOV), (float)this->width / (float)this->height,
                   this->near_plane, this->far_plane);
+  this->projection_matrix_ortho = ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
 
   is_update_need = true;
 }

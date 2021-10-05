@@ -103,16 +103,16 @@ public:
             break;  
         }
     }
-    void Update() {
+    void PreUpdate() {
         flush();
     }
     void flush() {
         auto mesh_data = buffer->BufferMeshDataUI(vertices, indices, colors, uvs, { 0,0,0 }, handle);
         buffer->AddCommand(mesh_data->command, draw_call_ui->command_buffer);
-        vertices.clear();
-        indices.clear();
-        colors.clear();
-        uvs.clear();
+        //vertices.clear();
+        //indices.clear();
+        //colors.clear();
+        //uvs.clear();
     }
 private:
     void _InitFontTextures() {
@@ -177,5 +177,7 @@ private:
         GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers->font_sampler);
         CheckGLError();
         handle = new Texture(texture_id, tex_handle, {});
+
+        buffer->BufferFontTextureHandle(handle);
     }
 };
