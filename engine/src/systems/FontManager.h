@@ -107,7 +107,8 @@ public:
         flush();
     }
     void flush() {
-        auto mesh_data = buffer->BufferMeshDataUI(vertices, indices, colors, uvs, { 0,0,0 }, handle);
+        auto trans = mat4(1.0);
+        auto mesh_data = buffer->BufferMeshDataUI(vertices, indices, colors, uvs, { 0,0,0 }, handle, trans);
         buffer->AddCommand(mesh_data->command, draw_call_ui->command_buffer);
         //vertices.clear();
         //indices.clear();

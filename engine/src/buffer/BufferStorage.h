@@ -159,7 +159,15 @@ public:
   void Dispose();
   
   void Buffer3DFontTransform();
-  void BufferUIFontTransform();
+  void BufferUIFontTransform(MeshDataFontUI* mesh) {
+      font_uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
+          mesh->transform;
+      if (mesh->instance_id == 0) {
+          font_uniforms_ptr->transform_offset[mesh->buffer_id + mesh->instance_id] =
+              mesh->transform_offset;
+      }
+      is_need_barrier = true;
+  };
   void BufferFontTextureHandle(Texture* texture) {
       font_texture_ptr[0] = texture->texture_handle_ARB;
   };

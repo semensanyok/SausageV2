@@ -11,5 +11,15 @@
     <mapping directory="$PROJECT_DIR$/dependencies/imgui" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/dependencies/libRocket" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/dependencies/zlib" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/assimp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/bullet3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/freetype" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/freetype/subprojects/dlg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/glad" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/glm" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/imgui" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/libRocket" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/stb" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/engine/dependencies/zlib" vcs="Git" />
   </component>
 </project>

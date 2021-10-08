@@ -33,21 +33,23 @@ public:
         vector<vec2>& uvs,
         vec3 relative_position,
         Texture* font_data,
-        bool is_transform_used = true)
+        mat4& transform)
     {
         shared_ptr<MeshLoadData> load_data = mesh_manager->CreateMesh(vertices, indices, colors, uvs);
-        auto mesh = load_data.get()->mesh;
+        MeshDataFontUI* mesh = (MeshDataFontUI*)load_data.get()->mesh;
         mesh->name = "TextUI";
         mesh->vertex_offset = margins.start_vertex;
         mesh->index_offset = margins.start_index;
         mesh->transform = translate(mat4(1), relative_position);
         buffer->BufferMeshData(load_data, vertex_total, index_total, meshes_total,
-            margins, SausageDefaults::DEFAULT_MESH_DATA_VECTOR, is_transform_used);
-        
+            margins, SausageDefaults::DEFAULT_MESH_DATA_VECTOR, false);
+
         mesh->texture = font_data;
         font_data->MakeResident();
         
-        return (MeshDataFontUI*)mesh;
+        mesh->transform = transform;
+        buffer->BufferUIFontTransform(mesh);
+        return mesh;
     }
     void BufferTransform() {
 

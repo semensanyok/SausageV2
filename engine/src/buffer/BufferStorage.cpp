@@ -422,7 +422,7 @@ void BufferStorage::BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind
   }
   if ((buffers_to_bind & BufferType::FONT_TEXTURE) && !(bound_buffers & BufferType::FONT_TEXTURE)) {
       glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_TEXTURE_UNIFORM_LOC, texture_buffer);
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_TEXTURE_UNIFORM_LOC, font_texture_buffer);
   }
   if ((buffers_to_bind & BufferType::FONT_UNIFORMS) && !(bound_buffers & BufferType::FONT_UNIFORMS)) {
       glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
