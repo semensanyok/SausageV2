@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sausage.h"
 #include "Settings.h"
+#include "sausage.h"
 
 using namespace std;
 using namespace glm;
@@ -38,8 +38,11 @@ struct DrawElementsIndirectCommand {
   GLuint baseInstance;
   // if randomly initialized and used - hardware crash
   DrawElementsIndirectCommand()
-      : count{0}, instanceCount{0}, firstIndex{0}, baseVertex{0}, baseInstance{
-                                                                      0} {};
+      : count{0},
+        instanceCount{0},
+        firstIndex{0},
+        baseVertex{0},
+        baseInstance{0} {};
 };
 // Indirect structures end
 // --------------------------------------------------------------------------------------------------------------------
@@ -47,13 +50,13 @@ struct DrawElementsIndirectCommand {
 // Texture structures start
 
 enum TextureType {
-  Diffuse,  // sampler2DArray   index 0
-  Normal,   //                        1
-  Specular, //                        2 roughness in PBR
-  AO,       //                        3
-  Height,   //                        4 PBR
-  Metal,    //                        5 PBR
-            // Opacity, //                        6 use Diffuse alpha
+  Diffuse,   // sampler2DArray   index 0
+  Normal,    //                        1
+  Specular,  //                        2 roughness in PBR
+  AO,        //                        3
+  Height,    //                        4 PBR
+  Metal,     //                        5 PBR
+             // Opacity, //                        6 use Diffuse alpha
 };
 
 struct MaterialTexNames {
@@ -76,31 +79,33 @@ struct MaterialTexNames {
 };
 class Samplers {
   bool is_samplers_init = false;
-public:
+
+ public:
   GLuint basic_repeat = 0;
   GLuint font_sampler = 0;
-  Samplers() {
-  }
+  Samplers() {}
   void Init() {
-      if (!is_samplers_init) {
-          glCreateSamplers(1, &basic_repeat);
-          glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
-          glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_T, GL_REPEAT);
-          glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-          // glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-          //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-          //glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); // bilinear
-          glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // trilinear
-          CheckGLError();
+    if (!is_samplers_init) {
+      glCreateSamplers(1, &basic_repeat);
+      glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glSamplerParameteri(basic_repeat, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      // glSamplerParameteri(basic_repeat, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      // glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      // glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER,
+      // GL_LINEAR_MIPMAP_NEAREST); // bilinear
+      glSamplerParameteri(basic_repeat, GL_TEXTURE_MIN_FILTER,
+                          GL_LINEAR_MIPMAP_LINEAR);  // trilinear
+      CheckGLError();
 
-          glCreateSamplers(1, &font_sampler);
-          glSamplerParameteri(font_sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-          glSamplerParameteri(font_sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-          glSamplerParameteri(font_sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-          glSamplerParameteri(font_sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-          CheckGLError();
-          is_samplers_init = true;
-      }
+      glCreateSamplers(1, &font_sampler);
+      glSamplerParameteri(font_sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glSamplerParameteri(font_sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glSamplerParameteri(font_sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glSamplerParameteri(font_sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      CheckGLError();
+      is_samplers_init = true;
+    }
   }
 };
 // --------------------------------------------------------------------------------------------------------------------
@@ -114,7 +119,7 @@ const float OGRE_P_L_ATT_DIST_13L = 0.35f;
 const float OGRE_P_L_ATT_DIST_13Q = 0.44f;
 const float OGRE_P_L_ATT_DIST_20L = 0.22f;
 const float OGRE_P_L_ATT_DIST_20Q = 0.20f;
-} // namespace AttenuationConsts
+}  // namespace AttenuationConsts
 
 struct Light {
   vec4 direction;
@@ -129,7 +134,7 @@ struct Light {
 
   float linear_attenuation;
   float quadratic_attenuation;
-  float padding[2] = {0, 0}; // OpenGL padding
+  float padding[2] = {0, 0};  // OpenGL padding
 };
 
 struct Lights {
@@ -191,7 +196,7 @@ namespace AnimBlendWeights {
 inline float Weight1 = 1;
 inline float Weight2 = 2;
 inline float Weight10 = 10;
-}; // namespace AnimBlendWeights
+};  // namespace AnimBlendWeights
 
 struct ActiveAnimation {
   double start_time;
@@ -199,90 +204,126 @@ struct ActiveAnimation {
   Animation *anim;
 };
 
-// TODO: REFACTOR MESH GOD
-//class Movable {
-//    mat4 transform;
-//
-//};
-//
-//class Textured {
-//public:
-//    Texture* texture;
-//    Textured() : texture{ nullptr } {};
-//};
-
-class MeshData {
-public:
-  unsigned long id;
-  bool is_transparent;
-  long buffer_id;
-  unsigned long instance_id;
-  unsigned long transform_offset;
-  mat4 transform;
-  string name;
-  DrawElementsIndirectCommand command;
-  BufferStorage *buffer;
+class PhysicsData {
+ public:
   vec3 max_AABB;
   vec3 min_AABB;
+  PhysicsData(vec3 min_AABB, vec3 max_AABB)
+      : min_AABB{min_AABB}, max_AABB{max_AABB} {}
+};
+
+class MeshDataBase {
+ public:
+  unsigned long id;
+  long buffer_id;
+  unsigned long instance_id;
   long vertex_offset;
   long index_offset;
+  long transform_offset;
+  BufferStorage *buffer;
+  MeshDataBase *base_mesh;
+  DrawElementsIndirectCommand command;
+  MeshDataBase()
+      : vertex_offset{-1},
+        index_offset{-1},
+        buffer_id{-1},
+        buffer {nullptr},
+        base_mesh{nullptr},
+        transform_offset{0} {};
+};
+
+class MeshData : public MeshDataBase {
+  friend class MeshManager;
+ public:
+  mat4 transform;
+  bool is_transparent;
+
+  string name;
+  Texture *texture;
+  Armature *armature;
+  PhysicsData *physics_data;
+
+ private:
+  MeshData()
+      : texture{nullptr},
+        physics_data{nullptr},
+        is_transparent{false} {};
+  ~MeshData() {
+      delete physics_data;
+  };
+};
+
+ // plate per font size. all fonts same size - instanced meshes.
+class MeshDataFontUI : public MeshDataBase {
+  friend class MeshManager;
+ public:
+  string text;
+  vec2 transform;
   Texture *texture;
 
-  MeshData *base_mesh;
-  Armature *armature;
-
-  MeshData()
-      : vertex_offset{ -1 }, index_offset{ -1 }, buffer_id{ -1 }, transform_offset{0}, base_mesh{ nullptr },
-        texture{nullptr}, armature{nullptr}, is_transparent{false} {};
+ private:
+  MeshDataFontUI() : texture{nullptr} {};
+  MeshDataFontUI(string text, vec2 transform) :
+    text{text},
+    transform{transform},
+    texture{nullptr} {};
+  ~MeshDataFontUI(){};
 };
 
-class MeshDataFontUI : public MeshData {
-
-};
-class MeshDataFont3D : public MeshData {
-
+class MeshDataFont3D : public MeshDataBase {
+  friend class MeshManager;
+ public:
+  string text;
+  mat4 transform;
+  Texture *texture;
+ private:
+  MeshDataFont3D() : texture{nullptr} {};
+  ~MeshDataFont3D(){};
 };
 
 class AnimMesh {
-public:
-  MeshData* mesh;
+ public:
+  MeshData *mesh;
   map<AnimIndependentChannel, vector<ActiveAnimation>> active_animations;
-  AnimMesh(MeshData* mesh) : mesh{ mesh } {};
-  ~AnimMesh() {};
+  AnimMesh(MeshData *mesh) : mesh{mesh} {};
+  ~AnimMesh(){};
   inline void AddAnim(AnimIndependentChannel channel, Animation *anim,
-               float blend_weight = AnimBlendWeights::Weight1,
-               AnimBlendType blend_type = AnimBlendType::BLEND,
-               double start_time = 0) {
+                      float blend_weight = AnimBlendWeights::Weight1,
+                      AnimBlendType blend_type = AnimBlendType::BLEND,
+                      double start_time = 0) {
     switch (blend_type) {
-    case REPLACE:
-      active_animations[channel].clear();
-      active_animations[channel].push_back({start_time, blend_weight, anim});
-      break;
-    case BLEND:
-      active_animations[channel].push_back({start_time, blend_weight, anim});
-      break;
-    default:
-      active_animations[channel].push_back({start_time, blend_weight, anim});
-      break;
+      case REPLACE:
+        active_animations[channel].clear();
+        active_animations[channel].push_back({start_time, blend_weight, anim});
+        break;
+      case BLEND:
+        active_animations[channel].push_back({start_time, blend_weight, anim});
+        break;
+      default:
+        active_animations[channel].push_back({start_time, blend_weight, anim});
+        break;
     }
   }
 };
 
 struct MeshLoadData {
-  MeshData *mesh;
   vector<Vertex> vertices;
   vector<unsigned int> indices;
   MaterialTexNames tex_names;
+  Armature *armature;
+  PhysicsData *physics_data;
+  string name;
+  mat4 transform;
   unsigned int instance_count;
-  //~MeshLoadData() { cout << "MeshLoadData deleted: " << (mesh_data == nullptr
-  //? "no mesh_data" : mesh_data->name) << endl; }
 };
 
 struct BufferLock {
   mutex data_mutex;
   condition_variable is_mapped_cv;
   bool is_mapped;
-  inline void Wait(unique_lock<mutex> &data_lock) { is_mapped_cv.wait(data_lock); }
+  inline void Wait(unique_lock<mutex> &data_lock) {
+    is_mapped_cv.wait(data_lock);
+  }
 };
 
 struct CommandBuffer {
@@ -294,7 +335,7 @@ struct CommandBuffer {
 };
 
 struct DrawCall {
-  int mode = GL_TRIANGLES; // GL_TRIANGLES GL_LINES
+  int mode = GL_TRIANGLES;  // GL_TRIANGLES GL_LINES
   BufferConsumer *buffer = nullptr;
   Shader *shader = nullptr;
   CommandBuffer *command_buffer;
@@ -307,8 +348,8 @@ struct Shaders {
   Shader *blinn_phong;
   Shader *bullet_debug;
   Shader *stencil;
-  Shader* font_ui;
-  Shader* font_3d;
+  Shader *font_ui;
+  Shader *font_3d;
 };
 
 struct MeshUniformData {
@@ -318,36 +359,44 @@ struct MeshUniformData {
 };
 
 struct FontUniformData {
-    mat4 transforms[MAX_FONT_TRANSFORM];
-    unsigned int transform_offset[MAX_FONT_TRANSFORM_OFFSET];
+  mat4 transforms[MAX_FONT_TRANSFORM];
+  unsigned int transform_offset[MAX_FONT_TRANSFORM_OFFSET];
+};
+
+struct FontUniformDataUI {
+  vec2 transforms[MAX_FONT_UI_TRANSFORM];
+  unsigned int transform_offset[MAX_FONT_UI_TRANSFORM_OFFSET];
 };
 
 struct BufferMargins {
-    unsigned long start_vertex;
-    unsigned long end_vertex;
-    unsigned long start_index;
-    unsigned long end_index;
+  unsigned long start_vertex;
+  unsigned long end_vertex;
+  unsigned long start_index;
+  unsigned long end_index;
 };
 
 namespace BufferType {
-    typedef int BufferTypeFlag;
-    const BufferTypeFlag MESH_VAO = 1;
-    const BufferTypeFlag VERTEX = 1 << 1;
-    const BufferTypeFlag INDEX = 1 << 2;
-    const BufferTypeFlag UNIFORMS = 1 << 3;
-    const BufferTypeFlag TEXTURE = 1 << 4;
-    const BufferTypeFlag LIGHT = 1 << 5;
-    const BufferTypeFlag COMMAND = 1 << 6;
+typedef int BufferTypeFlag;
+const BufferTypeFlag MESH_VAO = 1;
+const BufferTypeFlag VERTEX = 1 << 1;
+const BufferTypeFlag INDEX = 1 << 2;
+const BufferTypeFlag UNIFORMS = 1 << 3;
+const BufferTypeFlag TEXTURE = 1 << 4;
+const BufferTypeFlag LIGHT = 1 << 5;
+const BufferTypeFlag COMMAND = 1 << 6;
 
-    const BufferTypeFlag FONT_TEXTURE = 1 << 7;
-    const BufferTypeFlag FONT_UNIFORMS = 1 << 8;
+const BufferTypeFlag FONT_TEXTURE = 1 << 7;
+const BufferTypeFlag FONT_UNIFORMS = 1 << 8;
 
-    // COMPOSITE FLAGS
-    const BufferTypeFlag MESH_BUFFERS = MESH_VAO | VERTEX | INDEX | UNIFORMS | TEXTURE | LIGHT | COMMAND;
-    const BufferTypeFlag PHYSICS_DEBUG_BUFFERS = MESH_VAO | VERTEX | INDEX | COMMAND;
-    const BufferTypeFlag FONT_BUFFERS = MESH_VAO | VERTEX | INDEX | COMMAND | FONT_TEXTURE | FONT_UNIFORMS;
-};
+// COMPOSITE FLAGS
+const BufferTypeFlag MESH_BUFFERS =
+    MESH_VAO | VERTEX | INDEX | UNIFORMS | TEXTURE | LIGHT | COMMAND;
+const BufferTypeFlag PHYSICS_DEBUG_BUFFERS =
+    MESH_VAO | VERTEX | INDEX | COMMAND;
+const BufferTypeFlag FONT_BUFFERS =
+    MESH_VAO | VERTEX | INDEX | COMMAND | FONT_TEXTURE | FONT_UNIFORMS;
+};  // namespace BufferType
 
 namespace SausageDefaults {
-    inline vector<MeshData*> DEFAULT_MESH_DATA_VECTOR;
+inline vector<MeshDataBase *> DEFAULT_MESH_DATA_VECTOR;
 };

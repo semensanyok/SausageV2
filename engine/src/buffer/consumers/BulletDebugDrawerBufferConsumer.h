@@ -23,8 +23,7 @@ public:
     };
     void BufferMeshData(vector<vec3>& vertices,
         vector<unsigned int>& indices,
-        vector<vec3>& colors,
-        bool is_transform_used = false);
+        vector<vec3>& colors);
     void Init();
     void Reset();
 };

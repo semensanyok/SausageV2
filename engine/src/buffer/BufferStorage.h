@@ -49,6 +49,7 @@ private:
   const int LIGHTS_UNIFORM_LOC = 2;
   const int FONT_UNIFORMS_LOC = 3;
   const int FONT_TEXTURE_UNIFORM_LOC = 4;
+  const int FONT_UNIFORMS_UI_LOC = 5;
 
   bool is_need_barrier = false;
 
@@ -86,15 +87,21 @@ private:
   BufferType::BufferTypeFlag bound_buffers;
   
   // FONT buffers
-  const unsigned long FONT_UNIFORMS_STORAGE_SIZE = sizeof(FontUniformData);
   const unsigned long FONT_TEXTURE_STORAGE_SIZE = MAX_FONT_TEXTURES * sizeof(GLuint64);
+  const unsigned long FONT_UNIFORMS_STORAGE_SIZE = sizeof(FontUniformData);
   const unsigned long FONT_TRANSFORM_OFFSET_STORAGE_SIZE = MAX_FONT_TRANSFORM_OFFSET * sizeof(unsigned int);
-  FontUniformData* font_uniforms_ptr;
+  const unsigned long FONT_UNIFORMS_UI_STORAGE_SIZE = sizeof(FontUniformDataUI);
+  const unsigned long FONT_TRANSFORM_OFFSET_UI_STORAGE_SIZE = MAX_FONT_UI_TRANSFORM_OFFSET * sizeof(unsigned int);
   GLuint font_texture_buffer;
-  GLuint font_uniforms_buffer;
   GLuint64 *font_texture_ptr;
+  GLuint font_uniforms_buffer;
+  GLuint font_uniforms_ui_buffer;
+  FontUniformData* font_uniforms_ptr;
+  FontUniformDataUI* font_uniforms_ui_ptr;
 public:
   unsigned long transforms_total;
+  unsigned long transforms_total_font;
+  unsigned long transforms_total_font_ui;
 
   int id = -1;
 
@@ -136,19 +143,19 @@ public:
                   CommandBuffer *buf, int command_offset = -1);
   int AddCommand(DrawElementsIndirectCommand &command, CommandBuffer *buf,
                 int command_offset = -1);
-  void BufferMeshData(vector<shared_ptr<MeshLoadData>>& load_data,
-      unsigned long& vertex_total,
-      unsigned long& index_total,
-      unsigned long& meshes_total,
-      BufferMargins& margins,
-      bool is_transform_used = true);
-  void BufferMeshData(shared_ptr<MeshLoadData> load_data,
-      unsigned long& vertex_total,
-      unsigned long& index_total,
-      unsigned long& meshes_total,
-      BufferMargins& margins,
-      vector<MeshData*>& instances = SausageDefaults::DEFAULT_MESH_DATA_VECTOR,
-      bool is_transform_used = true);
+  void BufferMeshData(vector<MeshDataBase*>& load_data_meshes,
+                      vector<shared_ptr<MeshLoadData>>& load_data,
+                      unsigned long& vertex_total,
+                      unsigned long& index_total,
+                      unsigned long& meshes_total,
+                      BufferMargins& margins);
+  void BufferMeshData(MeshDataBase* mesh,
+                      shared_ptr<MeshLoadData> load_data,
+                      unsigned long& vertex_total,
+                      unsigned long& index_total,
+                      unsigned long& meshes_total,
+                      BufferMargins& margins,
+                      vector<MeshDataBase *> &instances = SausageDefaults::DEFAULT_MESH_DATA_VECTOR);
   void BufferBoneTransform(map<unsigned int, mat4> &id_to_transform);
   void BufferBoneTransform(Bone *bone, mat4 &trans, unsigned int num_bones = 1);
   void BufferTransform(MeshData *mesh);
@@ -157,18 +164,42 @@ public:
   void InitMeshBuffers();
   void BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind);
   void Dispose();
-  
-  void Buffer3DFontTransform();
+
+  void BufferMeshTexture(MeshData* mesh) {
+    if (mesh->texture != nullptr) {
+      texture_ptr[mesh->buffer_id] = mesh->texture->texture_handle_ARB;
+    }
+  }
+  void BufferFontTexture(MeshDataBase *mesh, Texture *texture) {
+    font_texture_ptr[mesh->buffer_id] = texture->texture_handle_ARB;
+  };
+  void Buffer3DFontTransform(MeshDataFont3D *mesh) {
+    if (mesh->transform_offset == -1) {
+      mesh->transform_offset = _GetTransformBucketFont(mesh);
+    }
+    font_uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
+        mesh->transform;
+    if (mesh->instance_id == 0) {
+      font_uniforms_ptr->transform_offset[mesh->buffer_id + mesh->instance_id] =
+          mesh->transform_offset;
+    }
+    is_need_barrier = true;
+  };
   void BufferUIFontTransform(MeshDataFontUI* mesh) {
-      font_uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
-          mesh->transform;
-      if (mesh->instance_id == 0) {
-          font_uniforms_ptr->transform_offset[mesh->buffer_id + mesh->instance_id] =
-              mesh->transform_offset;
-      }
-      is_need_barrier = true;
+    if (mesh->transform_offset == -1) {
+      mesh->transform_offset = _GetTransformBucketFontUI(mesh);
+    }
+    font_uniforms_ui_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
+        mesh->transform;
+    if (mesh->instance_id == 0) {
+      font_uniforms_ui_ptr->transform_offset[mesh->buffer_id + mesh->instance_id] =
+          mesh->transform_offset;
+    }
+    is_need_barrier = true;
   };
-  void BufferFontTextureHandle(Texture* texture) {
-      font_texture_ptr[0] = texture->texture_handle_ARB;
-  };
+
+ private:
+  long _GetTransformBucket(MeshData *mesh);
+  long _GetTransformBucketFont(MeshDataFont3D *mesh);
+  long _GetTransformBucketFontUI(MeshDataFontUI *mesh);
 };

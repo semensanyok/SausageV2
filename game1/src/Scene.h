@@ -97,8 +97,7 @@ private:
 		_LoadAnimations();
 	}
 	void _LoadMeshes(string& path, vector<shared_ptr<MeshLoadData>>& out_new_meshes, vector<Light*>& out_new_lights) {
-		bool is_load_armature = true;
-		systems_manager->mesh_manager->LoadMeshes(path, out_new_lights, out_new_meshes, is_load_armature);
+		systems_manager->mesh_manager->LoadMeshes(path, out_new_lights, out_new_meshes, true, true, true);
 		CheckGLError();
 	}
 	void _LoadAnimations() {

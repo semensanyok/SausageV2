@@ -23,10 +23,13 @@ public:
     };
     ~MeshDataBufferConsumer() {
     };
-    void BufferMeshData(vector<shared_ptr<MeshLoadData>>& load_data, bool is_transform_used = true);
+    void BufferMeshData(vector<MeshDataBase*>& load_data_meshes,
+                        vector<shared_ptr<MeshLoadData>>& load_data);
     void Init();
     void Reset();
-    void SetBaseMeshForInstancedCommand(vector<shared_ptr<MeshLoadData>>& new_meshes);
+    void SetBaseMeshForInstancedCommand(
+        vector<MeshDataBase*>& load_data_meshes,
+        vector<shared_ptr<MeshLoadData>>& load_data);
     void BufferTransform(vector<MeshData*>& meshes);
     void BufferLights(vector<Light*>& lights);
 };

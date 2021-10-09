@@ -27,7 +27,8 @@ BufferMargins BufferStorage::RequestStorage(float buffer_part_percent_vertex,
   auto end_index =
       (allocated_percent_index + buffer_part_percent_index) * MAX_INDEX;
 
-  BufferMargins margins = BufferMargins(start_vertex, end_vertex, start_index, end_index);
+  BufferMargins margins =
+      BufferMargins(start_vertex, end_vertex, start_index, end_index);
   allocated_percent_vertex += buffer_part_percent_vertex;
   allocated_percent_index += buffer_part_percent_index;
   return margins;
@@ -52,7 +53,8 @@ void BufferStorage::MapBuffer(CommandBuffer *buf) {
   buf->buffer_lock->is_mapped_cv.notify_all();
 }
 
-void BufferStorage::WaitGPU(GLsync fence_sync, const source_location &location) {
+void BufferStorage::WaitGPU(GLsync fence_sync,
+                            const source_location &location) {
   if (fence_sync == 0) {
     return;
   }
@@ -76,7 +78,7 @@ void BufferStorage::WaitGPU(GLsync fence_sync, const source_location &location) 
 
     // After the first time, need to start flushing, and wait for a looong time.
     waitFlags = GL_SYNC_FLUSH_COMMANDS_BIT;
-    waitDuration = 1000000000; // one second in nanoseconds
+    waitDuration = 1000000000;  // one second in nanoseconds
   }
   glDeleteSync(fence_sync);
   fence_sync = 0;
@@ -130,7 +132,7 @@ void BufferStorage::RemoveCommandBuffer(CommandBuffer *to_remove) {
     if (*cur_buf == to_remove) {
       command_buffers.erase(cur_buf);
       mapped_command_buffers.erase(to_remove->id);
-      //UnmapBuffer(to_remove);
+      // UnmapBuffer(to_remove);
       break;
     }
     cur_buf++;
@@ -200,6 +202,9 @@ void BufferStorage::BufferBoneTransform(Bone *bone, mat4 &trans,
   is_need_barrier = true;
 }
 void BufferStorage::BufferTransform(MeshData *mesh) {
+  if (mesh->transform_offset == -1) {
+    mesh->transform_offset = _GetTransformBucket(mesh);
+  }
   uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
       mesh->transform;
   if (mesh->instance_id == 0) {
@@ -216,7 +221,6 @@ void BufferStorage::BufferTransform(vector<MeshData *> &mesh) {
   is_need_barrier = true;
 }
 void BufferStorage::BufferLights(vector<Light *> &lights) {
-
   if (lights.size() > MAX_LIGHTS) {
     LOG((ostringstream() << "ERROR BufferLights. max lights buffer size="
                          << MAX_LIGHTS << " requested=" << lights.size())
@@ -231,106 +235,105 @@ void BufferStorage::BufferLights(vector<Light *> &lights) {
   is_need_barrier = true;
 }
 
-void BufferStorage::BufferMeshData(vector<shared_ptr<MeshLoadData>>& load_data,
-    unsigned long& vertex_total,
-    unsigned long& index_total,
-    unsigned long& meshes_total,
-    BufferMargins& margins,
-    bool is_transform_used)
-{
-    vector<MeshData*> instances;
-    for (int i = 0; i < load_data.size(); i++) {
-        BufferMeshData(load_data[i], vertex_total, index_total, meshes_total, margins, instances, is_transform_used);
-    }
-    for (auto& instance : instances) {
-        instance->buffer_id = instance->base_mesh->buffer_id;
-        instance->transform_offset = instance->base_mesh->transform_offset;
-    }
-    // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
-    is_need_barrier = true;
-    CheckGLError();
+void BufferStorage::BufferMeshData(vector<MeshDataBase *> &load_data_meshes,
+                                   vector<shared_ptr<MeshLoadData>> &load_data,
+                                   unsigned long &vertex_total,
+                                   unsigned long &index_total,
+                                   unsigned long &meshes_total,
+                                   BufferMargins &margins) {
+  vector<MeshDataBase *> instances;
+  for (int i = 0; i < load_data.size(); i++) {
+    BufferMeshData(load_data_meshes[i], load_data[i], vertex_total, index_total,
+                   meshes_total,
+                   margins, instances);
+  }
+  for (auto &instance : instances) {
+    instance->buffer_id = instance->base_mesh->buffer_id;
+    instance->transform_offset = instance->base_mesh->transform_offset;
+  }
+  // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
+  is_need_barrier = true;
+  CheckGLError();
 }
-void BufferStorage::BufferMeshData(shared_ptr<MeshLoadData> load_data,
-    unsigned long& vertex_total,
-    unsigned long& index_total,
-    unsigned long& meshes_total,
-    BufferMargins& margins,
-    vector<MeshData*>& instances,
-    bool is_transform_used)
-{
-    auto raw = load_data.get();
-    auto& mesh = raw->mesh;
-    bool is_instance = mesh->base_mesh != nullptr;
-    mesh->buffer = this;
-    if (is_instance) {
-        instances.push_back(mesh);
-        return;
-    }
-    auto& vertices = raw->vertices;
-    auto& indices = raw->indices;
-    // if offset initialized - reload data. (if vertices/indices size > existing - will corrupt other meshes)
-    bool is_new_mesh = mesh->buffer_id < 0;
+void BufferStorage::BufferMeshData(MeshDataBase* mesh,
+                                   shared_ptr<MeshLoadData> load_data,
+                                   unsigned long &vertex_total,
+                                   unsigned long &index_total,
+                                   unsigned long &meshes_total,
+                                   BufferMargins &margins,
+                                   vector<MeshDataBase *> &instances) {
+  auto raw = load_data.get();
+  bool is_instance = mesh->base_mesh != nullptr;
+  if (is_instance) {
+    instances.push_back(mesh);
+    return;
+  }
+  auto &vertices = raw->vertices;
+  auto &indices = raw->indices;
+  // if offset initialized - reload data. (if vertices/indices size > existing -
+  // will corrupt other meshes)
+  bool is_new_mesh = mesh->buffer_id < 0;
 
-    bool is_vertex_offset_provided = mesh->vertex_offset >= 0;
-    bool is_index_offset_provided = mesh->index_offset >= 0;
-    if (!is_vertex_offset_provided) {
-        mesh->vertex_offset = vertex_total;
-    }
-    if (!is_index_offset_provided) {
-        mesh->index_offset = index_total;
-    }
+  bool is_vertex_offset_provided = mesh->vertex_offset >= 0;
+  bool is_index_offset_provided = mesh->index_offset >= 0;
+  if (!is_vertex_offset_provided) {
+    mesh->vertex_offset = vertex_total;
+  }
+  if (!is_index_offset_provided) {
+    mesh->index_offset = index_total;
+  }
 
-    if (vertices.size() + mesh->vertex_offset > margins.end_vertex) {
-        LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total=" << vertex_total << "asked=" << vertices.size()
-            << "max=" << margins.end_vertex << " vertex offset=" << mesh->vertex_offset).str());
-        return;
-    }
-    if (indices.size() + mesh->index_offset > MAX_INDEX) {
-        LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total=" << index_total << "asked=" << indices.size()
-            << "max=" << margins.end_index << " index offset=" << mesh->index_offset).str());
-        return;
-    }
-    if (is_new_mesh) {
-        mesh->buffer_id = meshes_total++;
-    }
-    DrawElementsIndirectCommand& command = mesh->command;
-    command.count = indices.size();
-    command.instanceCount = raw->instance_count;
-    command.firstIndex = mesh->index_offset;
-    command.baseVertex = mesh->vertex_offset;
-    command.baseInstance = mesh->buffer_id;
-    // copy to GPU
-    memcpy(&vertex_ptr[mesh->vertex_offset], vertices.data(), vertices.size() * sizeof(Vertex));
-    memcpy(&index_ptr[mesh->index_offset], indices.data(), indices.size() * sizeof(unsigned int));
-    if (mesh->texture != nullptr) {
-        texture_ptr[mesh->buffer_id] = mesh->texture->texture_handle_ARB;
-    }
+  if (vertices.size() + mesh->vertex_offset > margins.end_vertex) {
+    LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total="
+                         << vertex_total << "asked=" << vertices.size()
+                         << "max=" << margins.end_vertex
+                         << " vertex offset=" << mesh->vertex_offset)
+            .str());
+    return;
+  }
+  if (indices.size() + mesh->index_offset > MAX_INDEX) {
+    LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total="
+                         << index_total << "asked=" << indices.size()
+                         << "max=" << margins.end_index
+                         << " index offset=" << mesh->index_offset)
+            .str());
+    return;
+  }
+  if (is_new_mesh) {
+    mesh->buffer_id = meshes_total++;
+  }
+  DrawElementsIndirectCommand &command = mesh->command;
+  command.count = indices.size();
+  command.instanceCount = raw->instance_count;
+  command.firstIndex = mesh->index_offset;
+  command.baseVertex = mesh->vertex_offset;
+  command.baseInstance = mesh->buffer_id;
+  // copy to GPU
+  memcpy(&vertex_ptr[mesh->vertex_offset], vertices.data(),
+         vertices.size() * sizeof(Vertex));
+  memcpy(&index_ptr[mesh->index_offset], indices.data(),
+         indices.size() * sizeof(unsigned int));
 
-    if (!is_vertex_offset_provided) {
-        vertex_total += vertices.size();
-    }
-    if (!is_index_offset_provided) {
-        index_total += indices.size();
-    }
-    if (is_transform_used) {
-        mesh->transform_offset = transforms_total;
-        if (is_new_mesh) {
-            transforms_total += command.instanceCount;
-        }
-    }
-    if (mesh->armature != nullptr && mesh->armature != NULL) {
-        int num_bones = mesh->armature->num_bones;
-        if (mesh->armature->bones != NULL) {
-            auto identity = mat4(1);
-            BufferBoneTransform(mesh->armature->bones, identity, mesh->armature->num_bones);
-        }
-    }
+  if (!is_vertex_offset_provided) {
+    vertex_total += vertices.size();
+  }
+  if (!is_index_offset_provided) {
+    index_total += indices.size();
+  }
+  //if (mesh->armature != nullptr && mesh->armature != NULL) {
+  //  int num_bones = mesh->armature->num_bones;
+  //  if (mesh->armature->bones != NULL) {
+  //    auto identity = mat4(1);
+  //    BufferBoneTransform(mesh->armature->bones, identity,
+  //                        mesh->armature->num_bones);
+  //  }
+  //}
 }
 void BufferStorage::InitMeshBuffers() {
   glGenVertexArrays(1, &mesh_VAO);
   glBindVertexArray(
-      mesh_VAO); // MUST be bound before glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
-                 // command_buffer).
+      mesh_VAO);  // MUST be bound before glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
+                  // command_buffer).
 
   glGenBuffers(1, &index_buffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
@@ -347,8 +350,8 @@ void BufferStorage::InitMeshBuffers() {
   glGenBuffers(1, &uniforms_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
   glBufferStorage(GL_SHADER_STORAGE_BUFFER, UNIFORMS_STORAGE_SIZE, NULL, flags);
-  uniforms_ptr = (MeshUniformData *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
-                                                 UNIFORMS_STORAGE_SIZE, flags);
+  uniforms_ptr = (MeshUniformData *)glMapBufferRange(
+      GL_SHADER_STORAGE_BUFFER, 0, UNIFORMS_STORAGE_SIZE, flags);
 
   glGenBuffers(1, &texture_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
@@ -356,77 +359,97 @@ void BufferStorage::InitMeshBuffers() {
   texture_ptr = (GLuint64 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
                                              TEXTURE_STORAGE_SIZE, flags);
 
-
   glGenBuffers(1, &light_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
   glBufferStorage(GL_SHADER_STORAGE_BUFFER, LIGHT_STORAGE_SIZE, NULL, flags);
   light_ptr = (Lights *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
                                          LIGHT_STORAGE_SIZE, flags);
-  
-  
+
   // Font buffers
   glGenBuffers(1, &font_texture_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
-  glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_TEXTURE_STORAGE_SIZE, NULL, flags);
-  font_texture_ptr = (GLuint64 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
-      FONT_TEXTURE_STORAGE_SIZE, flags);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_TEXTURE_STORAGE_SIZE, NULL,
+                  flags);
+  font_texture_ptr = (GLuint64 *)glMapBufferRange(
+      GL_SHADER_STORAGE_BUFFER, 0, FONT_TEXTURE_STORAGE_SIZE, flags);
   glGenBuffers(1, &font_uniforms_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
-  glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_STORAGE_SIZE, NULL, flags);
-  font_uniforms_ptr = (FontUniformData*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
-      FONT_UNIFORMS_STORAGE_SIZE, flags);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_STORAGE_SIZE, NULL,
+                  flags);
+  font_uniforms_ptr = (FontUniformData*)glMapBufferRange(
+      GL_SHADER_STORAGE_BUFFER, 0, FONT_UNIFORMS_STORAGE_SIZE, flags);
+  // Font UI buffers
+  glGenBuffers(1, &font_uniforms_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_UI_STORAGE_SIZE, NULL,
+                  flags);
+  font_uniforms_ui_ptr = (FontUniformDataUI *)glMapBufferRange(
+      GL_SHADER_STORAGE_BUFFER, 0, FONT_UNIFORMS_UI_STORAGE_SIZE, flags);
 }
 
-void BufferStorage::BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind) {
+void BufferStorage::BindVAOandBuffers(
+    BufferType::BufferTypeFlag buffers_to_bind) {
   // TODO: separate Font VAO. it needs less data.
-  if ((buffers_to_bind & BufferType::MESH_VAO) && !(bound_buffers & BufferType::MESH_VAO)) {
-      glBindVertexArray(mesh_VAO);
-      glEnableVertexAttribArray(0);
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-      glEnableVertexAttribArray(1);
-      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-          (void*)offsetof(Vertex, Normal));
-      glEnableVertexAttribArray(2);
-      glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-          (void*)offsetof(Vertex, TexCoords));
-      glEnableVertexAttribArray(3);
-      glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-          (void*)offsetof(Vertex, Tangent));
-      glEnableVertexAttribArray(4);
-      glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-          (void*)offsetof(Vertex, Bitangent));
-      glEnableVertexAttribArray(5);
-      glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex),
-          (void*)offsetof(Vertex, BoneIds));
-      glEnableVertexAttribArray(6);
-      glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-          (void*)offsetof(Vertex, BoneWeights));
+  if ((buffers_to_bind & BufferType::MESH_VAO) &&
+      !(bound_buffers & BufferType::MESH_VAO)) {
+    glBindVertexArray(mesh_VAO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void *)offsetof(Vertex, Normal));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void *)offsetof(Vertex, TexCoords));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void *)offsetof(Vertex, Tangent));
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void *)offsetof(Vertex, Bitangent));
+    glEnableVertexAttribArray(5);
+    glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex),
+                           (void *)offsetof(Vertex, BoneIds));
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void *)offsetof(Vertex, BoneWeights));
   }
-  if ((buffers_to_bind & BufferType::VERTEX) && !(bound_buffers & BufferType::VERTEX)) {
-      glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+  if ((buffers_to_bind & BufferType::VERTEX) &&
+      !(bound_buffers & BufferType::VERTEX)) {
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
   }
-  if ((buffers_to_bind & BufferType::UNIFORMS) && !(bound_buffers & BufferType::UNIFORMS)) {
-      glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, uniforms_buffer);
+  if ((buffers_to_bind & BufferType::UNIFORMS) &&
+      !(bound_buffers & BufferType::UNIFORMS)) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, uniforms_buffer);
   }
-  if ((buffers_to_bind & BufferType::TEXTURE) && !(bound_buffers & BufferType::TEXTURE)) {
-      glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_UNIFORM_LOC, texture_buffer);
+  if ((buffers_to_bind & BufferType::TEXTURE) &&
+      !(bound_buffers & BufferType::TEXTURE)) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_UNIFORM_LOC,
+                     texture_buffer);
   }
-  if ((buffers_to_bind & BufferType::LIGHT) && !(bound_buffers & BufferType::LIGHT)) {
-      glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC, light_buffer);
+  if ((buffers_to_bind & BufferType::LIGHT) &&
+      !(bound_buffers & BufferType::LIGHT)) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC,
+                     light_buffer);
   }
-  if ((buffers_to_bind & BufferType::INDEX) && !(bound_buffers & BufferType::INDEX)) {
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+  if ((buffers_to_bind & BufferType::INDEX) &&
+      !(bound_buffers & BufferType::INDEX)) {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
   }
-  if ((buffers_to_bind & BufferType::FONT_TEXTURE) && !(bound_buffers & BufferType::FONT_TEXTURE)) {
-      glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_TEXTURE_UNIFORM_LOC, font_texture_buffer);
+  if ((buffers_to_bind & BufferType::FONT_TEXTURE) &&
+      !(bound_buffers & BufferType::FONT_TEXTURE)) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_TEXTURE_UNIFORM_LOC,
+                     font_texture_buffer);
   }
-  if ((buffers_to_bind & BufferType::FONT_UNIFORMS) && !(bound_buffers & BufferType::FONT_UNIFORMS)) {
-      glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_LOC, uniforms_buffer);
+  if ((buffers_to_bind & BufferType::FONT_UNIFORMS) &&
+      !(bound_buffers & BufferType::FONT_UNIFORMS)) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_LOC,
+                     uniforms_buffer);
   }
 }
 void BufferStorage::Dispose() {
@@ -460,4 +483,22 @@ void BufferStorage::Dispose() {
   }
   command_buffers.clear();
   CheckGLError();
+}
+
+long BufferStorage::_GetTransformBucket(MeshData *mesh) {
+  long bucket = transforms_total;
+  transforms_total += mesh->command.instanceCount;
+  return bucket;
+}
+
+long BufferStorage::_GetTransformBucketFont(MeshDataFont3D *mesh) {
+  long bucket = transforms_total_font;
+  transforms_total_font += mesh->command.instanceCount;
+  return bucket;
+}
+
+long BufferStorage::_GetTransformBucketFontUI(MeshDataFontUI *mesh) {
+  long bucket = transforms_total_font_ui;
+  transforms_total_font_ui += mesh->command.instanceCount;
+  return bucket;
 }

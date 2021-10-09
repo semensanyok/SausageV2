@@ -123,8 +123,9 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/utils/GLMHelpers.cpp" 
 "src/utils/ThreadSafeQueue.cpp" 
 "src/systems/MeshManager.cpp" 
-"src/buffer/consumers/BufferConsumer.cpp" 
-"src/systems/RendererContextManager.cpp")
+"src/buffer/consumers/BufferConsumer.cpp"  
+"src/systems/RendererContextManager.cpp" 
+"src/buffer/consumers/FontBufferConsumer.cpp")
 
 target_link_libraries(${PROJECT_NAME} ${SAUSAGE_LIBS})
 
