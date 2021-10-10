@@ -1,11 +1,11 @@
 #pragma once
 
-#include "sausage.h"
 #include "Logging.h"
 #include "OpenGLHelpers.h"
 #include "Settings.h"
 #include "Structures.h"
 #include "Texture.h"
+#include "sausage.h"
 
 using namespace std;
 using namespace glm;
@@ -28,7 +28,7 @@ class BufferStorage {
   friend class MeshDataBufferConsumer;
   friend class FontBufferConsumer;
 
-private:
+ private:
   const unsigned long VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
   const unsigned long INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
   const unsigned long COMMAND_STORAGE_SIZE =
@@ -41,7 +41,7 @@ private:
   const unsigned long TRANSFORM_OFFSET_STORAGE_SIZE =
       MAX_TRANSFORM_OFFSET * sizeof(unsigned int);
   const unsigned long TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
-  
+
   const GLbitfield flags =
       GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
   const int UNIFORMS_LOC = 0;
@@ -56,7 +56,6 @@ private:
   unsigned long vertex_start = 0;
   unsigned long index_total = 0;
   unsigned int textures_total = 0;
-
 
   ///////////
   /// Buffers
@@ -85,20 +84,24 @@ private:
   float allocated_percent_index = 0.0;
 
   BufferType::BufferTypeFlag bound_buffers;
-  
+
   // FONT buffers
-  const unsigned long FONT_TEXTURE_STORAGE_SIZE = MAX_FONT_TEXTURES * sizeof(GLuint64);
+  const unsigned long FONT_TEXTURE_STORAGE_SIZE =
+      MAX_FONT_TEXTURES * sizeof(GLuint64);
   const unsigned long FONT_UNIFORMS_STORAGE_SIZE = sizeof(FontUniformData);
-  const unsigned long FONT_TRANSFORM_OFFSET_STORAGE_SIZE = MAX_FONT_TRANSFORM_OFFSET * sizeof(unsigned int);
+  const unsigned long FONT_TRANSFORM_OFFSET_STORAGE_SIZE =
+      MAX_FONT_TRANSFORM_OFFSET * sizeof(unsigned int);
   const unsigned long FONT_UNIFORMS_UI_STORAGE_SIZE = sizeof(FontUniformDataUI);
-  const unsigned long FONT_TRANSFORM_OFFSET_UI_STORAGE_SIZE = MAX_FONT_UI_TRANSFORM_OFFSET * sizeof(unsigned int);
+  const unsigned long FONT_TRANSFORM_OFFSET_UI_STORAGE_SIZE =
+      MAX_FONT_UI_TRANSFORM_OFFSET * sizeof(unsigned int);
   GLuint font_texture_buffer;
   GLuint64 *font_texture_ptr;
   GLuint font_uniforms_buffer;
   GLuint font_uniforms_ui_buffer;
-  FontUniformData* font_uniforms_ptr;
-  FontUniformDataUI* font_uniforms_ui_ptr;
-public:
+  FontUniformData *font_uniforms_ptr;
+  FontUniformDataUI *font_uniforms_ui_ptr;
+
+ public:
   unsigned long transforms_total = 0;
   unsigned long transforms_total_font = 0;
   unsigned long transforms_total_font_ui = 0;
@@ -144,20 +147,16 @@ public:
   int AddCommands(vector<DrawElementsIndirectCommand> &active_commands,
                   CommandBuffer *buf, int command_offset = -1);
   int AddCommand(DrawElementsIndirectCommand &command, CommandBuffer *buf,
-                int command_offset = -1);
-  void BufferMeshData(vector<MeshDataBase*>& load_data_meshes,
-                      vector<shared_ptr<MeshLoadData>>& load_data,
-                      unsigned long& vertex_total,
-                      unsigned long& index_total,
-                      unsigned long& meshes_total,
-                      BufferMargins& margins);
-  void BufferMeshData(MeshDataBase* mesh,
-                      shared_ptr<MeshLoadData> load_data,
-                      unsigned long& vertex_total,
-                      unsigned long& index_total,
-                      unsigned long& meshes_total,
-                      BufferMargins& margins,
-                      vector<MeshDataBase *> &instances = SausageDefaults::DEFAULT_MESH_DATA_VECTOR);
+                 int command_offset = -1);
+  void BufferMeshData(vector<MeshDataBase *> &load_data_meshes,
+                      vector<shared_ptr<MeshLoadData>> &load_data,
+                      unsigned long &vertex_total, unsigned long &index_total,
+                      unsigned long &meshes_total, BufferMargins &margins);
+  void BufferMeshData(MeshDataBase *mesh, shared_ptr<MeshLoadData> load_data,
+                      unsigned long &vertex_total, unsigned long &index_total,
+                      unsigned long &meshes_total, BufferMargins &margins,
+                      vector<MeshDataBase *> &instances =
+                          SausageDefaults::DEFAULT_MESH_DATA_VECTOR);
   void BufferBoneTransform(map<unsigned int, mat4> &id_to_transform);
   void BufferBoneTransform(Bone *bone, mat4 &trans, unsigned int num_bones = 1);
   void BufferTransform(MeshData *mesh);
@@ -167,7 +166,8 @@ public:
   void BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind);
   void Dispose();
 
-  void BufferMeshTexture(MeshData* mesh) {
+  void BufferMeshTexture(MeshData *mesh) {
+    SAUSAGE_DEBUG_ASSERT(mesh->buffer_id >= 0)
     if (mesh->texture != nullptr) {
       texture_ptr[mesh->buffer_id] = mesh->texture->texture_handle_ARB;
     }
@@ -187,14 +187,16 @@ public:
     }
     is_need_barrier = true;
   };
-  void BufferUIFontTransform(MeshDataFontUI* mesh) {
+  void BufferUIFontTransform(MeshDataFontUI *mesh) {
     if (mesh->transform_offset == -1) {
       mesh->transform_offset = _GetTransformBucketFontUI(mesh);
     }
-    font_uniforms_ui_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
+    font_uniforms_ui_ptr
+        ->transforms[mesh->transform_offset + mesh->instance_id] =
         mesh->transform;
     if (mesh->instance_id == 0) {
-      font_uniforms_ui_ptr->transform_offset[mesh->buffer_id + mesh->instance_id] =
+      font_uniforms_ui_ptr
+          ->transform_offset[mesh->buffer_id + mesh->instance_id] =
           mesh->transform_offset;
     }
     is_need_barrier = true;

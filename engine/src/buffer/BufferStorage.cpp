@@ -242,8 +242,7 @@ void BufferStorage::BufferMeshData(vector<MeshDataBase *> &load_data_meshes,
   vector<MeshDataBase *> instances;
   for (int i = 0; i < load_data.size(); i++) {
     BufferMeshData(load_data_meshes[i], load_data[i], vertex_total, index_total,
-                   meshes_total,
-                   margins, instances);
+                   meshes_total, margins, instances);
   }
   for (auto &instance : instances) {
     instance->buffer_id = instance->base_mesh->buffer_id;
@@ -253,7 +252,7 @@ void BufferStorage::BufferMeshData(vector<MeshDataBase *> &load_data_meshes,
   is_need_barrier = true;
   CheckGLError();
 }
-void BufferStorage::BufferMeshData(MeshDataBase* mesh,
+void BufferStorage::BufferMeshData(MeshDataBase *mesh,
                                    shared_ptr<MeshLoadData> load_data,
                                    unsigned long &vertex_total,
                                    unsigned long &index_total,
@@ -319,7 +318,7 @@ void BufferStorage::BufferMeshData(MeshDataBase* mesh,
   if (!is_index_offset_provided) {
     index_total += indices.size();
   }
-  //if (mesh->armature != nullptr && mesh->armature != NULL) {
+  // if (mesh->armature != nullptr && mesh->armature != NULL) {
   //  int num_bones = mesh->armature->num_bones;
   //  if (mesh->armature->bones != NULL) {
   //    auto identity = mat4(1);
@@ -375,7 +374,7 @@ void BufferStorage::InitMeshBuffers() {
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
   glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_STORAGE_SIZE, NULL,
                   flags);
-  font_uniforms_ptr = (FontUniformData*)glMapBufferRange(
+  font_uniforms_ptr = (FontUniformData *)glMapBufferRange(
       GL_SHADER_STORAGE_BUFFER, 0, FONT_UNIFORMS_STORAGE_SIZE, flags);
   // Font UI buffers
   glGenBuffers(1, &font_uniforms_ui_buffer);

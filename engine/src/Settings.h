@@ -93,3 +93,12 @@ namespace KeyboardLayout {
 namespace KeyboardEvents {
 	inline std::set<int> keys_pressed;
 };
+
+#define SAUSAGE_DEBUG_BUILD
+
+#ifdef SAUSAGE_DEBUG_BUILD
+#include <assert.h>
+#define SAUSAGE_DEBUG_ASSERT(x) assert(x);
+#else
+#define SAUSAGE_DEBUG_ASSERT(x) //
+#endif  // 1

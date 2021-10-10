@@ -111,7 +111,8 @@ class Scene {
     systems_manager->mesh_manager->LoadMeshes(path, out_new_lights,
                                               out_new_meshes, true, true, true);
     for (auto& load_data : out_new_meshes) {
-      auto mesh = systems_manager->mesh_manager->CreateMeshData(load_data.get());
+      auto mesh =
+          systems_manager->mesh_manager->CreateMeshData(load_data.get());
       if (mesh->name != "Terrain") {
         mesh->physics_data->mass = 10.0;
       }
@@ -157,8 +158,8 @@ class Scene {
     }
   }
   void _BufferMeshes(vector<MeshDataBase*>& new_meshes_data,
-    vector<shared_ptr<MeshLoadData>>& new_meshes) {
-    for (int i = 0; i < new_meshes.size();  i++) {
+                     vector<shared_ptr<MeshLoadData>>& new_meshes) {
+    for (int i = 0; i < new_meshes.size(); i++) {
       auto load_data = new_meshes[i].get();
       // dae only imports albedo name. temporary fix. TODO: delete
       {
@@ -168,15 +169,16 @@ class Scene {
           auto u = load_data->tex_names.diffuse.find("_");
           auto to_replace = load_data->tex_names.diffuse.substr(
               u + 1, load_data->tex_names.diffuse.find(".") - u - 1);
-          load_data->tex_names.normal.replace(u + 1, to_replace.size(), "normal");
+          load_data->tex_names.normal.replace(u + 1, to_replace.size(),
+                                              "normal");
           load_data->tex_names.specular.replace(u + 1, to_replace.size(),
-                                           "specular");
+                                                "specular");
         }
       }
     }
     CheckGLError();
     systems_manager->buffer_manager->mesh_data_buffer->BufferMeshData(
-      new_meshes_data, new_meshes);
+        new_meshes_data, new_meshes);
     CheckGLError();
     for (int i = 0; i < new_meshes_data.size(); i++) {
       if (MeshData* mesh = dynamic_cast<MeshData*>(new_meshes_data[i])) {
@@ -187,7 +189,8 @@ class Scene {
         mesh->texture = systems_manager->texture_manager->LoadTextureArray(
             new_meshes[i]->tex_names);
         if (mesh->texture != nullptr) {
-          systems_manager->buffer_manager->mesh_data_buffer->BufferMeshTexture(mesh);
+          systems_manager->buffer_manager->mesh_data_buffer->BufferMeshTexture(
+              mesh);
           mesh->texture->MakeResident();
         }
       }
@@ -205,10 +208,11 @@ class Scene {
     all_transparent_meshes.clear();
     all_lights.clear();
   }
-  using distance_comparator = decltype([](const pair<float, MeshDataBase*>& lhs,
-                                          const pair<float, MeshDataBase*>& rhs) {
-    return lhs.first > rhs.first;
-  });
+  using distance_comparator =
+      decltype([](const pair<float, MeshDataBase*>& lhs,
+                  const pair<float, MeshDataBase*>& rhs) {
+        return lhs.first > rhs.first;
+      });
   void _SortByDistance() {
     set<pair<float, MeshDataBase*>, distance_comparator> back_to_front;
     for (auto mesh_base : draw_meshes) {

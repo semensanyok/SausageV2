@@ -80,6 +80,11 @@
 					"name": "SDL2MAIN_LIBRARY",
 					"value": "${projectDir}/engine/lib/SDL/SDL2main.lib",
 					"type": "FILEPATH"
+				},
+				{
+					"name": "SAUSAGE_DEBUG_BUILD",
+					"value": "True",
+					"type": "BOOL"
 				}
 			]
 		},

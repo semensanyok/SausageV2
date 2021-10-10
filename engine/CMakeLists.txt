@@ -136,12 +136,15 @@ target_compile_options(assimp PRIVATE /w)
 ###### ENGINE OPTIONS ########################
 option(SAUSAGE_PROFILE_ENABLE "Enable profiling info" ON)
 option(SAUSAGE_DEBUG_DRAW_PHYSICS "Debug draw physics world" ON)
-
+option(SAUSAGE_DEBUG_BUILD "Enable assertions and other debug utilities" ON)
 IF ( SAUSAGE_PROFILE_ENABLE )
   add_definitions(-DSAUSAGE_PROFILE_ENABLE)
 endif()
 IF ( SAUSAGE_DEBUG_DRAW_PHYSICS )
   add_definitions(-DSAUSAGE_DEBUG_DRAW_PHYSICS)
+endif()
+IF ( SAUSAGE_DEBUG_BUILD )
+  add_definitions(-DSAUSAGE_DEBUG_BUILD)
 endif()
 ###### ENGINE OPTIONS END ####################
 
