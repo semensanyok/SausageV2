@@ -99,9 +99,9 @@ private:
   FontUniformData* font_uniforms_ptr;
   FontUniformDataUI* font_uniforms_ui_ptr;
 public:
-  unsigned long transforms_total;
-  unsigned long transforms_total_font;
-  unsigned long transforms_total_font_ui;
+  unsigned long transforms_total = 0;
+  unsigned long transforms_total_font = 0;
+  unsigned long transforms_total_font_ui = 0;
 
   int id = -1;
 
@@ -120,6 +120,8 @@ public:
     vertex_start = 0;
     index_total = 0;
     transforms_total = 0;
+    transforms_total_font = 0;
+    transforms_total_font_ui = 0;
     bound_buffers = 0;
   };
   BufferMargins RequestStorage(float buffer_part_percent_vertex,

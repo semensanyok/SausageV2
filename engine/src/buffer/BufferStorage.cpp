@@ -379,8 +379,8 @@ void BufferStorage::InitMeshBuffers() {
   font_uniforms_ptr = (FontUniformData*)glMapBufferRange(
       GL_SHADER_STORAGE_BUFFER, 0, FONT_UNIFORMS_STORAGE_SIZE, flags);
   // Font UI buffers
-  glGenBuffers(1, &font_uniforms_buffer);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
+  glGenBuffers(1, &font_uniforms_ui_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_ui_buffer);
   glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_UI_STORAGE_SIZE, NULL,
                   flags);
   font_uniforms_ui_ptr = (FontUniformDataUI *)glMapBufferRange(
@@ -450,6 +450,10 @@ void BufferStorage::BindVAOandBuffers(
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_LOC,
                      uniforms_buffer);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_ui_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_UI_LOC,
+                     font_uniforms_ui_buffer);
   }
 }
 void BufferStorage::Dispose() {

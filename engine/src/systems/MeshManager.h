@@ -67,6 +67,7 @@ class MeshManager {
     mesh->id = mesh_count++;
     mesh->buffer_id = -1;
     mesh->instance_id = 0;
+    mesh->transform = transform;
     meshes.push_back(mesh);
     return mesh;
   };

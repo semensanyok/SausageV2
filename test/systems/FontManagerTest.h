@@ -20,7 +20,8 @@ public:
 		SDL_main2();
 	};
 	void SubmitTextDraw() {
-		systems_manager->font_manager->WriteTextUI(teststr1, 0, 0);
+          systems_manager->font_manager->WriteTextUI(
+              teststr1, vec3(0.0, 255.0, 0.0), 100.0, 100.0);
 	}
 	int SDL_main2()
 	{

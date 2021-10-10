@@ -84,39 +84,46 @@ class FontManager {
     // renderer->RemoveDraw(draw_call_3d);
     // draw_call_3d->buffer->RemoveCommandBuffer(draw_call_3d->command_buffer);
   }
-  void WriteTextUI(string& text, float screen_x, float screen_y) {
+  void WriteTextUI(string& text, vec3 color, float screen_x, float screen_y) {
     vector<vec3> vertices;
     vector<vec3> colors;
     vector<vec2> uvs;
     vector<unsigned int> indices;
     // TODO: make each font letter instanced mesh.
-    auto charmap = this->size_chars.begin()->second;
-    int delta_x = 0;
+    auto size_chars_pair = this->size_chars.begin();
+    auto plate_size = size_chars_pair->first;
+    auto charmap = size_chars_pair->second;
+
+    float delta_x = 0;
+    float delta_y = 0;
+    int ind_delta = 0;
     for (auto chr : text) {
-      auto character = charmap['A'];
+      auto character = charmap[chr];
       auto u = character.size.x;
       auto v = character.size.y;
-      vertices.push_back({0, 0, 'A'});
-      vertices.push_back({0, v, 'A'});
-      vertices.push_back({u, 0, 'A'});
-      vertices.push_back({u, v, 'A'});
-      colors.push_back({255, 0, 0});
-      colors.push_back({255, 0, 0});
-      colors.push_back({255, 0, 0});
-      colors.push_back({255, 0, 0});
-      // TODO: fix uv order?
+      float uv_max_x = character.size.x / (float)plate_size;
+      float uv_max_y = character.size.y / (float)plate_size;
+      vertices.push_back({0 + delta_x, 0 + delta_y, chr});
+      vertices.push_back({0 + delta_x, v + delta_y, chr});
+      vertices.push_back({u + delta_x, 0 + delta_y, chr});
+      vertices.push_back({u + delta_x, v + delta_y, chr});
+      colors.push_back(color);
+      colors.push_back(color);
+      colors.push_back(color);
+      colors.push_back(color);
+      uvs.push_back({0, uv_max_y});
       uvs.push_back({0, 0});
-      uvs.push_back({0, 1});
-      uvs.push_back({1, 0});
-      uvs.push_back({1, 1});
+      uvs.push_back({uv_max_x, uv_max_y});
+      uvs.push_back({uv_max_x, 0});
 
-      indices.push_back(1);
-      indices.push_back(0);
-      indices.push_back(2);
-      indices.push_back(1);
-      indices.push_back(2);
-      indices.push_back(3);
-      break;
+      indices.push_back(ind_delta + 1);
+      indices.push_back(ind_delta + 0);
+      indices.push_back(ind_delta + 2);
+      indices.push_back(ind_delta + 1);
+      indices.push_back(ind_delta + 2);
+      indices.push_back(ind_delta + 3);
+      delta_x += character.advance >> 6;
+      ind_delta += 4;
     }
     new_texts.push_back(mesh_manager->CreateMeshDataFontUI(text, vec2(screen_x, screen_y)));
     batched_vertices.push_back(vertices);
@@ -131,6 +138,7 @@ class FontManager {
       buffer->BufferMeshDataUI(mesh, batched_vertices[i], batched_indices[i],
                                batched_colors[i], batched_uvs[i], {0, 0, 0},
                                handle);
+      buffer->BufferTransform(mesh);
       buffer->AddCommand(mesh->command, draw_call_ui->command_buffer);
       active_texts.push_back(mesh);
     }

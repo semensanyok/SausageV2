@@ -229,7 +229,7 @@ class MeshDataBase {
         buffer_id{-1},
         buffer {nullptr},
         base_mesh{nullptr},
-        transform_offset{0} {};
+        transform_offset{-1} {};
 };
 
 class MeshData : public MeshDataBase {
