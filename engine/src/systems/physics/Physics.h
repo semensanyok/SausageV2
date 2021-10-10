@@ -114,8 +114,10 @@ public:
 		ProfTime::physics_buf_trans_ns = chrono::steady_clock::now() - proft4;
 #endif
 	}
-	void AddBoxRigidBody(vec3 min_AABB, vec3 max_AABB, float mass, MeshData* user_pointer, mat4& model_transform) {
-		vec3 half_extents = max_AABB - min_AABB;
+	void AddBoxRigidBody(PhysicsData* physics_data,
+    MeshDataBase* user_pointer,
+    mat4& model_transform) {
+    vec3 half_extents = physics_data->max_AABB - physics_data->min_AABB;
 		half_extents.x = half_extents.x / 2;
 		half_extents.y = half_extents.y / 2;
 		half_extents.z = half_extents.z / 2;
@@ -127,18 +129,19 @@ public:
 			LOG((ostringstream()
 				<< "model scale must be 1 for bullet rigidbody. "
 				"Incorrect collision prediction for mesh: "
-				<< (user_pointer == nullptr ? string("Unknown user pointer") : user_pointer->name)).str());
+				<< (user_pointer == nullptr ? string("Unknown user pointer") : ((MeshData*)user_pointer)->name)).str());
 		}
 		transform.setFromOpenGLMatrix(&model_transform[0][0]);
 		btDefaultMotionState* motionstate = new btDefaultMotionState(transform);
 
-		bool isDynamic = (mass != 0.f);
+		bool isDynamic = (physics_data->mass != 0.f);
 		btVector3 localInertia(0, 0, 0);
-		if (isDynamic)
-			shape->calculateLocalInertia(mass, localInertia);
-
+    if (isDynamic) {
+      shape->calculateLocalInertia(physics_data->mass,
+                                   localInertia);
+    }
 		btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(
-			mass,                  // mass, in kg. 0 -> Static object, will never move.
+			physics_data->mass,  // mass, in kg. 0 -> Static object, will never move.
 			motionstate,
 			shape,  // collision shape of body
 			localInertia    // local inertia

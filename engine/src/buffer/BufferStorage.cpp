@@ -217,8 +217,6 @@ void BufferStorage::BufferTransform(vector<MeshData *> &mesh) {
   for (int i = 0; i < mesh.size(); i++) {
     BufferTransform(mesh[i]);
   }
-  // memcpy(&mvp_ptr[command_total], mvps.data(), mvps.size() * sizeof(mat4));
-  is_need_barrier = true;
 }
 void BufferStorage::BufferLights(vector<Light *> &lights) {
   if (lights.size() > MAX_LIGHTS) {
@@ -262,6 +260,7 @@ void BufferStorage::BufferMeshData(MeshDataBase* mesh,
                                    unsigned long &meshes_total,
                                    BufferMargins &margins,
                                    vector<MeshDataBase *> &instances) {
+  mesh->buffer = this;
   auto raw = load_data.get();
   bool is_instance = mesh->base_mesh != nullptr;
   if (is_instance) {
@@ -486,6 +485,18 @@ void BufferStorage::Dispose() {
     delete command_buffer;
   }
   command_buffers.clear();
+  CheckGLError();
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_ui_buffer);
+  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+  glDeleteBuffers(1, &font_uniforms_ui_buffer);
+  CheckGLError();
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
+  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+  glDeleteBuffers(1, &font_uniforms_buffer);
+  CheckGLError();
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
+  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+  glDeleteBuffers(1, &font_texture_buffer);
   CheckGLError();
 }
 

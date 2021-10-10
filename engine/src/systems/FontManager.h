@@ -57,7 +57,6 @@ class FontManager {
     draw_call_ui->buffer = (BufferConsumer*)buffer;
     draw_call_ui->command_buffer =
         draw_call_ui->buffer->CreateCommandBuffer(command_buffer_size);
-    draw_call_ui->command_count = 1;
     // TODO: 3d
     // draw_call_3d = new DrawCall();
     // draw_call_3d->shader = shaders->font_3d;
@@ -130,6 +129,8 @@ class FontManager {
     batched_colors.push_back(colors);
     batched_uvs.push_back(uvs);
     batched_indices.push_back(indices);
+
+    draw_call_ui->command_count = 1;
   }
   void PreUpdate() { flush(); }
   void flush() {

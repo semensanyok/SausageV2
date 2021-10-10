@@ -54,6 +54,14 @@ class MeshManager {
     meshes.push_back(mesh);
     return mesh;
   };
+  MeshData* CreateMeshData(MeshLoadData* load_data) {
+    auto mesh = new MeshData(load_data);
+    mesh->id = mesh_count++;
+    mesh->buffer_id = -1;
+    mesh->instance_id = 0;
+    meshes.push_back(mesh);
+    return mesh;
+  };
   MeshDataFont3D* CreateMeshDataFont() {
     auto mesh = new MeshDataFont3D();
     mesh->id = mesh_count++;

@@ -31,5 +31,11 @@ public:
         vector<MeshDataBase*>& load_data_meshes,
         vector<shared_ptr<MeshLoadData>>& load_data);
     void BufferTransform(vector<MeshData*>& meshes);
+    void BufferTransform(MeshData* mesh) {
+      buffer->BufferTransform(mesh);
+    }
     void BufferLights(vector<Light*>& lights);
+    void BufferMeshTexture(MeshData* mesh) {
+      buffer->BufferMeshTexture(mesh);
+    };
 };

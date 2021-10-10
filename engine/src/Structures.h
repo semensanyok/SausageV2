@@ -208,8 +208,21 @@ class PhysicsData {
  public:
   vec3 max_AABB;
   vec3 min_AABB;
+  float mass;
   PhysicsData(vec3 min_AABB, vec3 max_AABB)
-      : min_AABB{min_AABB}, max_AABB{max_AABB} {}
+      : min_AABB{min_AABB}, max_AABB{max_AABB}, mass{0.0} {}
+  PhysicsData(vec3 min_AABB, vec3 max_AABB, float mass)
+      : min_AABB{min_AABB}, max_AABB{max_AABB}, mass{mass} {}
+};
+struct MeshLoadData {
+  vector<Vertex> vertices;
+  vector<unsigned int> indices;
+  MaterialTexNames tex_names;
+  Armature *armature;
+  PhysicsData *physics_data;
+  string name;
+  mat4 transform;
+  unsigned int instance_count;
 };
 
 class MeshDataBase {
@@ -230,7 +243,9 @@ class MeshDataBase {
         buffer {nullptr},
         base_mesh{nullptr},
         transform_offset{-1} {};
+  virtual ~MeshDataBase(){};
 };
+
 
 class MeshData : public MeshDataBase {
   friend class MeshManager;
@@ -247,6 +262,13 @@ class MeshData : public MeshDataBase {
   MeshData()
       : texture{nullptr},
         physics_data{nullptr},
+        is_transparent{false} {};
+  MeshData(MeshLoadData* load_data)
+      : texture{nullptr},
+        physics_data{load_data->physics_data},
+        armature {load_data->armature},
+        name {load_data->name},
+        transform {load_data->transform},
         is_transparent{false} {};
   ~MeshData() {
       delete physics_data;
@@ -304,17 +326,6 @@ class AnimMesh {
         break;
     }
   }
-};
-
-struct MeshLoadData {
-  vector<Vertex> vertices;
-  vector<unsigned int> indices;
-  MaterialTexNames tex_names;
-  Armature *armature;
-  PhysicsData *physics_data;
-  string name;
-  mat4 transform;
-  unsigned int instance_count;
 };
 
 struct BufferLock {
