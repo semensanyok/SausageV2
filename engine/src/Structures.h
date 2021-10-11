@@ -299,6 +299,7 @@ class MeshDataFont3D : public MeshDataBase {
   mat4 transform;
   Texture *texture;
  private:
+  MeshDataFont3D(string &text, mat4 &transform) : text{text}, transform {transform}, texture{nullptr} {};
   MeshDataFont3D() : texture{nullptr} {};
   ~MeshDataFont3D(){};
 };
@@ -371,12 +372,10 @@ struct MeshUniformData {
 
 struct FontUniformData {
   mat4 transforms[MAX_FONT_TRANSFORM];
-  unsigned int transform_offset[MAX_FONT_TRANSFORM_OFFSET];
 };
 
 struct FontUniformDataUI {
   vec2 transforms[MAX_FONT_UI_TRANSFORM];
-  unsigned int transform_offset[MAX_FONT_UI_TRANSFORM_OFFSET];
 };
 
 struct BufferMargins {

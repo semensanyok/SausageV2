@@ -181,10 +181,6 @@ class BufferStorage {
     }
     font_uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
         mesh->transform;
-    if (mesh->instance_id == 0) {
-      font_uniforms_ptr->transform_offset[mesh->buffer_id + mesh->instance_id] =
-          mesh->transform_offset;
-    }
     is_need_barrier = true;
   };
   void BufferUIFontTransform(MeshDataFontUI *mesh) {
@@ -194,11 +190,6 @@ class BufferStorage {
     font_uniforms_ui_ptr
         ->transforms[mesh->transform_offset + mesh->instance_id] =
         mesh->transform;
-    if (mesh->instance_id == 0) {
-      font_uniforms_ui_ptr
-          ->transform_offset[mesh->buffer_id + mesh->instance_id] =
-          mesh->transform_offset;
-    }
     is_need_barrier = true;
   };
 

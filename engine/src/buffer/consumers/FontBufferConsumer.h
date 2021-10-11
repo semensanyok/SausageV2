@@ -31,8 +31,20 @@ class FontBufferConsumer : public BufferConsumer {
                         vector<vec3>& colors, vector<vec2>& uvs,
                         vec3 relative_position,
                         Texture* font_data);
+  void BufferMeshData3D(MeshDataFont3D* mesh,
+                        vector<vec3>& vertices,
+                        vector<unsigned int>& indices,
+                        vector<vec3>& colors,
+                        vector<vec2>& uvs,
+                        vector<vec3>& glyph_id,
+                        vec3 relative_position,
+                        Texture* font_data);
+
   void BufferTransform(MeshDataFontUI* mesh) {
     buffer->BufferUIFontTransform(mesh);
+  }
+  void BufferTransform(MeshDataFont3D* mesh) {
+    buffer->Buffer3DFontTransform(mesh);
   }
   void Init() {
     margins = buffer->RequestStorage(BufferSettings::Margins::FONT_VERTEX_PART,
@@ -43,7 +55,7 @@ class FontBufferConsumer : public BufferConsumer {
   void Reset() { Init(); }
 
  private:
-  void BufferFontTexture(MeshDataFontUI* mesh_data, Texture* texture) {
+  void BufferFontTexture(MeshDataBase* mesh_data, Texture* texture) {
     buffer->BufferFontTexture(mesh_data, texture);
   }
 };

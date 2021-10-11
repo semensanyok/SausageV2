@@ -12,11 +12,11 @@ in vs_out {
 
 layout (std430, binding = 4) buffer FontTextureArray
 {
-    sampler2DArray glyphs;
+    sampler2DArray glyphs[];
 };
 
 out vec4 color;
 
 void main(void) {
-  color = vec4(In.color, texture(glyphs, vec3(In.uv, In.glyph_id)).r);
+  color = vec4(In.color, texture(glyphs[In.base_instance], vec3(In.uv, In.glyph_id)).r);
 }

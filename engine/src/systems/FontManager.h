@@ -22,6 +22,22 @@ struct Character {
   unsigned int advance;  // Offset to advance to next glyph
 };
 
+static struct BatchFontDataUI {
+  MeshDataFontUI* mesh_data;
+  vector<vec3> vertices;
+  vector<vec3> colors;
+  vector<vec2> uvs;
+  vector<unsigned int> indices;
+};
+static struct BatchFontData3D {
+  MeshDataFont3D* mesh_data;
+  vector<vec3> vertices;
+  vector<vec3> colors;
+  vector<vec2> uvs;
+  vector<unsigned int> indices;
+  vector<vec3> glyph_id;
+};
+
 class FontManager {
   FontBufferConsumer* buffer;
   MeshManager* mesh_manager;
@@ -36,14 +52,11 @@ class FontManager {
 
   const unsigned int command_buffer_size = 1;
 
-  vector<MeshDataFontUI*> active_texts;
+  vector<MeshDataFontUI*> active_ui_texts;
+  vector<MeshDataFont3D*> active_3d_texts;
 
-  vector<MeshDataFontUI*> new_texts;
-  vector<vector<vec3>> batched_vertices;
-  vector<vector<vec3>> batched_colors;
-  vector<vector<vec2>> batched_uvs;
-  vector<vector<unsigned int>> batched_indices;
-
+  vector<BatchFontData3D> current_3d_batch;
+  vector<BatchFontDataUI> current_ui_batch;
  public:
   FontManager(Samplers* samplers, FontBufferConsumer* buffer,
               MeshManager* mesh_manager, Renderer* renderer, Shaders* shaders)
@@ -58,37 +71,32 @@ class FontManager {
     draw_call_ui->command_buffer =
         draw_call_ui->buffer->CreateCommandBuffer(command_buffer_size);
     // TODO: 3d
-    // draw_call_3d = new DrawCall();
-    // draw_call_3d->shader = shaders->font_3d;
-    // draw_call_3d->mode = GL_TRIANGLES;
-    // draw_call_3d->buffer = (BufferConsumer*)buffer;
-    // draw_call_3d->command_buffer =
-    // draw_call_3d->buffer->CreateCommandBuffer(command_buffer_size);
+     draw_call_3d = new DrawCall();
+     draw_call_3d->shader = shaders->font_3d;
+     draw_call_3d->mode = GL_TRIANGLES;
+     draw_call_3d->buffer = (BufferConsumer*)buffer;
+     draw_call_3d->command_buffer =
+     draw_call_3d->buffer->CreateCommandBuffer(command_buffer_size);
   };
   ~FontManager(){};
   void Init() {
     _InitFontTextures();
+
     renderer->AddDraw(draw_call_ui);
     draw_call_ui->buffer->ActivateCommandBuffer(draw_call_ui->command_buffer);
 
-    // TODO: 3d
-    // renderer->AddDraw(draw_call_3d);
-    // draw_call_3d->buffer->ActivateCommandBuffer(draw_call_3d->command_buffer);
+    renderer->AddDraw(draw_call_3d);
+    draw_call_3d->buffer->ActivateCommandBuffer(draw_call_3d->command_buffer);
   }
   void Deactivate() {
     renderer->RemoveDraw(draw_call_ui);
     draw_call_ui->buffer->RemoveCommandBuffer(draw_call_ui->command_buffer);
 
-    // TODO: 3d
-    // renderer->RemoveDraw(draw_call_3d);
-    // draw_call_3d->buffer->RemoveCommandBuffer(draw_call_3d->command_buffer);
+    renderer->RemoveDraw(draw_call_3d);
+    draw_call_3d->buffer->RemoveCommandBuffer(draw_call_3d->command_buffer);
   }
-  void WriteTextUI(string& text, vec3 color, float screen_x, float screen_y) {
-    vector<vec3> vertices;
-    vector<vec3> colors;
-    vector<vec2> uvs;
-    vector<unsigned int> indices;
-    // TODO: make each font letter instanced mesh.
+  void WriteText3D(string& text, vec3 color, mat4& transform) {
+    BatchFontData3D batch;
     auto size_chars_pair = this->size_chars.begin();
     auto plate_size = size_chars_pair->first;
     auto charmap = size_chars_pair->second;
@@ -102,55 +110,109 @@ class FontManager {
       auto v = character.size.y;
       float uv_max_x = character.size.x / (float)plate_size;
       float uv_max_y = character.size.y / (float)plate_size;
-      vertices.push_back({0 + delta_x, 0 + delta_y, chr});
-      vertices.push_back({0 + delta_x, v + delta_y, chr});
-      vertices.push_back({u + delta_x, 0 + delta_y, chr});
-      vertices.push_back({u + delta_x, v + delta_y, chr});
-      colors.push_back(color);
-      colors.push_back(color);
-      colors.push_back(color);
-      colors.push_back(color);
-      uvs.push_back({0, uv_max_y});
-      uvs.push_back({0, 0});
-      uvs.push_back({uv_max_x, uv_max_y});
-      uvs.push_back({uv_max_x, 0});
+      batch.vertices.push_back({0 + delta_x, 0 + delta_y, 0.0});
+      batch.vertices.push_back({0 + delta_x, v + delta_y, 0.0});
+      batch.vertices.push_back({u + delta_x, 0 + delta_y, 0.0});
+      batch.vertices.push_back({u + delta_x, v + delta_y, 0.0});
+      batch.colors.push_back(color);
+      batch.colors.push_back(color);
+      batch.colors.push_back(color);
+      batch.colors.push_back(color);
+      batch.uvs.push_back({0, uv_max_y});
+      batch.uvs.push_back({0, 0});
+      batch.uvs.push_back({uv_max_x, uv_max_y});
+      batch.uvs.push_back({uv_max_x, 0});
+      batch.glyph_id.push_back({chr, 0, 0});
+      batch.glyph_id.push_back({chr, 0, 0});
+      batch.glyph_id.push_back({chr, 0, 0});
+      batch.glyph_id.push_back({chr, 0, 0});
 
-      indices.push_back(ind_delta + 1);
-      indices.push_back(ind_delta + 0);
-      indices.push_back(ind_delta + 2);
-      indices.push_back(ind_delta + 1);
-      indices.push_back(ind_delta + 2);
-      indices.push_back(ind_delta + 3);
+      batch.indices.push_back(ind_delta + 1);
+      batch.indices.push_back(ind_delta + 0);
+      batch.indices.push_back(ind_delta + 2);
+      batch.indices.push_back(ind_delta + 1);
+      batch.indices.push_back(ind_delta + 2);
+      batch.indices.push_back(ind_delta + 3);
       delta_x += character.advance >> 6;
       ind_delta += 4;
     }
-    new_texts.push_back(mesh_manager->CreateMeshDataFontUI(text, vec2(screen_x, screen_y)));
-    batched_vertices.push_back(vertices);
-    batched_colors.push_back(colors);
-    batched_uvs.push_back(uvs);
-    batched_indices.push_back(indices);
 
+    batch.mesh_data = mesh_manager->CreateMeshDataFont3D(text, transform);
+    current_3d_batch.push_back(batch);
+    draw_call_ui->command_count = 1;
+  }
+  void WriteTextUI(string& text, vec3 color, float screen_x, float screen_y) {
+    BatchFontDataUI batch;
+    auto size_chars_pair = this->size_chars.begin();
+    auto plate_size = size_chars_pair->first;
+    auto charmap = size_chars_pair->second;
+
+    float delta_x = 0;
+    float delta_y = 0;
+    int ind_delta = 0;
+    for (auto chr : text) {
+      auto character = charmap[chr];
+      auto u = character.size.x;
+      auto v = character.size.y;
+      float uv_max_x = character.size.x / (float)plate_size;
+      float uv_max_y = character.size.y / (float)plate_size;
+      batch.vertices.push_back({0 + delta_x, 0 + delta_y, chr});
+      batch.vertices.push_back({0 + delta_x, v + delta_y, chr});
+      batch.vertices.push_back({u + delta_x, 0 + delta_y, chr});
+      batch.vertices.push_back({u + delta_x, v + delta_y, chr});
+      batch.colors.push_back(color);
+      batch.colors.push_back(color);
+      batch.colors.push_back(color);
+      batch.colors.push_back(color);
+      batch.uvs.push_back({0, uv_max_y});
+      batch.uvs.push_back({0, 0});
+      batch.uvs.push_back({uv_max_x, uv_max_y});
+      batch.uvs.push_back({uv_max_x, 0});
+
+      batch.indices.push_back(ind_delta + 1);
+      batch.indices.push_back(ind_delta + 0);
+      batch.indices.push_back(ind_delta + 2);
+      batch.indices.push_back(ind_delta + 1);
+      batch.indices.push_back(ind_delta + 2);
+      batch.indices.push_back(ind_delta + 3);
+      delta_x += character.advance >> 6;
+      ind_delta += 4;
+    }
+    batch.mesh_data = mesh_manager->CreateMeshDataFontUI(text, vec2(screen_x, screen_y));
+    current_ui_batch.push_back(batch);
     draw_call_ui->command_count = 1;
   }
   void PreUpdate() { flush(); }
   void flush() {
-    for (int i = 0; i < new_texts.size(); i++) {
-      auto mesh = new_texts[i];
-      buffer->BufferMeshDataUI(mesh, batched_vertices[i], batched_indices[i],
-                               batched_colors[i], batched_uvs[i], {0, 0, 0},
-                               handle);
-      buffer->BufferTransform(mesh);
-      buffer->AddCommand(mesh->command, draw_call_ui->command_buffer);
-      active_texts.push_back(mesh);
-    }
-    new_texts.clear();
-    batched_vertices.clear();
-    batched_indices.clear();
-    batched_colors.clear();
-    batched_uvs.clear();
+    _FlushUI();
+    _Flush3D();
   }
 
  private:
+  void _FlushUI() {
+      for (int i = 0; i < current_ui_batch.size(); i++) {
+      auto& batch = current_ui_batch[i];
+      buffer->BufferMeshDataUI(batch.mesh_data, batch.vertices, batch.indices,
+                               batch.colors, batch.uvs, {0, 0, 0},
+                               handle);
+      buffer->BufferTransform(batch.mesh_data);
+      buffer->AddCommand(batch.mesh_data->command, draw_call_ui->command_buffer);
+      active_ui_texts.push_back(batch.mesh_data);
+    }
+      current_ui_batch.clear();
+  }
+  void _Flush3D() {
+      for (int i = 0; i < current_3d_batch.size(); i++) {
+      auto& batch = current_3d_batch[i];
+      buffer->BufferMeshData3D(batch.mesh_data, batch.vertices, batch.indices,
+                               batch.colors, batch.uvs, batch.glyph_id, {0, 0, 0},
+                               handle);
+      buffer->BufferTransform(batch.mesh_data);
+      buffer->AddCommand(batch.mesh_data->command, draw_call_ui->command_buffer);
+      active_3d_texts.push_back(batch.mesh_data);
+    }
+      current_ui_batch.clear();
+  }
   void _InitFontTextures() {
     this->size_chars.insert(
         pair<int, map<char, Character>>(FontSizes::STANDART, {}));

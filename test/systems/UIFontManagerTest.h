@@ -10,7 +10,7 @@
 using namespace std;
 using namespace glm;
 
-class FontManagerTest {
+class UIFontManagerTest {
 	SystemsManager* systems_manager;
 	
 	string teststr1 = "qwe";

@@ -62,15 +62,15 @@ class MeshManager {
     meshes.push_back(mesh);
     return mesh;
   };
-  MeshDataFont3D* CreateMeshDataFont() {
-    auto mesh = new MeshDataFont3D();
+  MeshDataFont3D* CreateMeshDataFont3D(string& text, mat4& transform) {
+    auto mesh = new MeshDataFont3D(text, transform);
     mesh->id = mesh_count++;
     mesh->buffer_id = -1;
     mesh->instance_id = 0;
     meshes.push_back(mesh);
     return mesh;
   };
-  MeshDataFontUI* CreateMeshDataFontUI(string text, vec2 transform) {
+  MeshDataFontUI* CreateMeshDataFontUI(string& text, vec2 transform) {
     auto mesh = new MeshDataFontUI(text, transform);
     mesh->id = mesh_count++;
     mesh->buffer_id = -1;
@@ -93,6 +93,12 @@ class MeshManager {
                                       vector<unsigned int>& indices,
                                       vector<vec3>& normals,
                                       vector<vec2>& uvs);
+  shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices,
+                                      vector<unsigned int>& indices,
+                                      vector<vec3>& normals,
+                                      vector<vec2>& uvs,
+                                      vector<vec3>& tangents);
+  ;
   string GetBoneName(const char* bone, Armature* armature, bool is_dae = false);
 
  private:
