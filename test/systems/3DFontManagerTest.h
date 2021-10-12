@@ -16,7 +16,7 @@ class FontManagerTest3D {
 	string teststr1 = "qwe";
 public:
 	void run() {
-		Gui::enable = false;
+		//Gui::enable = false;
 		SDL_main2();
 	};
 	void SubmitTextDraw() {

@@ -139,7 +139,7 @@ class FontManager {
 
     batch.mesh_data = mesh_manager->CreateMeshDataFont3D(text, transform);
     current_3d_batch.push_back(batch);
-    draw_call_ui->command_count = 1;
+    draw_call_3d->command_count = 1;
   }
   void WriteTextUI(string& text, vec3 color, float screen_x, float screen_y) {
     BatchFontDataUI batch;
@@ -208,10 +208,10 @@ class FontManager {
                                batch.colors, batch.uvs, batch.glyph_id, {0, 0, 0},
                                handle);
       buffer->BufferTransform(batch.mesh_data);
-      buffer->AddCommand(batch.mesh_data->command, draw_call_ui->command_buffer);
+      buffer->AddCommand(batch.mesh_data->command, draw_call_3d->command_buffer);
       active_3d_texts.push_back(batch.mesh_data);
     }
-      current_ui_batch.clear();
+      current_3d_batch.clear();
   }
   void _InitFontTextures() {
     this->size_chars.insert(
