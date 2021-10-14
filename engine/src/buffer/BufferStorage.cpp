@@ -447,7 +447,7 @@ void BufferStorage::BindVAOandBuffers(
       !(bound_buffers & BufferType::FONT_UNIFORMS)) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_LOC,
-                     uniforms_buffer);
+                     font_uniforms_buffer);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_ui_buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_UI_LOC,
