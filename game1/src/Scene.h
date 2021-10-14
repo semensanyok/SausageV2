@@ -48,8 +48,8 @@ class Scene {
     // draw_call2->command_buffer =
     // draw_call2->buffer->CreateCommandBuffer(command_buffer_size);
 
-    systems_manager->renderer->AddDraw(draw_call);
-    // systems_manager->renderer->AddDraw(draw_call2);
+    systems_manager->renderer->AddDraw(draw_call, DrawOrder::MESH);
+     //systems_manager->renderer->AddDraw(draw_call2, DrawOrder::MESH);
   }
   ~Scene(){};
   void Init() {
@@ -91,7 +91,8 @@ class Scene {
     vector<shared_ptr<MeshLoadData>> new_meshes;
     vector<Light*> new_lights;
     _LoadMeshes(scene_path, new_mesh_data, new_meshes, new_lights);
-
+    _LoadGui();
+    
     systems_manager->buffer_manager->mesh_data_buffer
         ->SetBaseMeshForInstancedCommand(new_mesh_data, new_meshes);
     _BufferMeshes(new_mesh_data, new_meshes);
@@ -119,6 +120,17 @@ class Scene {
       out_new_mesh_data.push_back(mesh);
     }
     CheckGLError();
+  }
+  void _LoadGui() {
+    float font_scale = 0.1;
+    auto trans = translate(rotate(scale(mat4(1.0), font_scale * vec3(1)), 90.0f, vec3(1,0,0)), vec3(0,10,0));
+    string text1 = "Hola 3D!";
+    string text2 = "Hola 2D!";
+
+    systems_manager->font_manager->WriteText3D(text1, {255.0, 0.0, 0.0}, trans);
+    // TODO: fix FONT ui removes 3D overlay for some reason
+    //systems_manager->font_manager->WriteTextUI(text2, {0.0, 255.0, 0.0}, 0, 0);
+
   }
   void _LoadAnimations() {
     for (auto mesh_base : all_meshes) {

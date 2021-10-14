@@ -20,7 +20,8 @@ public:
 		SDL_main2();
 	};
 	void SubmitTextDraw() {
-    auto trans = mat4(1.0);
+    float font_scale = 0.01;
+    auto trans = rotate(scale(mat4(1.0), font_scale * vec3(1)), 90.0f, vec3(1,0,0));
     systems_manager->font_manager->WriteText3D(
         teststr1, vec3(0.0, 255.0, 0.0), trans);
 	}

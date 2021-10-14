@@ -29,7 +29,7 @@ public:
 		}
 		case SDL_MOUSEBUTTONDOWN:
 		{
-			physics_manager->ClickRayTest(e->button.x, e->button.y, camera->pos, camera->far_plane - camera->near_plane, camera->projection_view_inverse);
+			physics_manager->ClickRayTestClosest(e->button.x, e->button.y, camera->pos, camera->far_plane - camera->near_plane, camera->projection_view_inverse);
 			processor->MouseButtonDown(e->button);
 			break;
 		}

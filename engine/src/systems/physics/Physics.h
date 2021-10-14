@@ -58,7 +58,7 @@ public:
 		ProfTime::physics_debug_draw_world_ns = chrono::steady_clock::now() - proft8;
 #endif
 	}
-	void ClickRayTest(float screen_x, float screen_y, const vec3& position, float distance, const mat4& camera_projection_view_inverse) {
+	void ClickRayTestClosest(float screen_x, float screen_y, const vec3& position, float distance, const mat4& camera_projection_view_inverse) {
 		auto screen_x_normalized = (screen_x / GameSettings::SCR_WIDTH - 0.5f) * 2.0;
 		auto screen_y_normalized = -((screen_y) / GameSettings::SCR_HEIGHT - 0.5f) * 2.0;
 		vec4 world_end = camera_projection_view_inverse * vec4(screen_x_normalized, screen_y_normalized, 1, 1);

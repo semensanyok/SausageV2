@@ -72,13 +72,13 @@ public:
     void flushLines();
     
     void Activate() {
-        renderer->AddDraw(draw_call);
+        renderer->AddDraw(draw_call, DrawOrder::MESH);
         draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
     }
     void Deactivate() {
         clearPersist();
         clear();
-        renderer->RemoveDraw(draw_call);
+        renderer->RemoveDraw(draw_call, DrawOrder::MESH);
         draw_call->buffer->RemoveCommandBuffer(draw_call->command_buffer);
     }
     void   drawLinePersist(const btVector3& from, const btVector3& to, const btVector3& color);

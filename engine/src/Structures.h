@@ -407,6 +407,11 @@ const BufferTypeFlag FONT_BUFFERS =
     MESH_VAO | VERTEX | INDEX | COMMAND | FONT_TEXTURE | FONT_UNIFORMS;
 };  // namespace BufferType
 
+enum DrawOrder {
+  MESH,
+  UI
+};
+
 namespace SausageDefaults {
 inline vector<MeshDataBase *> DEFAULT_MESH_DATA_VECTOR;
 };
