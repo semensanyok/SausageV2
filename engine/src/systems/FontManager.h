@@ -95,7 +95,7 @@ class FontManager {
     renderer->RemoveDraw(draw_call_3d);
     draw_call_3d->buffer->RemoveCommandBuffer(draw_call_3d->command_buffer);
   }
-  void WriteText3D(string& text, vec3 color, mat4& transform, float scale = 0.01) {
+  void WriteText3D(string& text, vec3 color, mat4& transform, float font_scale = 0.01) {
     BatchFontData3D batch;
     auto size_chars_pair = this->size_chars.begin();
     auto plate_size = size_chars_pair->first;
@@ -106,19 +106,21 @@ class FontManager {
     int ind_delta = 0;
     for (auto chr : text) {
       auto character = charmap[chr];
-      auto u = character.size.x * scale;
-      auto v = character.size.y * scale;
+      //auto u = character.size.x * font_scale;
+      //auto v = character.size.y * font_scale;
+      auto u = character.size.x;
+      auto v = character.size.y;
       float uv_max_x = character.size.x / (float)plate_size;
       float uv_max_y = character.size.y / (float)plate_size;
-      //batch.vertices.push_back({0 + delta_x, 0 + delta_y, 0.0});
-      //batch.vertices.push_back({0 + delta_x, v + delta_y, 0.0});
-      //batch.vertices.push_back({u + delta_x, 0 + delta_y, 0.0});
-      //batch.vertices.push_back({u + delta_x, v + delta_y, 0.0});
+      batch.vertices.push_back({0 + delta_x, 0 + delta_y, 0.0});
+      batch.vertices.push_back({0 + delta_x, v + delta_y, 0.0});
+      batch.vertices.push_back({u + delta_x, 0 + delta_y, 0.0});
+      batch.vertices.push_back({u + delta_x, v + delta_y, 0.0});
 
-      batch.vertices.push_back({0 + delta_x,0.0, 0 + delta_y});
-      batch.vertices.push_back({0 + delta_x,0.0, v + delta_y});
-      batch.vertices.push_back({u + delta_x,0.0, 0 + delta_y});
-      batch.vertices.push_back({u + delta_x,0.0, v + delta_y});
+      //batch.vertices.push_back({0 + delta_x,0.0, 0 + delta_y});
+      //batch.vertices.push_back({0 + delta_x,0.0, v + delta_y});
+      //batch.vertices.push_back({u + delta_x,0.0, 0 + delta_y});
+      //batch.vertices.push_back({u + delta_x,0.0, v + delta_y});
       
       batch.colors.push_back(color);
       batch.colors.push_back(color);
@@ -139,9 +141,11 @@ class FontManager {
       batch.indices.push_back(ind_delta + 1);
       batch.indices.push_back(ind_delta + 2);
       batch.indices.push_back(ind_delta + 3);
-      delta_x += (character.advance >> 6)* scale;
+      //delta_x += (character.advance >> 6)* font_scale;
+      delta_x += character.advance >> 6;
       ind_delta += 4;
     }
+    transform = scale(transform, vec3(1) * font_scale);
     batch.mesh_data = mesh_manager->CreateMeshDataFont3D(text, transform);
     current_3d_batch.push_back(batch);
     draw_call_3d->command_count = 1;

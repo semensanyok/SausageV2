@@ -31,7 +31,7 @@ out vs_out {
 void main()
 {
     mat4 transform = transforms[gl_BaseInstanceARB];
-    gl_Position = projection_view * mat4(1) * vec4(position, 1.0);
+    gl_Position = projection_view * transform * vec4(position, 1.0);
     Out.color = color;
     Out.glyph_id = int(glyph_id.x);
     Out.uv = uv.xy;
