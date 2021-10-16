@@ -11,7 +11,7 @@
 using namespace std;
 using namespace glm;
 
-class FontBufferConsumer : public BufferConsumer {
+class FontBufferConsumerUI : public BufferConsumer {
   MeshManager* mesh_manager;
   BufferMargins margins;
   unsigned long vertex_total = 0;
@@ -19,32 +19,20 @@ class FontBufferConsumer : public BufferConsumer {
   unsigned long meshes_total = 0;
 
  public:
-  FontBufferConsumer(BufferStorage* buffer, MeshManager* mesh_manager)
+  FontBufferConsumerUI(BufferStorage* buffer, MeshManager* mesh_manager)
       : BufferConsumer(buffer, BufferType::FONT_BUFFERS),
         mesh_manager{mesh_manager} {}
-  ~FontBufferConsumer() {}
+  ~FontBufferConsumerUI() {}
   // TODO:
   // track available buckets.
-  void BufferMeshDataUI(MeshDataFontUI* mesh,
-                        vector<vec3>& vertices,
-                        vector<unsigned int>& indices,
-                        vector<vec3>& colors, vector<vec2>& uvs,
-                        vec3 relative_position,
-                        Texture* font_data);
-  void BufferMeshData3D(MeshDataFont3D* mesh,
-                        vector<vec3>& vertices,
-                        vector<unsigned int>& indices,
-                        vector<vec3>& colors,
-                        vector<vec2>& uvs,
-                        vector<vec3>& glyph_id,
-                        vec3 relative_position,
-                        Texture* font_data);
-
+  void BufferMeshData(MeshDataFontUI* mesh,
+                      vector<vec3>& vertices,
+                      vector<unsigned int>& indices,
+                      vector<vec3>& colors, vector<vec2>& uvs,
+                      vec3 relative_position,
+                      Texture* font_data);
   void BufferTransform(MeshDataFontUI* mesh) {
     buffer->BufferUIFontTransform(mesh);
-  }
-  void BufferTransform(MeshDataFont3D* mesh) {
-    buffer->Buffer3DFontTransform(mesh);
   }
   void Init() {
     margins = buffer->RequestStorage(BufferSettings::Margins::FONT_VERTEX_PART,

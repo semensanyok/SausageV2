@@ -292,16 +292,16 @@ class MeshDataFontUI : public MeshDataBase {
   ~MeshDataFontUI(){};
 };
 
-class MeshDataFont3D : public MeshDataBase {
+class MeshDataOverlay3D : public MeshDataBase {
   friend class MeshManager;
  public:
   string text;
   mat4 transform;
   Texture *texture;
  private:
-  MeshDataFont3D(string &text, mat4 &transform) : text{text}, transform {transform}, texture{nullptr} {};
-  MeshDataFont3D() : texture{nullptr} {};
-  ~MeshDataFont3D(){};
+  MeshDataOverlay3D(string &text, mat4 &transform) : text{text}, transform {transform}, texture{nullptr} {};
+  MeshDataOverlay3D() : texture{nullptr} {};
+  ~MeshDataOverlay3D(){};
 };
 
 class AnimMesh {

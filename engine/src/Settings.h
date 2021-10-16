@@ -58,8 +58,10 @@ namespace BufferSettings {
 		const float DEBUG_PHYS_VERTEX_PART = 0;
 		const float DEBUG_PHYS_INDEX_PART = 0;
 #endif
-		const float FONT_VERTEX_PART = 0.05;
-		const float FONT_INDEX_PART = 0.05;
+		const float FONT_VERTEX_PART = 0.03;
+		const float FONT_INDEX_PART = 0.03;
+    const float OVERLAY_VERTEX_PART = 0.03;
+		const float OVERLAY_INDEX_PART = 0.03;
 	}
 };
 

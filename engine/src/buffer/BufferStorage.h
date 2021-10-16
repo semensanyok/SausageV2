@@ -26,7 +26,8 @@ using namespace BufferSettings;
 
 class BufferStorage {
   friend class MeshDataBufferConsumer;
-  friend class FontBufferConsumer;
+  friend class FontBufferConsumerUI;
+  friend class OverlayBufferConsumer3D;
 
  private:
   const unsigned long VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
@@ -175,7 +176,7 @@ class BufferStorage {
   void BufferFontTexture(MeshDataBase *mesh, Texture *texture) {
     font_texture_ptr[mesh->buffer_id] = texture->texture_handle_ARB;
   };
-  void Buffer3DFontTransform(MeshDataFont3D *mesh) {
+  void Buffer3DFontTransform(MeshDataOverlay3D *mesh) {
     if (mesh->transform_offset == -1) {
       mesh->transform_offset = _GetTransformBucketFont(mesh);
     }
@@ -195,6 +196,6 @@ class BufferStorage {
 
  private:
   long _GetTransformBucket(MeshData *mesh);
-  long _GetTransformBucketFont(MeshDataFont3D *mesh);
+  long _GetTransformBucketFont(MeshDataOverlay3D *mesh);
   long _GetTransformBucketFontUI(MeshDataFontUI *mesh);
 };

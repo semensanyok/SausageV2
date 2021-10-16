@@ -62,8 +62,8 @@ class MeshManager {
     meshes.push_back(mesh);
     return mesh;
   };
-  MeshDataFont3D* CreateMeshDataFont3D(string& text, mat4& transform) {
-    auto mesh = new MeshDataFont3D(text, transform);
+  MeshDataOverlay3D* CreateMeshDataFont3D(string& text, mat4& transform) {
+    auto mesh = new MeshDataOverlay3D(text, transform);
     mesh->id = mesh_count++;
     mesh->buffer_id = -1;
     mesh->instance_id = 0;

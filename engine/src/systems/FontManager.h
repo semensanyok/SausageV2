@@ -3,7 +3,8 @@
 #include <ft2build.h>
 
 #include "AssetUtils.h"
-#include "FontBufferConsumer.h"
+#include "FontBufferConsumerUI.h"
+#include "OverlayBufferConsumer3D.h"
 #include "Logging.h"
 #include "Renderer.h"
 #include "Shader.h"
@@ -30,7 +31,7 @@ static struct BatchFontDataUI {
   vector<unsigned int> indices;
 };
 static struct BatchFontData3D {
-  MeshDataFont3D* mesh_data;
+  MeshDataOverlay3D* mesh_data;
   vector<vec3> vertices;
   vector<vec3> colors;
   vector<vec2> uvs;
@@ -39,7 +40,8 @@ static struct BatchFontData3D {
 };
 
 class FontManager {
-  FontBufferConsumer* buffer;
+  FontBufferConsumerUI* buffer_ui;
+  OverlayBufferConsumer3D* buffer_3d;
   MeshManager* mesh_manager;
   DrawCall* draw_call_ui;
   DrawCall* draw_call_3d;
@@ -53,28 +55,33 @@ class FontManager {
   const unsigned int command_buffer_size = 1;
 
   vector<MeshDataFontUI*> active_ui_texts;
-  vector<MeshDataFont3D*> active_3d_texts;
+  vector<MeshDataOverlay3D*> active_3d_texts;
 
   vector<BatchFontData3D> current_3d_batch;
   vector<BatchFontDataUI> current_ui_batch;
  public:
-  FontManager(Samplers* samplers, FontBufferConsumer* buffer,
-              MeshManager* mesh_manager, Renderer* renderer, Shaders* shaders)
+  FontManager(Samplers* samplers,
+    FontBufferConsumerUI* buffer_ui,
+    OverlayBufferConsumer3D* buffer_3d,
+    MeshManager* mesh_manager,
+    Renderer* renderer,
+    Shaders* shaders)
       : samplers{samplers},
-        buffer{buffer},
+        buffer_ui{buffer_ui},
+        buffer_3d {buffer_3d},
         mesh_manager{mesh_manager},
         renderer{renderer} {
     draw_call_ui = new DrawCall();
     draw_call_ui->shader = shaders->font_ui;
     draw_call_ui->mode = GL_TRIANGLES;
-    draw_call_ui->buffer = (BufferConsumer*)buffer;
+    draw_call_ui->buffer = (BufferConsumer*)buffer_ui;
     draw_call_ui->command_buffer =
         draw_call_ui->buffer->CreateCommandBuffer(command_buffer_size);
     // TODO: 3d
      draw_call_3d = new DrawCall();
      draw_call_3d->shader = shaders->font_3d;
      draw_call_3d->mode = GL_TRIANGLES;
-     draw_call_3d->buffer = (BufferConsumer*)buffer;
+     draw_call_3d->buffer = (BufferConsumer*)buffer_3d;
      draw_call_3d->command_buffer =
      draw_call_3d->buffer->CreateCommandBuffer(command_buffer_size);
   };
@@ -201,11 +208,11 @@ class FontManager {
   void _FlushUI() {
       for (int i = 0; i < current_ui_batch.size(); i++) {
       auto& batch = current_ui_batch[i];
-      buffer->BufferMeshDataUI(batch.mesh_data, batch.vertices, batch.indices,
+      buffer_ui->BufferMeshData(batch.mesh_data, batch.vertices, batch.indices,
                                batch.colors, batch.uvs, {0, 0, 0},
                                handle);
-      buffer->BufferTransform(batch.mesh_data);
-      buffer->AddCommand(batch.mesh_data->command, draw_call_ui->command_buffer);
+      buffer_ui->BufferTransform(batch.mesh_data);
+      buffer_ui->AddCommand(batch.mesh_data->command, draw_call_ui->command_buffer);
       active_ui_texts.push_back(batch.mesh_data);
     }
       current_ui_batch.clear();
@@ -213,11 +220,11 @@ class FontManager {
   void _Flush3D() {
       for (int i = 0; i < current_3d_batch.size(); i++) {
       auto& batch = current_3d_batch[i];
-      buffer->BufferMeshData3D(batch.mesh_data, batch.vertices, batch.indices,
+      buffer_3d->BufferMeshData(batch.mesh_data, batch.vertices, batch.indices,
                                batch.colors, batch.uvs, batch.glyph_id, {0, 0, 0},
                                handle);
-      buffer->BufferTransform(batch.mesh_data);
-      buffer->AddCommand(batch.mesh_data->command, draw_call_3d->command_buffer);
+      buffer_3d->BufferTransform(batch.mesh_data);
+      buffer_3d->AddCommand(batch.mesh_data->command, draw_call_3d->command_buffer);
       active_3d_texts.push_back(batch.mesh_data);
     }
       current_3d_batch.clear();

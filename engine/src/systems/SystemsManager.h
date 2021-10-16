@@ -5,7 +5,6 @@
 #include "RendererContextManager.h"
 #include "Camera.h"
 #include "Gui.h"
-#include "buffer.h"
 #include "Controller.h"
 #include "TextureManager.h"
 #include "FontManager.h"
@@ -16,6 +15,7 @@
 #include "MouseKeyboardEventProcessor.h"
 #include "Logging.h"
 #include "FileWatcher.h"
+#include "BufferManager.h"
 
 class SystemsManager
 {

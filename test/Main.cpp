@@ -13,7 +13,7 @@ int main()
 	//GLMHelpersTest::run();
 	//AssetUtilsTest::run();
 	//RendererContextManagerTest::run();
-	//UIFontManagerTest().run();
-  FontManagerTest3D().run();
+	UIFontManagerTest().run();
+  //FontManagerTest3D().run();
 	return 0;
 }

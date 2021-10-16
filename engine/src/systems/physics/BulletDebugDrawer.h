@@ -6,7 +6,7 @@
 #include "Renderer.h"
 #include "Settings.h"
 #include "StateManager.h"
-#include "buffer.h"
+#include "BulletDebugDrawerBufferConsumer.h"
 
 using namespace std;
 
