@@ -9,8 +9,8 @@
 
 class BulletDebugDrawerBufferConsumer : public BufferConsumer {
     BufferMargins margins;
-    unsigned long vertex_total;
-    unsigned long index_total;
+    unsigned long vertex_total = 0;
+    unsigned long index_total = 0;
     unsigned long meshes_total = 1;
 public:
     MeshData* mesh = nullptr;

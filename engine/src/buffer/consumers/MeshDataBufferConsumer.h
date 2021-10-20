@@ -38,4 +38,7 @@ public:
     void BufferMeshTexture(MeshData* mesh) {
       buffer->BufferMeshTexture(mesh);
     };
+    void BufferBoneTransform(map<unsigned int, mat4>& bones_transforms) {
+      buffer->BufferBoneTransform(bones_transforms);
+    };
 };

@@ -4,13 +4,17 @@
 #include "Structures.h"
 #include "Settings.h"
 #include "BufferStorage.h"
+#include "BufferManager.h"
 
 using namespace std;
 
 class StateManager {
+  MeshDataBufferConsumer* mesh_data_buffer;
 	map<unsigned long, pair<MeshData*, mat4>> physics_update;
 
 public:
+  StateManager(BufferManager* buffer_manager)
+      : mesh_data_buffer{ buffer_manager->mesh_data_buffer } {};
 	float delta_time = 0;
 	float last_ticks = 0;
 	uint32_t milliseconds_since_start = 0;
@@ -26,8 +30,8 @@ public:
 			Events::end_render_frame_event.wait(end_render_frame_lock);
 		}
 	}
-	void BufferBoneTransformUpdate(BufferStorage* buffer, map<unsigned int, mat4>& final_transforms) {
-		buffer->BufferBoneTransform(final_transforms);
+	void BufferBoneTransformUpdate(map<unsigned int, mat4>& bones_transforms) {
+		mesh_data_buffer->BufferBoneTransform(bones_transforms);
 	}
 	void UpdateDeltaTimeTimings() {
 		float this_ticks = SDL_GetTicks();
@@ -48,7 +52,7 @@ private:
 		for (auto& mesh_update : physics_update) {
 			auto mesh = mesh_update.second.first;
 			mesh->transform = mesh_update.second.second;
-			mesh->buffer->BufferTransform(mesh);
+			mesh_data_buffer->BufferTransform(mesh);
 		}
 		physics_update.clear();
 	}

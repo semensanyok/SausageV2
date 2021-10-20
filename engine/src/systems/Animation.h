@@ -7,7 +7,7 @@
 #include "GLMHelpers.h"
 #include "AnimHelpers.h"
 #include "StateManager.h"
-
+#include "BufferManager.h"
 
 using namespace std;
 using namespace glm;
@@ -25,8 +25,14 @@ class AnimationManager {
     atomic<unsigned long> anim_count{ 0 };
     StateManager* state_manager;
     MeshManager* mesh_manager;
+    MeshDataBufferConsumer* mesh_data_buffer;
 public:
-    AnimationManager(StateManager* state_manager, MeshManager* mesh_manager) : state_manager{ state_manager }, mesh_manager{ mesh_manager } {};
+    AnimationManager(StateManager* state_manager,
+      MeshManager* mesh_manager,
+      BufferManager* buffer_manager) :
+      state_manager{ state_manager },
+      mesh_manager{ mesh_manager },
+      mesh_data_buffer{ buffer_manager->mesh_data_buffer } {};
     ~AnimationManager() {};
     void Reset();
     void QueueMeshAnimUpdate(AnimMesh* mesh);

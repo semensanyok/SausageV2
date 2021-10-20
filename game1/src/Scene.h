@@ -116,6 +116,8 @@ class Scene {
       if (mesh->name != "Terrain") {
         mesh->physics_data->mass = 10.0;
       }
+      mesh->physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
+      mesh->physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
       out_new_mesh_data.push_back(mesh);
     }
     CheckGLError();

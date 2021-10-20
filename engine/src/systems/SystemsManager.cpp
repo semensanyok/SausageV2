@@ -8,13 +8,13 @@ void SystemsManager::InitSystems() {
 	main_thread_id = this_thread::get_id();
 	mesh_manager = new MeshManager();
 	file_watcher = new FileWatcher();
-	state_manager = new StateManager();
 	camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
 	renderer_context_manager = new RendererContextManager();
 	renderer = new Renderer(renderer_context_manager);
 	renderer_context_manager->InitContext();
 	buffer_manager = new BufferManager(mesh_manager);
 	buffer_manager->Init();
+	state_manager = new StateManager(buffer_manager);
 	samplers = new Samplers();
 	samplers->Init();
 	texture_manager = new TextureManager(samplers);
@@ -32,7 +32,7 @@ void SystemsManager::InitSystems() {
 #endif
 	controller_event_processor = new ControllerEventProcessorEditor(camera);
 	controller = new Controller(camera, state_manager, physics_manager, controller_event_processor);
-	anim_manager = new AnimationManager(state_manager, mesh_manager);
+	anim_manager = new AnimationManager(state_manager, mesh_manager, buffer_manager);
 
 	async_manager = new AsyncTaskManager();
 	_SubmitAsyncTasks();

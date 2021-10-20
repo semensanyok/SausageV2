@@ -58,7 +58,11 @@ public:
 		ProfTime::physics_debug_draw_world_ns = chrono::steady_clock::now() - proft8;
 #endif
 	}
-	void ClickRayTestClosest(float screen_x, float screen_y, const vec3& position, float distance, const mat4& camera_projection_view_inverse) {
+	void ClickRayTestClosest(float screen_x,
+    float screen_y,
+    const vec3& position,
+    float distance,
+    const mat4& camera_projection_view_inverse) {
 		auto screen_x_normalized = (screen_x / GameSettings::SCR_WIDTH - 0.5f) * 2.0;
 		auto screen_y_normalized = -((screen_y) / GameSettings::SCR_HEIGHT - 0.5f) * 2.0;
 		vec4 world_end = camera_projection_view_inverse * vec4(screen_x_normalized, screen_y_normalized, 1, 1);
@@ -67,33 +71,31 @@ public:
 		btVector3 btStart(position.x, position.y, position.z);
 		btVector3 btEnd(world_end.x, world_end.y, world_end.z);
 
-		btCollisionWorld::ClosestRayResultCallback RayCallback(
+		btCollisionWorld::ClosestRayResultCallback rayCallback(
 			btStart,
 			btEnd
 		);
 
+    rayCallback.m_collisionFilterGroup =
+                    SausageCollisionMasks::CLICKABLE_GROUP_0;
+    rayCallback.m_collisionFilterMask =
+                    SausageCollisionMasks::CLICKABLE_GROUP_0;
+
 		dynamicsWorld->rayTest(
 			btStart,
 			btEnd,
-			RayCallback
+			rayCallback
 		);
 
-		string message;
-		if (RayCallback.hasHit()) {
-			std::ostringstream oss;
-			oss << "mesh " << ((MeshData*)RayCallback.m_collisionObject->getUserPointer())->name;
-			message = oss.str();
-		}
-		else {
-			message = "background";
-		}
+    if (rayCallback.hasHit()) {
+      auto up = rayCallback.m_collisionObject->getUserPointer();
+      if (up != nullptr) {
+        //((MeshDataClickable*)up)->Call();
+      }
+    }
 		if (GameSettings::phys_debug_draw) {
 			debugDrawer->drawLinePersist(btStart, btEnd, { 255,0,0 });
 		}
-#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
-		
-#endif
-		cout << message << endl;
 	}
 	void UpdateTransforms() {
 #ifdef SAUSAGE_PROFILE_ENABLE
@@ -115,7 +117,7 @@ public:
 #endif
 	}
 	void AddBoxRigidBody(PhysicsData* physics_data,
-    MeshDataBase* user_pointer,
+    MeshData* user_pointer,
     mat4& model_transform) {
     vec3 half_extents = physics_data->max_AABB - physics_data->min_AABB;
 		half_extents.x = half_extents.x / 2;
@@ -128,8 +130,8 @@ public:
 		if (model_transform[0].x > 1 || model_transform[1].y > 1 || model_transform[2].z > 1) {
 			LOG((ostringstream()
 				<< "model scale must be 1 for bullet rigidbody. "
-				"Incorrect collision prediction for mesh: "
-				<< (user_pointer == nullptr ? string("Unknown user pointer") : ((MeshData*)user_pointer)->name)).str());
+				"Incorrect collision prediction for mesh. "
+				<< (user_pointer == nullptr ? string("Unknown user pointer") : ((MeshDataClickable*)user_pointer)->mesh_data->name)).str());
 		}
 		transform.setFromOpenGLMatrix(&model_transform[0][0]);
 		btDefaultMotionState* motionstate = new btDefaultMotionState(transform);
@@ -149,7 +151,7 @@ public:
 		btRigidBody* rigidBody = new btRigidBody(rigidBodyCI);
 		
 		rigidBody->setUserPointer(user_pointer);
-		dynamicsWorld->addRigidBody(rigidBody);
+		dynamicsWorld->addRigidBody(rigidBody, physics_data->collision_group, physics_data->collides_with_groups);
 		rigidBodies.push_back(rigidBody);
 	}
 

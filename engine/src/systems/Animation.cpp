@@ -37,7 +37,7 @@ void AnimationManager::PlayAnim() {
                 }
             }
         }
-        state_manager->BufferBoneTransformUpdate(anim_mesh->mesh->buffer, final_transforms);
+        state_manager->BufferBoneTransformUpdate(final_transforms);
         active_anim++;
     }
 }

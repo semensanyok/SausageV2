@@ -259,7 +259,6 @@ void BufferStorage::BufferMeshData(MeshDataBase *mesh,
                                    unsigned long &meshes_total,
                                    BufferMargins &margins,
                                    vector<MeshDataBase *> &instances) {
-  mesh->buffer = this;
   auto raw = load_data.get();
   bool is_instance = mesh->base_mesh != nullptr;
   if (is_instance) {

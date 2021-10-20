@@ -209,10 +209,22 @@ class PhysicsData {
   vec3 max_AABB;
   vec3 min_AABB;
   float mass;
+  int collision_group;
+  int collides_with_groups;
+
   PhysicsData(vec3 min_AABB, vec3 max_AABB)
-      : min_AABB{min_AABB}, max_AABB{max_AABB}, mass{0.0} {}
-  PhysicsData(vec3 min_AABB, vec3 max_AABB, float mass)
-      : min_AABB{min_AABB}, max_AABB{max_AABB}, mass{mass} {}
+      : min_AABB{min_AABB},
+        max_AABB{max_AABB},
+        mass{0.0},
+        collision_group{0},
+        collides_with_groups{0} {}
+  PhysicsData(vec3 min_AABB, vec3 max_AABB,
+    float mass,
+    int collision_group,
+    int collides_with_groups)
+      : min_AABB{min_AABB}, max_AABB{max_AABB}, mass{mass},
+        collision_group{collision_group},
+        collides_with_groups{collides_with_groups} {}
 };
 struct MeshLoadData {
   vector<Vertex> vertices;
@@ -233,14 +245,12 @@ class MeshDataBase {
   long vertex_offset;
   long index_offset;
   long transform_offset;
-  BufferStorage *buffer;
   MeshDataBase *base_mesh;
   DrawElementsIndirectCommand command;
   MeshDataBase()
       : vertex_offset{-1},
         index_offset{-1},
         buffer_id{-1},
-        buffer {nullptr},
         base_mesh{nullptr},
         transform_offset{-1} {};
   virtual ~MeshDataBase(){};
@@ -249,6 +259,7 @@ class MeshDataBase {
 
 class MeshData : public MeshDataBase {
   friend class MeshManager;
+  friend class MeshDataClickable;
  public:
   mat4 transform;
   bool is_transparent;
@@ -302,6 +313,15 @@ class MeshDataOverlay3D : public MeshDataBase {
   MeshDataOverlay3D(string &text, mat4 &transform) : text{text}, transform {transform}, texture{nullptr} {};
   MeshDataOverlay3D() : texture{nullptr} {};
   ~MeshDataOverlay3D(){};
+};
+
+class MeshDataClickable {
+ public:
+  MeshData *mesh_data;
+  MeshDataClickable(MeshData *mesh_data) : mesh_data{mesh_data} {} 
+  void Call() {
+    cout << "RayHit from mesh " << mesh_data->name << endl;
+  }
 };
 
 class AnimMesh {
@@ -410,6 +430,14 @@ const BufferTypeFlag FONT_BUFFERS =
 enum DrawOrder {
   MESH,
   UI
+};
+
+// bullet supports 32 bit masks. create new dynamics world if not enough.
+namespace SausageCollisionMasks {
+const int MESH_GROUP_0 = 1;
+const int CLICKABLE_GROUP_0 = 1 << 1;
+
+const int ALL = 0b11111111111111111111111111111111;
 };
 
 namespace SausageDefaults {
