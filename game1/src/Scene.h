@@ -32,6 +32,15 @@ class Scene {
   string scene_path = GetModelPath("Frog.fbx");
   // string scene_path = GetModelPath("dae/Frog.dae");
   // string scene_path = GetModelPath("Frog.gltf");
+
+  set<string> clickable_meshes_names = {
+    "Cube.001",
+    "Cube.002",
+    "Cube.003",
+    "Cube.004",
+    "Frog"
+  };
+
   Scene(SystemsManager* systems_manager)
       : systems_manager{systems_manager}, shaders{systems_manager->shaders} {
     draw_call = new DrawCall();
@@ -165,8 +174,15 @@ class Scene {
   void _AddRigidBodies(vector<MeshDataBase*>& new_meshes) {
     for (auto& mesh_base : new_meshes) {
       if (MeshData* mesh = dynamic_cast<MeshData*>(mesh_base)) {
+        SausageUserPointer* up = nullptr;
+        if (clickable_meshes_names.contains(mesh->name)) {
+          up = new MeshDataClickable(mesh);
+        } else {
+          up = mesh;
+        }
         systems_manager->physics_manager->AddBoxRigidBody(
-            mesh->physics_data, mesh, mesh->transform);
+          mesh->physics_data, up, mesh->transform, mesh->name
+        );
       }
     }
   }

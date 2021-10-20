@@ -256,8 +256,12 @@ class MeshDataBase {
   virtual ~MeshDataBase(){};
 };
 
+class SausageUserPointer {
+ public:
+  virtual ~SausageUserPointer(){};
+};
 
-class MeshData : public MeshDataBase {
+class MeshData : public MeshDataBase, public SausageUserPointer {
   friend class MeshManager;
   friend class MeshDataClickable;
  public:
@@ -315,10 +319,11 @@ class MeshDataOverlay3D : public MeshDataBase {
   ~MeshDataOverlay3D(){};
 };
 
-class MeshDataClickable {
+
+class MeshDataClickable : public SausageUserPointer {
  public:
   MeshData *mesh_data;
-  MeshDataClickable(MeshData *mesh_data) : mesh_data{mesh_data} {} 
+  MeshDataClickable(MeshData *mesh_data) : mesh_data{mesh_data} {};
   void Call() {
     cout << "RayHit from mesh " << mesh_data->name << endl;
   }

@@ -88,9 +88,9 @@ public:
 		);
 
     if (rayCallback.hasHit()) {
-      auto up = rayCallback.m_collisionObject->getUserPointer();
-      if (up != nullptr) {
-        //((MeshDataClickable*)up)->Call();
+      auto sausage_up = (SausageUserPointer*)rayCallback.m_collisionObject->getUserPointer();
+      if (dynamic_cast<MeshDataClickable*>(sausage_up)) {
+        ((MeshDataClickable*)sausage_up)->Call();
       }
     }
 		if (GameSettings::phys_debug_draw) {
@@ -107,8 +107,15 @@ public:
 		{
 			auto rigidBody = nonStatic[i];
 			rigidBody->getMotionState()->getWorldTransform(btTrans);
-			MeshData* mesh_data = (MeshData*)rigidBody->getUserPointer();
-			auto& update = state_manager->GetPhysicsUpdate(mesh_data);
+			SausageUserPointer* sausage_up = ((SausageUserPointer*)rigidBody->getUserPointer());
+      MeshData* mesh_data = nullptr;
+      if (dynamic_cast<MeshDataClickable*>(sausage_up)) {
+        mesh_data = ((MeshDataClickable*)sausage_up)->mesh_data;
+      }
+      else if (dynamic_cast<MeshDataBase*>(sausage_up)) {
+          mesh_data = ((MeshData*)sausage_up);
+      }
+      auto& update = state_manager->GetPhysicsUpdate(mesh_data);
 			update.first = mesh_data;
 			btTrans.getOpenGLMatrix(&update.second[0][0]);
 		}
@@ -117,8 +124,9 @@ public:
 #endif
 	}
 	void AddBoxRigidBody(PhysicsData* physics_data,
-    MeshData* user_pointer,
-    mat4& model_transform) {
+    SausageUserPointer* user_pointer,
+    mat4& model_transform,
+    string& name_for_log) {
     vec3 half_extents = physics_data->max_AABB - physics_data->min_AABB;
 		half_extents.x = half_extents.x / 2;
 		half_extents.y = half_extents.y / 2;
@@ -130,8 +138,8 @@ public:
 		if (model_transform[0].x > 1 || model_transform[1].y > 1 || model_transform[2].z > 1) {
 			LOG((ostringstream()
 				<< "model scale must be 1 for bullet rigidbody. "
-				"Incorrect collision prediction for mesh. "
-				<< (user_pointer == nullptr ? string("Unknown user pointer") : ((MeshDataClickable*)user_pointer)->mesh_data->name)).str());
+				"Incorrect collision prediction for mesh: "
+				<< name_for_log).str());
 		}
 		transform.setFromOpenGLMatrix(&model_transform[0][0]);
 		btDefaultMotionState* motionstate = new btDefaultMotionState(transform);
