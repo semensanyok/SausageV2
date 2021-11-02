@@ -85,6 +85,11 @@
 					"name": "SAUSAGE_DEBUG_BUILD",
 					"value": "True",
 					"type": "BOOL"
+				},
+				{
+					"name": "PKG_CONFIG_EXECUTABLE",
+					"value": "C:/MyProjects/OpenSource/pkg-config/bin/pkg-config.exe",
+					"type": "FILEPATH"
 				}
 			]
 		},
@@ -97,7 +102,29 @@
 			"cmakeCommandArgs": "",
 			"buildCommandArgs": "-v",
 			"ctestCommandArgs": "",
-			"inheritEnvironments": [ "msvc_x64_x64" ]
+			"inheritEnvironments": [ "msvc_x64_x64" ],
+			"variables": [
+				{
+					"name": "SDL2_LIBRARY",
+					"value": "C:/MyProjects/SausageV2/engine/lib/SDL/SDL2.lib",
+					"type": "FILEPATH"
+				},
+				{
+					"name": "SDL2_PATH",
+					"value": "C:/MyProjects/SausageV2/engine/lib/SDL",
+					"type": "STRING"
+				},
+				{
+					"name": "SDL2_IMAGE_INCLUDE_DIR",
+					"value": "C:/MyProjects/SausageV2/engine/lib/SDL/include",
+					"type": "PATH"
+				},
+				{
+					"name": "SDL2_IMAGE_LIBRARY",
+					"value": "C:/MyProjects/SausageV2/engine/lib/SDL/SDL2_image.lib",
+					"type": "FILEPATH"
+				}
+			]
 		},
 		{
 			"name": "x86-Debug",
@@ -119,7 +146,19 @@
 			"cmakeCommandArgs": "",
 			"buildCommandArgs": "-v",
 			"ctestCommandArgs": "",
-			"inheritEnvironments": [ "msvc_x86" ]
+			"inheritEnvironments": [ "msvc_x86" ],
+			"variables": [
+				{
+					"name": "SDL2_PATH",
+					"value": "C:\\MyProjects\\SausageV2\\engine\\lib\\SDL",
+					"type": "STRING"
+				},
+				{
+					"name": "SDL2_IMAGE_LIBRARY",
+					"value": "C:/MyProjects/SausageV2/engine/lib/SDL/SDL2_image.lib",
+					"type": "FILEPATH"
+				}
+			]
 		}
 	]
 }

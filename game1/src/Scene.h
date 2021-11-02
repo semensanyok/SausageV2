@@ -4,7 +4,7 @@
 #include "Settings.h"
 #include "Structures.h"
 #include "sausage.h"
-#include "systems/Gui.h"
+#include "ImguiGui.h"
 #include "systems/MeshManager.h"
 #include "systems/Renderer.h"
 #include "systems/SystemsManager.h"

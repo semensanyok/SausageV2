@@ -10,6 +10,6 @@ include_directories(
 	"systems/"
 )
 
-add_executable(${SAUSAGE_TEST_PROJ} "Main.cpp" "systems/UIFontManagerTest.h" "systems/RendererContextManagerTest.h" "systems/3DFontManagerTest.h")
+add_executable(${SAUSAGE_TEST_PROJ} "Main.cpp" "systems/UIFontManagerTest.h" "systems/RendererContextManagerTest.h" "systems/3DFontManagerTest.h" "systems/ScreenOverlayTest.h")
 
 target_link_libraries(${SAUSAGE_TEST_PROJ} engine)

@@ -4,7 +4,7 @@
 #include "Renderer.h"
 #include "RendererContextManager.h"
 #include "Camera.h"
-#include "Gui.h"
+#include "ImguiGui.h"
 #include "Controller.h"
 #include "TextureManager.h"
 #include "FontManager.h"

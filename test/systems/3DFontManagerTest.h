@@ -5,7 +5,7 @@
 #include <AssetUtils.h>
 #include <SystemsManager.h>
 #include <FontManager.h>
-#include <Gui.h>
+#include <ImguiGui.h>
 
 using namespace std;
 using namespace glm;

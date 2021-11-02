@@ -7,7 +7,7 @@
 #include "OpenGLHelpers.h"
 #include "Shader.h"
 #include "Structures.h"
-#include "Gui.h"
+#include "ImguiGui.h"
 #include "TestShapes.h"
 #include "ThreadSafeQueue.h"
 #include "BufferConsumer.h"

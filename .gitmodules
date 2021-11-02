@@ -13,15 +13,9 @@
 [submodule "engine/dependencies/stb"]
 	path = engine/dependencies/stb
 	url = https://github.com/nothings/stb.git
-[submodule "engine/dependencies/zlib"]
-	path = engine/dependencies/zlib
-	url = https://github.com/madler/zlib.git
 [submodule "engine/dependencies/freetype"]
 	path = engine/dependencies/freetype
 	url = https://github.com/freetype/freetype.git
-[submodule "engine/dependencies/libRocket"]
-	path = engine/dependencies/libRocket
-	url = https://github.com/libRocket/libRocket.git
 [submodule "engine/dependencies/imgui"]
 	path = engine/dependencies/imgui
 	url = https://github.com/ocornut/imgui.git

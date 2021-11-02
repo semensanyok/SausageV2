@@ -3,7 +3,7 @@
 #include "Structures.h"
 #include "Texture.h"
 #include "sausage.h"
-#include "utils/AssimpHelper.h"
+#include "AssimpHelper.h"
 
 #define AI_MAX_BONE_WEIGHTS 4
 using namespace std;
