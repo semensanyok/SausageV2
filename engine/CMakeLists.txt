@@ -18,6 +18,8 @@ option(ASSIMP_BUILD_SAMPLES OFF)
 option(ASSIMP_BUILD_TESTS OFF)
 add_subdirectory("${ENGINE_DEP_DIR}/assimp")
 
+target_compile_options(assimp PRIVATE /w)
+
 #find_library(assimp
 #    NAMES assimp-vc142-mtd.lib # what to look for
 #    HINTS "${ENGINE_LIB_DIR}/assimp/" # where to look
@@ -66,31 +68,11 @@ find_package(freetype REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK4 REQUIRED gtk4)
 
-#pkg_check_modules(GLib REQUIRED glib-2.0)
-#pkg_check_modules(cairo REQUIRED cairo)
-#pkg_check_modules(harfbuzz REQUIRED harfbuzz)
-#pkg_check_modules(Graphene REQUIRED graphene-1.0)
-
 set(PGK_CONF_FOUND_LIBS ${GTK4_LIBRARIES}
-#${GTK4_LIBRARIES}
-#${GLib_LIBRARIES} 
-#${cairo_LIBRARIES} 
-#${harfbuzz_LIBRARIES} 
-#${Graphene_LIBRARIES}
 )
 set(PGK_CONF_FOUND_LIBS_INCLUDE_DIRS ${GTK4_INCLUDE_DIRS}
-# ${GTK4_INCLUDE_DIRS}
-# ${GLib_STATIC_INCLUDE_DIRS}
-# ${cairo_INCLUDE_DIRS}
-# ${harfbuzz_INCLUDE_DIRS}
-# ${Graphene_INCLUDE_DIRS}
 )
 set(PGK_CONF_FOUND_LIBS_LIBRARY_DIRS ${GTK4_LIBRARY_DIRS}
-#${GTK4_LIBRARY_DIRS}
-# ${GLib_STATIC_LIBRARY_DIRS}
-# ${cairo_LIBRARY_DIRS}
-# ${harfbuzz_LIBRARY_DIRS}
-# ${Graphene_LIBRARY_DIRS}
 )
 # LIBRARIES FOUND BY PKG CONFIG END ############################
 MY_PRINT_ALL_VARIABLES()
@@ -160,7 +142,9 @@ Bullet3Geometry
 Bullet3Collision 
 Bullet3Dynamics 
 LinearMath
-${SDL2_IMAGE_LIBRARIES} ${Freetype} ${PGK_CONF_FOUND_LIBS} 
+${SDL2_IMAGE_LIBRARIES} 
+${Freetype} 
+${PGK_CONF_FOUND_LIBS} 
 CACHE INTERNAL "${PROJECT_NAME} libraries" FORCE)
 
 add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES} 
@@ -181,7 +165,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/buffer/consumers/FontBufferConsumerUI.cpp" 
 "src/buffer/consumers/OverlayBufferConsumer3D.cpp")
 
-target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS} )
+target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 
 target_link_libraries(${PROJECT_NAME} ${SAUSAGE_LIBS})
 

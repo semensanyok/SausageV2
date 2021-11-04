@@ -90,6 +90,11 @@
 					"name": "PKG_CONFIG_EXECUTABLE",
 					"value": "C:/MyProjects/OpenSource/pkg-config/bin/pkg-config.exe",
 					"type": "FILEPATH"
+				},
+				{
+					"name": "ASSIMP_BUILD_ZLIB",
+					"value": "True",
+					"type": "BOOL"
 				}
 			]
 		},
