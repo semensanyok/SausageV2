@@ -19,3 +19,10 @@
 [submodule "engine/dependencies/imgui"]
 	path = engine/dependencies/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "engine/dependencies/gtk"]
+	path = engine/dependencies/gtk
+	url = https://gitlab.gnome.org/GNOME/gtk.git
+
+[submodule ".\\engine\\dependencies\\glib"]
+	path = .\\engine\\dependencies\\glib
+	url = https://github.com/GNOME/glib.git
