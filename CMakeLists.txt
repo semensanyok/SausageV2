@@ -15,3 +15,7 @@ add_subdirectory(engine)
 add_subdirectory(test)
 
 add_subdirectory(game1)
+
+get_property(aaa GLOBAL PROPERTY PATH)
+message("aaaaa $ENV{Path}")
+message("$ENV{LD_LIBRARY_PATH}")
