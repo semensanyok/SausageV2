@@ -20,9 +20,10 @@ public:
     //  });
     //GTKHelloWorldNonBlocking::gtk_main(0, nullptr);
 
-    //Init();
+   //Init();
    //GTKHelloWorldOpenGl::gtk_main(0, nullptr);
 
+    Init();
     GTKLoadedFromUIFile::gtk_main(0, nullptr);
 	};
 

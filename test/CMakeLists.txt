@@ -10,14 +10,37 @@ include_directories(
 	"systems/"
 )
 set(GRESOURCE_C   testresources.c)
-set(GRESOURCE_C_LOC   ${CMAKE_CURRENT_BINARY_DIR}/${GRESOURCE_C})
+set(GRECOURCES_GENERATED_PATH ${CMAKE_CURRENT_BINARY_DIR})
+set(GRESOURCE_C_LOC   ${GRECOURCES_GENERATED_PATH}/${GRESOURCE_C})
 set(GRESOURCE_RESOURCES_PATH testresources)
+set(GTK_UI_PATH ${CMAKE_CURRENT_LIST_DIR}/assets)
 
-#set(TEST_GRESOURCE test_gresource)
-#add_custom_target(
-#    ${TEST_GRESOURCE}
-#    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${GRESOURCE_C}
-#)
+file(GLOB files "${GTK_UI_PATH}/*")
+foreach(file ${files})
+    list(APPEND gresources_deps ${file})
+endforeach()
+
+file(GLOB files "${CMAKE_CURRENT_LIST_DIR}/assets/*.glade")
+foreach(file ${files})
+    list(APPEND gresources_glade_gtk3_deps ${file})
+endforeach()
+
+foreach(file ${files})
+    list(APPEND gresources_glade_gtk3_deps ${file})
+    get_filename_component(filename ${file} NAME)
+    message("AAAAA ${filename}")
+add_custom_command(
+    OUTPUT ${filename}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/assets
+    COMMAND glib-compile-resources
+    ARGS
+        --target=gtk4-builder-tool
+        simplify
+        --3to4
+        --replace
+        ${filename}
+)
+endforeach()
 
 add_custom_command(
     OUTPUT ${GRESOURCE_C}
@@ -27,16 +50,9 @@ add_custom_command(
         --target=${GRESOURCE_C_LOC}
         ${GRESOURCE_RESOURCES_PATH}
         --generate-source
-    #DEPENDS ${GRESOURCE_RESOURCES_PATH}
-    #VERBATIM
-    #BYPRODUCTS ${GRESOURCE_C_LOC}
-    #MAIN_DEPENDENCY ${GRESOURCE_RESOURCES_PATH}
+    DEPENDS ${gresources_deps}
 )
 
-add_custom_target(
-    dummy-resource
-    DEPENDS ${GRESOURCE_C_LOC}
-)
 
 set_source_files_properties(
     ${GRESOURCE_C_LOC}
@@ -54,6 +70,5 @@ ${GRESOURCE_C_LOC}
 )
 #add_dependencies(${PROJECT_NAME} dummy-resource)
 target_link_libraries(${PROJECT_NAME} engine)
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-
+target_include_directories(${PROJECT_NAME} PUBLIC ${GRECOURCES_GENERATED_PATH})
 #add_dependencies(${SAUSAGE_TEST_PROJ} ${TEST_GRESOURCE})

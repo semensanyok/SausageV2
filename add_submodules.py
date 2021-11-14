@@ -10,5 +10,6 @@ for path, url in [
     ("engine/dependencies/zlib", "https://github.com/madler/zlib.git"),
     ("engine/dependencies/freetype", "https://github.com/freetype/freetype.git"),
     ("engine/dependencies/libRocket", "https://github.com/libRocket/libRocket.git"),
-    ("engine/dependencies/imgui", "https://github.com/ocornut/imgui.git")]:
+    ("engine/dependencies/imgui", "https://github.com/ocornut/imgui.git"),
+    ("engine/dependencies/gtk", "https://gitlab.gnome.org/GNOME/gtk.git")]:
     subprocess.run(args=["git", "submodule", "add", url, path])
