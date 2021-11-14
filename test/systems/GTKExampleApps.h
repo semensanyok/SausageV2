@@ -1,6 +1,6 @@
 #pragma once
 #include <gtk/gtk.h>
-
+#include "testresources.c"
 static cairo_surface_t *surface = NULL;
 static double start_x;
 static double start_y;
@@ -377,18 +377,19 @@ class GTKLoadedFromUIFile {
     gsize length;
     char *filename;
     int i;
-    GtkBuilder *build;
+    GtkBuilder *builder;
     GtkApplication *app;
     gboolean done = FALSE;
+    GError* error;
 
     gtk_init ();
     app = gtk_application_new ("GTKLoadedFromUIFile", G_APPLICATION_HANDLES_OPEN);
 
-    build = gtk_builder_new_from_file ("C:\\MyProjects\\SausageV2\\test\\assets\\test.ui");
-    win = GTK_WIDGET (gtk_builder_get_object (build, "win"));
+    builder = gtk_builder_new_from_resource ("/test/test.ui");
+    win = GTK_WIDGET (gtk_builder_get_object (builder, "win"));
     gtk_window_set_application (GTK_WINDOW (win), GTK_APPLICATION (app));
-    nb = GTK_WIDGET (gtk_builder_get_object (build, "nb"));
-    g_object_unref(build);
+    nb = GTK_WIDGET (gtk_builder_get_object (builder, "nb"));
+    g_object_unref(builder);
     gtk_window_present (GTK_WINDOW (win));
     g_signal_connect (win, "destroy", G_CALLBACK (exit), &done);
 
