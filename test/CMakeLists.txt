@@ -25,26 +25,30 @@ foreach(file ${files})
     list(APPEND gresources_glade_gtk3_deps ${file})
 endforeach()
 
-foreach(file ${files})
-    list(APPEND gresources_glade_gtk3_deps ${file})
+foreach(file ${gresources_glade_gtk3_deps})
     get_filename_component(filename ${file} NAME)
-    message("AAAAA ${filename}")
+add_custom_target(
+    dummy_target_${filename} ALL
+    DEPENDS dummy_${filename}
+)
 add_custom_command(
-    OUTPUT ${filename}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/assets
-    COMMAND glib-compile-resources
+    OUTPUT dummy_${filename}
+    COMMENT "gtk4-builder-tool 3to4 ${filename}"
+    WORKING_DIRECTORY ${GTK_UI_PATH}
+    COMMAND gtk4-builder-tool
     ARGS
-        --target=gtk4-builder-tool
         simplify
         --3to4
         --replace
         ${filename}
+    DEPENDS ${file}
 )
 endforeach()
 
 add_custom_command(
     OUTPUT ${GRESOURCE_C}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/assets
+    COMMENT "glib-compile-resources ${GRESOURCE_RESOURCES_PATH}"
+    WORKING_DIRECTORY ${GTK_UI_PATH}
     COMMAND glib-compile-resources
     ARGS
         --target=${GRESOURCE_C_LOC}
