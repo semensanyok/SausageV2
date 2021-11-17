@@ -528,16 +528,15 @@ class GTKLoadedFromUIFile {
     char *filename;
     int i;
     GtkBuilder *builder;
-    GtkApplication *app;
     gboolean done = FALSE;
     GError* error;
 
     GtkWidget *drawing_area;
+
     GtkGesture *drag;
     GtkGesture *press;
 
     gtk_init ();
-    app = gtk_application_new ("GTKLoadedFromUIFile", G_APPLICATION_HANDLES_OPEN);
 
     //builder = gtk_builder_new_from_resource ("/test/test.ui");
     //win = GTK_WIDGET (gtk_builder_get_object (builder, "win"));
@@ -556,7 +555,7 @@ class GTKLoadedFromUIFile {
     // add GL area end ///////////////////////////////////////////
 
     // add GL via glad ///////////////////////////////////////////
-    builder = gtk_builder_new_from_resource ("/test/testGL.glade");
+    builder = gtk_builder_new_from_resource ("/test/testGL_gtk4.glade");
     win = GTK_WIDGET (gtk_builder_get_object (builder, "win"));
     area = GTK_WIDGET(gtk_builder_get_object (builder, "area"));
     button = GTK_WIDGET(gtk_builder_get_object (builder, "button"));
