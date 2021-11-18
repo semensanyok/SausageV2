@@ -365,24 +365,37 @@ class GTKLoadedFromUIFile {
     gboolean *done = (gboolean *)data;
     *done = TRUE;
   }
-  static void render (GtkGLArea *area, GdkGLContext *context)
+  static void render (GtkGLArea *area, GdkGLContext *context, gpointer data)
   {
-    // inside this function it's safe to use GL; the given
-    // GdkGLContext has been made current to the drawable
-    // surface used by the `GtkGLArea` and the viewport has
-    // already been set to be the size of the allocation
-
-    // we can start by clearing the buffer
-    glClearColor (255, 0, 0, 1);
-    glClear (GL_COLOR_BUFFER_BIT);
-
-    // draw your object
-    // draw_an_object ();
-
-    // we completed our drawing; the draw commands will be
-    // flushed at the end of the signal emission chain, and
-    // the buffers will be drawn on the window
+    SystemsManager* systems_manager = (SystemsManager*) data;
+    SDL_Event e;
+			while (SDL_PollEvent(&e)) {
+				if (Gui::enable) {
+					ImGui_ImplSDL2_ProcessEvent(&e);
+				}
+				systems_manager->controller->ProcessEvent(&e);
+			}
+			systems_manager->Render();
+			systems_manager->Update();
   }
+  //static void render (GtkGLArea *area, GdkGLContext *context)
+  //{
+  //  // inside this function it's safe to use GL; the given
+  //  // GdkGLContext has been made current to the drawable
+  //  // surface used by the `GtkGLArea` and the viewport has
+  //  // already been set to be the size of the allocation
+
+  //  // we can start by clearing the buffer
+  //  glClearColor (255, 0, 0, 1);
+  //  glClear (GL_COLOR_BUFFER_BIT);
+
+  //  // draw your object
+  //  // draw_an_object ();
+
+  //  // we completed our drawing; the draw commands will be
+  //  // flushed at the end of the signal emission chain, and
+  //  // the buffers will be drawn on the window
+  //}
   static void create_context (GtkWidget *widget,
                gpointer   data) {
   }
@@ -513,7 +526,8 @@ class GTKLoadedFromUIFile {
       cairo_surface_destroy (surface);
   }
 
-  static void gtk_main(int argc, char** argv) {
+  static void gtk_main(int argc, char** argv, 
+  SystemsManager *systems_manager) {
     GtkWidget *win;
     GtkWidget *nb;
     GtkWidget *lab;
@@ -564,7 +578,7 @@ class GTKLoadedFromUIFile {
     //gtk_window_set_child (GTK_WINDOW (window), area);
     gtk_widget_set_size_request(area, 200, 200);
     // connect to the "render" signal
-    g_signal_connect (area, "render", G_CALLBACK (render), NULL);
+    g_signal_connect (area, "render", G_CALLBACK (render), systems_manager);
     // add GL via glad end ///////////////////////////////////////
 
     // DRAWING AREA ////////////////////////////////////////////////

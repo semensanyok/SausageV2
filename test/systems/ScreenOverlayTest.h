@@ -24,7 +24,7 @@ public:
    //GTKHelloWorldOpenGl::gtk_main(0, nullptr);
 
     Init();
-    GTKLoadedFromUIFile::gtk_main(0, nullptr);
+    GTKLoadedFromUIFile::gtk_main(0, nullptr, systems_manager);
 	};
 
   	int SDL_main2() {
