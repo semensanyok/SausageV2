@@ -65,16 +65,46 @@ find_package(SDL2_image REQUIRED)
 find_package(freetype REQUIRED)
 
 # LIBRARIES FOUND BY PKG CONFIG ############################
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTK4 REQUIRED gtk4)
-
-set(PGK_CONF_FOUND_LIBS ${GTK4_LIBRARIES}
-)
-set(PGK_CONF_FOUND_LIBS_INCLUDE_DIRS ${GTK4_INCLUDE_DIRS}
-)
-set(PGK_CONF_FOUND_LIBS_LIBRARY_DIRS ${GTK4_LIBRARY_DIRS}
-)
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(GTK4 REQUIRED gtk4)
+#set(PGK_CONF_FOUND_LIBS ${GTK4_LIBRARIES}
+#)
+#set(PGK_CONF_FOUND_LIBS_INCLUDE_DIRS ${GTK4_INCLUDE_DIRS}
+#)
+#set(PGK_CONF_FOUND_LIBS_LIBRARY_DIRS ${GTK4_LIBRARY_DIRS}
+#)
 # LIBRARIES FOUND BY PKG CONFIG END ############################
+
+###### GTK ##################################################
+
+#set(GRESOURCE_C   gtkresources.c)
+#set(GRESOURCE_C_LOC   ${GRECOURCES_GENERATED_PATH}/${GRESOURCE_C})
+#set(GRESOURCE_RESOURCES_PATH gtkresources)
+#set(GTK_UI_PATH ${ENGINE_SRC_DIR}/systems/gtk/ui)
+#set(GRECOURCES_GENERATED_PATH ${GTK_UI_PATH})
+#
+#file(GLOB files "${GTK_UI_PATH}/*")
+#foreach(file ${files})
+#    list(APPEND gresources_deps ${file})
+#endforeach()
+#
+#MIGRATE_GLADE_GTK3_TO_GTK4_WITH_SUFFIX(${GTK_UI_PATH})
+#
+#add_custom_command(
+#    OUTPUT ${GRESOURCE_C}
+#    COMMENT "glib-compile-resources ${GRESOURCE_RESOURCES_PATH}"
+#    WORKING_DIRECTORY ${GTK_UI_PATH}
+#    COMMAND glib-compile-resources
+#    ARGS
+#        --target=${GRESOURCE_C_LOC}
+#        ${GRESOURCE_RESOURCES_PATH}
+#        --generate-source
+#    DEPENDS ${gresources_deps}
+#)
+
+###### GTK END ################################################
+
+
 MY_PRINT_ALL_VARIABLES()
 set(DEPENDENCIES_INCLUDE_DIRS 
                     "${ENGINE_DEP_DIR}/assimp/include/"
@@ -124,16 +154,6 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
 ${IMGUI_HEADERS} 
 ${DEPENDENCIES_INCLUDE_DIRS})
 
-message("GTK4_LIBRARY_DIRS ${GTK4_LIBRARY_DIRS}")
-message("GTK4_LIBRARIES ${GTK4_LIBRARIES}")
-message("PGK_CONF_FOUND_LIBS ${PGK_CONF_FOUND_LIBS}")
-message("GTK4_INCLUDE_DIRS ${GTK4_INCLUDE_DIRS}")
-message("GTK4_LIBDIR ${GTK4_LIBDIR}")
-message("GTK4_INCLUDEDIR ${GTK4_INCLUDEDIR}")
-message("PGK_CONF_FOUND_LIBS_INCLUDE_DIRS ${PGK_CONF_FOUND_LIBS_INCLUDE_DIRS}")
-message("PGK_CONF_FOUND_LIBS_LIBRARY_DIRS ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS}")
-message("PGK_CONF_FOUND_LIBS ${PGK_CONF_FOUND_LIBS}")
-
 set(SAUSAGE_LIBS assimp glad glm SDL2::Main 
 Bullet3Common 
 BulletCollision 
@@ -163,9 +183,10 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/buffer/consumers/BufferConsumer.cpp"  
 "src/systems/RendererContextManager.cpp" 
 "src/buffer/consumers/FontBufferConsumerUI.cpp" 
-"src/buffer/consumers/OverlayBufferConsumer3D.cpp")
+"src/buffer/consumers/OverlayBufferConsumer3D.cpp" 
+"src/SausageMain.h")
 
-target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
+#target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 
 target_link_libraries(${PROJECT_NAME} ${SAUSAGE_LIBS})
 

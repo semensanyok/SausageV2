@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <object class="GtkApplicationWindow" id="win">
+    <property name="name">win</property>
+    <property name="visible">1</property>
+    <property name="default-width">600</property>
+    <property name="default-height">400</property>
+    <child>
+      <object class="GtkOverlay" id="overlay">
+        <property name="name">overlay</property>
+        <property name="child">
+          <object class="GtkGLArea" id="area">
+            <property name="name">area</property>
+          </object>
+        </property>
+      </object>
+    </child>
+  </object>
+</interface>

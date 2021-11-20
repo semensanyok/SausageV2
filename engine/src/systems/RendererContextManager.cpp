@@ -22,7 +22,7 @@ void RendererContextManager::InitContext()
 #endif
 
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
-
+//#ifndef USE_GTK_BACKEND
     window = SDL_CreateWindow("caveview", SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED, GameSettings::SCR_WIDTH,
         GameSettings::SCR_HEIGHT,
@@ -31,6 +31,7 @@ void RendererContextManager::InitContext()
     );
     if (!window)
         LOG("Couldn't create window");
+//#endif // USE_GTK_BACKEND
 
     context = SDL_GL_CreateContext(window);
     if (!context)
