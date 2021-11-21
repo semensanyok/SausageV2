@@ -5,6 +5,7 @@
 #include "3DFontManagerTest.h"
 #include "RendererContextManagerTest.h"
 #include "GtkGLOverlayTest.h"
+#include "ScreenOverlayManagerTest.h"
 
 #undef main
 
@@ -15,7 +16,8 @@ int main()
 	//AssetUtilsTest::run();
 	//RendererContextManagerTest::run();
 	//UIFontManagerTest().run();
-  FontManagerTest3D().run();
+  //FontManagerTest3D().run();
   //GtkGLOverlayTest().run();
+  ScreenOverlayManagerTest().run();
   return 0;
 }

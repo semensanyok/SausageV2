@@ -184,7 +184,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/systems/RendererContextManager.cpp" 
 "src/buffer/consumers/FontBufferConsumerUI.cpp" 
 "src/buffer/consumers/OverlayBufferConsumer3D.cpp" 
-"src/SausageMain.h")
+"src/SausageMain.h" "src/systems/gui/ScreenOverlayManager.h" "src/systems/gui/ScreenOverlayManager.cpp")
 
 #target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 

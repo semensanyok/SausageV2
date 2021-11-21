@@ -35,6 +35,7 @@ void SystemsManager::InitSystems() {
 	anim_manager = new AnimationManager(state_manager, mesh_manager, buffer_manager);
 
 	async_manager = new AsyncTaskManager();
+  screen_overlay_manager = new ScreenOverlayManager();
 	_SubmitAsyncTasks();
 }
 

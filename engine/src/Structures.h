@@ -110,7 +110,9 @@ class Samplers {
 };
 // --------------------------------------------------------------------------------------------------------------------
 // Texture structures end
+namespace LightType {
 enum LightType { Point, Directional, Spot };
+}
 
 namespace AttenuationConsts {
 const float OGRE_P_L_ATT_DIST_7L = 0.7f;

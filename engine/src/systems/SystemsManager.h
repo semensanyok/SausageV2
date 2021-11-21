@@ -16,6 +16,7 @@
 #include "Logging.h"
 #include "FileWatcher.h"
 #include "BufferManager.h"
+#include "ScreenOverlayManager.h"
 
 class SystemsManager
 {
@@ -35,6 +36,7 @@ public:
 	StateManager* state_manager;
 	BulletDebugDrawer* bullet_debug_drawer;
 	ControllerEventProcessorEditor* controller_event_processor;
+  ScreenOverlayManager* screen_overlay_manager;
 
 	BufferManager* buffer_manager;
 	
