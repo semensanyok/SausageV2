@@ -70,8 +70,8 @@ class MeshManager {
     meshes.push_back(mesh);
     return mesh;
   };
-  MeshDataFontUI* CreateMeshDataFontUI(string& text, vec2 transform) {
-    auto mesh = new MeshDataFontUI(text, transform);
+  MeshDataUI* CreateMeshDataFontUI(string& text, vec2 transform) {
+    auto mesh = new MeshDataUI(text, transform);
     mesh->id = mesh_count++;
     mesh->buffer_id = -1;
     mesh->instance_id = 0;

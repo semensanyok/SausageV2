@@ -137,10 +137,8 @@ class Scene {
     string text1 = "Hola 3D!";
     string text2 = "Hola 2D!";
 
-    systems_manager->font_manager->WriteText3D(text1, {255.0, 0.0, 0.0}, trans);
-    // TODO: fix FONT ui removes 3D overlay for some reason
-    systems_manager->font_manager->WriteTextUI(text2, {0.0, 255.0, 0.0}, 0, 0);
-
+    //systems_manager->font_manager->WriteText3D(text1, {255.0, 0.0, 0.0}, trans);
+    //systems_manager->font_manager->WriteTextUI(text2, {0.0, 255.0, 0.0}, 0, 0);
   }
   void _LoadAnimations() {
     for (auto mesh_base : all_meshes) {

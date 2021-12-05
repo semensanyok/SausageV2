@@ -49,7 +49,7 @@ add_executable(${PROJECT_NAME} "Main.cpp"
 "systems/GtkGLOverlayTest.h"
 "systems/GTKExampleApps.h"
 ${GRESOURCE_C_LOC}
- "systems/ScreenOverlayManagerTest.h")
+ "systems/ScreenOverlayManagerTest.h" "systems/SausageTestBase.h")
 #add_dependencies(${PROJECT_NAME} dummy-resource)
 target_link_libraries(${PROJECT_NAME} engine)
 target_include_directories(${PROJECT_NAME} PUBLIC ${GRECOURCES_GENERATED_PATH})

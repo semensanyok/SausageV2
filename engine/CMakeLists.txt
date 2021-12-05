@@ -182,9 +182,9 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/systems/MeshManager.cpp" 
 "src/buffer/consumers/BufferConsumer.cpp"  
 "src/systems/RendererContextManager.cpp" 
-"src/buffer/consumers/FontBufferConsumerUI.cpp" 
+"src/buffer/consumers/UIBufferConsumer.cpp" 
 "src/buffer/consumers/OverlayBufferConsumer3D.cpp" 
-"src/SausageMain.h" "src/systems/gui/ScreenOverlayManager.h" "src/systems/gui/ScreenOverlayManager.cpp")
+"src/SausageMain.h" "src/systems/gui/ScreenOverlayManager.h" "src/systems/gui/ScreenOverlayManager.cpp" "src/systems/controller/ControllerUtils.h" )
 
 #target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 

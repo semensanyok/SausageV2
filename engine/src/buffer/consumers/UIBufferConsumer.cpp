@@ -1,6 +1,6 @@
-#include "FontBufferConsumerUI.h"
+#include "UIBufferConsumer.h"
 
-void FontBufferConsumerUI::BufferMeshData(MeshDataFontUI* mesh,
+void UIBufferConsumer::BufferMeshData(MeshDataUI* mesh,
     vector<vec3>& vertices, vector<unsigned int>& indices, vector<vec3>& colors,
     vector<vec2>& uvs, vec3 relative_position, Texture* font_data) {
   shared_ptr<MeshLoadData> load_data =

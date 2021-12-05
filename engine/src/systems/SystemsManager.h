@@ -20,6 +20,7 @@
 
 class SystemsManager
 {
+  friend class SausageTestBase;
 public:
 	MeshManager* mesh_manager;
 	Camera* camera;

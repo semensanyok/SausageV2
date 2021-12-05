@@ -11,7 +11,7 @@
 using namespace std;
 using namespace glm;
 
-class FontBufferConsumerUI : public BufferConsumer {
+class UIBufferConsumer : public BufferConsumer {
   MeshManager* mesh_manager;
   BufferMargins margins;
   unsigned long vertex_total = 0;
@@ -19,19 +19,19 @@ class FontBufferConsumerUI : public BufferConsumer {
   unsigned long meshes_total = 0;
 
  public:
-  FontBufferConsumerUI(BufferStorage* buffer, MeshManager* mesh_manager)
+  UIBufferConsumer(BufferStorage* buffer, MeshManager* mesh_manager)
       : BufferConsumer(buffer, BufferType::FONT_BUFFERS),
         mesh_manager{mesh_manager} {}
-  ~FontBufferConsumerUI() {}
+  ~UIBufferConsumer() {}
   // TODO:
   // track available buckets.
-  void BufferMeshData(MeshDataFontUI* mesh,
+  void BufferMeshData(MeshDataUI* mesh,
                       vector<vec3>& vertices,
                       vector<unsigned int>& indices,
                       vector<vec3>& colors, vector<vec2>& uvs,
                       vec3 relative_position,
                       Texture* font_data);
-  void BufferTransform(MeshDataFontUI* mesh) {
+  void BufferTransform(MeshDataUI* mesh) {
     buffer->BufferUIFontTransform(mesh);
   }
   void Init() {

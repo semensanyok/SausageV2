@@ -4,19 +4,44 @@ using namespace std;
 
 static ofstream logstream("LOG.log");
 
-static ThreadSafeQueue<string> log_queue;
+static struct LogEntry {
+  string message;
+  std::source_location location;
+};
 
-void LOG(const string& s) {
-	log_queue.Push(s);
+static ThreadSafeQueue<LogEntry> log_queue;
+
+void LOG(const ostringstream& s,
+         const std::source_location& location) {
+  LOG(s.str(), location);
+}
+
+void LOG(const string& s, const std::source_location& location) {
+  log_queue.Push( {s, location} );
+}
+
+static void _LogMessage(ostream& stream, std::source_location& location, string& message) {
+  stream
+        << "["
+        << location.file_name() << "("
+        << location.line() << ":"
+			  << location.column() << ")#"
+			  << location.function_name()
+        << "]"
+        << message
+        << endl;
 }
 namespace Sausage {
 	void LogIO() {
 		//this_thread::sleep_for(std::chrono::milliseconds(300));
 		auto logs = log_queue.PopAll();
 		while (!logs.empty()) {
-			auto& log = logs.front();
-			cout << log << endl;
-			logstream << log << endl;
+      auto& log = logs.front();
+      auto& location = log.location;
+      auto& message = log.message;
+
+			_LogMessage(cout, location, message);
+      _LogMessage(logstream, location, message);
 			logs.pop();
 		}
 	}

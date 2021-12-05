@@ -3,19 +3,25 @@
 #include <ft2build.h>
 
 #include "AssetUtils.h"
-#include "FontBufferConsumerUI.h"
+#include "UIBufferConsumer.h"
 #include "OverlayBufferConsumer3D.h"
 #include "Logging.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "sausage.h"
+#include "OpenGLHelpers.h"
+#include <limits>
 #include FT_FREETYPE_H
 
 using namespace std;
 
+class FontManager;
+
 namespace FontSizes {
-const int STANDART = 48;
-};
+  enum FontSizes {
+    STANDART = 48
+  };
+}
 
 struct Character {
   glm::ivec2 size;       // Size of glyph
@@ -23,12 +29,17 @@ struct Character {
   unsigned int advance;  // Offset to advance to next glyph
 };
 
-static struct BatchFontDataUI {
-  MeshDataFontUI* mesh_data;
+class BatchDataUI {
+public:
   vector<vec3> vertices;
   vector<vec3> colors;
   vector<vec2> uvs;
   vector<unsigned int> indices;
+  int x_min;
+  int x_max;
+  int y_min;
+  int y_max;
+  Texture* texture;
 };
 static struct BatchFontData3D {
   MeshDataOverlay3D* mesh_data;
@@ -40,43 +51,23 @@ static struct BatchFontData3D {
 };
 
 class FontManager {
-  FontBufferConsumerUI* buffer_ui;
-  OverlayBufferConsumer3D* buffer_3d;
-  MeshManager* mesh_manager;
-  DrawCall* draw_call_ui;
-  DrawCall* draw_call_3d;
-  Renderer* renderer;
+  //DrawCall* draw_call_3d;
   Samplers* samplers;
-  Texture* handle;
-  map<int, map<char, Character>> size_chars;
-  // TODO: instancig
-  // map<int, MeshDataFontUI> size_instanced_plane;
-
+  map<int, pair<Texture*, map<char, Character>>> size_chars;
   const unsigned int command_buffer_size = 1;
 
-  vector<MeshDataFontUI*> active_ui_texts;
+  DrawCall* draw_call_3d;
+  OverlayBufferConsumer3D* buffer_3d;
   vector<MeshDataOverlay3D*> active_3d_texts;
-
   vector<BatchFontData3D> current_3d_batch;
-  vector<BatchFontDataUI> current_ui_batch;
  public:
   FontManager(Samplers* samplers,
-    FontBufferConsumerUI* buffer_ui,
     OverlayBufferConsumer3D* buffer_3d,
     MeshManager* mesh_manager,
     Renderer* renderer,
     Shaders* shaders)
       : samplers{samplers},
-        buffer_ui{buffer_ui},
-        buffer_3d {buffer_3d},
-        mesh_manager{mesh_manager},
-        renderer{renderer} {
-    draw_call_ui = new DrawCall();
-    draw_call_ui->shader = shaders->font_ui;
-    draw_call_ui->mode = GL_TRIANGLES;
-    draw_call_ui->buffer = (BufferConsumer*)buffer_ui;
-    draw_call_ui->command_buffer =
-        draw_call_ui->buffer->CreateCommandBuffer(command_buffer_size);
+        buffer_3d {buffer_3d} {
     // TODO: 3d
      draw_call_3d = new DrawCall();
      draw_call_3d->shader = shaders->font_3d;
@@ -88,152 +79,161 @@ class FontManager {
   ~FontManager(){};
   void Init() {
     _InitFontTextures();
-
-    renderer->AddDraw(draw_call_ui, DrawOrder::UI);
-    draw_call_ui->buffer->ActivateCommandBuffer(draw_call_ui->command_buffer);
-
-    renderer->AddDraw(draw_call_3d, DrawOrder::UI);
-    draw_call_3d->buffer->ActivateCommandBuffer(draw_call_3d->command_buffer);
+    //renderer->AddDraw(draw_call_3d, DrawOrder::UI);
+    //draw_call_3d->buffer->ActivateCommandBuffer(draw_call_3d->command_buffer);
   }
   void Deactivate() {
-    renderer->RemoveDraw(draw_call_ui, DrawOrder::UI);
-    draw_call_ui->buffer->RemoveCommandBuffer(draw_call_ui->command_buffer);
-
-    renderer->RemoveDraw(draw_call_3d, DrawOrder::UI);
-    draw_call_3d->buffer->RemoveCommandBuffer(draw_call_3d->command_buffer);
+    //renderer->RemoveDraw(draw_call_3d, DrawOrder::UI);
+    //draw_call_3d->buffer->RemoveCommandBuffer(draw_call_3d->command_buffer);
   }
-  void WriteText3D(string& text, vec3 color, mat4& transform) {
-    BatchFontData3D batch;
-    auto size_chars_pair = this->size_chars.begin();
+  //void WriteText3D(string& text, vec3 color, mat4& transform) {
+  //  BatchFontData3D batch;
+  //  auto size_chars_pair = this->size_chars.begin();
+  //  auto plate_size = size_chars_pair->first;
+  //  auto charmap = size_chars_pair->second;
+
+  //  float delta_x = 0;
+  //  float delta_y = 0;
+  //  int ind_delta = 0;
+  //  for (auto chr : text) {
+  //    auto character = charmap[chr];
+  //    //auto u = character.size.x * font_scale;
+  //    //auto v = character.size.y * font_scale;
+  //    auto u = character.size.x;
+  //    auto v = character.size.y;
+  //    float uv_max_x = character.size.x / (float)plate_size;
+  //    float uv_max_y = character.size.y / (float)plate_size;
+  //    //batch.vertices.push_back({0 + delta_x, 0 + delta_y, 0.0});
+  //    //batch.vertices.push_back({0 + delta_x, v + delta_y, 0.0});
+  //    //batch.vertices.push_back({u + delta_x, 0 + delta_y, 0.0});
+  //    //batch.vertices.push_back({u + delta_x, v + delta_y, 0.0});
+
+  //                                               // -z forward
+  //    batch.vertices.push_back({0 + delta_x,0.0, - 0 + delta_y});
+  //    batch.vertices.push_back({0 + delta_x,0.0, - v + delta_y});
+  //    batch.vertices.push_back({u + delta_x,0.0, - 0 + delta_y});
+  //    batch.vertices.push_back({u + delta_x,0.0, - v + delta_y});
+  //    
+  //    batch.colors.push_back(color);
+  //    batch.colors.push_back(color);
+  //    batch.colors.push_back(color);
+  //    batch.colors.push_back(color);
+  //    batch.uvs.push_back({0, uv_max_y});
+  //    batch.uvs.push_back({0, 0});
+  //    batch.uvs.push_back({uv_max_x, uv_max_y});
+  //    batch.uvs.push_back({uv_max_x, 0});
+  //    batch.glyph_id.push_back({chr, 0, 0});
+  //    batch.glyph_id.push_back({chr, 0, 0});
+  //    batch.glyph_id.push_back({chr, 0, 0});
+  //    batch.glyph_id.push_back({chr, 0, 0});
+
+  //    batch.indices.push_back(ind_delta + 1);
+  //    batch.indices.push_back(ind_delta + 0);
+  //    batch.indices.push_back(ind_delta + 2);
+  //    batch.indices.push_back(ind_delta + 1);
+  //    batch.indices.push_back(ind_delta + 2);
+  //    batch.indices.push_back(ind_delta + 3);
+  //    //delta_x += (character.advance >> 6)* font_scale;
+  //    delta_x += character.advance >> 6;
+  //    ind_delta += 4;
+  //  }
+  //  batch.mesh_data = mesh_manager->CreateMeshDataFont3D(text, transform);
+  //  current_3d_batch.push_back(batch);
+  //  draw_call_3d->command_count = 1;
+  //}
+  unique_ptr<BatchDataUI> GetMeshTextUI(
+    string& text,
+    vec3 color,
+    FontSizes::FontSizes font_size = FontSizes::STANDART) {
+    auto batch = make_unique<BatchDataUI>();
+    Point anchor_position;
+
+    auto size_chars_pair = this->size_chars.find(font_size);
+    if (size_chars_pair == this->size_chars.end()) {
+      LOG((ostringstream() << "size_chars does not contain requested font size: " << font_size).str());
+      return batch;
+    }
     auto plate_size = size_chars_pair->first;
-    auto charmap = size_chars_pair->second;
+    batch->texture = size_chars_pair->second.first;
+    auto charmap = size_chars_pair->second.second;
+
+    int x_min = numeric_limits<int>::min();
+    int x_max = numeric_limits<int>::max();
+    int y_min = numeric_limits<int>::min();
+    int y_max = numeric_limits<int>::max();
 
     float delta_x = 0;
     float delta_y = 0;
     int ind_delta = 0;
     for (auto chr : text) {
       auto character = charmap[chr];
-      //auto u = character.size.x * font_scale;
-      //auto v = character.size.y * font_scale;
       auto u = character.size.x;
       auto v = character.size.y;
       float uv_max_x = character.size.x / (float)plate_size;
       float uv_max_y = character.size.y / (float)plate_size;
-      //batch.vertices.push_back({0 + delta_x, 0 + delta_y, 0.0});
-      //batch.vertices.push_back({0 + delta_x, v + delta_y, 0.0});
-      //batch.vertices.push_back({u + delta_x, 0 + delta_y, 0.0});
-      //batch.vertices.push_back({u + delta_x, v + delta_y, 0.0});
+      x_min = std::min<int>(0 + delta_x, x_min);
+      x_max = std::max<int>(u + delta_x, x_max);
+      y_min = std::min<int>(0 + delta_y, y_min);
+      y_max = std::max<int>(v + delta_y, y_max);
 
-                                                 // -z forward
-      batch.vertices.push_back({0 + delta_x,0.0, - 0 + delta_y});
-      batch.vertices.push_back({0 + delta_x,0.0, - v + delta_y});
-      batch.vertices.push_back({u + delta_x,0.0, - 0 + delta_y});
-      batch.vertices.push_back({u + delta_x,0.0, - v + delta_y});
-      
-      batch.colors.push_back(color);
-      batch.colors.push_back(color);
-      batch.colors.push_back(color);
-      batch.colors.push_back(color);
-      batch.uvs.push_back({0, uv_max_y});
-      batch.uvs.push_back({0, 0});
-      batch.uvs.push_back({uv_max_x, uv_max_y});
-      batch.uvs.push_back({uv_max_x, 0});
-      batch.glyph_id.push_back({chr, 0, 0});
-      batch.glyph_id.push_back({chr, 0, 0});
-      batch.glyph_id.push_back({chr, 0, 0});
-      batch.glyph_id.push_back({chr, 0, 0});
+      batch->vertices.push_back({0 + delta_x, 0 + delta_y, chr});
+      batch->vertices.push_back({0 + delta_x, v + delta_y, chr});
+      batch->vertices.push_back({u + delta_x, 0 + delta_y, chr});
+      batch->vertices.push_back({u + delta_x, v + delta_y, chr});
+      batch->colors.push_back(color);
+      batch->colors.push_back(color);
+      batch->colors.push_back(color);
+      batch->colors.push_back(color);
+      batch->uvs.push_back({0, uv_max_y});
+      batch->uvs.push_back({0, 0});
+      batch->uvs.push_back({uv_max_x, uv_max_y});
+      batch->uvs.push_back({uv_max_x, 0});
 
-      batch.indices.push_back(ind_delta + 1);
-      batch.indices.push_back(ind_delta + 0);
-      batch.indices.push_back(ind_delta + 2);
-      batch.indices.push_back(ind_delta + 1);
-      batch.indices.push_back(ind_delta + 2);
-      batch.indices.push_back(ind_delta + 3);
-      //delta_x += (character.advance >> 6)* font_scale;
+      batch->indices.push_back(ind_delta + 1);
+      batch->indices.push_back(ind_delta + 0);
+      batch->indices.push_back(ind_delta + 2);
+      batch->indices.push_back(ind_delta + 1);
+      batch->indices.push_back(ind_delta + 2);
+      batch->indices.push_back(ind_delta + 3);
       delta_x += character.advance >> 6;
       ind_delta += 4;
     }
-    batch.mesh_data = mesh_manager->CreateMeshDataFont3D(text, transform);
-    current_3d_batch.push_back(batch);
-    draw_call_3d->command_count = 1;
-  }
-  void WriteTextUI(string& text, vec3 color, float screen_x, float screen_y) {
-    BatchFontDataUI batch;
-    auto size_chars_pair = this->size_chars.begin();
-    auto plate_size = size_chars_pair->first;
-    auto charmap = size_chars_pair->second;
+    batch->x_max = x_max;
+    batch->x_min = x_min;
+    batch->y_max = y_max;
+    batch->y_min = y_min;
 
-    float delta_x = 0;
-    float delta_y = 0;
-    int ind_delta = 0;
-    for (auto chr : text) {
-      auto character = charmap[chr];
-      auto u = character.size.x;
-      auto v = character.size.y;
-      float uv_max_x = character.size.x / (float)plate_size;
-      float uv_max_y = character.size.y / (float)plate_size;
-      batch.vertices.push_back({0 + delta_x, 0 + delta_y, chr});
-      batch.vertices.push_back({0 + delta_x, v + delta_y, chr});
-      batch.vertices.push_back({u + delta_x, 0 + delta_y, chr});
-      batch.vertices.push_back({u + delta_x, v + delta_y, chr});
-      batch.colors.push_back(color);
-      batch.colors.push_back(color);
-      batch.colors.push_back(color);
-      batch.colors.push_back(color);
-      batch.uvs.push_back({0, uv_max_y});
-      batch.uvs.push_back({0, 0});
-      batch.uvs.push_back({uv_max_x, uv_max_y});
-      batch.uvs.push_back({uv_max_x, 0});
-
-      batch.indices.push_back(ind_delta + 1);
-      batch.indices.push_back(ind_delta + 0);
-      batch.indices.push_back(ind_delta + 2);
-      batch.indices.push_back(ind_delta + 1);
-      batch.indices.push_back(ind_delta + 2);
-      batch.indices.push_back(ind_delta + 3);
-      delta_x += character.advance >> 6;
-      ind_delta += 4;
-    }
-    batch.mesh_data = mesh_manager->CreateMeshDataFontUI(text, vec2(screen_x, screen_y));
-    current_ui_batch.push_back(batch);
-    draw_call_ui->command_count = 1;
+    return batch;
   }
-  void PreUpdate() { flush(); }
-  void flush() {
-    _FlushUI();
-    _Flush3D();
+  void PreUpdate() { Flush(); }
+  void Flush() {
+    //_Flush3D();
   }
 
  private:
-  void _FlushUI() {
-      for (int i = 0; i < current_ui_batch.size(); i++) {
-      auto& batch = current_ui_batch[i];
-      buffer_ui->BufferMeshData(batch.mesh_data, batch.vertices, batch.indices,
-                               batch.colors, batch.uvs, {0, 0, 0},
-                               handle);
-      buffer_ui->BufferTransform(batch.mesh_data);
-      buffer_ui->AddCommand(batch.mesh_data->command, draw_call_ui->command_buffer);
-      active_ui_texts.push_back(batch.mesh_data);
-    }
-      current_ui_batch.clear();
-  }
-  void _Flush3D() {
-      for (int i = 0; i < current_3d_batch.size(); i++) {
-      auto& batch = current_3d_batch[i];
-      buffer_3d->BufferMeshData(batch.mesh_data, batch.vertices, batch.indices,
-                               batch.colors, batch.uvs, batch.glyph_id, {0, 0, 0},
-                               handle);
-      buffer_3d->BufferTransform(batch.mesh_data);
-      buffer_3d->AddCommand(batch.mesh_data->command, draw_call_3d->command_buffer);
-      active_3d_texts.push_back(batch.mesh_data);
-    }
-      current_3d_batch.clear();
-  }
+  //void _Flush3D() {
+  //  for (int i = 0; i < current_3d_batch.size(); i++) {
+  //    auto& batch = current_3d_batch[i];
+  //    buffer_3d->BufferMeshData(batch.mesh_data, batch.vertices, batch.indices,
+  //                             batch.colors, batch.uvs, batch.glyph_id, {0, 0, 0},
+  //                             font_texture);
+  //    buffer_3d->BufferTransform(batch.mesh_data);
+  //    buffer_3d->AddCommand(batch.mesh_data->command, draw_call_3d->command_buffer);
+  //    active_3d_texts.push_back(batch.mesh_data);
+  //  }
+  //  current_3d_batch.clear();
+  //}
   void _InitFontTextures() {
-    this->size_chars.insert(
-        pair<int, map<char, Character>>(FontSizes::STANDART, {}));
-
     GLuint texture_id;
+    glGenTextures(1, &texture_id);
+    GLuint64 tex_handle =
+        glGetTextureSamplerHandleARB(texture_id, samplers->font_sampler);
+    CheckGLError();
+    auto texture = new Texture(texture_id, tex_handle, {});
+
+    this->size_chars.insert(
+      {FontSizes::STANDART, {texture, {}}});
+
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
       std::cout << "ERROR::FREETYPE: Could not init FreeType Library"
@@ -248,7 +248,6 @@ class FontManager {
     FT_Set_Pixel_Sizes(face, 0, FontSizes::STANDART);
     FT_Load_Char(face, 'A', FT_LOAD_RENDER);
 
-    glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
                    1,                    // mipmaps. 1 == no mipmaps.
@@ -284,12 +283,8 @@ class FontManager {
           ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
           ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
           face->glyph->advance.x};
-      this->size_chars[FontSizes::STANDART][c] = character;
+      this->size_chars[FontSizes::STANDART].second[c] = character;
     }
     CheckGLError();
-    GLuint64 tex_handle =
-        glGetTextureSamplerHandleARB(texture_id, samplers->font_sampler);
-    CheckGLError();
-    handle = new Texture(texture_id, tex_handle, {});
   }
 };

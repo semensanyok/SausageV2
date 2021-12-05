@@ -510,7 +510,7 @@ long BufferStorage::_GetTransformBucketFont(MeshDataOverlay3D *mesh) {
   return bucket;
 }
 
-long BufferStorage::_GetTransformBucketFontUI(MeshDataFontUI *mesh) {
+long BufferStorage::_GetTransformBucketFontUI(MeshDataUI *mesh) {
   long bucket = transforms_total_font_ui;
   transforms_total_font_ui += mesh->command.instanceCount;
   return bucket;

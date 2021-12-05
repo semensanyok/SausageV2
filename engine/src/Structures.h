@@ -291,9 +291,20 @@ class MeshData : public MeshDataBase, public SausageUserPointer {
       delete physics_data;
   };
 };
+namespace AnchorRelativeToNodePosition {
+enum AnchorRelativeToNodePosition {
+  LeftBottom,
+  LeftTop,
+  RightBottom,
+  RightTop,
+};
+}
+struct Point {
+  int x;
+  int y;
+};
 
- // plate per font size. all fonts same size - instanced meshes.
-class MeshDataFontUI : public MeshDataBase {
+class MeshDataUI : public MeshDataBase {
   friend class MeshManager;
  public:
   string text;
@@ -301,12 +312,18 @@ class MeshDataFontUI : public MeshDataBase {
   Texture *texture;
 
  private:
-  MeshDataFontUI() : texture{nullptr} {};
-  MeshDataFontUI(string text, vec2 transform) :
+  MeshDataUI() : texture{nullptr} {};
+  MeshDataUI(string text, vec2 transform) :
     text{text},
     transform{transform},
     texture{nullptr} {};
-  ~MeshDataFontUI(){};
+  ~MeshDataUI(){};
+};
+struct UINodePosition {
+  Point anchor_position;
+  AnchorRelativeToNodePosition::AnchorRelativeToNodePosition anchor_relative_to_node_position;
+  int width;
+  int height;
 };
 
 class MeshDataOverlay3D : public MeshDataBase {

@@ -4,7 +4,7 @@
 #include "MeshDataBufferConsumer.h"	
 #include "BufferStorage.h"
 #include "BulletDebugDrawerBufferConsumer.h"
-#include "FontBufferConsumerUI.h"
+#include "UIBufferConsumer.h"
 #include "OverlayBufferConsumer3D.h"
 
 class BufferManager {
@@ -12,7 +12,7 @@ class BufferManager {
 	MeshManager* mesh_manager;
 public:
 	MeshDataBufferConsumer* mesh_data_buffer;
-	FontBufferConsumerUI* font_ui_buffer;
+	UIBufferConsumer* ui_buffer;
   OverlayBufferConsumer3D* overlay_3d_buffer;
 	BulletDebugDrawerBufferConsumer* bullet_debug_drawer_buffer;
 	BufferManager(MeshManager* mesh_manager) : mesh_manager{ mesh_manager } {};

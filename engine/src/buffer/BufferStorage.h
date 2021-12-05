@@ -184,7 +184,7 @@ class BufferStorage {
         mesh->transform;
     is_need_barrier = true;
   };
-  void BufferUIFontTransform(MeshDataFontUI *mesh) {
+  void BufferUIFontTransform(MeshDataUI *mesh) {
     if (mesh->transform_offset == -1) {
       mesh->transform_offset = _GetTransformBucketFontUI(mesh);
     }
@@ -197,5 +197,5 @@ class BufferStorage {
  private:
   long _GetTransformBucket(MeshData *mesh);
   long _GetTransformBucketFont(MeshDataOverlay3D *mesh);
-  long _GetTransformBucketFontUI(MeshDataFontUI *mesh);
+  long _GetTransformBucketFontUI(MeshDataUI *mesh);
 };

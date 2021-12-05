@@ -20,7 +20,6 @@ void SystemsManager::InitSystems() {
 	texture_manager = new TextureManager(samplers);
 	_SetupShaders();
 	font_manager = new FontManager(samplers,
-    buffer_manager->font_ui_buffer,
     buffer_manager->overlay_3d_buffer,
     mesh_manager, renderer, shaders);
 	font_manager->Init();
@@ -35,7 +34,7 @@ void SystemsManager::InitSystems() {
 	anim_manager = new AnimationManager(state_manager, mesh_manager, buffer_manager);
 
 	async_manager = new AsyncTaskManager();
-  screen_overlay_manager = new ScreenOverlayManager();
+  screen_overlay_manager = new ScreenOverlayManager(buffer_manager->ui_buffer,shaders,mesh_manager,font_manager);
 	_SubmitAsyncTasks();
 }
 
