@@ -51,6 +51,7 @@ static struct BatchFontData3D {
 };
 
 class FontManager {
+  friend class ScreenOverlayManagerTest;
   //DrawCall* draw_call_3d;
   Samplers* samplers;
   map<int, pair<Texture*, map<char, Character>>> size_chars;
@@ -144,23 +145,24 @@ class FontManager {
   unique_ptr<BatchDataUI> GetMeshTextUI(
     string& text,
     vec3 color,
-    FontSizes::FontSizes font_size = FontSizes::STANDART) {
+    int font_size) {
     auto batch = make_unique<BatchDataUI>();
     Point anchor_position;
 
     auto size_chars_pair = this->size_chars.find(font_size);
     if (size_chars_pair == this->size_chars.end()) {
       LOG((ostringstream() << "size_chars does not contain requested font size: " << font_size).str());
+      batch.release();
       return batch;
     }
     auto plate_size = size_chars_pair->first;
     batch->texture = size_chars_pair->second.first;
     auto charmap = size_chars_pair->second.second;
 
-    int x_min = numeric_limits<int>::min();
-    int x_max = numeric_limits<int>::max();
-    int y_min = numeric_limits<int>::min();
-    int y_max = numeric_limits<int>::max();
+    int x_min = numeric_limits<int>::max();
+    int x_max = numeric_limits<int>::min();
+    int y_min = numeric_limits<int>::max();
+    int y_max = numeric_limits<int>::min();
 
     float delta_x = 0;
     float delta_y = 0;
@@ -224,6 +226,9 @@ class FontManager {
   //  current_3d_batch.clear();
   //}
   void _InitFontTextures() {
+    _InitFontTexture(FontSizes::STANDART);
+  }
+  void _InitFontTexture(int font_size) {
     GLuint texture_id;
     glGenTextures(1, &texture_id);
     GLuint64 tex_handle =
@@ -232,7 +237,7 @@ class FontManager {
     auto texture = new Texture(texture_id, tex_handle, {});
 
     this->size_chars.insert(
-      {FontSizes::STANDART, {texture, {}}});
+      {font_size, {texture, {}}});
 
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
@@ -245,15 +250,15 @@ class FontManager {
       std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
       return;
     }
-    FT_Set_Pixel_Sizes(face, 0, FontSizes::STANDART);
+    FT_Set_Pixel_Sizes(face, 0, font_size);
     FT_Load_Char(face, 'A', FT_LOAD_RENDER);
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
                    1,                    // mipmaps. 1 == no mipmaps.
                    GL_R8,                // Internal format
-                   FontSizes::STANDART,  // width
-                   FontSizes::STANDART,  // height
+                   font_size,  // width
+                   font_size,  // height
                    // face->glyph->bitmap.width,//width
                    // face->glyph->bitmap.rows,//height
                    BufferSettings::TEXTURES_SINGLE_FONT  // Number of layers
@@ -283,7 +288,7 @@ class FontManager {
           ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
           ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
           face->glyph->advance.x};
-      this->size_chars[FontSizes::STANDART].second[c] = character;
+      this->size_chars[font_size].second[c] = character;
     }
     CheckGLError();
   }

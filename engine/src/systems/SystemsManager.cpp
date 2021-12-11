@@ -34,7 +34,8 @@ void SystemsManager::InitSystems() {
 	anim_manager = new AnimationManager(state_manager, mesh_manager, buffer_manager);
 
 	async_manager = new AsyncTaskManager();
-  screen_overlay_manager = new ScreenOverlayManager(buffer_manager->ui_buffer,shaders,mesh_manager,font_manager);
+  screen_overlay_manager = new ScreenOverlayManager(buffer_manager->ui_buffer,shaders,mesh_manager,font_manager,renderer);
+  screen_overlay_manager->Init();
 	_SubmitAsyncTasks();
 }
 
@@ -131,8 +132,11 @@ void SystemsManager::_SetupShaders() {
 	};
 	shaders->blinn_phong->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
 	shaders->blinn_phong->SetVec3Uniform(string("view_pos"), &(camera->pos));
-	shaders->bullet_debug->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
-	shaders->font_ui->SetMat4Uniform(string("projection_ortho"), &(camera->projection_matrix_ortho));
+
+  shaders->bullet_debug->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
+
+  shaders->font_ui->SetMat4Uniform(string("projection_ortho"), &(camera->projection_matrix_ortho));
+
   shaders->font_3d->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
 }
 

@@ -93,10 +93,12 @@ public:
     UIBufferConsumer* buffer,
     Shaders* shaders,
     MeshManager* mesh_manager,
-    FontManager* font_manager) :
+    FontManager* font_manager,
+    Renderer* renderer) :
     buffer{buffer},
     mesh_manager{mesh_manager},
-    font_manager{font_manager} {
+    font_manager{font_manager},
+    renderer {renderer} {
     draw_call_ui = new DrawCall();
     draw_call_ui->shader = shaders->font_ui;
     draw_call_ui->mode = GL_TRIANGLES;
@@ -134,9 +136,14 @@ public:
       (*(cell->nodes.begin()))->OnPressed();
     }
   }
-  pair<unique_ptr<BatchDataUI>, MeshDataUI*> GetTextMesh(string& text, float screen_x = 0.0, float screen_y = 0.0) {
+  pair<unique_ptr<BatchDataUI>, MeshDataUI*> GetTextMesh(
+    string& text,
+    float screen_x,
+    float screen_y,
+    int font_size
+  ) {
     // create UI mesh pointer
-    unique_ptr<BatchDataUI> batch = font_manager->GetMeshTextUI(text, {255.0, 0.0, 0.0});
+    unique_ptr<BatchDataUI> batch = font_manager->GetMeshTextUI(text, {255.0, 0.0, 0.0}, font_size);
     MeshDataUI* mesh_data = mesh_manager->CreateMeshDataFontUI(text, vec2(screen_x, screen_y));
     mesh_data->texture = batch->texture;
 
@@ -155,12 +162,13 @@ public:
     MeshDataUI* mesh,
     //BatchDataUI* batch,
     int x_max, int x_min, int y_max, int y_min, 
-    AnchorRelativeToNodePosition::AnchorRelativeToNodePosition anchor = AnchorRelativeToNodePosition::LeftBottom) {
+    AnchorRelativeToNodePosition::AnchorRelativeToNodePosition anchor
+  ) {
     // create UI node object.
     Point anchor_position = {mesh->transform.x, mesh->transform.y};
     UINodePosition node_position = {
       anchor_position,
-      {AnchorRelativeToNodePosition::LeftBottom},
+      {anchor},
       x_max - x_min,
       y_max - y_min};
     ScreenCell* start_cell = _GetCellAtPoint(mesh->transform.x, mesh->transform.y);
@@ -169,13 +177,16 @@ public:
     _IterNodeCells(ui_node, _InsertNodeSetMaxOpenOrderCallback(ui_node));
   }
 private:
-  inline ScreenCell* _GetCellAtPoint(float screen_x = 0.0, float screen_y = 0.0) {
+  inline ScreenCell* _GetCellAtPoint(float screen_x, float screen_y) {
     if (!ControllerUtils::IsInScreenBorders(screen_x, screen_y)) {
       return nullptr;
     }
     return &all_cells[
       (int)(screen_x / cell_width) * total_cells_x +
-        (int)(screen_y / cell_width)];
+        (int)(screen_y / cell_height)];
+  }
+  inline ScreenCell* _GetCellAtPointById(int screen_x, int screen_y) {
+    return &all_cells[screen_x * total_cells_x + screen_y];
   }
   inline void _RemoveUINode(UINode* ui_node) {
     _IterNodeCells(ui_node, _RemoveNodeCallback(ui_node));
@@ -208,20 +219,20 @@ private:
     all_cells = new ScreenCell[total_cells_x * total_cells_y];
     for (int w = 0; w < total_cells_x; w++) {
       for (int h = 0; h < total_cells_y; h++)  {
-        auto cell = _GetCellAtPoint(w, h);
+        auto cell = _GetCellAtPointById(w, h);
         cell->pos.x = w * cell_width;
         cell->pos.y = h * cell_height;
         if (w != total_cells_x - 1) {
-          cell->right = _GetCellAtPoint(w + 1, h);
+          cell->right = _GetCellAtPointById(w + 1, h);
         }
         if (h != total_cells_y - 1) {
-          cell->top = _GetCellAtPoint(w, h + 1);
+          cell->top = _GetCellAtPointById(w, h + 1);
         }
         if (w != 0) {
-          cell->left = _GetCellAtPoint(w - 1, h);
+          cell->left = _GetCellAtPointById(w - 1, h);
         }
         if (h != 0) {
-          cell->bottom = _GetCellAtPoint(w, h - 1);
+          cell->bottom = _GetCellAtPointById(w, h - 1);
         }
       }
     }
