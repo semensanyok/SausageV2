@@ -23,16 +23,26 @@ using namespace std;
 class UINode;
 class ScreenCell;
 
-bool operator==(const Point& p1, const Point& p2);
-template <>
-struct std::formatter<Point> : std::formatter<std::string> {
-  auto format(Point p, format_context& ctx) {
-    return formatter<string>::format(
-      std::format("(x={}, y={})", p.x, p.y), ctx);
-  }
+class UINode
+{
+  friend class ScreenOverlayManager;
+  UINodePosition node_position;
+  ScreenCell* start_cell;
+  // last opened drawn last, above previously opened windows.
+  vector<function<void()>> on_destroys;
+public:
+  int open_order;
+  void Call() { cout << "Call" << endl; };
+  void OnHover() { cout << "OnHover" << endl; };
+  void OnPressed() { cout << "OnPressed" << endl; };
+  void OnReleased() { cout << "OnReleased" << endl; };
+  void OnDestroy() {};
+private:
+  UINode(UINodePosition node_position, ScreenCell* start_cell, int open_order) :
+    node_position{node_position},
+    start_cell{start_cell},
+    open_order {open_order} {}
 };
-
-std::ostream& operator<<(std::ostream& in, const Point& pt);
 
 class ScreenCell
 {
@@ -42,32 +52,9 @@ public:
   ScreenCell* bottom;
   ScreenCell* left;
   ScreenCell* right;
-  set<UINode*> nodes;
-};
-
-class UINode
-{
-  friend class ScreenOverlayManager;
-  UINodePosition node_position;
-  ScreenCell* start_cell;
-  // last opened drawn last, above previously opened windows.
-  int open_order;
-  vector<function<void()>> on_destroys;
-public:
-  void Call() { cout << "Call" << endl; };
-  void OnHover() { cout << "OnHover" << endl; };
-  void OnPressed() { cout << "OnPressed" << endl; };
-  void OnReleased() { cout << "OnReleased" << endl; };
-  void OnDestroy() {};
-  // opened last > opened first.
-  bool operator< (const UINode &other) {
-    return open_order < other.open_order;
-  };
-private:
-  UINode(UINodePosition node_position, ScreenCell* start_cell, int open_order) :
-    node_position{node_position},
-    start_cell{start_cell},
-    open_order {open_order} {}
+  set<UINode*, decltype([](UINode* lhs, UINode* rhs) {
+        return lhs->open_order > rhs->open_order;
+})> nodes;
 };
 
 class ScreenOverlayManager
@@ -80,7 +67,8 @@ private:
   int total_cells_x, total_cells_y;
   ScreenCell* all_cells;
 
-  vector<MeshDataUI*> active_ui_texts;
+  vector<MeshDataUI*> drawn_ui_elements;
+  vector<UINode*> interactive_ui_elements;
   UIBufferConsumer* buffer;
   MeshManager* mesh_manager;
   FontManager* font_manager;
@@ -136,6 +124,12 @@ public:
       (*(cell->nodes.begin()))->OnPressed();
     }
   }
+  void OnHover(float screen_x, float screen_y) {
+    auto cell = _GetCellAtPoint(screen_x, screen_y);
+    if (!cell->nodes.empty()) {
+      (*(cell->nodes.begin()))->OnHover();
+    }
+  }
   pair<unique_ptr<BatchDataUI>, MeshDataUI*> GetTextMesh(
     string& text,
     float screen_x,
@@ -155,10 +149,10 @@ public:
                                mesh->texture);
       buffer->BufferTransform(mesh);
       buffer->AddCommand(mesh->command, draw_call_ui->command_buffer);
-      active_ui_texts.push_back(mesh);
+      drawn_ui_elements.push_back(mesh);
       draw_call_ui->command_count = 1;
   }
-  void AddInteractiveElement(
+  UINode* AddInteractiveElement(
     MeshDataUI* mesh,
     //BatchDataUI* batch,
     int x_max, int x_min, int y_max, int y_min, 
@@ -173,8 +167,10 @@ public:
       y_max - y_min};
     ScreenCell* start_cell = _GetCellAtPoint(mesh->transform.x, mesh->transform.y);
     UINode* ui_node = new UINode(node_position, start_cell, 0);
+    interactive_ui_elements.push_back(ui_node);
     // assign node to screen cells.
     _IterNodeCells(ui_node, _InsertNodeSetMaxOpenOrderCallback(ui_node));
+    return ui_node;
   }
 private:
   inline ScreenCell* _GetCellAtPoint(float screen_x, float screen_y) {
@@ -198,8 +194,9 @@ private:
   }
   inline std::function<void(ScreenCell*)> _InsertNodeSetMaxOpenOrderCallback(UINode* ui_node) {
     return [ui_node](ScreenCell* cell) {
-      cell->nodes.insert(ui_node);
+      // Must assign open_order before insert.
       ui_node->open_order = std::max(ui_node->open_order, (int)cell->nodes.size());
+      cell->nodes.insert(ui_node);
     };
   }
   inline void _IterNodeCells(UINode* ui_node, std::function<void(ScreenCell*)> CellCallBack) {

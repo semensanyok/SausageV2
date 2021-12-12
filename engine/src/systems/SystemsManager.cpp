@@ -29,13 +29,14 @@ void SystemsManager::InitSystems() {
 	bullet_debug_drawer->Activate();
 	physics_manager->SetDebugDrawer(bullet_debug_drawer);
 #endif
-	controller_event_processor = new ControllerEventProcessorEditor(camera);
-	controller = new Controller(camera, state_manager, physics_manager, controller_event_processor);
 	anim_manager = new AnimationManager(state_manager, mesh_manager, buffer_manager);
 
 	async_manager = new AsyncTaskManager();
   screen_overlay_manager = new ScreenOverlayManager(buffer_manager->ui_buffer,shaders,mesh_manager,font_manager,renderer);
   screen_overlay_manager->Init();
+
+	controller_event_processor = new ControllerEventProcessorEditor(camera, screen_overlay_manager);
+	controller = new Controller(camera, state_manager, physics_manager, controller_event_processor);
 	_SubmitAsyncTasks();
 }
 

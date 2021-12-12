@@ -3,12 +3,18 @@
 #include "sausage.h"
 #include "Camera.h"
 #include "Settings.h"
+#include "ScreenOverlayManager.h"
 
 class ControllerEventProcessor {
 protected:
 	Camera* camera;
+  ScreenOverlayManager* screen_overlay_manager;
 public:
-	inline ControllerEventProcessor(Camera* camera) : camera { camera } {};
+  inline ControllerEventProcessor(
+    Camera* camera,
+    ScreenOverlayManager* screen_overlay_manager) :
+    camera{ camera },
+    screen_overlay_manager{ screen_overlay_manager } {};
 	inline ~ControllerEventProcessor() {};
 	virtual void KeyDown(int key) {};
 	virtual void KeyUp(int key) {};
@@ -22,7 +28,8 @@ class ControllerEventProcessorEditor : public ControllerEventProcessor {
 	int screen_x, screen_y;
 	bool is_motion_callback_rts_continious_scroll = false;
 public:
-	ControllerEventProcessorEditor(Camera* camera);
+	ControllerEventProcessorEditor(Camera* camera,
+    ScreenOverlayManager* screen_overlay_manager);
 	~ControllerEventProcessorEditor();
 	void KeyDown(int key);
 	void KeyUp(int key);

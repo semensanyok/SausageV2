@@ -1,6 +1,9 @@
 #include "MouseKeyboardEventProcessor.h"
 
-ControllerEventProcessorEditor::ControllerEventProcessorEditor(Camera* camera) : ControllerEventProcessor(camera) {
+ControllerEventProcessorEditor::ControllerEventProcessorEditor(
+  Camera* camera,
+  ScreenOverlayManager* screen_overlay_manager) :
+  ControllerEventProcessor(camera, screen_overlay_manager) {
 }
 
 ControllerEventProcessorEditor::~ControllerEventProcessorEditor() {
@@ -58,5 +61,6 @@ void ControllerEventProcessorEditor::MouseMotion(SDL_MouseMotionEvent& e)
 void ControllerEventProcessorEditor::Update() {
 	if (is_motion_callback_rts_continious_scroll) {
 		camera->MouseMotionCallback(screen_x, screen_y);
+    screen_overlay_manager->OnHover(screen_x, screen_y);
 	}
 }
