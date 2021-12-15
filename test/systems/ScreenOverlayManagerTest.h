@@ -46,11 +46,17 @@ public:
 
   void Test_AddInteractiveElement() {
     assert(is_inited);
-    auto batch_mesh = som->GetTextMesh(test_string, 0.0, 0.0, test_font_size);
-    auto bp_raw = batch_mesh.first.get();
+    auto batch_back = som->_GetBackgroundMesh({255,0,0}, 0, 0, 13, 13);
+    auto batch_mesh = som->_GetTextMesh(test_string, {0,255,0}, 0.0, 0.0, test_font_size);
     auto mesh = batch_mesh.second;
+    auto mesh_data = batch_mesh.first.get();
+    auto back = batch_back.second;
+    auto back_data = batch_back.first.get();
+
+    auto NODE_0_OPEN_ORDER = 0;
     //som->SubmitDraw(bp_raw, mesh);
-    auto node1 = som->AddInteractiveElement(mesh,bp_raw->x_max,bp_raw->x_min,bp_raw->y_max,bp_raw->y_min,AnchorRelativeToNodePosition::LeftBottom);
+    auto node1 = som->_AddUINode(mesh,back,back_data->x_max,back_data->x_min,
+      back_data->y_max,back_data->y_min,AnchorRelativeToNodePosition::LeftBottom, NODE_0_OPEN_ORDER);
     // expected overlap bottom left corner of screen
     set<int> expected_overlap_cells_ids = {0,1,som->total_cells_x,som->total_cells_x + 1};
     const int expected_cells_checked = 4;
@@ -64,15 +70,25 @@ public:
     }
     assert(cells_checked == expected_cells_checked);
 
-
+    // TODO: fix SET removes nodes instead of adding if open_order is same.
+    auto NODE_1_OPEN_ORDER = 1;
     // test new text written above
-    auto x_offet = som->cell_width;
-    auto batch_mesh2 = som->GetTextMesh(test_string, x_offet, 0.0, test_font_size);
-    auto bp_raw2 = batch_mesh2.first.get();
+    auto horizontal_offet = som->cell_width;
+    auto batch_back2 = som->_GetBackgroundMesh({255,0,0}, 0.0, horizontal_offet, 13, 13);
+    auto batch_mesh2 = som->_GetTextMesh(test_string, {0,255,0}, 0.0, horizontal_offet, test_font_size);
     auto mesh2 = batch_mesh2.second;
-    auto node2 = som->AddInteractiveElement(mesh2,bp_raw2->x_max,bp_raw2->x_min,bp_raw2->y_max,bp_raw2->y_min,AnchorRelativeToNodePosition::LeftBottom);
-    set<int> expected_overlap_cells_ids_with_previous = {som->total_cells_x,som->total_cells_x + 1};
+    auto mesh_data2 = batch_mesh2.first.get();
+    auto back2 = batch_back2.second;
+    auto back_data2 = batch_back2.first.get();
+    auto node2 = som->_AddUINode(mesh2,back2,back_data2->x_max,back_data2->x_min,
+      back_data2->y_max,back_data2->y_min,AnchorRelativeToNodePosition::LeftBottom, NODE_1_OPEN_ORDER);
+
+    expected_overlap_cells_ids = {1,2,som->total_cells_x + 1,som->total_cells_x + 2};
+    set<int> expected_overlap_cells_ids_with_previous = {1,som->total_cells_x + 1};
     cells_checked = 0;
+    for (int i = 0; i < som->total_cells_x * som->total_cells_y;i++) {
+      cout << i << " : " << som->all_cells[i].nodes.size() << endl;
+    }
     for (int i = 0; i < som->total_cells_x * som->total_cells_y;i++) {
       if (expected_overlap_cells_ids_with_previous.contains(i)) {
         assert(som->all_cells[i].nodes.size() == 2);
@@ -80,7 +96,7 @@ public:
         cells_checked++;
       } else if (expected_overlap_cells_ids.contains(i)) {
         assert(som->all_cells[i].nodes.size() == 1);
-        assert(node1 == (*(som->all_cells[i].nodes.begin())));
+        assert(node2 == (*(som->all_cells[i].nodes.begin())));
         cells_checked++;
       }
     }

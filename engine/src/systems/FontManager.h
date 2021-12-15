@@ -147,8 +147,6 @@ class FontManager {
     vec3 color,
     int font_size) {
     auto batch = make_unique<BatchDataUI>();
-    Point anchor_position;
-
     auto size_chars_pair = this->size_chars.find(font_size);
     if (size_chars_pair == this->size_chars.end()) {
       LOG((ostringstream() << "size_chars does not contain requested font size: " << font_size).str());
@@ -207,6 +205,7 @@ class FontManager {
 
     return batch;
   }
+
   void PreUpdate() { Flush(); }
   void Flush() {
     //_Flush3D();

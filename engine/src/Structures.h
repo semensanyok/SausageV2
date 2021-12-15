@@ -323,14 +323,11 @@ struct std::formatter<Point> : std::formatter<std::string> {
 class MeshDataUI : public MeshDataBase {
   friend class MeshManager;
  public:
-  string text;
   vec2 transform;
   Texture *texture;
-
  private:
-  MeshDataUI() : texture{nullptr} {};
-  MeshDataUI(string text, vec2 transform) :
-    text{text},
+   MeshDataUI() : texture{nullptr} {};
+  MeshDataUI(vec2 transform) :
     transform{transform},
     texture{nullptr} {};
   ~MeshDataUI(){};

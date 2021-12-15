@@ -5,6 +5,7 @@
 
 in vs_out {
     flat int base_instance;
+    // for non font glyph_id = -1
     flat int glyph_id;
     vec3 color;
     vec2 uv;
@@ -18,5 +19,5 @@ layout (std430, binding = 4) buffer FontTextureArray
 out vec4 color;
 
 void main(void) {
-  color = vec4(In.color, texture(glyphs[In.base_instance], vec3(In.uv, In.glyph_id)).r);
+  color = vec4(In.color, (In.glyph_id == -1) ? 1.0 : texture(glyphs[In.base_instance], vec3(In.uv, In.glyph_id)).r);
 }

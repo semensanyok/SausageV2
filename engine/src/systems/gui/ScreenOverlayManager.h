@@ -26,11 +26,14 @@ class ScreenCell;
 class UINode
 {
   friend class ScreenOverlayManager;
+  MeshDataUI* text;
+  MeshDataUI* background;
   UINodePosition node_position;
   ScreenCell* start_cell;
   // last opened drawn last, above previously opened windows.
   vector<function<void()>> on_destroys;
 public:
+  // suborder. expected to be max for text and min for background, to draw text above background.
   int open_order;
   void Call() { cout << "Call" << endl; };
   void OnHover() { cout << "OnHover" << endl; };
@@ -38,10 +41,17 @@ public:
   void OnReleased() { cout << "OnReleased" << endl; };
   void OnDestroy() {};
 private:
-  UINode(UINodePosition node_position, ScreenCell* start_cell, int open_order) :
+  UINode(
+    UINodePosition node_position,
+    ScreenCell* start_cell,
+    int open_order,
+    MeshDataUI* text,
+    MeshDataUI* background) :
     node_position{node_position},
     start_cell{start_cell},
-    open_order {open_order} {}
+    open_order {open_order},
+    text {text},
+    background {background} {}
 };
 
 class ScreenCell
@@ -67,8 +77,13 @@ private:
   int total_cells_x, total_cells_y;
   ScreenCell* all_cells;
 
+  map<int, set<UINode*, decltype([](UINode* lhs, UINode* rhs) {
+        return lhs->open_order > rhs->open_order;
+    })>> open_order_to_nodes;
+
   vector<MeshDataUI*> drawn_ui_elements;
-  vector<UINode*> interactive_ui_elements;
+  vector<UINode*> active_ui_elements;
+
   UIBufferConsumer* buffer;
   MeshManager* mesh_manager;
   FontManager* font_manager;
@@ -76,6 +91,7 @@ private:
   Renderer* renderer;
   const unsigned int command_buffer_size = 1;
 
+  bool is_pause_menu_active = false;
 public:
   ScreenOverlayManager(
     UIBufferConsumer* buffer,
@@ -106,73 +122,164 @@ public:
   void OnResize() {
     float height_delta = (float)GameSettings::SCR_HEIGHT / init_screen_height;
     float width_delta = (float)GameSettings::SCR_WIDTH / init_screen_width;
+    for (auto ui_node : active_ui_elements) {
+      _IterNodeCells(ui_node, _RemoveNodeCallback(ui_node));
+      ui_node->node_position.anchor_position.x *= width_delta;
+      ui_node->node_position.anchor_position.y *= height_delta;
+      ui_node->node_position.height *= height_delta;
+      ui_node->node_position.width *= width_delta;
+    }
     init_screen_width = GameSettings::SCR_WIDTH;
     init_screen_height = GameSettings::SCR_HEIGHT;
     cell_width = cell_width * width_delta;
     cell_height = cell_height * height_delta;
+    for (int w = 0; w < total_cells_x; w++) {
+      for (int h = 0; h < total_cells_y; h++)  {
+        auto cell = _GetCellAtPointById(w, h);
+        cell->pos.x *= width_delta;
+        cell->pos.y *= height_delta;
+      }
+    }
+    for (auto ui_node : active_ui_elements) {
+      _IterNodeCells(ui_node, _InsertNodeCallback(ui_node));
+    }
     // TODO: pass scale to shader
-    //for (int w = 0; w < total_cells_x; w++) {
-    //  for (int h = 0; h < total_cells_y; h++)  {
-    //    auto& cell = all_cells[w][h];
-    //    cell.pos.x *= width_delta;
-    //    cell.pos.y *= height_delta;
-    //}
   }
   void OnClick(float screen_x, float screen_y) {
+    if (!is_pause_menu_active) {
+      return;
+    }
     auto cell = _GetCellAtPoint(screen_x, screen_y);
     if (!cell->nodes.empty()) {
       (*(cell->nodes.begin()))->OnPressed();
     }
   }
   void OnHover(float screen_x, float screen_y) {
+    if (!is_pause_menu_active) {
+      return;
+    }
     auto cell = _GetCellAtPoint(screen_x, screen_y);
     if (!cell->nodes.empty()) {
       (*(cell->nodes.begin()))->OnHover();
     }
   }
-  pair<unique_ptr<BatchDataUI>, MeshDataUI*> GetTextMesh(
-    string& text,
-    float screen_x,
-    float screen_y,
-    int font_size
-  ) {
-    // create UI mesh pointer
-    unique_ptr<BatchDataUI> batch = font_manager->GetMeshTextUI(text, {255.0, 0.0, 0.0}, font_size);
-    MeshDataUI* mesh_data = mesh_manager->CreateMeshDataFontUI(text, vec2(screen_x, screen_y));
-    mesh_data->texture = batch->texture;
+  void InitPauseMenu() {
+    const int button_font_size = FontSizes::STANDART;
+    const int back_indent = 5;
+    int button_width = button_font_size * 15 + 2 * back_indent;
+    int button_height = button_font_size + 2 * back_indent;
+    vec3 text_color = {255,255,255};
+    vec3 back_color = {255,255,255};
+    int init_open_order = 0;
 
-    return {std::move(batch), mesh_data};
+    const vector<string> buttons = {
+      "resume",
+      "save",
+      "load",
+      "settings",
+      "quit",
+    };
+    int menu_start_x = GameSettings::SCR_WIDTH / 2 - button_width / 2;
+    int menu_start_y = GameSettings::SCR_HEIGHT / 2 - (button_height * buttons.size()) / 2;
+    for (int i = 0; i < buttons.size(); i++) {
+      auto b_start_x = menu_start_x;
+      auto b_start_y = menu_start_y + i * button_height;
+      auto t_start_x = b_start_x + back_indent;
+      auto t_start_y = b_start_y + back_indent;
+
+      auto back = _GetBackgroundMesh(back_color, t_start_x, t_start_y, button_width, button_height);
+      auto text = _GetTextMesh(buttons[i], text_color, t_start_x, t_start_y, button_font_size);
+      auto back_mesh = back.second;
+      auto text_mesh = text.second;
+
+      _SubmitDraw(back.first.get(),back_mesh);
+      _SubmitDraw(text.first.get(),text_mesh);
+
+      _AddUINode(text_mesh, back_mesh,
+        back.first->x_max,back.first->x_min,back.first->y_max,back.first->y_min,
+        AnchorRelativeToNodePosition::LeftBottom, init_open_order);
+    }
+
+
   }
-  void SubmitDraw(BatchDataUI* batch, MeshDataUI* mesh) {
+  void ActivatePauseMenu() {
+    draw_call_ui->command_count = 1;
+    is_pause_menu_active = true;
+  }
+  void DectivatePauseMenu() {
+    draw_call_ui->command_count = 0;
+    is_pause_menu_active = false;
+  }
+private:
+  void _SubmitDraw(
+    BatchDataUI* batch,
+    MeshDataUI* mesh
+  ) {
       buffer->BufferMeshData(mesh, batch->vertices, batch->indices,
                                batch->colors, batch->uvs, {0, 0, 0},
                                mesh->texture);
       buffer->BufferTransform(mesh);
       buffer->AddCommand(mesh->command, draw_call_ui->command_buffer);
       drawn_ui_elements.push_back(mesh);
-      draw_call_ui->command_count = 1;
   }
-  UINode* AddInteractiveElement(
-    MeshDataUI* mesh,
+  pair<unique_ptr<BatchDataUI>, MeshDataUI*> _GetTextMesh(
+    string text,
+    vec3 color,
+    float screen_x, float screen_y,
+    int font_size
+  ) {
+    // create UI mesh pointer
+    unique_ptr<BatchDataUI> batch = font_manager->GetMeshTextUI(text, color, font_size);
+    MeshDataUI* mesh_data = mesh_manager->CreateMeshDataFontUI(vec2(screen_x, screen_y));
+    mesh_data->texture = batch->texture;
+
+    return {std::move(batch), mesh_data};
+  }
+  // do enhancements in the shader. here just set base color.
+  pair<unique_ptr<BatchDataUI>, MeshDataUI*> _GetBackgroundMesh(
+    vec3 color,
+    float screen_x, float screen_y,
+    int size_x, int size_y) {
+    auto batch = make_unique<BatchDataUI>();
+    batch->vertices = {{0,0,-1},{0,size_y,-1},{size_x,0,-1},{size_x,size_y,-1}};
+    batch->indices = {1,0,2,1,2,3};
+    batch->colors = {color,color,color,color};
+
+    batch->uvs.push_back({0, size_y});
+    batch->uvs.push_back({0, 0});
+    batch->uvs.push_back({size_x, size_y});
+    batch->uvs.push_back({size_x, 0});
+
+    batch->x_min = 0;
+    batch->x_max = size_x;
+    batch->y_min = 0;
+    batch->y_max = size_y;
+
+    MeshDataUI* mesh_data = mesh_manager->CreateMeshDataFontUI(vec2(screen_x, screen_y));
+    return {std::move(batch), mesh_data};
+  }
+  UINode* _AddUINode(
+    MeshDataUI* text,
+    MeshDataUI* background,
     //BatchDataUI* batch,
     int x_max, int x_min, int y_max, int y_min, 
-    AnchorRelativeToNodePosition::AnchorRelativeToNodePosition anchor
+    AnchorRelativeToNodePosition::AnchorRelativeToNodePosition anchor,
+    int open_order
   ) {
-    // create UI node object.
-    Point anchor_position = {mesh->transform.x, mesh->transform.y};
+    auto biggest_mesh = background == nullptr ? text : background;
+    Point anchor_position = {biggest_mesh->transform.x, biggest_mesh->transform.y};
     UINodePosition node_position = {
       anchor_position,
       {anchor},
       x_max - x_min,
       y_max - y_min};
-    ScreenCell* start_cell = _GetCellAtPoint(mesh->transform.x, mesh->transform.y);
-    UINode* ui_node = new UINode(node_position, start_cell, 0);
-    interactive_ui_elements.push_back(ui_node);
+    ScreenCell* start_cell = _GetCellAtPoint(biggest_mesh->transform.x, biggest_mesh->transform.y);
+    UINode* ui_node = new UINode(node_position, start_cell, open_order, text, background);
+    active_ui_elements.push_back(ui_node);
     // assign node to screen cells.
-    _IterNodeCells(ui_node, _InsertNodeSetMaxOpenOrderCallback(ui_node));
+    _IterNodeCells(ui_node, _InsertNodeCallback(ui_node));
     return ui_node;
   }
-private:
   inline ScreenCell* _GetCellAtPoint(float screen_x, float screen_y) {
     if (!ControllerUtils::IsInScreenBorders(screen_x, screen_y)) {
       return nullptr;
@@ -184,18 +291,13 @@ private:
   inline ScreenCell* _GetCellAtPointById(int screen_x, int screen_y) {
     return &all_cells[screen_x * total_cells_x + screen_y];
   }
-  inline void _RemoveUINode(UINode* ui_node) {
-    _IterNodeCells(ui_node, _RemoveNodeCallback(ui_node));
-  }
   inline std::function<void(ScreenCell*)> _RemoveNodeCallback(UINode* ui_node) {
     return [ui_node](ScreenCell* cell) {
       cell->nodes.erase(ui_node);
     };
   }
-  inline std::function<void(ScreenCell*)> _InsertNodeSetMaxOpenOrderCallback(UINode* ui_node) {
+  inline std::function<void(ScreenCell*)> _InsertNodeCallback(UINode* ui_node) {
     return [ui_node](ScreenCell* cell) {
-      // Must assign open_order before insert.
-      ui_node->open_order = std::max(ui_node->open_order, (int)cell->nodes.size());
       cell->nodes.insert(ui_node);
     };
   }
