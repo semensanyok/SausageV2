@@ -30,7 +30,7 @@ out vs_out {
 void main()
 {
     vec2 transform = transforms[gl_BaseInstanceARB];
-    gl_Position = projection_ortho * vec4(position_glyph_id.xy + transform, 0.0 , 1.0);
+    gl_Position = projection_ortho * vec4(position_glyph_id.xy + transform, 1.0 , 1.0);
     Out.color = color;
     Out.glyph_id = int(position_glyph_id.z);
     Out.uv = uv.xy;

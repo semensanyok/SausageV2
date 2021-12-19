@@ -54,12 +54,10 @@ public:
     int button_font_size = FontSizes::STANDART;
     int back_indent = 5;
     vec3 text_color = {255,0,0};
-    vec3 back_color = {255,255,255};
+    vec3 back_color = {0,0,0};
     PauseMenuSettings sets = {button_font_size,back_indent,text_color,back_color};
 
-    som->InitPauseMenu(
-      //sets
-    );
+    som->InitPauseMenu(sets);
     som->ActivatePauseMenu();
   }
 

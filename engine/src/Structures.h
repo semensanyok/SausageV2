@@ -462,7 +462,7 @@ const BufferTypeFlag MESH_BUFFERS =
 const BufferTypeFlag PHYSICS_DEBUG_BUFFERS =
     MESH_VAO | VERTEX | INDEX | COMMAND;
 const BufferTypeFlag FONT_BUFFERS =
-    MESH_VAO | VERTEX | INDEX | COMMAND | FONT_TEXTURE | FONT_UNIFORMS;
+    MESH_VAO | VERTEX | INDEX | COMMAND | TEXTURE | FONT_TEXTURE | FONT_UNIFORMS;
 };  // namespace BufferType
 
 namespace DrawOrder {

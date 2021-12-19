@@ -112,7 +112,8 @@ private:
   FontManager* font_manager;
   DrawCall* draw_call_text;
   DrawCall* draw_call_back;
-  CommandBuffer* command_buffer;
+  CommandBuffer* command_buffer_font;
+  CommandBuffer* command_buffer_back;
   Renderer* renderer;
 
   const unsigned int COMMAND_BUFFER_SIZE = 100;
@@ -131,19 +132,20 @@ public:
     mesh_manager{mesh_manager},
     font_manager{font_manager},
     renderer {renderer} {
-    command_buffer = buffer->CreateCommandBuffer(COMMAND_BUFFER_SIZE);
+    command_buffer_font = buffer->CreateCommandBuffer(COMMAND_BUFFER_SIZE);
+    command_buffer_back = buffer->CreateCommandBuffer(COMMAND_BUFFER_SIZE);
 
     draw_call_text = new DrawCall();
     draw_call_text->shader = shaders->font_ui;
     draw_call_text->mode = GL_TRIANGLES;
     draw_call_text->buffer = (BufferConsumer*)buffer;
-    draw_call_text->command_buffer = command_buffer;
+    draw_call_text->command_buffer = command_buffer_font;
 
     draw_call_back = new DrawCall();
     draw_call_back->shader = shaders->back_ui;
     draw_call_back->mode = GL_TRIANGLES;
     draw_call_back->buffer = (BufferConsumer*)buffer;
-    draw_call_back->command_buffer = command_buffer;
+    draw_call_back->command_buffer = command_buffer_back;
   };
   ~ScreenOverlayManager() {
     Deactivate();
@@ -205,7 +207,7 @@ public:
       (*(cell->nodes.begin()))->OnHover();
     }
   }
-  void InitPauseMenu(PauseMenuSettings pause_menu_settings = {FontSizes::STANDART, 5, {255,0,0},{255,255,255}}) {
+  void InitPauseMenu(PauseMenuSettings pause_menu_settings = {FontSizes::STANDART, 5, {255,0,0},{0,0,0}}) {
     const int button_font_size = pause_menu_settings.button_font_size;
     const int back_indent = pause_menu_settings.back_indent;
     const int button_width = pause_menu_settings.button_width;

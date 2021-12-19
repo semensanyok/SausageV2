@@ -17,5 +17,5 @@ layout (std430, binding = 1) buffer TextureArray
 out vec4 color;
 
 void main(void) {
-  color = vec4(In.color, 1.0);
+  color = vec4(In.color, 0.3);
 }
