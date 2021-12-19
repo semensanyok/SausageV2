@@ -19,6 +19,7 @@ class FontManager;
 
 namespace FontSizes {
   enum FontSizes {
+    //STANDART = 24,
     STANDART = 48
   };
 }
@@ -58,34 +59,16 @@ class FontManager {
   const unsigned int command_buffer_size = 1;
 
   DrawCall* draw_call_3d;
-  OverlayBufferConsumer3D* buffer_3d;
-  vector<MeshDataOverlay3D*> active_3d_texts;
-  vector<BatchFontData3D> current_3d_batch;
  public:
   FontManager(Samplers* samplers,
-    OverlayBufferConsumer3D* buffer_3d,
     MeshManager* mesh_manager,
     Renderer* renderer,
     Shaders* shaders)
-      : samplers{samplers},
-        buffer_3d {buffer_3d} {
-    // TODO: 3d
-     draw_call_3d = new DrawCall();
-     draw_call_3d->shader = shaders->font_3d;
-     draw_call_3d->mode = GL_TRIANGLES;
-     draw_call_3d->buffer = (BufferConsumer*)buffer_3d;
-     draw_call_3d->command_buffer =
-     draw_call_3d->buffer->CreateCommandBuffer(command_buffer_size);
+      : samplers{samplers} {
   };
   ~FontManager(){};
   void Init() {
     _InitFontTextures();
-    //renderer->AddDraw(draw_call_3d, DrawOrder::UI);
-    //draw_call_3d->buffer->ActivateCommandBuffer(draw_call_3d->command_buffer);
-  }
-  void Deactivate() {
-    //renderer->RemoveDraw(draw_call_3d, DrawOrder::UI);
-    //draw_call_3d->buffer->RemoveCommandBuffer(draw_call_3d->command_buffer);
   }
   //void WriteText3D(string& text, vec3 color, mat4& transform) {
   //  BatchFontData3D batch;
@@ -230,13 +213,7 @@ class FontManager {
   void _InitFontTexture(int font_size) {
     GLuint texture_id;
     glGenTextures(1, &texture_id);
-    GLuint64 tex_handle =
-        glGetTextureSamplerHandleARB(texture_id, samplers->font_sampler);
     CheckGLError();
-    auto texture = new Texture(texture_id, tex_handle, {});
-
-    this->size_chars.insert(
-      {font_size, {texture, {}}});
 
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
@@ -289,6 +266,10 @@ class FontManager {
           face->glyph->advance.x};
       this->size_chars[font_size].second[c] = character;
     }
+    GLuint64 tex_handle =
+        glGetTextureSamplerHandleARB(texture_id, samplers->font_sampler);
+    auto texture = new Texture(texture_id, tex_handle, {});
+    this->size_chars[font_size].first = texture;
     CheckGLError();
   }
 };

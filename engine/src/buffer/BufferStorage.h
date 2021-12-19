@@ -24,6 +24,8 @@ using namespace BufferSettings;
 //    bool is_mapped;
 //};
 
+// TODO: try coroutines instead of locks
+
 class BufferStorage {
   friend class MeshDataBufferConsumer;
   friend class FontBufferConsumerUI;

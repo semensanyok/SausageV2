@@ -9,8 +9,10 @@ void UIBufferConsumer::BufferMeshData(MeshDataUI* mesh,
   buffer->BufferMeshData(mesh, load_data, vertex_total, index_total, meshes_total,
                          margins, SausageDefaults::DEFAULT_MESH_DATA_VECTOR);
 
-  mesh->texture = font_data;
-  mesh->texture->MakeResident();
-  BufferFontTexture(mesh, mesh->texture);
+  if (mesh->texture) {
+    mesh->texture = font_data;
+    mesh->texture->MakeResident();
+    BufferFontTexture(mesh, mesh->texture);
+  }
   buffer->BufferUIFontTransform(mesh);
 }

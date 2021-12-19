@@ -99,12 +99,12 @@ void BufferStorage::UnmapBuffer(CommandBuffer *buf) {
   if (buf->buffer_lock->is_mapped == false) {
     return;
   }
+  buf->buffer_lock->is_mapped = false;
+  buf->buffer_lock->is_mapped_cv.notify_all();
   // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
   if (!glUnmapNamedBuffer(buf->id)) {
     CheckGLError();
   }
-  buf->buffer_lock->is_mapped = false;
-  buf->buffer_lock->is_mapped_cv.notify_all();
 }
 CommandBuffer *BufferStorage::CreateCommandBuffer(unsigned int size) {
   auto buf = new CommandBuffer();
@@ -176,7 +176,7 @@ int BufferStorage::AddCommands(
 int BufferStorage::AddCommand(DrawElementsIndirectCommand &command,
                               CommandBuffer *buf, int command_offset) {
   unique_lock<mutex> data_lock(buf->buffer_lock->data_mutex);
-  if (!buf->buffer_lock->is_mapped) {
+  while (!buf->buffer_lock->is_mapped) {
     buf->buffer_lock->Wait(data_lock);
   }
   auto mapped_buffer = mapped_command_buffers.find(buf->id);

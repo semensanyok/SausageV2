@@ -327,9 +327,9 @@ class MeshDataUI : public MeshDataBase {
   Texture *texture;
  private:
    MeshDataUI() : texture{nullptr} {};
-  MeshDataUI(vec2 transform) :
+  MeshDataUI(vec2 transform, Texture* texture) :
     transform{transform},
-    texture{nullptr} {};
+    texture{texture} {};
   ~MeshDataUI(){};
 };
 struct UINodePosition {

@@ -45,7 +45,7 @@ void Renderer::Render(Camera *camera) {
           }
           buffer_consumer->PostDraw();
         }
-        // CheckGLError();
+        CheckGLError();
       }
     }
 #ifdef SAUSAGE_PROFILE_ENABLE

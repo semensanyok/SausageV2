@@ -23,6 +23,29 @@ using namespace std;
 class UINode;
 class ScreenCell;
 
+class PauseMenuSettings {
+public:
+  int button_font_size;
+  int back_indent;
+  int button_width;
+  int button_height;
+  vec3 text_color;
+  vec3 back_color;
+  PauseMenuSettings(
+    int button_font_size,
+    int back_indent,
+    vec3 text_color,
+    vec3 back_color) :
+    button_font_size{button_font_size},
+    back_indent{back_indent},
+    text_color{text_color},
+    back_color{back_color} {
+    button_width = button_font_size * 15 + 2 * back_indent;
+    button_height = button_font_size + 2 * back_indent;
+  }
+};
+  
+
 class UINode
 {
   friend class ScreenOverlayManager;
@@ -110,6 +133,9 @@ public:
     draw_call_ui->command_buffer =
         draw_call_ui->buffer->CreateCommandBuffer(command_buffer_size);
   };
+  ~ScreenOverlayManager() {
+    Deactivate();
+  }
   void Init() {
     _InitScreenLayout();
     renderer->AddDraw(draw_call_ui, DrawOrder::UI);
@@ -119,7 +145,7 @@ public:
     renderer->RemoveDraw(draw_call_ui, DrawOrder::UI);
     draw_call_ui->buffer->RemoveCommandBuffer(draw_call_ui->command_buffer);
   }
-  void OnResize() {
+  void OnResize() { // NOT TESTED
     float height_delta = (float)GameSettings::SCR_HEIGHT / init_screen_height;
     float width_delta = (float)GameSettings::SCR_WIDTH / init_screen_width;
     for (auto ui_node : active_ui_elements) {
@@ -163,13 +189,13 @@ public:
       (*(cell->nodes.begin()))->OnHover();
     }
   }
-  void InitPauseMenu() {
-    const int button_font_size = FontSizes::STANDART;
-    const int back_indent = 5;
-    int button_width = button_font_size * 15 + 2 * back_indent;
-    int button_height = button_font_size + 2 * back_indent;
-    vec3 text_color = {255,255,255};
-    vec3 back_color = {255,255,255};
+  void InitPauseMenu(PauseMenuSettings pause_menu_settings = {FontSizes::STANDART, 5, {255,0,0},{255,255,255}}) {
+    const int button_font_size = pause_menu_settings.button_font_size;
+    const int back_indent = pause_menu_settings.back_indent;
+    const int button_width = pause_menu_settings.button_width;
+    const int button_height = pause_menu_settings.button_height;
+    const vec3 text_color = pause_menu_settings.text_color;
+    const vec3 back_color = pause_menu_settings.back_color;
     int init_open_order = 0;
 
     const vector<string> buttons = {
@@ -199,8 +225,6 @@ public:
         back.first->x_max,back.first->x_min,back.first->y_max,back.first->y_min,
         AnchorRelativeToNodePosition::LeftBottom, init_open_order);
     }
-
-
   }
   void ActivatePauseMenu() {
     draw_call_ui->command_count = 1;
@@ -230,7 +254,7 @@ private:
   ) {
     // create UI mesh pointer
     unique_ptr<BatchDataUI> batch = font_manager->GetMeshTextUI(text, color, font_size);
-    MeshDataUI* mesh_data = mesh_manager->CreateMeshDataFontUI(vec2(screen_x, screen_y));
+    MeshDataUI* mesh_data = mesh_manager->CreateMeshDataFontUI(vec2(screen_x, screen_y),batch->texture);
     mesh_data->texture = batch->texture;
 
     return {std::move(batch), mesh_data};

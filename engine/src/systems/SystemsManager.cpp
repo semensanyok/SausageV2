@@ -19,9 +19,7 @@ void SystemsManager::InitSystems() {
 	samplers->Init();
 	texture_manager = new TextureManager(samplers);
 	_SetupShaders();
-	font_manager = new FontManager(samplers,
-    buffer_manager->overlay_3d_buffer,
-    mesh_manager, renderer, shaders);
+	font_manager = new FontManager(samplers,mesh_manager, renderer, shaders);
 	font_manager->Init();
 	physics_manager = new PhysicsManager(state_manager);
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
@@ -82,6 +80,8 @@ void SystemsManager::Clear() {
 	delete renderer;
 	delete camera;
 	delete async_manager;
+  delete mesh_manager;
+  delete file_watcher;
 }
 
 Shader* SystemsManager::RegisterShader(const char* vs_name, const char* fs_name) {

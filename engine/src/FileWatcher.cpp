@@ -18,6 +18,9 @@ void FileWatcher::AddCallback(string& path, function<void()>& file_change_callba
 
 void FileWatcher::Watch()
 {
+  if (watchers.empty()) {
+    return;
+  }
 	lock_guard lock_shader(shader_mutex);
 	for (auto& watcher : watchers) {
 		auto wtime_dur = filesystem::last_write_time(watcher.first);

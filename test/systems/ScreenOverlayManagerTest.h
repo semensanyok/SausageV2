@@ -17,8 +17,11 @@ class ScreenOverlayManagerTest : public SausageTestBase {
   int test_font_size = 15;
 public:
 	void run() {
-    TestInit();
-    Test_AddInteractiveElement();
+    //TestInit();
+    //Test_AddInteractiveElement();
+    Gui::enable = false;
+    Test_InitPauseMenu();
+    this->SDL_main2();
 	};
 
   void TestInit() {
@@ -42,6 +45,20 @@ public:
     }
     systems_manager->font_manager->_InitFontTexture(test_font_size);
     is_inited = true;
+  }
+
+  void Test_InitPauseMenu() {
+    GameSettings::SCR_WIDTH = 800;
+    GameSettings::SCR_HEIGHT = 800;
+		Init();
+    int button_font_size = FontSizes::STANDART;
+    int back_indent = 5;
+    vec3 text_color = {255,0,0};
+    vec3 back_color = {255,255,255};
+    PauseMenuSettings sets = {button_font_size,back_indent,text_color,back_color};
+
+    som->InitPauseMenu(sets);
+    som->ActivatePauseMenu();
   }
 
   void Test_AddInteractiveElement() {
