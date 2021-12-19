@@ -27,7 +27,8 @@ namespace FontSizes {
 struct Character {
   glm::ivec2 size;       // Size of glyph
   glm::ivec2 bearing;    // Offset from baseline to left/top of glyph
-  unsigned int advance;  // Offset to advance to next glyph
+  FT_Vector advance;  // Offset to advance to next glyph
+  unsigned int glyph_index;
 };
 
 class BatchDataUI {
@@ -59,6 +60,7 @@ class FontManager {
   const unsigned int command_buffer_size = 1;
 
   DrawCall* draw_call_3d;
+  FT_Face face_ttf;
  public:
   FontManager(Samplers* samplers,
     MeshManager* mesh_manager,
@@ -148,6 +150,9 @@ class FontManager {
     float delta_x = 0;
     float delta_y = 0;
     int ind_delta = 0;
+
+    unsigned int last_chr_glyph_index = 0;
+
     for (auto chr : text) {
       auto character = charmap[chr];
       auto u = character.size.x;
@@ -178,8 +183,16 @@ class FontManager {
       batch->indices.push_back(ind_delta + 1);
       batch->indices.push_back(ind_delta + 2);
       batch->indices.push_back(ind_delta + 3);
-      delta_x += character.advance >> 6;
+      if (delta_x > 0) {
+        FT_Vector kerning;
+        auto q = FT_Get_Kerning(face_ttf, last_chr_glyph_index, character.glyph_index, FT_Kerning_Mode::FT_KERNING_DEFAULT, &kerning);
+        auto b = FT_HAS_KERNING(face_ttf);
+        auto a = kerning.x;
+      }
+      delta_x += character.advance.x >> 6;
+      delta_y += character.advance.y >> 6;
       ind_delta += 4;
+      last_chr_glyph_index = character.glyph_index;
     }
     batch->x_max = x_max;
     batch->x_min = x_min;
@@ -221,13 +234,12 @@ class FontManager {
                 << std::endl;
       return;
     }
-    FT_Face face;
-    if (FT_New_Face(ft, GetFontPath("arial.ttf").c_str(), 0, &face)) {
+    if (FT_New_Face(ft, GetFontPath("times.ttf").c_str(), 0, &face_ttf)) {
       std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
       return;
     }
-    FT_Set_Pixel_Sizes(face, 0, font_size);
-    FT_Load_Char(face, 'A', FT_LOAD_RENDER);
+    FT_Set_Pixel_Sizes(face_ttf, 0, font_size);
+    FT_Load_Char(face_ttf, 'A', FT_LOAD_RENDER);
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
@@ -245,7 +257,7 @@ class FontManager {
 
     for (unsigned char c = 0; c < BufferSettings::TEXTURES_SINGLE_FONT; c++) {
       // load character glyph
-      if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+      if (FT_Load_Char(face_ttf, c, FT_LOAD_RENDER)) {
         std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
         continue;
       }
@@ -253,17 +265,18 @@ class FontManager {
       glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
                       0,        // Mipmap number
                       0, 0, c,  // xoffset, yoffset, zoffset
-                      face->glyph->bitmap.width, face->glyph->bitmap.rows,
+                      face_ttf->glyph->bitmap.width, face_ttf->glyph->bitmap.rows,
                       1,                 // width, height, depth
                       GL_RED,            // format
                       GL_UNSIGNED_BYTE,  // type
-                      face->glyph->bitmap.buffer);
+                      face_ttf->glyph->bitmap.buffer);
       CheckGLError();
       // now store character for later use
       Character character = {
-          ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-          ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-          face->glyph->advance.x};
+          ivec2(face_ttf->glyph->bitmap.width, face_ttf->glyph->bitmap.rows),
+          ivec2(face_ttf->glyph->bitmap_left, face_ttf->glyph->bitmap_top),
+          face_ttf->glyph->advance,
+          face_ttf->glyph->glyph_index};
       this->size_chars[font_size].second[c] = character;
     }
     GLuint64 tex_handle =

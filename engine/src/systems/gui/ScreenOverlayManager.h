@@ -227,7 +227,7 @@ public:
 
     const vector<string> buttons = {
       "quit",
-      "settings",
+      "settings_^",
       "load",
       "save",
       "resume",
@@ -240,7 +240,7 @@ public:
       auto t_start_x = b_start_x + back_indent;
       auto t_start_y = b_start_y + back_indent;
 
-      auto back = _GetBackgroundMesh(back_color, t_start_x, t_start_y, button_width, button_height);
+      auto back = _GetBackgroundMesh(back_color, b_start_x, b_start_y, button_width, button_height);
       auto text = _GetTextMesh(buttons[i], text_color, t_start_x, t_start_y, button_font_size);
       auto back_mesh = back.second;
       auto text_mesh = text.second;
