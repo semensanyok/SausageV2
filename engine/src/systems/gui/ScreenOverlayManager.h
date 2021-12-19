@@ -40,7 +40,7 @@ public:
     back_indent{back_indent},
     text_color{text_color},
     back_color{back_color} {
-    button_width = button_font_size * 15 + 2 * back_indent;
+    button_width = button_font_size * 10 + 2 * back_indent;
     button_height = button_font_size + 2 * back_indent;
   }
 };
@@ -110,9 +110,14 @@ private:
   UIBufferConsumer* buffer;
   MeshManager* mesh_manager;
   FontManager* font_manager;
-  DrawCall* draw_call_ui;
+  DrawCall* draw_call_text;
+  DrawCall* draw_call_back;
+  CommandBuffer* command_buffer;
   Renderer* renderer;
-  const unsigned int command_buffer_size = 1;
+
+  const unsigned int COMMAND_BUFFER_SIZE = 100;
+  int total_draw_commands_text = 0;
+  int total_draw_commands_back = 0;
 
   bool is_pause_menu_active = false;
 public:
@@ -126,24 +131,35 @@ public:
     mesh_manager{mesh_manager},
     font_manager{font_manager},
     renderer {renderer} {
-    draw_call_ui = new DrawCall();
-    draw_call_ui->shader = shaders->font_ui;
-    draw_call_ui->mode = GL_TRIANGLES;
-    draw_call_ui->buffer = (BufferConsumer*)buffer;
-    draw_call_ui->command_buffer =
-        draw_call_ui->buffer->CreateCommandBuffer(command_buffer_size);
+    command_buffer = buffer->CreateCommandBuffer(COMMAND_BUFFER_SIZE);
+
+    draw_call_text = new DrawCall();
+    draw_call_text->shader = shaders->font_ui;
+    draw_call_text->mode = GL_TRIANGLES;
+    draw_call_text->buffer = (BufferConsumer*)buffer;
+    draw_call_text->command_buffer = command_buffer;
+
+    draw_call_back = new DrawCall();
+    draw_call_back->shader = shaders->back_ui;
+    draw_call_back->mode = GL_TRIANGLES;
+    draw_call_back->buffer = (BufferConsumer*)buffer;
+    draw_call_back->command_buffer = command_buffer;
   };
   ~ScreenOverlayManager() {
     Deactivate();
   }
   void Init() {
     _InitScreenLayout();
-    renderer->AddDraw(draw_call_ui, DrawOrder::UI);
-    draw_call_ui->buffer->ActivateCommandBuffer(draw_call_ui->command_buffer);
+    renderer->AddDraw(draw_call_text, DrawOrder::UI_TEXT);
+    draw_call_text->buffer->ActivateCommandBuffer(draw_call_text->command_buffer);
+    renderer->AddDraw(draw_call_back, DrawOrder::UI_BACK);
+    draw_call_back->buffer->ActivateCommandBuffer(draw_call_back->command_buffer);
   }
   void Deactivate() {
-    renderer->RemoveDraw(draw_call_ui, DrawOrder::UI);
-    draw_call_ui->buffer->RemoveCommandBuffer(draw_call_ui->command_buffer);
+    renderer->RemoveDraw(draw_call_text, DrawOrder::UI_TEXT);
+    draw_call_text->buffer->RemoveCommandBuffer(draw_call_text->command_buffer);
+    renderer->RemoveDraw(draw_call_back, DrawOrder::UI_BACK);
+    draw_call_back->buffer->RemoveCommandBuffer(draw_call_back->command_buffer);
   }
   void OnResize() { // NOT TESTED
     float height_delta = (float)GameSettings::SCR_HEIGHT / init_screen_height;
@@ -199,11 +215,11 @@ public:
     int init_open_order = 0;
 
     const vector<string> buttons = {
-      "resume",
-      "save",
-      "load",
-      "settings",
       "quit",
+      "settings",
+      "load",
+      "save",
+      "resume",
     };
     int menu_start_x = GameSettings::SCR_WIDTH / 2 - button_width / 2;
     int menu_start_y = GameSettings::SCR_HEIGHT / 2 - (button_height * buttons.size()) / 2;
@@ -218,32 +234,45 @@ public:
       auto back_mesh = back.second;
       auto text_mesh = text.second;
 
-      _SubmitDraw(back.first.get(),back_mesh);
-      _SubmitDraw(text.first.get(),text_mesh);
+      _SubmitDrawText(text.first.get(), text_mesh);
+      _SubmitDrawBack(back.first.get(),back_mesh);
 
       _AddUINode(text_mesh, back_mesh,
-        back.first->x_max,back.first->x_min,back.first->y_max,back.first->y_min,
-        AnchorRelativeToNodePosition::LeftBottom, init_open_order);
+                 back.first->x_max,
+                 back.first->x_min,
+                 back.first->y_max,
+                 back.first->y_min,
+                 AnchorRelativeToNodePosition::LeftBottom,
+                 init_open_order);
     }
   }
   void ActivatePauseMenu() {
-    draw_call_ui->command_count = 1;
+    draw_call_text->command_count = total_draw_commands_text;
+    draw_call_back->command_count = total_draw_commands_back;
     is_pause_menu_active = true;
   }
   void DectivatePauseMenu() {
-    draw_call_ui->command_count = 0;
+    draw_call_text->command_count = 0;
+    draw_call_back->command_count = 0;
     is_pause_menu_active = false;
   }
 private:
-  void _SubmitDraw(
+  void _SubmitDrawText(
     BatchDataUI* batch,
     MeshDataUI* mesh
   ) {
-      buffer->BufferMeshData(mesh, batch->vertices, batch->indices,
-                               batch->colors, batch->uvs, {0, 0, 0},
-                               mesh->texture);
+      buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
       buffer->BufferTransform(mesh);
-      buffer->AddCommand(mesh->command, draw_call_ui->command_buffer);
+      buffer->AddCommand(mesh->command, draw_call_text->command_buffer,total_draw_commands_text++);
+      drawn_ui_elements.push_back(mesh);
+  }
+  void _SubmitDrawBack(
+    BatchDataUI* batch,
+    MeshDataUI* mesh
+  ) {
+      buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
+      buffer->BufferTransform(mesh);
+      buffer->AddCommand(mesh->command, draw_call_back->command_buffer,total_draw_commands_back++);
       drawn_ui_elements.push_back(mesh);
   }
   pair<unique_ptr<BatchDataUI>, MeshDataUI*> _GetTextMesh(

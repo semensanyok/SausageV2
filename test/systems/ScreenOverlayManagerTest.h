@@ -57,7 +57,9 @@ public:
     vec3 back_color = {255,255,255};
     PauseMenuSettings sets = {button_font_size,back_indent,text_color,back_color};
 
-    som->InitPauseMenu(sets);
+    som->InitPauseMenu(
+      //sets
+    );
     som->ActivatePauseMenu();
   }
 

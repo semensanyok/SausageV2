@@ -418,6 +418,7 @@ struct Shaders {
   Shader *bullet_debug;
   Shader *stencil;
   Shader *font_ui;
+  Shader *back_ui;
   Shader *font_3d;
 };
 
@@ -464,10 +465,13 @@ const BufferTypeFlag FONT_BUFFERS =
     MESH_VAO | VERTEX | INDEX | COMMAND | FONT_TEXTURE | FONT_UNIFORMS;
 };  // namespace BufferType
 
+namespace DrawOrder {
 enum DrawOrder {
   MESH,
-  UI
+  UI_BACK,
+  UI_TEXT,
 };
+}
 
 // bullet supports 32 bit masks. create new dynamics world if not enough.
 namespace SausageCollisionMasks {

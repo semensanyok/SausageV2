@@ -58,10 +58,10 @@ void Shader::CompileFS() {
     fs = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fs, 1, &code_c, NULL);
     glCompileShader(fs);
-    CheckCompileErrors(fs, "FRAGMENT");
-  }
-  if (CheckGLError() == false) {
-    is_fs_updated = true;
+    auto is_success = CheckCompileErrors(fs, format("FRAGMENT {}",this->fragment_path));
+    if (is_success && CheckGLError() == false) {
+      is_fs_updated = true;
+    }
   }
 }
 void Shader::CompileVS() {
@@ -74,11 +74,10 @@ void Shader::CompileVS() {
     vs = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vs, 1, &code_c, NULL);
     glCompileShader(vs);
-    CheckCompileErrors(vs, "VERTEX");
-  }
-  CheckGLError();
-  if (CheckGLError() == false) {
-    is_vs_updated = true;
+    auto is_success = CheckCompileErrors(vs, format("VERTEX {}",this->vertex_path));
+    if (is_success && CheckCompileErrors(vs, format("VERTEX {}",this->vertex_path)) && (CheckGLError() == false)) {
+      is_vs_updated = true;
+    }
   }
 }
 void Shader::_Dispose() {
@@ -160,7 +159,7 @@ string Shader::_LoadCode(string &path) {
 }
 // utility function for checking shader compilation/linking errors.
 // ------------------------------------------------------------------------
-void Shader::CheckCompileErrors(GLuint shader, string type) {
+bool Shader::CheckCompileErrors(GLuint shader, string type) {
   GLint success;
   GLchar infoLog[1024];
   if (type != "PROGRAM") {
@@ -184,4 +183,5 @@ void Shader::CheckCompileErrors(GLuint shader, string type) {
               .str());
     }
   }
+  return success;
 }

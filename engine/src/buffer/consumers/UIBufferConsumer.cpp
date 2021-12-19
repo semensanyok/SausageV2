@@ -2,7 +2,7 @@
 
 void UIBufferConsumer::BufferMeshData(MeshDataUI* mesh,
     vector<vec3>& vertices, vector<unsigned int>& indices, vector<vec3>& colors,
-    vector<vec2>& uvs, vec3 relative_position, Texture* font_data) {
+    vector<vec2>& uvs) {
   shared_ptr<MeshLoadData> load_data =
       mesh_manager->CreateMesh(vertices, indices, colors, uvs);
 
@@ -10,7 +10,6 @@ void UIBufferConsumer::BufferMeshData(MeshDataUI* mesh,
                          margins, SausageDefaults::DEFAULT_MESH_DATA_VECTOR);
 
   if (mesh->texture) {
-    mesh->texture = font_data;
     mesh->texture->MakeResident();
     BufferFontTexture(mesh, mesh->texture);
   }

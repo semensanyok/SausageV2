@@ -5,18 +5,17 @@
 
 in vs_out {
     flat int base_instance;
-    flat int glyph_id;
     vec3 color;
     vec2 uv;
 } In;
 
-layout (std430, binding = 4) buffer FontTextureArray
+layout (std430, binding = 1) buffer TextureArray
 {
-    sampler2DArray glyphs[];
+    sampler2DArray textures[];
 };
 
 out vec4 color;
 
 void main(void) {
-  color = vec4(In.color, texture(glyphs[In.base_instance], vec3(In.uv, In.glyph_id)).r);
+  color = vec4(In.color, 1.0);
 }

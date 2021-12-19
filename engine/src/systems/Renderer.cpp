@@ -96,7 +96,7 @@ Shader *Renderer::RegisterShader(const char *vs_name, const char *fs_name) {
   return shader;
 }
 
-bool Renderer::AddDraw(DrawCall *draw, DrawOrder draw_order) {
+bool Renderer::AddDraw(DrawCall *draw, DrawOrder::DrawOrder draw_order) {
   if (!shaders.contains(draw->shader->id)) {
     LOG((ostringstream() << "Unable to add draw for unregistered shader: "
                          << draw->shader->id
@@ -115,7 +115,7 @@ bool Renderer::AddDraw(DrawCall *draw, DrawOrder draw_order) {
   return true;
 }
 
-bool Renderer::RemoveDraw(DrawCall *draw, DrawOrder draw_order) {
+bool Renderer::RemoveDraw(DrawCall *draw, DrawOrder::DrawOrder draw_order) {
   auto btd_ptr = buffer_to_draw_call.find(draw->buffer->GetBufferId());
   if (btd_ptr == buffer_to_draw_call.end()) {
     LOG("Unable to remove draw, buffer not found");

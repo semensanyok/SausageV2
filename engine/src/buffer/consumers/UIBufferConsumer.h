@@ -28,9 +28,7 @@ class UIBufferConsumer : public BufferConsumer {
   void BufferMeshData(MeshDataUI* mesh,
                       vector<vec3>& vertices,
                       vector<unsigned int>& indices,
-                      vector<vec3>& colors, vector<vec2>& uvs,
-                      vec3 relative_position,
-                      Texture* font_data);
+                      vector<vec3>& colors, vector<vec2>& uvs);
   void BufferTransform(MeshDataUI* mesh) {
     buffer->BufferUIFontTransform(mesh);
   }
