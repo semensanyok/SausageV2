@@ -43,11 +43,6 @@ public:
 			camera->MouseWheelCallback(e->wheel);
 			break;
 		}
-		case SDL_QUIT:
-		{
-			GameSettings::quit = true;
-			break;
-		}
 		case SDL_WINDOWEVENT:
 		{
 			switch (e->window.event) {
@@ -64,8 +59,6 @@ public:
 		{
 			int s = e->key.keysym.scancode;
 			KeyboardEvents::keys_pressed.insert(s);
-			if (s == SDL_SCANCODE_ESCAPE)
-				GameSettings::quit = 1;
 			processor->KeyDown(s);
 			break;
 		}

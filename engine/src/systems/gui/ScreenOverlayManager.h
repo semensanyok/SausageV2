@@ -163,6 +163,15 @@ public:
     renderer->RemoveDraw(draw_call_back, DrawOrder::UI_BACK);
     draw_call_back->buffer->RemoveCommandBuffer(draw_call_back->command_buffer);
   }
+  void KeyCallback(int scan_code) {
+    if (scan_code == KeyboardLayout::PauseMenu) {
+        if (is_pause_menu_active) {
+          DectivatePauseMenu();
+        } else {
+          ActivatePauseMenu();
+        }
+    }
+  }
   void OnResize() { // NOT TESTED
     float height_delta = (float)GameSettings::SCR_HEIGHT / init_screen_height;
     float width_delta = (float)GameSettings::SCR_WIDTH / init_screen_width;

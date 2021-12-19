@@ -58,7 +58,6 @@ public:
     PauseMenuSettings sets = {button_font_size,back_indent,text_color,back_color};
 
     som->InitPauseMenu(sets);
-    som->ActivatePauseMenu();
   }
 
   void Test_AddInteractiveElement() {

@@ -12,6 +12,7 @@ ControllerEventProcessorEditor::~ControllerEventProcessorEditor() {
 void ControllerEventProcessorEditor::KeyDown(int key)
 {
 	camera->KeyCallback(key);
+  screen_overlay_manager->KeyCallback(key);
 }
 
 void ControllerEventProcessorEditor::KeyUp(int key)
@@ -25,6 +26,7 @@ void ControllerEventProcessorEditor::MouseButtonUp(SDL_MouseButtonEvent& e)
 
 void ControllerEventProcessorEditor::MouseButtonDown(SDL_MouseButtonEvent& e)
 {
+  screen_overlay_manager->OnClick(e.x, e.y);
 }
 
 void ControllerEventProcessorEditor::MouseMotion(SDL_MouseMotionEvent& e)

@@ -91,6 +91,7 @@ namespace KeyboardLayout {
 	inline SDL_Scancode Down = SDL_SCANCODE_S;
 	inline SDL_Scancode LShift = SDL_SCANCODE_LSHIFT;
 	inline SDL_Scancode ChangeCamera = SDL_SCANCODE_Z;
+  inline SDL_Scancode PauseMenu = SDL_SCANCODE_ESCAPE;
 };
 
 namespace KeyboardEvents {
