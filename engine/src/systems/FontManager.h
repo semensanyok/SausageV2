@@ -11,6 +11,8 @@
 #include "sausage.h"
 #include "OpenGLHelpers.h"
 #include <limits>
+#include <hb-ft.h>
+#include <cstring>
 #include FT_FREETYPE_H
 
 using namespace std;
@@ -223,6 +225,18 @@ class FontManager {
   void _InitFontTextures() {
     _InitFontTexture(FontSizes::STANDART);
   }
+  //void WriteTextCairo(string& text,
+  //  vec3 color,
+  //  int font_size) {
+  //  auto width = text.size();
+  //  auto height = font_size;
+  //  auto stride = cairo_format_stride_for_width (CAIRO_FORMAT_A8, width);
+  //  unsigned char* texture = (unsigned char*)malloc(stride * height);
+  //  auto stride_bytes = stride / sizeof(char);
+  //  memset(texture, 0, stride_bytes);
+  //  auto cr = cairo_image_surface_create_for_data(texture, CAIRO_FORMAT_A8, width, height, stride);
+  //  
+  //}
   void _InitFontTexture(int font_size) {
     GLuint texture_id;
     glGenTextures(1, &texture_id);

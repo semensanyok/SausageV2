@@ -59,20 +59,22 @@ find_library(Freetype
     NO_DEFAULT_PATH # do not search system default paths
     )
 
-
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(freetype REQUIRED)
 
 # LIBRARIES FOUND BY PKG CONFIG ############################
-#find_package(PkgConfig REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(harfbuzz REQUIRED harfbuzz)
+set(PGK_CONF_FOUND_LIBS ${harfbuzz_LIBRARIES})
+set(PGK_CONF_FOUND_LIBS_INCLUDE_DIRS ${harfbuzz_INCLUDE_DIRS})
+set(PGK_CONF_FOUND_LIBS_LIBRARY_DIRS ${harfbuzz_LIBRARY_DIRS})
+
 #pkg_check_modules(GTK4 REQUIRED gtk4)
-#set(PGK_CONF_FOUND_LIBS ${GTK4_LIBRARIES}
-#)
-#set(PGK_CONF_FOUND_LIBS_INCLUDE_DIRS ${GTK4_INCLUDE_DIRS}
-#)
-#set(PGK_CONF_FOUND_LIBS_LIBRARY_DIRS ${GTK4_LIBRARY_DIRS}
-#)
+#set(PGK_CONF_FOUND_LIBS ${GTK4_LIBRARIES})
+#set(PGK_CONF_FOUND_LIBS_INCLUDE_DIRS ${GTK4_INCLUDE_DIRS})
+#set(PGK_CONF_FOUND_LIBS_LIBRARY_DIRS ${GTK4_LIBRARY_DIRS})
 # LIBRARIES FOUND BY PKG CONFIG END ############################
 
 ###### GTK ##################################################
@@ -116,6 +118,9 @@ set(DEPENDENCIES_INCLUDE_DIRS
                     "${SDL2_INCLUDE_DIR}"
                     "${ENGINE_DEP_DIR}/imgui/"
                     "${ENGINE_DEP_DIR}/imgui/backends/"
+                    "${ENGINE_DEP_DIR}/cairo/src"
+                    # "${ENGINE_DEP_DIR}/cairo/build/src"
+                    "${ENGINE_LIB_DIR}/harfbuzz/include/harfbuzz"
                     "${PGK_CONF_FOUND_LIBS_INCLUDE_DIRS}")
 ############### DEPS END ############################################
 
@@ -186,7 +191,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/buffer/consumers/OverlayBufferConsumer3D.cpp" 
 "src/SausageMain.h" "src/systems/gui/ScreenOverlayManager.h" "src/systems/gui/ScreenOverlayManager.cpp" "src/systems/controller/ControllerUtils.h" )
 
-#target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
+target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 
 target_link_libraries(${PROJECT_NAME} ${SAUSAGE_LIBS})
 
