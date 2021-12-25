@@ -26,3 +26,9 @@
 [submodule ".\\engine\\dependencies\\glib"]
 	path = .\\engine\\dependencies\\glib
 	url = https://github.com/GNOME/glib.git
+[submodule "engine/dependencies/cairo"]
+	path = engine/dependencies/cairo
+	url = https://gitlab.freedesktop.org/cairo/cairo.git
+[submodule "engine/dependencies/harfbuzz"]
+	path = engine/dependencies/harfbuzz
+	url = https://github.com/harfbuzz/harfbuzz.git
