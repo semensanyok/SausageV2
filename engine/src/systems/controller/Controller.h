@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "Physics.h"
 #include "StateManager.h"
+#include <SDL.h>
 
 class Controller {
 public:

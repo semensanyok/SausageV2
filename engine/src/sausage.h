@@ -1,7 +1,7 @@
 #pragma once
 // Engine header file, common imports
 
-#include <SDL.h>
+//#include <SDL.h>
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
@@ -47,3 +47,5 @@
 #include <shared_mutex>
 
 #include <stdint.h>
+
+#include <stdio.h>

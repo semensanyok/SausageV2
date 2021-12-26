@@ -3,6 +3,7 @@
 #include "sausage.h"
 #include "Logging.h"
 #include "Settings.h"
+#include <SDL.h>
 
 using namespace std;
 using namespace glm;

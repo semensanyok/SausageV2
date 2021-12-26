@@ -62,7 +62,10 @@ class FontManager {
   const unsigned int command_buffer_size = 1;
 
   DrawCall* draw_call_3d;
-  FT_Face face_ttf;
+  // TODO: free after all buttons / texts initialized.
+  FT_Face ft_face;
+  hb_face_t* hb_face;
+  hb_font_t* hb_font;
  public:
   FontManager(Samplers* samplers,
     MeshManager* mesh_manager,
@@ -149,27 +152,51 @@ class FontManager {
     int y_min = numeric_limits<int>::max();
     int y_max = numeric_limits<int>::min();
 
-    float delta_x = 0;
-    float delta_y = 0;
+    //float delta_x = 0;
+    //float delta_y = 0;
     int ind_delta = 0;
 
-    unsigned int last_chr_glyph_index = 0;
+    hb_buffer_t *buf;
+    buf = hb_buffer_create();
 
-    for (auto chr : text) {
+    hb_buffer_add_utf8(buf, text.c_str(), -1, 0, -1);
+    //hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
+    //hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
+    //hb_buffer_set_language(buf, hb_language_from_string("en", -1));
+    hb_buffer_guess_segment_properties (buf);
+
+    hb_shape(hb_font, buf, NULL, 0);
+
+    unsigned int glyph_count;
+    hb_glyph_info_t *glyph_info    = hb_buffer_get_glyph_infos(buf, &glyph_count);
+    hb_glyph_position_t *glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
+
+    hb_position_t cursor_x = 0;
+    hb_position_t cursor_y = 0;
+    for (int i = 0; i < text.size(); i++) {
+      auto chr = text[i];
       auto character = charmap[chr];
       auto u = character.size.x;
       auto v = character.size.y;
       float uv_max_x = character.size.x / (float)plate_size;
       float uv_max_y = character.size.y / (float)plate_size;
-      x_min = std::min<int>(0 + delta_x, x_min);
-      x_max = std::max<int>(u + delta_x, x_max);
-      y_min = std::min<int>(0 + delta_y, y_min);
-      y_max = std::max<int>(v + delta_y, y_max);
 
-      batch->vertices.push_back({0 + delta_x, 0 + delta_y, chr});
-      batch->vertices.push_back({0 + delta_x, v + delta_y, chr});
-      batch->vertices.push_back({u + delta_x, 0 + delta_y, chr});
-      batch->vertices.push_back({u + delta_x, v + delta_y, chr});
+      hb_codepoint_t glyphid  = glyph_info[i].codepoint;
+      glyph_info[i].cluster;
+      hb_position_t x_offset  = glyph_pos[i].x_offset;
+      hb_position_t y_offset  = glyph_pos[i].y_offset;
+      hb_position_t x_advance = glyph_pos[i].x_advance;
+      hb_position_t y_advance = glyph_pos[i].y_advance;
+
+      x_min = std::min<int>(0 + cursor_x, x_min);
+      x_max = std::max<int>(u + cursor_x, x_max);
+      y_min = std::min<int>(0 + cursor_y, y_min);
+      y_max = std::max<int>(v + cursor_y, y_max);
+
+      batch->vertices.push_back({0 + cursor_x, 0 + cursor_y, chr});
+      batch->vertices.push_back({0 + cursor_x, v + cursor_y, chr});
+      batch->vertices.push_back({u + cursor_x, 0 + cursor_y, chr});
+      batch->vertices.push_back({u + cursor_x, v + cursor_y, chr});
       batch->colors.push_back(color);
       batch->colors.push_back(color);
       batch->colors.push_back(color);
@@ -185,16 +212,10 @@ class FontManager {
       batch->indices.push_back(ind_delta + 1);
       batch->indices.push_back(ind_delta + 2);
       batch->indices.push_back(ind_delta + 3);
-      if (delta_x > 0) {
-        FT_Vector kerning;
-        auto q = FT_Get_Kerning(face_ttf, last_chr_glyph_index, character.glyph_index, FT_Kerning_Mode::FT_KERNING_DEFAULT, &kerning);
-        auto b = FT_HAS_KERNING(face_ttf);
-        auto a = kerning.x;
-      }
-      delta_x += character.advance.x >> 6;
-      delta_y += character.advance.y >> 6;
       ind_delta += 4;
-      last_chr_glyph_index = character.glyph_index;
+
+      cursor_x += x_advance >> 6;
+      cursor_y += y_advance >> 6;
     }
     batch->x_max = x_max;
     batch->x_min = x_min;
@@ -248,12 +269,12 @@ class FontManager {
                 << std::endl;
       return;
     }
-    if (FT_New_Face(ft, GetFontPath("times.ttf").c_str(), 0, &face_ttf)) {
+    if (FT_New_Face(ft, GetFontPath("times.ttf").c_str(), 0, &ft_face)) {
       std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
       return;
     }
-    FT_Set_Pixel_Sizes(face_ttf, 0, font_size);
-    FT_Load_Char(face_ttf, 'A', FT_LOAD_RENDER);
+    FT_Set_Pixel_Sizes(ft_face, 0, font_size);
+    FT_Load_Char(ft_face, 'A', FT_LOAD_RENDER);
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
@@ -271,7 +292,7 @@ class FontManager {
 
     for (unsigned char c = 0; c < BufferSettings::TEXTURES_SINGLE_FONT; c++) {
       // load character glyph
-      if (FT_Load_Char(face_ttf, c, FT_LOAD_RENDER)) {
+      if (FT_Load_Char(ft_face, c, FT_LOAD_RENDER)) {
         std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
         continue;
       }
@@ -279,18 +300,18 @@ class FontManager {
       glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
                       0,        // Mipmap number
                       0, 0, c,  // xoffset, yoffset, zoffset
-                      face_ttf->glyph->bitmap.width, face_ttf->glyph->bitmap.rows,
+                      ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows,
                       1,                 // width, height, depth
                       GL_RED,            // format
                       GL_UNSIGNED_BYTE,  // type
-                      face_ttf->glyph->bitmap.buffer);
+                      ft_face->glyph->bitmap.buffer);
       CheckGLError();
       // now store character for later use
       Character character = {
-          ivec2(face_ttf->glyph->bitmap.width, face_ttf->glyph->bitmap.rows),
-          ivec2(face_ttf->glyph->bitmap_left, face_ttf->glyph->bitmap_top),
-          face_ttf->glyph->advance,
-          face_ttf->glyph->glyph_index};
+          ivec2(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows),
+          ivec2(ft_face->glyph->bitmap_left, ft_face->glyph->bitmap_top),
+          ft_face->glyph->advance,
+          ft_face->glyph->glyph_index};
       this->size_chars[font_size].second[c] = character;
     }
     GLuint64 tex_handle =
@@ -298,5 +319,8 @@ class FontManager {
     auto texture = new Texture(texture_id, tex_handle, {});
     this->size_chars[font_size].first = texture;
     CheckGLError();
+
+    hb_font = hb_ft_font_create_referenced(ft_face);
+    hb_face = hb_ft_face_create_referenced(ft_face);
   }
 };

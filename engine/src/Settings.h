@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "OpenGLHelpers.h"
+#include <SDL.h>
 
 namespace GameSettings {
 	inline int SCR_WIDTH = 800;
