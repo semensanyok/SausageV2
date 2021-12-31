@@ -40,7 +40,7 @@ public:
     back_indent{back_indent},
     text_color{text_color},
     back_color{back_color} {
-    button_width = button_font_size * 10 + 2 * back_indent;
+    button_width = button_font_size * 4 + 2 * back_indent;
     button_height = button_font_size + 2 * back_indent;
   }
 };
@@ -216,7 +216,7 @@ public:
       (*(cell->nodes.begin()))->OnHover();
     }
   }
-  void InitPauseMenu(PauseMenuSettings pause_menu_settings = {FontSizes::STANDART, 5, {255,0,0},{0,0,0}}) {
+  void InitPauseMenu(PauseMenuSettings pause_menu_settings = {FontSizes::STANDART, FontSizes::STANDART / 2, {255,0,0},{0,0,0}}) {
     const int button_font_size = pause_menu_settings.button_font_size;
     const int back_indent = pause_menu_settings.back_indent;
     const int button_width = pause_menu_settings.button_width;
@@ -227,7 +227,7 @@ public:
 
     const vector<string> buttons = {
       "quit",
-      "settings_^",
+      "settings",
       "load",
       "save",
       "resume",

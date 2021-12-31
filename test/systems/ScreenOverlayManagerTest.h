@@ -51,13 +51,7 @@ public:
     GameSettings::SCR_WIDTH = 800;
     GameSettings::SCR_HEIGHT = 800;
 		Init();
-    int button_font_size = FontSizes::STANDART;
-    int back_indent = 5;
-    vec3 text_color = {255,0,0};
-    vec3 back_color = {0,0,0};
-    PauseMenuSettings sets = {button_font_size,back_indent,text_color,back_color};
-
-    som->InitPauseMenu(sets);
+    som->InitPauseMenu();
   }
 
   void Test_AddInteractiveElement() {

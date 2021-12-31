@@ -11,7 +11,6 @@
 #include "sausage.h"
 #include "OpenGLHelpers.h"
 #include <limits>
-#include <hb-ft.h>
 #include <cstring>
 #include FT_FREETYPE_H
 
@@ -54,18 +53,6 @@ static struct BatchFontData3D {
   vector<unsigned int> indices;
   vector<vec3> glyph_id;
 };
-namespace HBFeature {
-    const hb_tag_t KernTag = HB_TAG('k', 'e', 'r', 'n'); // kerning operations
-    const hb_tag_t LigaTag = HB_TAG('l', 'i', 'g', 'a'); // standard ligature substitution
-    const hb_tag_t CligTag = HB_TAG('c', 'l', 'i', 'g'); // contextual ligature substitution
-
-    static hb_feature_t LigatureOff = { LigaTag, 0, 0, std::numeric_limits<unsigned int>::max() };
-    static hb_feature_t LigatureOn  = { LigaTag, 1, 0, std::numeric_limits<unsigned int>::max() };
-    static hb_feature_t KerningOff  = { KernTag, 0, 0, std::numeric_limits<unsigned int>::max() };
-    static hb_feature_t KerningOn   = { KernTag, 1, 0, std::numeric_limits<unsigned int>::max() };
-    static hb_feature_t CligOff     = { CligTag, 0, 0, std::numeric_limits<unsigned int>::max() };
-    static hb_feature_t CligOn      = { CligTag, 1, 0, std::numeric_limits<unsigned int>::max() };
-}
 
 class FontManager {
   friend class ScreenOverlayManagerTest;
@@ -77,8 +64,6 @@ class FontManager {
   DrawCall* draw_call_3d;
   // TODO: free after all buttons / texts initialized.
   FT_Face ft_face;
-  hb_face_t* hb_face;
-  hb_font_t* hb_font;
  public:
   FontManager(Samplers* samplers,
     MeshManager* mesh_manager,
