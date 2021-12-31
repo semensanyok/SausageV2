@@ -28,9 +28,10 @@ namespace FontSizes {
 
 struct Character {
   glm::ivec2 size;       // Size of glyph
-  glm::ivec2 bearing;    // Offset from baseline to left/top of glyph
   FT_Vector advance;  // Offset to advance to next glyph
   unsigned int glyph_index;
+  FT_Glyph_Metrics metrics;
+  int descend;
 };
 
 class BatchDataUI {
@@ -53,6 +54,18 @@ static struct BatchFontData3D {
   vector<unsigned int> indices;
   vector<vec3> glyph_id;
 };
+namespace HBFeature {
+    const hb_tag_t KernTag = HB_TAG('k', 'e', 'r', 'n'); // kerning operations
+    const hb_tag_t LigaTag = HB_TAG('l', 'i', 'g', 'a'); // standard ligature substitution
+    const hb_tag_t CligTag = HB_TAG('c', 'l', 'i', 'g'); // contextual ligature substitution
+
+    static hb_feature_t LigatureOff = { LigaTag, 0, 0, std::numeric_limits<unsigned int>::max() };
+    static hb_feature_t LigatureOn  = { LigaTag, 1, 0, std::numeric_limits<unsigned int>::max() };
+    static hb_feature_t KerningOff  = { KernTag, 0, 0, std::numeric_limits<unsigned int>::max() };
+    static hb_feature_t KerningOn   = { KernTag, 1, 0, std::numeric_limits<unsigned int>::max() };
+    static hb_feature_t CligOff     = { CligTag, 0, 0, std::numeric_limits<unsigned int>::max() };
+    static hb_feature_t CligOn      = { CligTag, 1, 0, std::numeric_limits<unsigned int>::max() };
+}
 
 class FontManager {
   friend class ScreenOverlayManagerTest;
@@ -152,27 +165,10 @@ class FontManager {
     int y_min = numeric_limits<int>::max();
     int y_max = numeric_limits<int>::min();
 
-    //float delta_x = 0;
-    //float delta_y = 0;
     int ind_delta = 0;
 
-    hb_buffer_t *buf;
-    buf = hb_buffer_create();
-
-    hb_buffer_add_utf8(buf, text.c_str(), -1, 0, -1);
-    //hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
-    //hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
-    //hb_buffer_set_language(buf, hb_language_from_string("en", -1));
-    hb_buffer_guess_segment_properties (buf);
-
-    hb_shape(hb_font, buf, NULL, 0);
-
-    unsigned int glyph_count;
-    hb_glyph_info_t *glyph_info    = hb_buffer_get_glyph_infos(buf, &glyph_count);
-    hb_glyph_position_t *glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
-
-    hb_position_t cursor_x = 0;
-    hb_position_t cursor_y = 0;
+    int cursor_x = 0;
+    int cursor_y = 0;
     for (int i = 0; i < text.size(); i++) {
       auto chr = text[i];
       auto character = charmap[chr];
@@ -181,41 +177,36 @@ class FontManager {
       float uv_max_x = character.size.x / (float)plate_size;
       float uv_max_y = character.size.y / (float)plate_size;
 
-      hb_codepoint_t glyphid  = glyph_info[i].codepoint;
-      glyph_info[i].cluster;
-      hb_position_t x_offset  = glyph_pos[i].x_offset;
-      hb_position_t y_offset  = glyph_pos[i].y_offset;
-      hb_position_t x_advance = glyph_pos[i].x_advance;
-      hb_position_t y_advance = glyph_pos[i].y_advance;
+      cursor_y -= character.descend;
+      {
+        x_min = std::min<int>(0 + cursor_x, x_min);
+        x_max = std::max<int>(u + cursor_x, x_max);
+        y_min = std::min<int>(0 + cursor_y, y_min);
+        y_max = std::max<int>(v + cursor_y, y_max);
 
-      x_min = std::min<int>(0 + cursor_x, x_min);
-      x_max = std::max<int>(u + cursor_x, x_max);
-      y_min = std::min<int>(0 + cursor_y, y_min);
-      y_max = std::max<int>(v + cursor_y, y_max);
+        batch->vertices.push_back({0 + cursor_x, 0 + cursor_y, chr});
+        batch->vertices.push_back({0 + cursor_x, v + cursor_y, chr});
+        batch->vertices.push_back({u + cursor_x, 0 + cursor_y, chr});
+        batch->vertices.push_back({u + cursor_x, v + cursor_y, chr});
+        batch->colors.push_back(color);
+        batch->colors.push_back(color);
+        batch->colors.push_back(color);
+        batch->colors.push_back(color);
+        batch->uvs.push_back({0, uv_max_y});
+        batch->uvs.push_back({0, 0});
+        batch->uvs.push_back({uv_max_x, uv_max_y});
+        batch->uvs.push_back({uv_max_x, 0});
 
-      batch->vertices.push_back({0 + cursor_x, 0 + cursor_y, chr});
-      batch->vertices.push_back({0 + cursor_x, v + cursor_y, chr});
-      batch->vertices.push_back({u + cursor_x, 0 + cursor_y, chr});
-      batch->vertices.push_back({u + cursor_x, v + cursor_y, chr});
-      batch->colors.push_back(color);
-      batch->colors.push_back(color);
-      batch->colors.push_back(color);
-      batch->colors.push_back(color);
-      batch->uvs.push_back({0, uv_max_y});
-      batch->uvs.push_back({0, 0});
-      batch->uvs.push_back({uv_max_x, uv_max_y});
-      batch->uvs.push_back({uv_max_x, 0});
-
-      batch->indices.push_back(ind_delta + 1);
-      batch->indices.push_back(ind_delta + 0);
-      batch->indices.push_back(ind_delta + 2);
-      batch->indices.push_back(ind_delta + 1);
-      batch->indices.push_back(ind_delta + 2);
-      batch->indices.push_back(ind_delta + 3);
-      ind_delta += 4;
-
-      cursor_x += x_advance >> 6;
-      cursor_y += y_advance >> 6;
+        batch->indices.push_back(ind_delta + 1);
+        batch->indices.push_back(ind_delta + 0);
+        batch->indices.push_back(ind_delta + 2);
+        batch->indices.push_back(ind_delta + 1);
+        batch->indices.push_back(ind_delta + 2);
+        batch->indices.push_back(ind_delta + 3);
+        ind_delta += 4;
+      }
+      cursor_y += character.descend;
+      cursor_x += character.advance.x >> 6;
     }
     batch->x_max = x_max;
     batch->x_min = x_min;
@@ -232,7 +223,7 @@ class FontManager {
 
  private:
   //void _Flush3D() {
-  //  for (int i = 0; i < current_3d_batch.size(); i++) {
+  //  fror (int i = 0; i < current_3d_batch.size(); i++) {
   //    auto& batch = current_3d_batch[i];
   //    buffer_3d->BufferMeshData(batch.mesh_data, batch.vertices, batch.indices,
   //                             batch.colors, batch.uvs, batch.glyph_id, {0, 0, 0},
@@ -309,9 +300,10 @@ class FontManager {
       // now store character for later use
       Character character = {
           ivec2(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows),
-          ivec2(ft_face->glyph->bitmap_left, ft_face->glyph->bitmap_top),
           ft_face->glyph->advance,
-          ft_face->glyph->glyph_index};
+          ft_face->glyph->glyph_index,
+          ft_face->glyph->metrics,
+          (ft_face->glyph->metrics.height - ft_face->glyph->metrics.horiBearingY) >> 6};
       this->size_chars[font_size].second[c] = character;
     }
     GLuint64 tex_handle =
@@ -319,8 +311,5 @@ class FontManager {
     auto texture = new Texture(texture_id, tex_handle, {});
     this->size_chars[font_size].first = texture;
     CheckGLError();
-
-    hb_font = hb_ft_font_create_referenced(ft_face);
-    hb_face = hb_ft_face_create_referenced(ft_face);
   }
 };
