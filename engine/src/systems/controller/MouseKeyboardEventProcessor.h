@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "Settings.h"
 #include "ScreenOverlayManager.h"
+#include "BufferManager.h"
 
 class ControllerEventProcessor {
 protected:
@@ -27,9 +28,14 @@ public:
 class ControllerEventProcessorEditor : public ControllerEventProcessor {
 	int screen_x, screen_y;
 	bool is_motion_callback_rts_continious_scroll = false;
+  BufferStorage* buffer_storage;
+  bool is_mouse_left_click = false;
+  bool is_mouse_left_pressed = false;
+  
 public:
 	ControllerEventProcessorEditor(Camera* camera,
-    ScreenOverlayManager* screen_overlay_manager);
+    ScreenOverlayManager* screen_overlay_manager,
+    BufferManager* buffer_manager);
 	~ControllerEventProcessorEditor();
 	void KeyDown(int key);
 	void KeyUp(int key);

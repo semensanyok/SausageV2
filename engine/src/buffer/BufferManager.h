@@ -8,6 +8,7 @@
 #include "OverlayBufferConsumer3D.h"
 
 class BufferManager {
+  friend class ControllerEventProcessorEditor;
 	BufferStorage* storage;
 	MeshManager* mesh_manager;
 public:

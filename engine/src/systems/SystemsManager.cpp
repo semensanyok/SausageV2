@@ -33,7 +33,7 @@ void SystemsManager::InitSystems() {
   screen_overlay_manager = new ScreenOverlayManager(buffer_manager->ui_buffer,shaders,mesh_manager,font_manager,renderer);
   screen_overlay_manager->Init();
 
-	controller_event_processor = new ControllerEventProcessorEditor(camera, screen_overlay_manager);
+	controller_event_processor = new ControllerEventProcessorEditor(camera, screen_overlay_manager, buffer_manager);
 	controller = new Controller(camera, state_manager, physics_manager, controller_event_processor);
 	_SubmitAsyncTasks();
 }

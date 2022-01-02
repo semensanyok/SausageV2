@@ -238,6 +238,6 @@ function(POSTPROCESS_SHADERS)
 endfunction()
 #POSTPROCESS_SHADERS()
 
-FILE(COPY "src/shaders/" DESTINATION "${CMAKE_BINARY_DIR}/shaders")
+#FILE(COPY "src/shaders/" DESTINATION "${CMAKE_BINARY_DIR}/shaders")
 
 #FILE(COPY "dlls/" DESTINATION "${CMAKE_BINARY_DIR}")

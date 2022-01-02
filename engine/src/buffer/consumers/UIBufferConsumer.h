@@ -20,7 +20,7 @@ class UIBufferConsumer : public BufferConsumer {
 
  public:
   UIBufferConsumer(BufferStorage* buffer, MeshManager* mesh_manager)
-      : BufferConsumer(buffer, BufferType::FONT_BUFFERS),
+      : BufferConsumer(buffer, BufferType::UI_BUFFERS),
         mesh_manager{mesh_manager} {}
   ~UIBufferConsumer() {}
   // TODO:
@@ -31,6 +31,9 @@ class UIBufferConsumer : public BufferConsumer {
                       vector<vec3>& colors, vector<vec2>& uvs);
   void BufferTransform(MeshDataUI* mesh) {
     buffer->BufferUniformDataUITransform(mesh);
+  }
+  void BufferSize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y) {
+    buffer->BufferUniformDataUISize(mesh, min_x, max_x, min_y, max_y);
   }
   void Init() {
     margins = buffer->RequestStorage(BufferSettings::Margins::FONT_VERTEX_PART,

@@ -9,6 +9,11 @@ in vs_out {
     vec2 uv;
 } In;
 
+{{ controller_uniforms_shared }}
+{{ ui_uniforms_shared }}
+{{ ui_utils }}
+
+
 layout (std430, binding = 1) buffer TextureArray
 {
     sampler2DArray textures[];
@@ -17,5 +22,5 @@ layout (std430, binding = 1) buffer TextureArray
 out vec4 color;
 
 void main(void) {
-  color = vec4(In.color, 0.3);
+  color = vec4(IsMouseHover(mouse_x, mouse_y, In.base_instance) ? In.color + 100 : In.color, 0.3);
 }

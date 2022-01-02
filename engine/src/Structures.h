@@ -435,13 +435,13 @@ struct MeshUniformData {
   unsigned int transform_offset[MAX_TRANSFORM_OFFSET];
 };
 
-struct FontUniformData {
-  mat4 transforms[MAX_FONT_TRANSFORM];
+struct UniformData3DOverlay {
+  mat4 transforms[MAX_3D_OVERLAY_TRANSFORM];
 };
 
 struct UniformDataUI {
-  ivec4 min_max_x_y[MAX_FONT_UI_TRANSFORM];
-  vec2 transforms[MAX_FONT_UI_TRANSFORM];
+  ivec4 min_max_x_y[MAX_UI_UNIFORM_TRANSFORM];
+  vec2 transforms[MAX_UI_UNIFORM_TRANSFORM];
 };
 
 struct BufferMargins {
@@ -462,15 +462,16 @@ const BufferTypeFlag LIGHT = 1 << 5;
 const BufferTypeFlag COMMAND = 1 << 6;
 
 const BufferTypeFlag FONT_TEXTURE = 1 << 7;
-const BufferTypeFlag FONT_UNIFORMS = 1 << 8;
+const BufferTypeFlag UI_UNIFORMS = 1 << 8;
+const BufferTypeFlag CONTROLLER_UNIFORMS = 1 << 9;
 
 // COMPOSITE FLAGS
 const BufferTypeFlag MESH_BUFFERS =
     MESH_VAO | VERTEX | INDEX | UNIFORMS | TEXTURE | LIGHT | COMMAND;
 const BufferTypeFlag PHYSICS_DEBUG_BUFFERS =
     MESH_VAO | VERTEX | INDEX | COMMAND;
-const BufferTypeFlag FONT_BUFFERS =
-    MESH_VAO | VERTEX | INDEX | COMMAND | TEXTURE | FONT_TEXTURE | FONT_UNIFORMS;
+const BufferTypeFlag UI_BUFFERS =
+    MESH_VAO | VERTEX | INDEX | COMMAND | TEXTURE | FONT_TEXTURE | UI_UNIFORMS | CONTROLLER_UNIFORMS;
 };  // namespace BufferType
 
 namespace DrawOrder {

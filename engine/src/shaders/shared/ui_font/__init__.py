@@ -1,4 +1,6 @@
 import sys
 sys.path.append("..")
 
-from _ui import ui_transform as parameters
+from _ui import ui
+
+parameters = ui

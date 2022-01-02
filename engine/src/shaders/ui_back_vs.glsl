@@ -8,7 +8,7 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 color;
 layout (location = 2) in vec2 uv;
 
-{{ ui_transform_shared }}
+{{ ui_uniforms_shared }}
 out vec2 TexCoords;
 
 uniform mat4 projection_ortho;
@@ -24,6 +24,7 @@ void main()
     vec2 transform = transforms[gl_BaseInstanceARB];
     gl_Position = projection_ortho * vec4(position.xy + transform, 0.0 , 1.0);
     Out.color = color;
+    
     Out.uv = uv.xy;
     Out.base_instance = gl_BaseInstanceARB;
 }

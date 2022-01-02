@@ -2,8 +2,9 @@
 
 ControllerEventProcessorEditor::ControllerEventProcessorEditor(
   Camera* camera,
-  ScreenOverlayManager* screen_overlay_manager) :
-  ControllerEventProcessor(camera, screen_overlay_manager) {
+  ScreenOverlayManager* screen_overlay_manager,
+  BufferManager* buffer_manager) :
+  ControllerEventProcessor(camera, screen_overlay_manager), buffer_storage{ buffer_manager->storage } {
 }
 
 ControllerEventProcessorEditor::~ControllerEventProcessorEditor() {
@@ -22,10 +23,17 @@ void ControllerEventProcessorEditor::KeyUp(int key)
 
 void ControllerEventProcessorEditor::MouseButtonUp(SDL_MouseButtonEvent& e)
 {
+  if (e.which == SDL_BUTTON_LEFT) {
+    is_mouse_left_pressed = false;
+  }
 }
 
 void ControllerEventProcessorEditor::MouseButtonDown(SDL_MouseButtonEvent& e)
 {
+  if (e.which == SDL_BUTTON_LEFT) {
+    is_mouse_left_pressed = true;
+    is_mouse_left_click = true;
+  }
   screen_overlay_manager->OnClick(e.x, e.y);
 }
 
@@ -60,4 +68,6 @@ void ControllerEventProcessorEditor::Update() {
 		camera->MouseMotionCallback(screen_x, screen_y);
 	}
   screen_overlay_manager->OnHover(screen_x, screen_y);
+  buffer_storage->BufferUniformDataController(screen_x, screen_y, (int)is_mouse_left_pressed, (int)is_mouse_left_click);
+  is_mouse_left_click = false;
 }

@@ -369,19 +369,26 @@ void BufferStorage::InitMeshBuffers() {
                   flags);
   font_texture_ptr = (GLuint64 *)glMapBufferRange(
       GL_SHADER_STORAGE_BUFFER, 0, FONT_TEXTURE_STORAGE_SIZE, flags);
-  glGenBuffers(1, &font_uniforms_buffer);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
-  glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_STORAGE_SIZE, NULL,
+  glGenBuffers(1, &uniforms_3d_overlay_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_3d_overlay_buffer);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, UNIFORMS_3D_OVERLAY_STORAGE_SIZE, NULL,
                   flags);
-  font_uniforms_ptr = (FontUniformData *)glMapBufferRange(
-      GL_SHADER_STORAGE_BUFFER, 0, FONT_UNIFORMS_STORAGE_SIZE, flags);
+  uniforms_3d_overlay_ptr = (UniformData3DOverlay *)glMapBufferRange(
+      GL_SHADER_STORAGE_BUFFER, 0, UNIFORMS_3D_OVERLAY_STORAGE_SIZE, flags);
   // Font UI buffers
-  glGenBuffers(1, &font_uniforms_ui_buffer);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_ui_buffer);
-  glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_UI_STORAGE_SIZE, NULL,
+  glGenBuffers(1, &uniforms_ui_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_buffer);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, UNIFORMS_UI_STORAGE_SIZE, NULL,
                   flags);
-  font_uniforms_ui_ptr = (UniformDataUI *)glMapBufferRange(
-      GL_SHADER_STORAGE_BUFFER, 0, FONT_UNIFORMS_UI_STORAGE_SIZE, flags);
+  uniforms_ui_ptr = (UniformDataUI *)glMapBufferRange(
+      GL_SHADER_STORAGE_BUFFER, 0, UNIFORMS_UI_STORAGE_SIZE, flags);
+
+  glGenBuffers(1, &uniforms_controller_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_controller_buffer);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(ControllerUniformData), NULL,
+                  flags);
+  uniforms_controller_ptr = (ControllerUniformData *)glMapBufferRange(
+      GL_SHADER_STORAGE_BUFFER, 0, sizeof(ControllerUniformData), flags);
 }
 
 void BufferStorage::BindVAOandBuffers(
@@ -442,15 +449,19 @@ void BufferStorage::BindVAOandBuffers(
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_TEXTURE_UNIFORM_LOC,
                      font_texture_buffer);
   }
-  if ((buffers_to_bind & BufferType::FONT_UNIFORMS) &&
-      !(bound_buffers & BufferType::FONT_UNIFORMS)) {
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
+  if ((buffers_to_bind & BufferType::UI_UNIFORMS) &&
+      !(bound_buffers & BufferType::UI_UNIFORMS)) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_3d_overlay_buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_LOC,
-                     font_uniforms_buffer);
+                     uniforms_3d_overlay_buffer);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_ui_buffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_UI_LOC,
-                     font_uniforms_ui_buffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UI_UNIFORM_LOC,
+                     uniforms_ui_buffer);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_controller_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CONTROLLER_UNIFORM_LOC,
+                     uniforms_controller_buffer);
   }
 }
 void BufferStorage::Dispose() {
@@ -484,13 +495,13 @@ void BufferStorage::Dispose() {
   }
   command_buffers.clear();
   CheckGLError();
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_ui_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  glDeleteBuffers(1, &font_uniforms_ui_buffer);
+  glDeleteBuffers(1, &uniforms_ui_buffer);
   CheckGLError();
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_3d_overlay_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  glDeleteBuffers(1, &font_uniforms_buffer);
+  glDeleteBuffers(1, &uniforms_3d_overlay_buffer);
   CheckGLError();
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);

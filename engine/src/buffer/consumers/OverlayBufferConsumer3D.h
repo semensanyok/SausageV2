@@ -20,7 +20,7 @@ class OverlayBufferConsumer3D : public BufferConsumer {
 
  public:
   OverlayBufferConsumer3D(BufferStorage* buffer, MeshManager* mesh_manager)
-      : BufferConsumer(buffer, BufferType::FONT_BUFFERS),
+      : BufferConsumer(buffer, BufferType::UI_BUFFERS),
         mesh_manager{mesh_manager} {}
   ~OverlayBufferConsumer3D() {}
   // TODO:

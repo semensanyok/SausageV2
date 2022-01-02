@@ -52,7 +52,8 @@ class BufferStorage {
   const int LIGHTS_UNIFORM_LOC = 2;
   const int FONT_UNIFORMS_LOC = 3;
   const int FONT_TEXTURE_UNIFORM_LOC = 4;
-  const int FONT_UNIFORMS_UI_LOC = 5;
+  const int UI_UNIFORM_LOC = 5;
+  const int CONTROLLER_UNIFORM_LOC = 6;
 
   bool is_need_barrier = false;
 
@@ -91,18 +92,20 @@ class BufferStorage {
   // FONT buffers
   const unsigned long FONT_TEXTURE_STORAGE_SIZE =
       MAX_FONT_TEXTURES * sizeof(GLuint64);
-  const unsigned long FONT_UNIFORMS_STORAGE_SIZE = sizeof(FontUniformData);
-  const unsigned long FONT_TRANSFORM_OFFSET_STORAGE_SIZE =
-      MAX_FONT_TRANSFORM_OFFSET * sizeof(unsigned int);
-  const unsigned long FONT_UNIFORMS_UI_STORAGE_SIZE = sizeof(UniformDataUI);
-  const unsigned long FONT_TRANSFORM_OFFSET_UI_STORAGE_SIZE =
-      MAX_FONT_UI_TRANSFORM_OFFSET * sizeof(unsigned int);
+  const unsigned long UNIFORMS_3D_OVERLAY_STORAGE_SIZE = sizeof(UniformData3DOverlay);
+  const unsigned long TRANSFORM_3D_OVERLAY_OFFSET_STORAGE_SIZE =
+      MAX_3D_OVERLAY_TRANSFORM_OFFSET * sizeof(unsigned int);
+  const unsigned long UNIFORMS_UI_STORAGE_SIZE = sizeof(UniformDataUI);
+  const unsigned long TRANSFORM_OFFSET_UI_STORAGE_SIZE =
+      MAX_UI_UNIFORM_OFFSET * sizeof(unsigned int);
   GLuint font_texture_buffer;
   GLuint64 *font_texture_ptr;
-  GLuint font_uniforms_buffer;
-  GLuint font_uniforms_ui_buffer;
-  FontUniformData *font_uniforms_ptr;
-  UniformDataUI *font_uniforms_ui_ptr;
+  GLuint uniforms_3d_overlay_buffer;
+  GLuint uniforms_ui_buffer;
+  GLuint uniforms_controller_buffer;
+  UniformData3DOverlay *uniforms_3d_overlay_ptr;
+  UniformDataUI *uniforms_ui_ptr;
+  ControllerUniformData* uniforms_controller_ptr;
 
  public:
   unsigned long transforms_total = 0;
@@ -182,7 +185,7 @@ class BufferStorage {
     if (mesh->transform_offset == -1) {
       mesh->transform_offset = _GetTransformBucketFont(mesh);
     }
-    font_uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
+    uniforms_3d_overlay_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
         mesh->transform;
     is_need_barrier = true;
   };
@@ -190,7 +193,7 @@ class BufferStorage {
     if (mesh->transform_offset == -1) {
       mesh->transform_offset = _GetTransformBucketFontUI(mesh);
     }
-    font_uniforms_ui_ptr
+    uniforms_ui_ptr
       ->min_max_x_y[mesh->transform_offset + mesh->instance_id] = {min_x, max_x, min_y, max_y};
     is_need_barrier = true;
   }
@@ -198,11 +201,18 @@ class BufferStorage {
     if (mesh->transform_offset == -1) {
       mesh->transform_offset = _GetTransformBucketFontUI(mesh);
     }
-    font_uniforms_ui_ptr
+    uniforms_ui_ptr
         ->transforms[mesh->transform_offset + mesh->instance_id] =
         mesh->transform;
     is_need_barrier = true;
   };
+  void BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click) {
+    uniforms_controller_ptr->mouse_x = mouse_x;
+    uniforms_controller_ptr->mouse_y = mouse_y;
+    uniforms_controller_ptr->is_pressed = is_pressed;
+    uniforms_controller_ptr->is_click = is_click;
+    is_need_barrier = true;
+  }
 
  private:
   long _GetTransformBucket(MeshData *mesh);
