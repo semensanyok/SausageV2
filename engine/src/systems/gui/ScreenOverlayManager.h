@@ -283,7 +283,14 @@ private:
   ) {
       buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
       buffer->BufferTransform(mesh);
-      buffer->BufferSize(mesh, batch->x_min, batch->x_max, batch->y_min, batch->y_max);
+      auto min = mesh->transform;
+      min.x += batch->x_min;
+      min.y += batch->y_min;
+      auto max = mesh->transform;
+      max.x += batch->x_max;
+      max.y += batch->y_max;
+
+      buffer->BufferSize(mesh, min.x, max.x, min.y, max.y);
       buffer->AddCommand(mesh->command, draw_call_back->command_buffer,total_draw_commands_back++);
       drawn_ui_elements.push_back(mesh);
   }

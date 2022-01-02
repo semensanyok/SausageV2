@@ -43,7 +43,7 @@ void ControllerEventProcessorEditor::MouseMotion(SDL_MouseMotionEvent& e)
 	{
 	case RTS:
 		screen_x = e.x;
-		screen_y = e.y;
+		screen_y = GameSettings::SCR_HEIGHT - e.y;
 		is_motion_callback_rts_continious_scroll = camera->IsCursorOnWindowBorder(screen_x, screen_y) ? true : false;
 		break;
 	case FREE:
