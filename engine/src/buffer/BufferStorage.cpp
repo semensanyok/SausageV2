@@ -380,7 +380,7 @@ void BufferStorage::InitMeshBuffers() {
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_uniforms_ui_buffer);
   glBufferStorage(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_UI_STORAGE_SIZE, NULL,
                   flags);
-  font_uniforms_ui_ptr = (FontUniformDataUI *)glMapBufferRange(
+  font_uniforms_ui_ptr = (UniformDataUI *)glMapBufferRange(
       GL_SHADER_STORAGE_BUFFER, 0, FONT_UNIFORMS_UI_STORAGE_SIZE, flags);
 }
 

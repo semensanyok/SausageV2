@@ -3,6 +3,8 @@
 #extension GL_ARB_bindless_texture : require
 #extension GL_ARB_shader_storage_buffer_object : require
 
+{{ ui_transform_shared }}
+
 in vs_out {
     flat int base_instance;
     flat int glyph_id;

@@ -8,17 +8,10 @@ layout (location = 0) in vec3 position_glyph_id;
 layout (location = 1) in vec3 color;
 layout (location = 2) in vec2 uv;
 
-const uint MAX_TRANSFORM = 4000;
-
+{{ ui_transform_shared }}
 out vec2 TexCoords;
 
 uniform mat4 projection_ortho;
-
-layout (std430, binding = 5) buffer FontUniformDataUI
-{
-    vec2 transforms[MAX_TRANSFORM];
-};
-
 
 out vs_out {
     flat int base_instance;

@@ -53,8 +53,7 @@ class UINode
   MeshDataUI* background;
   UINodePosition node_position;
   ScreenCell* start_cell;
-  // last opened drawn last, above previously opened windows.
-  vector<function<void()>> on_destroys;
+  //vector<function<void()>> on_destroys;
 public:
   // suborder. expected to be max for text and min for background, to draw text above background.
   int open_order;
@@ -203,7 +202,7 @@ public:
       return;
     }
     auto cell = _GetCellAtPoint(screen_x, screen_y);
-    if (!cell->nodes.empty()) {
+    if (cell != nullptr && !cell->nodes.empty()) {
       (*(cell->nodes.begin()))->OnPressed();
     }
   }
@@ -212,7 +211,7 @@ public:
       return;
     }
     auto cell = _GetCellAtPoint(screen_x, screen_y);
-    if (!cell->nodes.empty()) {
+    if (cell != nullptr && !cell->nodes.empty()) {
       (*(cell->nodes.begin()))->OnHover();
     }
   }

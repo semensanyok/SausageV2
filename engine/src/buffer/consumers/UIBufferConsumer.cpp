@@ -13,5 +13,5 @@ void UIBufferConsumer::BufferMeshData(MeshDataUI* mesh,
     mesh->texture->MakeResident();
     BufferFontTexture(mesh, mesh->texture);
   }
-  buffer->BufferUIFontTransform(mesh);
+  buffer->BufferUniformDataUITransform(mesh);
 }

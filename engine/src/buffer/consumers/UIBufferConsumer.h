@@ -30,7 +30,7 @@ class UIBufferConsumer : public BufferConsumer {
                       vector<unsigned int>& indices,
                       vector<vec3>& colors, vector<vec2>& uvs);
   void BufferTransform(MeshDataUI* mesh) {
-    buffer->BufferUIFontTransform(mesh);
+    buffer->BufferUniformDataUITransform(mesh);
   }
   void Init() {
     margins = buffer->RequestStorage(BufferSettings::Margins::FONT_VERTEX_PART,

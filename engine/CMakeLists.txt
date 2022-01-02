@@ -213,6 +213,31 @@ IF ( SAUSAGE_DEBUG_BUILD )
 endif()
 ###### ENGINE OPTIONS END ####################
 
+function(POSTPROCESS_SHADERS)
+    file(GLOB shaders_files "src/shaders/*")
+    list(FILTER shaders_files EXCLUDE REGEX "__")
+    
+    #file(GLOB files "${GLADE_ASSETS_PATH}/*.glade")
+    #add_custom_target(
+    #    dummy_target_${filename_gtk4} ALL
+    #    DEPENDS ${filename_gtk4}
+    #)
+    #add_custom_command(
+    #    OUTPUT ${filename_gtk4}
+    #    COMMENT "gtk4-builder-tool 3to4 ${filename}"
+    #    WORKING_DIRECTORY ${GTK_UI_PATH}
+    #    COMMAND gtk4-builder-tool
+    #    ARGS
+    #        simplify
+    #        --3to4
+    #        #--replace
+    #        ${filename}
+    #        > ${filename_gtk4}
+    #    DEPENDS ${file}
+    #)
+endfunction()
+#POSTPROCESS_SHADERS()
+
 FILE(COPY "src/shaders/" DESTINATION "${CMAKE_BINARY_DIR}/shaders")
 
 #FILE(COPY "dlls/" DESTINATION "${CMAKE_BINARY_DIR}")

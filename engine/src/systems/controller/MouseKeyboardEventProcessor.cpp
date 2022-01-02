@@ -52,17 +52,12 @@ void ControllerEventProcessorEditor::MouseMotion(SDL_MouseMotionEvent& e)
 			SDL_SetRelativeMouseMode(SDL_FALSE);
 		}
 		break;
-	default:
-		screen_x = e.x;
-		screen_y = e.y;
-		is_motion_callback_rts_continious_scroll = camera->IsCursorOnWindowBorder(screen_x, screen_y) ? true : false;
-		break;
 	}
 }
 
 void ControllerEventProcessorEditor::Update() {
 	if (is_motion_callback_rts_continious_scroll) {
 		camera->MouseMotionCallback(screen_x, screen_y);
-    screen_overlay_manager->OnHover(screen_x, screen_y);
 	}
+  screen_overlay_manager->OnHover(screen_x, screen_y);
 }

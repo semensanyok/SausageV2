@@ -422,6 +422,13 @@ struct Shaders {
   Shader *font_3d;
 };
 
+struct ControllerUniformData {
+  int mouse_x;
+  int mouse_y;
+  int is_pressed;
+  int is_click;
+};
+
 struct MeshUniformData {
   mat4 bones_transforms[MAX_BONES];
   mat4 transforms[MAX_TRANSFORM];
@@ -432,7 +439,8 @@ struct FontUniformData {
   mat4 transforms[MAX_FONT_TRANSFORM];
 };
 
-struct FontUniformDataUI {
+struct UniformDataUI {
+  ivec4 min_max_x_y[MAX_FONT_UI_TRANSFORM];
   vec2 transforms[MAX_FONT_UI_TRANSFORM];
 };
 

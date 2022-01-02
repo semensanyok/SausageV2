@@ -94,7 +94,7 @@ class BufferStorage {
   const unsigned long FONT_UNIFORMS_STORAGE_SIZE = sizeof(FontUniformData);
   const unsigned long FONT_TRANSFORM_OFFSET_STORAGE_SIZE =
       MAX_FONT_TRANSFORM_OFFSET * sizeof(unsigned int);
-  const unsigned long FONT_UNIFORMS_UI_STORAGE_SIZE = sizeof(FontUniformDataUI);
+  const unsigned long FONT_UNIFORMS_UI_STORAGE_SIZE = sizeof(UniformDataUI);
   const unsigned long FONT_TRANSFORM_OFFSET_UI_STORAGE_SIZE =
       MAX_FONT_UI_TRANSFORM_OFFSET * sizeof(unsigned int);
   GLuint font_texture_buffer;
@@ -102,7 +102,7 @@ class BufferStorage {
   GLuint font_uniforms_buffer;
   GLuint font_uniforms_ui_buffer;
   FontUniformData *font_uniforms_ptr;
-  FontUniformDataUI *font_uniforms_ui_ptr;
+  UniformDataUI *font_uniforms_ui_ptr;
 
  public:
   unsigned long transforms_total = 0;
@@ -186,7 +186,15 @@ class BufferStorage {
         mesh->transform;
     is_need_barrier = true;
   };
-  void BufferUIFontTransform(MeshDataUI *mesh) {
+  void BufferUniformDataUISize(MeshDataUI *mesh, int min_x, int max_x, int min_y, int max_y) {
+    if (mesh->transform_offset == -1) {
+      mesh->transform_offset = _GetTransformBucketFontUI(mesh);
+    }
+    font_uniforms_ui_ptr
+      ->min_max_x_y[mesh->transform_offset + mesh->instance_id] = {min_x, max_x, min_y, max_y};
+    is_need_barrier = true;
+  }
+  void BufferUniformDataUITransform(MeshDataUI *mesh) {
     if (mesh->transform_offset == -1) {
       mesh->transform_offset = _GetTransformBucketFontUI(mesh);
     }
