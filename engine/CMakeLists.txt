@@ -216,27 +216,28 @@ endif()
 function(POSTPROCESS_SHADERS)
     file(GLOB shaders_files "src/shaders/*")
     list(FILTER shaders_files EXCLUDE REGEX "__")
-    
-    #file(GLOB files "${GLADE_ASSETS_PATH}/*.glade")
-    #add_custom_target(
-    #    dummy_target_${filename_gtk4} ALL
-    #    DEPENDS ${filename_gtk4}
-    #)
-    #add_custom_command(
-    #    OUTPUT ${filename_gtk4}
-    #    COMMENT "gtk4-builder-tool 3to4 ${filename}"
-    #    WORKING_DIRECTORY ${GTK_UI_PATH}
-    #    COMMAND gtk4-builder-tool
-    #    ARGS
-    #        simplify
-    #        --3to4
-    #        #--replace
-    #        ${filename}
-    #        > ${filename_gtk4}
-    #    DEPENDS ${file}
-    #)
+    foreach(file ${shaders_files})
+        get_filename_component(filename ${file} NAME)
+        list(APPEND out_shaders_files ${CMAKE_BINARY_DIR}/shaders/${filename})
+    endforeach()
+    add_custom_target(
+        dummy_target_${filename} ALL
+        DEPENDS ${out_shaders_files}
+    )
+    add_custom_command(
+        OUTPUT ${out_shaders_files}
+        COMMENT "GENERATE SHADERS"
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/scripts
+        COMMAND python
+        ARGS
+            -m
+            generate_shaders
+            ${ENGINE_SRC_DIR}
+            ${CMAKE_BINARY_DIR}
+        DEPENDS ${shaders_files}
+    )
 endfunction()
-#POSTPROCESS_SHADERS()
+POSTPROCESS_SHADERS()
 
 #FILE(COPY "src/shaders/" DESTINATION "${CMAKE_BINARY_DIR}/shaders")
 
