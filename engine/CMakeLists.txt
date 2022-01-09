@@ -217,13 +217,13 @@ endif()
 
 function(POSTPROCESS_SHADERS)
     file(GLOB shaders_files "src/shaders/*")
-    list(FILTER shaders_files EXCLUDE REGEX "__")
+    list(FILTER shaders_files EXCLUDE REGEX "__\.py")
     foreach(file ${shaders_files})
         get_filename_component(filename ${file} NAME)
         list(APPEND out_shaders_files ${CMAKE_BINARY_DIR}/shaders/${filename})
     endforeach()
     add_custom_target(
-        dummy_target_${filename} ALL
+        dummy_target_generate_shaders ALL
         DEPENDS ${out_shaders_files}
     )
     add_custom_command(

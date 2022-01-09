@@ -1,2 +1,2 @@
-mypy==0.790
+jinja2
 pytest==6.2.4
