@@ -1,14 +1,7 @@
 #pragma once
 
-#include <sausage.h>
-#include <OpenGLHelpers.h>
-#include <Settings.h>
-#include <Shader.h>
-#include <utils/AssetUtils.h>
-#include <Logging.h>
-#include <Texture.h>
-#include <FileWatcher.h>
-#include <systems/SystemsManager.h>
+#include "Scene1.h"
+#include <systems/GameLoop.h>
 
 struct WorldEvent {
 

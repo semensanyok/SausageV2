@@ -19,7 +19,6 @@ private:
 	friend class Gui;
 	friend class Renderer;
 	friend class Controller;
-	friend class Scene;
 	friend class SystemsManager;
 
 	mat4 view_matrix;
@@ -27,11 +26,8 @@ private:
 	mat4 projection_matrix_ortho;
 	mat4 projection_view;
 	mat4 projection_view_inverse;
-	vec3 pos;
 	vec3 up;
 	vec3 world_up;
-	vec3 right;
-	vec3 direction;
 	float yaw_angle;
 	float pitch_angle;
 
@@ -47,6 +43,10 @@ private:
 	float velocity;
 	float delta_time;
 public:
+	vec3 pos;
+	vec3 direction;
+	vec3 right;
+
 	bool is_update_need = false;
 	CameraMode camera_mode = CameraMode::RTS;
 

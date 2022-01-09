@@ -6,3 +6,5 @@ Gameplay:
  1. write architecture of "pawns" and AI/RTS controller.
  2. interface for drag n drop models from DCC (.fbx). Also used in gameplay. (select building, select produced unit. etc.)
  3. AI: asignment, current action, action queue
+
+Map generation from rgba? YES

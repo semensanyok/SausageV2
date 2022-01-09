@@ -73,6 +73,12 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
     return texture;
 }
 
+unique_ptr<RawTextureData> TextureManager::LoadRawTextureData(string& path)
+{
+  SDL_Surface* surface = IMG_Load(path.c_str());
+  return make_unique<RawTextureData>(surface);
+}
+
 GLenum TextureManager::GetTexFormat(int bytes_per_pixel, bool for_storage) {
     if (bytes_per_pixel == 3) {
         return for_storage ? GL_RGB8 : GL_RGB;

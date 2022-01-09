@@ -1,18 +1,19 @@
 #pragma once
 
-#include "FileWatcher.h"
-#include "Settings.h"
-#include "Structures.h"
-#include "sausage.h"
-#include "ImguiGui.h"
-#include "systems/MeshManager.h"
-#include "systems/Renderer.h"
-#include "systems/SystemsManager.h"
-#include "systems/TextureManager.h"
+#include <FileWatcher.h>
+#include <Settings.h>
+#include <Structures.h>
+#include <sausage.h>
+#include <ImguiGui.h>
+#include <systems/MeshManager.h>
+#include <systems/Renderer.h>
+#include <systems/SystemsManager.h>
+#include <systems/TextureManager.h>
+#include <Scene.h>
 
 using namespace std;
 
-class Scene {
+class Scene1 : public Scene {
  public:
   SystemsManager* systems_manager;
 
@@ -41,7 +42,7 @@ class Scene {
     "Frog"
   };
 
-  Scene(SystemsManager* systems_manager)
+  Scene1(SystemsManager* systems_manager)
       : systems_manager{systems_manager}, shaders{systems_manager->shaders} {
     draw_call = new DrawCall();
     draw_call->shader = shaders->blinn_phong;
@@ -59,11 +60,11 @@ class Scene {
     systems_manager->renderer->AddDraw(draw_call, DrawOrder::MESH);
      //systems_manager->renderer->AddDraw(draw_call2, DrawOrder::MESH);
   }
-  ~Scene(){};
-  void Init() {
+  ~Scene1(){};
+  void Init() override {
     _LoadData();
 
-    function<void()> scene_reload_callback = bind(&Scene::_ReloadScene, this);
+    function<void()> scene_reload_callback = bind(&Scene1::_ReloadScene, this);
     bool is_persistent_command = false;
     scene_reload_callback =
         bind(&Renderer::AddGlCommand, systems_manager->renderer,
@@ -74,7 +75,7 @@ class Scene {
     Gui::AddButton({"Reload scene", scene_reload_callback});
     CheckGLError();
   }
-  void PrepareDraws() {
+  void PrepareDraws() override {
     _OcclusionGather();
     _SortByDistance();
     vector<DrawElementsIndirectCommand> commands;

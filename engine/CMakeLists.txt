@@ -154,10 +154,11 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
 "${ENGINE_SRC_DIR}/systems/" 
 "${ENGINE_SRC_DIR}/systems/controller/" 
 "${ENGINE_SRC_DIR}/systems/physics/" 
+"${ENGINE_SRC_DIR}/systems/world_gen"
+"${ENGINE_SRC_DIR}/systems/gui/"
 "${ENGINE_SRC_DIR}/utils/" 
 "${ENGINE_SRC_DIR}/buffer/" 
 "${ENGINE_SRC_DIR}/buffer/consumers/" 
-"${ENGINE_SRC_DIR}/systems/gui/"
 ${IMGUI_HEADERS} 
 ${DEPENDENCIES_INCLUDE_DIRS})
 
@@ -191,7 +192,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/systems/RendererContextManager.cpp" 
 "src/buffer/consumers/UIBufferConsumer.cpp" 
 "src/buffer/consumers/OverlayBufferConsumer3D.cpp" 
-"src/SausageMain.h" "src/systems/gui/ScreenOverlayManager.h" "src/systems/gui/ScreenOverlayManager.cpp" "src/systems/controller/ControllerUtils.h" )
+"src/systems/gui/ScreenOverlayManager.cpp")
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 

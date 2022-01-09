@@ -14,8 +14,6 @@ if __name__ == "__main__":
     SHADERS_MODULE_PATH = sys.argv[1]
     BUILD_PATH = sys.argv[2]
     sys.path.append(SHADERS_MODULE_PATH)
-    print(f"${SHADERS_MODULE_PATH=}")
-    print(f"${BUILD_PATH=}")
     SHADERS_PATH = os.path.join(SHADERS_MODULE_PATH, SHADERS_RELATIVE_PATH)
     TEMPLATE_VARS_PATH = os.path.join(SHADERS_PATH, "shared")
     sys.path.append(TEMPLATE_VARS_PATH)
