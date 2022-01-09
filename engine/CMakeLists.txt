@@ -66,6 +66,8 @@ find_package(freetype REQUIRED)
 # LIBRARIES FOUND BY PKG CONFIG ############################
 find_package(PkgConfig REQUIRED)
 
+get_filename_component(PARENT_DIR ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
+set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH};${ENGINE_LIB_DIR}/harfbuzz/lib/pkgconfig")
 pkg_check_modules(harfbuzz REQUIRED harfbuzz)
 set(PGK_CONF_FOUND_LIBS ${harfbuzz_LIBRARIES})
 set(PGK_CONF_FOUND_LIBS_INCLUDE_DIRS ${harfbuzz_INCLUDE_DIRS})

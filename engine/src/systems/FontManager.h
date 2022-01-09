@@ -29,7 +29,7 @@ struct Character {
   glm::ivec2 size;       // Size of glyph
   FT_Vector advance;  // Offset to advance to next glyph
   unsigned int glyph_index;
-  FT_Glyph_Metrics metrics;
+  //FT_Glyph_Metrics metrics;
   int descend;
 };
 
@@ -287,7 +287,7 @@ class FontManager {
           ivec2(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows),
           ft_face->glyph->advance,
           ft_face->glyph->glyph_index,
-          ft_face->glyph->metrics,
+          //ft_face->glyph->metrics,
           (ft_face->glyph->metrics.height - ft_face->glyph->metrics.horiBearingY) >> 6};
       this->size_chars[font_size].second[c] = character;
     }
