@@ -185,12 +185,13 @@ class Scene1 : public Scene {
       }
     }
   }
+
   void _BufferMeshes(vector<MeshDataBase*>& new_meshes_data,
                      vector<shared_ptr<MeshLoadData>>& new_meshes) {
-    for (int i = 0; i < new_meshes.size(); i++) {
-      auto load_data = new_meshes[i].get();
-      // dae only imports albedo name. temporary fix. TODO: delete
-      {
+    // dae only imports albedo name. temporary fix. TODO: delete
+    {
+      for (int i = 0; i < new_meshes.size(); i++) {
+        auto load_data = new_meshes[i].get();
         if (load_data->tex_names.normal.empty()) {
           load_data->tex_names.normal = load_data->tex_names.diffuse;
           load_data->tex_names.specular = load_data->tex_names.diffuse;
@@ -224,23 +225,27 @@ class Scene1 : public Scene {
       }
     }
   }
+
   void _ReloadScene() {
     lock_guard<mutex> pause_lock(Events::pause_phys_mtx);
 
     _CleanupScene();
     _LoadData();
   }
+
   void _CleanupScene() {
     systems_manager->Reset();
     all_meshes.clear();
     all_transparent_meshes.clear();
     all_lights.clear();
   }
+
   using distance_comparator =
       decltype([](const pair<float, MeshDataBase*>& lhs,
                   const pair<float, MeshDataBase*>& rhs) {
         return lhs.first > rhs.first;
       });
+
   void _SortByDistance() {
     set<pair<float, MeshDataBase*>, distance_comparator> back_to_front;
     for (auto mesh_base : draw_meshes) {
@@ -255,7 +260,9 @@ class Scene1 : public Scene {
       draw_meshes.push_back(mesh_dist.second);
     }
   }
+
   void _LoadTerrain() {}
+
   void _OcclusionGather() {
     draw_lights = all_lights;
     draw_meshes = all_meshes;

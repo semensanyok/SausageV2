@@ -1,13 +1,14 @@
 #pragma once
 
 #include "sausage.h"
+#include "Structures.h"
 #include "MeshDataBufferConsumer.h"	
 #include "BufferStorage.h"
 #include "BulletDebugDrawerBufferConsumer.h"
 #include "UIBufferConsumer.h"
 #include "OverlayBufferConsumer3D.h"
 
-class BufferManager {
+class BufferManager : public SausageSystem {
   friend class ControllerEventProcessorEditor;
 	BufferStorage* storage;
 	MeshManager* mesh_manager;

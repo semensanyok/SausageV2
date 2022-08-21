@@ -15,7 +15,7 @@
 
 using namespace std;
 
-class Renderer {
+class Renderer : public SausageSystem {
 private:
 	RendererContextManager* context_manager;
 	ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;

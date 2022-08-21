@@ -54,16 +54,11 @@ namespace BufferSettings {
 	namespace Margins {
 		const float MESH_DATA_VERTEX_PART = 0.65;
 		const float MESH_DATA_INDEX_PART = 0.65;
-#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
 		const float DEBUG_PHYS_VERTEX_PART = 0.20;
 		const float DEBUG_PHYS_INDEX_PART = 0.20;
-#else
-		const float DEBUG_PHYS_VERTEX_PART = 0;
-		const float DEBUG_PHYS_INDEX_PART = 0;
-#endif
 		const float FONT_VERTEX_PART = 0.03;
 		const float FONT_INDEX_PART = 0.03;
-    const float OVERLAY_VERTEX_PART = 0.03;
+        const float OVERLAY_VERTEX_PART = 0.03;
 		const float OVERLAY_INDEX_PART = 0.03;
 	}
 };

@@ -18,45 +18,50 @@
 #include "BufferManager.h"
 #include "ScreenOverlayManager.h"
 
+namespace SausageSystems {
+  static map<string, SausageSystem*> registry;
+}
+
 class SystemsManager
 {
   friend class SausageTestBase;
 public:
-	MeshManager* mesh_manager;
-	Camera* camera;
-	Controller* controller;
-	Renderer* renderer;
-	RendererContextManager* renderer_context_manager;
-	Samplers* samplers;
-	TextureManager* texture_manager;
-	FontManager* font_manager;
-	FileWatcher* file_watcher;
-	AsyncTaskManager* async_manager;
-	AnimationManager* anim_manager;
-	PhysicsManager* physics_manager;
-	StateManager* state_manager;
-	BulletDebugDrawer* bullet_debug_drawer;
-	ControllerEventProcessorEditor* controller_event_processor;
-  ScreenOverlayManager* screen_overlay_manager;
+  MeshManager* mesh_manager = nullptr;
+  Camera* camera = nullptr;
+  Controller* controller = nullptr;
+  Renderer* renderer = nullptr;
+  RendererContextManager* renderer_context_manager = nullptr;
+  Samplers* samplers = nullptr;
+  TextureManager* texture_manager = nullptr;
+  FontManager* font_manager = nullptr;
+  FileWatcher* file_watcher = nullptr;
+  AsyncTaskManager* async_manager = nullptr;
+  AnimationManager* anim_manager = nullptr;
+  PhysicsManager* physics_manager = nullptr;
+  StateManager* state_manager = nullptr;
+  BulletDebugDrawer* bullet_debug_drawer = nullptr;
+  ControllerEventProcessorEditor* controller_event_processor = nullptr;
+  ScreenOverlayManager* screen_overlay_manager = nullptr;
 
-	BufferManager* buffer_manager;
-	
-	Shaders* shaders;
+  BufferManager* buffer_manager;
 
-	SystemsManager() {};
-	~SystemsManager() {};
-	
-	void Render();
-	void InitSystems();
-	void ChangeStateUpdate();
-	void Reset();
+  Shaders* shaders;
 
-	void PreUpdate();
-	void Update();
-	void Clear();
-	Shader* RegisterShader(const char* vs_name, const char* fs_name);
+  SystemsManager() {};
+  ~SystemsManager() {};
+
+  void Render();
+  void InitSystems();
+  void ChangeStateUpdate();
+  void _ChangePhysicsDebugDrawer();
+  void Reset();
+
+  void PreUpdate();
+  void Update();
+  void Clear();
+  Shader* RegisterShader(const char* vs_name, const char* fs_name);
 private:
-	void _SubmitAsyncTasks();
-	void _CreateDebugDrawer();
-	void _SetupShaders();
+  void _SubmitAsyncTasks();
+  void _CreateDebugDrawer();
+  void _SetupShaders();
 };

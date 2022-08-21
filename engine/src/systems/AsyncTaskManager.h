@@ -3,18 +3,24 @@
 #include "sausage.h"
 #include "ThreadSafeQueue.h"
 #include "Settings.h"
+#include "Structures.h"
 
 using namespace std;
 
-class AsyncTaskManager {
+struct AsyncTask {
+  function<void()> run;
+  bool is_persistent;
+};
+
+class AsyncTaskManager : public SausageSystem {
 	int MAX_THREADS = std::thread::hardware_concurrency();
 	thread physics_thread;
 	thread anim_thread;
 	thread misc_thread;
 
-	ThreadSafeQueue<pair<function<void()>, bool>> misc_tasks;
-	ThreadSafeQueue<pair<function<void()>, bool>> physics_tasks;
-	ThreadSafeQueue<pair<function<void()>, bool>> anim_tasks;
+	ThreadSafeQueue<AsyncTask> misc_tasks;
+	ThreadSafeQueue<AsyncTask> physics_tasks;
+	ThreadSafeQueue<AsyncTask> anim_tasks;
 public:
 
 	AsyncTaskManager() {};

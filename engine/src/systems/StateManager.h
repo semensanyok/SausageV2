@@ -8,7 +8,7 @@
 
 using namespace std;
 
-class StateManager {
+class StateManager : public SausageSystem {
   MeshDataBufferConsumer* mesh_data_buffer;
 	map<unsigned long, pair<MeshData*, mat4>> physics_update;
 

@@ -32,3 +32,6 @@
 [submodule "engine/dependencies/harfbuzz"]
 	path = engine/dependencies/harfbuzz
 	url = https://github.com/harfbuzz/harfbuzz.git
+[submodule "engine/dependencies/FastNoise2"]
+	path = engine/dependencies/FastNoise2
+	url = https://github.com/Auburn/FastNoise2.git

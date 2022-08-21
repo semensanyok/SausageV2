@@ -89,7 +89,7 @@ public:
 })> nodes;
 };
 
-class ScreenOverlayManager
+class ScreenOverlayManager : public SausageSystem
 {
   friend class SausageTestBase;
   friend class ScreenOverlayManagerTest;

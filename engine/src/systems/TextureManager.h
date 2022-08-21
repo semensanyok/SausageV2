@@ -13,7 +13,7 @@ public:
   };
 };
 
-class TextureManager {
+class TextureManager : public SausageSystem {
     map<size_t, Texture*> path_to_tex;
     Samplers* samplers;
 public:

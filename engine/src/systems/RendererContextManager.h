@@ -4,9 +4,9 @@
 #include "Settings.h"
 #include "Logging.h"
 #include "ImguiGui.h"
+#include "Structures.h"
 
-
-class RendererContextManager {
+class RendererContextManager : public SausageSystem {
 public:
 	SDL_Window* window;
 	SDL_GLContext context;

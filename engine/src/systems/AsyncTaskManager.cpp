@@ -32,8 +32,8 @@ void AsyncTaskManager::RunPhysicsTasks(bool& quit) {
 	auto tasks = physics_tasks.WaitPopAll(quit);
 	while (!tasks.empty()) {
 		auto& task = tasks.front();
-		task.first();
-		if (task.second) {
+		task.run();
+		if (task.is_persistent) {
 			physics_tasks.Push(task);
 		}
 		tasks.pop();
@@ -47,8 +47,8 @@ void AsyncTaskManager::RunMiscTasks(bool& quit) {
 	auto tasks = misc_tasks.WaitPopAll(quit);
 	while (!tasks.empty()) {
 		auto& task = tasks.front();
-		task.first();
-		if (task.second) {
+		task.run();
+		if (task.is_persistent) {
 			misc_tasks.Push(task);
 		}
 		tasks.pop();
@@ -61,11 +61,11 @@ void AsyncTaskManager::RunAnimTasks(bool& quit) {
 #ifdef SAUSAGE_PROFILE_ENABLE
 		auto proft1 = chrono::steady_clock::now();
 #endif
-		task.first();
+		task.run();
 #ifdef SAUSAGE_PROFILE_ENABLE
 		ProfTime::anim_update_ns = chrono::steady_clock::now() - proft1;
 #endif
-		if (task.second) {
+		if (task.is_persistent) {
 			anim_tasks.Push(task);
 		}
 		tasks.pop();

@@ -6,9 +6,9 @@
 #include "ScreenOverlayManager.h"
 #include "BufferManager.h"
 
-class ControllerEventProcessor {
+class ControllerEventProcessor : public SausageSystem {
 protected:
-	Camera* camera;
+  Camera* camera;
   ScreenOverlayManager* screen_overlay_manager;
 public:
   inline ControllerEventProcessor(
@@ -16,16 +16,17 @@ public:
     ScreenOverlayManager* screen_overlay_manager) :
     camera{ camera },
     screen_overlay_manager{ screen_overlay_manager } {};
-	inline ~ControllerEventProcessor() {};
-	virtual void KeyDown(int key) {};
-	virtual void KeyUp(int key) {};
-	virtual void MouseButtonUp(SDL_MouseButtonEvent& e) {};
-	virtual void MouseButtonDown(SDL_MouseButtonEvent& e) {};
-	virtual void MouseMotion(SDL_MouseMotionEvent& e) {};
-	virtual void Update() {};
+  inline ~ControllerEventProcessor() {};
+  virtual void KeyDown(int key) {};
+  virtual void KeyUp(int key) {};
+  virtual void MouseButtonUp(SDL_MouseButtonEvent& e) {};
+  virtual void MouseButtonDown(SDL_MouseButtonEvent& e) {};
+  virtual void MouseMotion(SDL_MouseMotionEvent& e) {};
+  virtual void MouseWheelCallback(SDL_MouseWheelEvent& mw_event) {};
+  virtual void Update() {};
 };
 
-class ControllerEventProcessorEditor : public ControllerEventProcessor {
+class ControllerEventProcessorEditor : public ControllerEventProcessor, public SausageSystem {
 	int screen_x, screen_y;
 	bool is_motion_callback_rts_continious_scroll = false;
   BufferStorage* buffer_storage;

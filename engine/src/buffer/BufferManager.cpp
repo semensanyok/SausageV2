@@ -13,11 +13,11 @@ void BufferManager::Init() {
 	bullet_debug_drawer_buffer->Init();
 }
 void BufferManager::Reset() {
-	mesh_data_buffer->Reset();
-	ui_buffer->Reset();
+  mesh_data_buffer->Reset();
+  ui_buffer->Reset();
   overlay_3d_buffer->Reset();
-	bullet_debug_drawer_buffer->Reset();
-	storage->Reset();
+  bullet_debug_drawer_buffer->Reset();
+  storage->Reset();
 }
 //void _DisposeBuffer() {
 //	renderer->RemoveBuffer(buffer);

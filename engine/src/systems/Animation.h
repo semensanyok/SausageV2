@@ -18,7 +18,7 @@ struct FinalTransform {
     Bone* bone;
 };
 
-class AnimationManager {
+class AnimationManager : public SausageSystem {
     vector<Animation*> anims;
     vector<AnimMesh*> all_anim_meshes;
     map<unsigned int, AnimMesh*> active_anims;

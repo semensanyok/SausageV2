@@ -1,22 +1,15 @@
 #include "Renderer.h"
+#include "Macros.h"
 
 using namespace std;
 
 void Renderer::Render(Camera *camera) {
-#ifdef SAUSAGE_PROFILE_ENABLE
-  auto proft1 = chrono::steady_clock::now();
-#endif
+  IF_PROFILE_ENABLED(auto proft1 = chrono::steady_clock::now(););
   _ExecuteCommands();
-#ifdef SAUSAGE_PROFILE_ENABLE
-  auto proft2 = chrono::steady_clock::now();
-#endif
+  IF_PROFILE_ENABLED(auto proft2 = chrono::steady_clock::now(););
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-
-  // glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-  // glStencilFunc(GL_NOT, 1, 0xFF);
-  // glStencilMask(0xFF);
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   {
@@ -49,22 +42,18 @@ void Renderer::Render(Camera *camera) {
         CheckGLError();
       }
     }
-#ifdef SAUSAGE_PROFILE_ENABLE
-    auto proft3 = chrono::steady_clock::now();
-#endif
+    IF_PROFILE_ENABLED(auto proft3 = chrono::steady_clock::now(););
     Gui::RenderGui(context_manager->window, camera);
-#ifdef SAUSAGE_PROFILE_ENABLE
-    auto proft4 = chrono::steady_clock::now();
-#endif
+    IF_PROFILE_ENABLED(auto proft4 = chrono::steady_clock::now(););
     SDL_GL_SwapWindow(context_manager->window);
-#ifdef SAUSAGE_PROFILE_ENABLE
-    auto proft5 = chrono::steady_clock::now();
-    ProfTime::render_total_ns = proft5 - proft1;
-    ProfTime::render_commands_ns = proft2 - proft1;
-    ProfTime::render_draw_ns = proft3 - proft2;
-    ProfTime::render_gui_ns = proft4 - proft3;
-    ProfTime::render_swap_window_ns = proft5 - proft4;
-#endif
+    IF_PROFILE_ENABLED(
+      auto proft5 = chrono::steady_clock::now();
+      ProfTime::render_total_ns = proft5 - proft1;
+      ProfTime::render_commands_ns = proft2 - proft1;
+      ProfTime::render_draw_ns = proft3 - proft2;
+      ProfTime::render_gui_ns = proft4 - proft3;
+      ProfTime::render_swap_window_ns = proft5 - proft4;
+    );
   }
   Events::end_render_frame_event.notify_all();
 }
@@ -141,7 +130,6 @@ bool Renderer::RemoveDraw(DrawCall *draw, DrawOrder::DrawOrder draw_order) {
 }
 
 void Renderer::_ExecuteCommands() {
-  function<void()> f;
   auto commands = gl_commands.PopAll();
   while (!commands.empty()) {
     auto &command = commands.front();

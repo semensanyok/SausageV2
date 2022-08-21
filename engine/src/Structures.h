@@ -12,6 +12,16 @@ class BufferConsumer;
 class Shader;
 class Texture;
 
+class SausageUserPointer {
+public:
+  virtual ~SausageUserPointer() {};
+};
+
+class SausageSystem {
+public:
+  virtual ~SausageSystem() {};
+};
+
 struct Vertex {
   vec3 Position;
   vec3 Normal;
@@ -77,7 +87,7 @@ struct MaterialTexNames {
                               .append(opacity));
   }
 };
-class Samplers {
+class Samplers : public SausageSystem {
   bool is_samplers_init = false;
 
  public:
@@ -256,11 +266,6 @@ class MeshDataBase {
         base_mesh{nullptr},
         transform_offset{-1} {};
   virtual ~MeshDataBase(){};
-};
-
-class SausageUserPointer {
- public:
-  virtual ~SausageUserPointer(){};
 };
 
 class MeshData : public MeshDataBase, public SausageUserPointer {

@@ -1,11 +1,12 @@
 #pragma once
 
 #include "sausage.h"
+#include "Structures.h"
 
 using namespace std;
 static mutex shader_mutex;
 
-class FileWatcher
+class FileWatcher : public SausageSystem
 {
 public:
 	void AddCallback(string& path, function<void()>& file_change_callback);

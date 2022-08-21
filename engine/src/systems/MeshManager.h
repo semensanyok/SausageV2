@@ -22,7 +22,7 @@ vec4 FromAi(aiColor3D& aivec);
 
 Light* FromAi(aiLight* light);
 
-class MeshManager {
+class MeshManager : public SausageSystem {
  public:
   MeshManager(){};
   ~MeshManager(){};

@@ -7,10 +7,11 @@
 #include "Settings.h"
 #include "AssetUtils.h"
 #include "StateManager.h"
+#include "Macros.h"
 
 using namespace std;
 
-class PhysicsManager {
+class PhysicsManager : public SausageSystem {
 	btDefaultCollisionConfiguration* collisionConfiguration;
 	btCollisionDispatcher* dispatcher;
 	btBroadphaseInterface* overlappingPairCache;
@@ -23,7 +24,6 @@ class PhysicsManager {
 	btSequentialImpulseConstraintSolver* solver;
 	btDiscreteDynamicsWorld* dynamicsWorld;
 
-	const char* save_name = "./testFile.bullet";
 	StateManager* state_manager;
 public:
 	
@@ -43,20 +43,11 @@ public:
 	}
 	void Simulate() {
 		//dynamicsWorld->stepSimulation(GameSettings::delta_time, 1);
-#ifdef SAUSAGE_PROFILE_ENABLE
-		auto proft3 = chrono::steady_clock::now();
-#endif
-		dynamicsWorld->stepSimulation(state_manager->delta_time * GameSettings::physics_step_multiplier, 1000);
-#ifdef SAUSAGE_PROFILE_ENABLE
-		ProfTime::physics_sym_ns = chrono::steady_clock::now() - proft3;
-		auto proft8 = chrono::steady_clock::now();
-#endif
-#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
-		dynamicsWorld->debugDrawWorld();
-#endif
-#ifdef SAUSAGE_PROFILE_ENABLE
-		ProfTime::physics_debug_draw_world_ns = chrono::steady_clock::now() - proft8;
-#endif
+    IF_PROFILE_ENABLED(auto proft3 = chrono::steady_clock::now(););
+	dynamicsWorld->stepSimulation(state_manager->delta_time * GameSettings::physics_step_multiplier, 1000);
+    IF_PROFILE_ENABLED(ProfTime::physics_sym_ns = chrono::steady_clock::now() - proft3; auto proft8 = chrono::steady_clock::now(););
+    dynamicsWorld->debugDrawWorld();
+    IF_PROFILE_ENABLED(ProfTime::physics_debug_draw_world_ns = chrono::steady_clock::now() - proft8;);
 	}
 	void ClickRayTestClosest(float screen_x,
     float screen_y,
@@ -98,9 +89,7 @@ public:
 		}
 	}
 	void UpdateTransforms() {
-#ifdef SAUSAGE_PROFILE_ENABLE
-		auto proft4 = chrono::steady_clock::now();
-#endif
+    IF_PROFILE_ENABLED(auto proft4 = chrono::steady_clock::now());
 		auto nonStatic = dynamicsWorld->getNonStaticRigidBodies();
 		btTransform btTrans;
 		for (size_t i = 0; i < nonStatic.size(); i++)
@@ -119,9 +108,7 @@ public:
 			update.first = mesh_data;
 			btTrans.getOpenGLMatrix(&update.second[0][0]);
 		}
-#ifdef SAUSAGE_PROFILE_ENABLE
-		ProfTime::physics_buf_trans_ns = chrono::steady_clock::now() - proft4;
-#endif
+    IF_PROFILE_ENABLED(ProfTime::physics_buf_trans_ns = chrono::steady_clock::now() - proft4);
 	}
 	void AddBoxRigidBody(PhysicsData* physics_data,
     SausageUserPointer* user_pointer,
@@ -183,13 +170,6 @@ public:
 		}
 		collisionShapes.clear();
 		rigidBodies.clear();
-	}
-	void Serialize() {
-		btDefaultSerializer* serializer = new btDefaultSerializer();
-		dynamicsWorld->serialize(serializer);
-		FILE* file = fopen(save_name, "wb");
-		fwrite(serializer->getBufferPointer(), serializer->getCurrentBufferSize(), 1, file);
-		fclose(file);
 	}
 	~PhysicsManager() {
 		Reset();

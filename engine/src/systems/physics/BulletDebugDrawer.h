@@ -40,11 +40,12 @@ public:
         renderer{ renderer },
         buffer_consumer{ buffer_consumer },
         debug_shader{ shaders->bullet_debug },
-        state_manager{ state_manager } {
+      state_manager{ state_manager } {
         draw_call = new DrawCall();
         draw_call->shader = shaders->bullet_debug;
         draw_call->mode = GL_LINES;
         draw_call->buffer = (BufferConsumer*)buffer_consumer;
+        draw_call->command_count = 1;
         draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(command_buffer_size);
         Activate();
         CheckGLError();
@@ -72,8 +73,8 @@ public:
     void flushLines();
     
     void Activate() {
-        renderer->AddDraw(draw_call, DrawOrder::MESH);
-        draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
+      renderer->AddDraw(draw_call, DrawOrder::MESH);
+      draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
     }
     void Deactivate() {
         clearPersist();

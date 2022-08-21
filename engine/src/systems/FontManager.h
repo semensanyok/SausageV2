@@ -54,7 +54,7 @@ static struct BatchFontData3D {
   vector<vec3> glyph_id;
 };
 
-class FontManager {
+class FontManager : public SausageSystem {
   friend class ScreenOverlayManagerTest;
   //DrawCall* draw_call_3d;
   Samplers* samplers;

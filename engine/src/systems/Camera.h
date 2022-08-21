@@ -3,6 +3,7 @@
 #include "sausage.h"
 #include "Logging.h"
 #include "Settings.h"
+#include "Structures.h"
 #include <SDL.h>
 
 using namespace std;
@@ -13,7 +14,7 @@ enum CameraMode {
 	FREE
 };
 
-class Camera
+class Camera : public SausageSystem
 {
 private:
 	friend class Gui;
