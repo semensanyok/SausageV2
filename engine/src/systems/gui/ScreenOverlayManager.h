@@ -5,6 +5,7 @@
 #include "ControllerUtils.h"
 #include "UIBufferConsumer.h"
 #include "FontManager.h"
+#include "Renderer.h"
 
 /*
 Screen splitted to equaly sized cells;

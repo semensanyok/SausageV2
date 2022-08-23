@@ -6,7 +6,7 @@ void BulletDebugDrawerBufferConsumer::BufferMeshData(vector<vec3>& vertices,
 {
     shared_ptr<MeshLoadData> load_data = mesh_manager->CreateMesh(vertices, indices, colors);
     buffer->BufferMeshData(mesh, load_data, vertex_total, index_total, meshes_total,
-      margins, SausageDefaults::DEFAULT_MESH_DATA_VECTOR);
+      margins);
 }
 
 void BulletDebugDrawerBufferConsumer::Init() {

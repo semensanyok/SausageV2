@@ -252,21 +252,32 @@ void BufferStorage::BufferMeshData(vector<MeshDataBase *> &load_data_meshes,
   is_need_barrier = true;
   CheckGLError();
 }
+
 void BufferStorage::BufferMeshData(MeshDataBase *mesh,
                                    shared_ptr<MeshLoadData> load_data,
                                    unsigned long &vertex_total,
                                    unsigned long &index_total,
                                    unsigned long &meshes_total,
-                                   BufferMargins &margins,
-                                   vector<MeshDataBase *> &instances) {
+                                   BufferMargins &margins) {
+  vector<MeshDataBase*> dev_null;
+  BufferMeshData(mesh, load_data, vertex_total, index_total, meshes_total, margins, dev_null);
+}
+
+void BufferStorage::BufferMeshData(MeshDataBase* mesh,
+                                   shared_ptr<MeshLoadData> load_data,
+                                   unsigned long& vertex_total,
+                                   unsigned long& index_total,
+                                   unsigned long& meshes_total,
+                                   BufferMargins& margins,
+                                   vector<MeshDataBase*>& instances) {
   auto raw = load_data.get();
   bool is_instance = mesh->base_mesh != nullptr;
   if (is_instance) {
     instances.push_back(mesh);
     return;
   }
-  auto &vertices = raw->vertices;
-  auto &indices = raw->indices;
+  auto& vertices = raw->vertices;
+  auto& indices = raw->indices;
   // if offset initialized - reload data. (if vertices/indices size > existing -
   // will corrupt other meshes)
   bool is_new_mesh = mesh->buffer_id < 0;
@@ -282,24 +293,24 @@ void BufferStorage::BufferMeshData(MeshDataBase *mesh,
 
   if (vertices.size() + mesh->vertex_offset > margins.end_vertex) {
     LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total="
-                         << vertex_total << "asked=" << vertices.size()
-                         << "max=" << margins.end_vertex
-                         << " vertex offset=" << mesh->vertex_offset)
+      << vertex_total << "asked=" << vertices.size()
+      << "max=" << margins.end_vertex
+      << " vertex offset=" << mesh->vertex_offset)
             .str());
     return;
   }
   if (indices.size() + mesh->index_offset > MAX_INDEX) {
     LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total="
-                         << index_total << "asked=" << indices.size()
-                         << "max=" << margins.end_index
-                         << " index offset=" << mesh->index_offset)
+      << index_total << "asked=" << indices.size()
+      << "max=" << margins.end_index
+      << " index offset=" << mesh->index_offset)
             .str());
     return;
   }
   if (is_new_mesh) {
     mesh->buffer_id = meshes_total++;
   }
-  DrawElementsIndirectCommand &command = mesh->command;
+  DrawElementsIndirectCommand& command = mesh->command;
   command.count = indices.size();
   command.instanceCount = raw->instance_count;
   command.firstIndex = mesh->index_offset;

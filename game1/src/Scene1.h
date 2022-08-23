@@ -42,8 +42,8 @@ class Scene1 : public Scene {
     "Frog"
   };
 
-  Scene1(SystemsManager* systems_manager)
-      : systems_manager{systems_manager}, shaders{systems_manager->shaders} {
+  Scene1()
+      : systems_manager{ SystemsManager::GetInstance() }, shaders{systems_manager->shader_manager->all_shaders} {
     draw_call = new DrawCall();
     draw_call->shader = shaders->blinn_phong;
     draw_call->mode = GL_TRIANGLES;

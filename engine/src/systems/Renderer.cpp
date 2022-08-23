@@ -69,39 +69,22 @@ void Renderer::AddGlCommand(function<void()> &f, bool is_persistent) {
   gl_commands.Push(pair(f, is_persistent));
 }
 
-Shader *Renderer::RegisterShader(const char *vs_name, const char *fs_name) {
-  for (auto shader : shaders) {
-    if (shader.second->vertex_path.ends_with(vs_name) ||
-        shader.second->fragment_path.ends_with(fs_name)) {
-      LOG((ostringstream() << "Shader with vs_name=" << string(vs_name)
-                           << " fs_name=" << string(fs_name)
-                           << " already registered")
-              .str());
-      return shader.second;
-    }
-  }
-  Shader *shader = new Shader(GetShaderPath(vs_name), GetShaderPath(fs_name));
-  shader->InitOrReload();
-  shaders[shader->id] = shader;
-  return shader;
-}
-
 bool Renderer::AddDraw(DrawCall *draw, DrawOrder::DrawOrder draw_order) {
-  if (!shaders.contains(draw->shader->id)) {
-    LOG((ostringstream() << "Unable to add draw for unregistered shader: "
-                         << draw->shader->id
-                         << " vs:" << draw->shader->vertex_path
-                         << " fs:" << draw->shader->fragment_path)
-            .str());
-    return false;
-  }
-  pair<int, int> buf_shad_id{draw->buffer->GetBufferId(), draw->shader->id};
+  // MAYBE NEEDED SAFE CHECK  
+  //if (!shaders.contains(draw->shader->id)) {
+  //  LOG((ostringstream() << "Unable to add draw for unregistered shader: "
+  //                       << draw->shader->id
+  //                       << " vs:" << draw->shader->vertex_path
+  //                       << " fs:" << draw->shader->fragment_path)
+  //          .str());
+  //  return false;
+  //}
+
   // if (buf_shad_ids.contains(buf_shad_id)) {
   //	LOG((ostringstream() << "Draw for shader: " << draw->shader->id << "
   //buffer:" << draw->buffer->id << "already exists").str()); 	return false;
   //}
   buffer_to_draw_call[draw->buffer->GetBufferId()][draw_order].push_back(draw);
-  buf_shad_ids.insert(buf_shad_id);
   return true;
 }
 

@@ -54,7 +54,8 @@ namespace BufferSettings {
 	namespace Margins {
 		const float MESH_DATA_VERTEX_PART = 0.65;
 		const float MESH_DATA_INDEX_PART = 0.65;
-		const float DEBUG_PHYS_VERTEX_PART = 0.20;
+        // TODO: set to 0 in Release
+        const float DEBUG_PHYS_VERTEX_PART = 0.20;
 		const float DEBUG_PHYS_INDEX_PART = 0.20;
 		const float FONT_VERTEX_PART = 0.03;
 		const float FONT_INDEX_PART = 0.03;

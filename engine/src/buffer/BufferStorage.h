@@ -158,11 +158,13 @@ class BufferStorage {
                       vector<shared_ptr<MeshLoadData>> &load_data,
                       unsigned long &vertex_total, unsigned long &index_total,
                       unsigned long &meshes_total, BufferMargins &margins);
-  void BufferMeshData(MeshDataBase *mesh, shared_ptr<MeshLoadData> load_data,
+  void BufferMeshData(MeshDataBase* mesh, shared_ptr<MeshLoadData> load_data,
+                      unsigned long& vertex_total, unsigned long& index_total,
+                      unsigned long& meshes_total, BufferMargins& margins);
+  void BufferMeshData(MeshDataBase* mesh, shared_ptr<MeshLoadData> load_data,
                       unsigned long &vertex_total, unsigned long &index_total,
                       unsigned long &meshes_total, BufferMargins &margins,
-                      vector<MeshDataBase *> &instances =
-                          SausageDefaults::DEFAULT_MESH_DATA_VECTOR);
+                      vector<MeshDataBase *> &instances);
   void BufferBoneTransform(map<unsigned int, mat4> &id_to_transform);
   void BufferBoneTransform(Bone *bone, mat4 &trans, unsigned int num_bones = 1);
   void BufferTransform(MeshData *mesh);

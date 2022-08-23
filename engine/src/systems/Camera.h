@@ -21,6 +21,7 @@ private:
 	friend class Renderer;
 	friend class Controller;
 	friend class SystemsManager;
+    friend class ShaderManager;
 
 	mat4 view_matrix;
 	mat4 projection_matrix;

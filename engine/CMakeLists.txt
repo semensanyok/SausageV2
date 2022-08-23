@@ -10,7 +10,7 @@ set(ENGINE_LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/lib)
 ############### DEPS START ############################################
 
 # force lib build, not dll
-#set(BUILD_SHARED_LIBS OFF)
+set(BUILD_SHARED_LIBS OFF)
 
 # ASSIMP
 option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
@@ -33,6 +33,8 @@ add_subdirectory("${ENGINE_DEP_DIR}/glm")
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 add_subdirectory("${ENGINE_LIB_DIR}/glad")
+
+add_subdirectory("${ENGINE_DEP_DIR}/FastNoise2")
 
 # BULLET
 # multithread support. something about defining BT_THREADSAFE 
@@ -159,10 +161,16 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
 "${ENGINE_SRC_DIR}/utils/" 
 "${ENGINE_SRC_DIR}/buffer/" 
 "${ENGINE_SRC_DIR}/buffer/consumers/" 
+"${ENGINE_SRC_DIR}/systems/world_gen/" 
 ${IMGUI_HEADERS} 
 ${DEPENDENCIES_INCLUDE_DIRS})
 
-set(SAUSAGE_LIBS assimp glad glm SDL2::Main 
+set(SAUSAGE_LIBS 
+assimp 
+glad 
+glm 
+FastNoise
+SDL2::Main 
 Bullet3Common 
 BulletCollision 
 BulletDynamics 
@@ -192,7 +200,10 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/systems/RendererContextManager.cpp" 
 "src/buffer/consumers/UIBufferConsumer.cpp" 
 "src/buffer/consumers/OverlayBufferConsumer3D.cpp" 
-"src/systems/gui/ScreenOverlayManager.cpp")
+"src/systems/gui/ScreenOverlayManager.cpp"
+"src/systems/ShaderManager.cpp"
+"src/systems/world_gen/TerrainManager.cpp"
+${source})
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 
@@ -244,4 +255,4 @@ POSTPROCESS_SHADERS()
 
 #FILE(COPY "src/shaders/" DESTINATION "${CMAKE_BINARY_DIR}/shaders")
 
-#FILE(COPY "dlls/" DESTINATION "${CMAKE_BINARY_DIR}")
+FILE(COPY "dlls/" DESTINATION "${CMAKE_BINARY_DIR}")

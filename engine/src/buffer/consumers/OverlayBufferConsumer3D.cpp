@@ -8,7 +8,7 @@ void OverlayBufferConsumer3D::BufferMeshData(
       mesh_manager->CreateMesh(vertices, indices, colors, uvs, glyph_id);
 
   buffer->BufferMeshData(mesh, load_data, vertex_total, index_total, meshes_total,
-                         margins, SausageDefaults::DEFAULT_MESH_DATA_VECTOR);
+                         margins);
 
   mesh->texture = font_data;
   mesh->texture->MakeResident();

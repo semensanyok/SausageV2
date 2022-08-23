@@ -20,9 +20,7 @@ private:
 	RendererContextManager* context_manager;
 	ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;
 
-	map<unsigned int, Shader*> shaders;
 	map<unsigned int, map<DrawOrder::DrawOrder, vector<DrawCall*>>> buffer_to_draw_call;
-	set<pair<int, int>> buf_shad_ids;
 public:
 	SDL_Renderer* renderer;
 	Renderer(
@@ -32,7 +30,6 @@ public:
 	void Render(Camera* camera);
 	void RemoveBuffer(BufferStorage* buffer);
 	void AddGlCommand(function<void()>& f, bool is_persistent);
-	Shader* RegisterShader(const char* vs_name, const char* fs_name);
 	bool AddDraw(DrawCall* draw, DrawOrder::DrawOrder draw_order);
 	bool RemoveDraw(DrawCall* draw, DrawOrder::DrawOrder draw_order);
 private:

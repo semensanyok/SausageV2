@@ -147,7 +147,7 @@ public:
 		return 0;
 	}
   void Init() {
-		systems_manager = new SystemsManager();
+        systems_manager = SystemsManager::GetInstance();
 		systems_manager->InitSystems();
     som = systems_manager->screen_overlay_manager;
 		CheckGLError();

@@ -21,6 +21,7 @@ void FileWatcher::Watch()
   if (watchers.empty()) {
     return;
   }
+    // TODO: remove
 	lock_guard lock_shader(shader_mutex);
 	for (auto& watcher : watchers) {
 		auto wtime_dur = filesystem::last_write_time(watcher.first);

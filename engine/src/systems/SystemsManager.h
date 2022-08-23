@@ -17,10 +17,7 @@
 #include "FileWatcher.h"
 #include "BufferManager.h"
 #include "ScreenOverlayManager.h"
-
-namespace SausageSystems {
-  static map<string, SausageSystem*> registry;
-}
+#include "ShaderManager.h"
 
 class SystemsManager
 {
@@ -42,12 +39,14 @@ public:
   BulletDebugDrawer* bullet_debug_drawer = nullptr;
   ControllerEventProcessorEditor* controller_event_processor = nullptr;
   ScreenOverlayManager* screen_overlay_manager = nullptr;
+  ShaderManager* shader_manager = nullptr;
+  BufferManager* buffer_manager = nullptr;
 
-  BufferManager* buffer_manager;
+  static SystemsManager* GetInstance() {
+    static SystemsManager* instance = new SystemsManager();
+    return instance;
+  };
 
-  Shaders* shaders;
-
-  SystemsManager() {};
   ~SystemsManager() {};
 
   void Render();
@@ -59,9 +58,9 @@ public:
   void PreUpdate();
   void Update();
   void Clear();
-  Shader* RegisterShader(const char* vs_name, const char* fs_name);
+
 private:
+  SystemsManager() { };
   void _SubmitAsyncTasks();
   void _CreateDebugDrawer();
-  void _SetupShaders();
 };

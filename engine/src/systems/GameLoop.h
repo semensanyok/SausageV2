@@ -17,19 +17,19 @@ using namespace glm;
 
 
 namespace SausageGameLoop {
-  SystemsManager* systems_manager;
   Controller* controller;
 
   void Init() {
     // create systems
-    systems_manager = new SystemsManager();
-    systems_manager->InitSystems();
+    SystemsManager::GetInstance()->InitSystems();
     CheckGLError();
   }
 
 
   int run(Scene* scene)
   {
+    auto systems_manager = SystemsManager::GetInstance();
+    scene->Init();
     systems_manager->async_manager->Run();
     while (!GameSettings::quit) {
       systems_manager->PreUpdate();
