@@ -99,8 +99,8 @@ class Scene1 : public Scene {
     vector<MeshDataBase*> new_mesh_data;
     vector<shared_ptr<MeshLoadData>> new_meshes;
     vector<Light*> new_lights;
-    _LoadMeshes(scene_path, new_mesh_data, new_meshes, new_lights);
     _LoadGui();
+    _LoadMeshes(scene_path, new_mesh_data, new_meshes, new_lights);
     
     systems_manager->buffer_manager->mesh_data_buffer
         ->SetBaseMeshForInstancedCommand(new_mesh_data, new_meshes);
