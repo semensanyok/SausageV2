@@ -117,8 +117,8 @@ void Camera::MouseMotionCallback(float screen_x, float screen_y) {
 void Camera::MouseMotionCallbackRTS(float screen_x, float screen_y) {
   bool is_left = screen_x - screen_border <= 0;
   bool is_right = screen_x + 1 + screen_border >= GameSettings::SCR_WIDTH;
-  bool is_down = screen_y + 1 + screen_border >= GameSettings::SCR_HEIGHT;
-  bool is_up = screen_y - screen_border <= 0;
+  bool is_up = screen_y + 1 + screen_border >= GameSettings::SCR_HEIGHT;
+  bool is_down = screen_y - screen_border <= 0;
   bool is_rts = true;
 
   _CameraMove(is_left, is_right, is_up, is_down, is_rts,
