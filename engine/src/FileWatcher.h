@@ -1,7 +1,8 @@
 #pragma once
 
 #include "sausage.h"
-#include "Structures.h"
+#include "structures/Structures.h"
+#include "structures/Interfaces.h"
 
 using namespace std;
 static mutex shader_mutex;

@@ -4,8 +4,8 @@
 #include "utils/AssetUtils.h"
 #include "SDL_image.h"
 #include "Logging.h"
-#include "Structures.h"
 #include "OpenGLHelpers.h"
+#include "structures/TextureStruct.h"
 
 using namespace std;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sausage.h"
-#include "Structures.h"
+#include "structures/Structures.h"
 #include "MeshManager.h"
 #include "AssimpHelper.h"
 #include "GLMHelpers.h"

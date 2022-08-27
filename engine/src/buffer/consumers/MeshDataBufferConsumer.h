@@ -2,7 +2,7 @@
 
 #include "sausage.h"
 #include "Settings.h"
-#include "Structures.h"
+#include "structures/Structures.h"
 #include "Logging.h"
 #include "OpenGLHelpers.h"
 #include "BufferStorage.h"

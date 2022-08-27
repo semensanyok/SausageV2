@@ -3,7 +3,8 @@
 #include "sausage.h"
 #include "Logging.h"
 #include "Settings.h"
-#include "Structures.h"
+#include "structures/Structures.h"
+#include "structures/Interfaces.h"
 #include <SDL.h>
 
 using namespace std;

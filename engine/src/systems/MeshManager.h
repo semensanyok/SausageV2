@@ -1,6 +1,11 @@
 #pragma once
 
-#include "Structures.h"
+#include "structures/Structures.h"
+#include "structures/MeshDataStruct.h"
+#include "structures/AnimationStruct.h"
+#include "structures/PhysicsStruct.h"
+#include "structures/LightStruct.h"
+#include "structures/Interfaces.h"
 #include "Texture.h"
 #include "sausage.h"
 #include "AssimpHelper.h"

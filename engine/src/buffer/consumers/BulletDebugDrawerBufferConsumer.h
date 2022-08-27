@@ -2,7 +2,7 @@
 
 #include "sausage.h"
 #include "Settings.h"
-#include "Structures.h"
+#include "structures/Structures.h"
 #include "MeshManager.h"
 #include "BufferStorage.h"
 #include "BufferConsumer.h"

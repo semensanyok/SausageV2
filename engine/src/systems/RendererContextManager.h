@@ -4,7 +4,7 @@
 #include "Settings.h"
 #include "Logging.h"
 #include "ImguiGui.h"
-#include "Structures.h"
+#include "structures/Structures.h"
 
 class RendererContextManager : public SausageSystem {
 public:

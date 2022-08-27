@@ -1,7 +1,7 @@
   #pragma once
 
 #include "sausage.h"
-#include "Structures.h"
+#include "structures/Structures.h"
 #include "systems/MeshManager.h"
 
 //void TestLoadPlane(vector<vector<Vertex>>& vertices, vector<vector<unsigned int>>& indices) {

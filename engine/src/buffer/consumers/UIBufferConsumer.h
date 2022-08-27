@@ -6,7 +6,9 @@
 #include "MeshManager.h"
 #include "OpenGLHelpers.h"
 #include "Settings.h"
-#include "Structures.h"
+#include "structures/Structures.h"
+#include "structures/GPUStructs.h"
+
 #include "sausage.h"
 using namespace std;
 using namespace glm;

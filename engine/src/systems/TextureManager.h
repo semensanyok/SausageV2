@@ -1,7 +1,9 @@
 #pragma once
 
 #include "sausage.h"
-#include "Structures.h"
+#include "structures/Structures.h"
+#include "structures/Interfaces.h"
+#include "structures/GPUStructs.h"
 #include "Texture.h"
 
 class RawTextureData {

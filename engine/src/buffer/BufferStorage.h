@@ -3,7 +3,11 @@
 #include "Logging.h"
 #include "OpenGLHelpers.h"
 #include "Settings.h"
-#include "Structures.h"
+#include "structures/MeshDataStruct.h"
+#include "structures/AnimationStruct.h"
+#include "structures/GLUniformsStruct.h"
+#include "structures/TextureStruct.h"
+#include "structures/LightStruct.h"
 #include "Texture.h"
 #include "sausage.h"
 

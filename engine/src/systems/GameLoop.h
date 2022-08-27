@@ -2,7 +2,7 @@
 
 #include "FileWatcher.h"
 #include "Settings.h"
-#include "Structures.h"
+#include "structures/Structures.h"
 #include "sausage.h"
 #include "ImguiGui.h"
 #include "MeshManager.h"

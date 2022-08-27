@@ -3,7 +3,8 @@
 #include "sausage.h"
 #include "ThreadSafeQueue.h"
 #include "Settings.h"
-#include "Structures.h"
+#include "structures/Structures.h"
+#include "structures/Interfaces.h"
 
 using namespace std;
 

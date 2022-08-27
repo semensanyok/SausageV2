@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sausage.h"
-#include "Structures.h"
+#include "structures/Structures.h"
 #include "ControllerUtils.h"
 #include "UIBufferConsumer.h"
 #include "FontManager.h"

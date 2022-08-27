@@ -2,7 +2,7 @@
 
 #include "sausage.h"
 #include "SystemsManager.h"
-#include "Structures.h"
+#include "structures/Structures.h"
 #include "FileWatcher.h"
 #include "Renderer.h"
 

@@ -149,6 +149,7 @@ set(IMGUI_HEADERS
     "${ENGINE_DEP_DIR}/imgui/backends/imgui_impl_sdl.h"
 )
 ####### IMGUI END ##################
+
 include_directories("${DEPENDENCIES_INCLUDE_DIRS}")
 
 set(${PROJECT_NAME}_INCLUDE_DIRS 
@@ -162,6 +163,7 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
 "${ENGINE_SRC_DIR}/buffer/" 
 "${ENGINE_SRC_DIR}/buffer/consumers/" 
 "${ENGINE_SRC_DIR}/systems/world_gen/" 
+"${ENGINE_SRC_DIR}/src/structures/" 
 ${IMGUI_HEADERS} 
 ${DEPENDENCIES_INCLUDE_DIRS})
 
@@ -203,7 +205,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/systems/gui/ScreenOverlayManager.cpp"
 "src/systems/ShaderManager.cpp"
 "src/systems/world_gen/TerrainManager.cpp"
-${source})
+${source} "src/structures/Interfaces.h")
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 
