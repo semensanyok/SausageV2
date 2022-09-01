@@ -7,6 +7,8 @@ using namespace glm;
 using namespace std;
 using namespace BufferSettings;
 
+
+// some GPU structs resides in other headers, i.e. Light.h
 struct MeshUniformData {
   mat4 bones_transforms[MAX_BONES];
   mat4 transforms[MAX_TRANSFORM];

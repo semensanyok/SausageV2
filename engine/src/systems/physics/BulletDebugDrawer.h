@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "structures/Structures.h"
+#include "structures/ShaderStruct.h"
 #include "Shader.h"
 #include "Renderer.h"
 #include "Settings.h"
@@ -21,7 +22,7 @@ class BulletDebugDrawer : public btIDebugDraw
     DrawCall* draw_call;
     Shader* debug_shader;
     Renderer* renderer;
-    BulletDebugDrawerBufferConsumer* buffer_consumer;
+    BulletDebugDrawerBufferConsumer* buffer;
     StateManager* state_manager;
     int m_debugMode;
 
@@ -33,23 +34,18 @@ class BulletDebugDrawer : public btIDebugDraw
 
     const unsigned int command_buffer_size = 1;
 public:
-
     BulletDebugDrawer(Renderer* renderer,
-        BulletDebugDrawerBufferConsumer* buffer_consumer,
+        BulletDebugDrawerBufferConsumer* buffer,
         Shaders* shaders,
         StateManager* state_manager) :
         renderer{ renderer },
-        buffer_consumer{ buffer_consumer },
+        buffer{ buffer },
         debug_shader{ shaders->bullet_debug },
       state_manager{ state_manager } {
-        draw_call = new DrawCall();
-        draw_call->shader = shaders->bullet_debug;
-        draw_call->mode = GL_LINES;
-        draw_call->buffer = (BufferConsumer*)buffer_consumer;
-        draw_call->command_count = 1;
-        draw_call->command_buffer = draw_call->buffer->CreateCommandBuffer(command_buffer_size);
-        Activate();
-        CheckGLError();
+      draw_call = buffer->CreateDrawCall(shaders->bullet_debug, buffer->CreateCommandBuffer(command_buffer_size), GL_LINES);
+      draw_call->command_count = 1;
+      Activate();
+      CheckGLError();
     };
     ~BulletDebugDrawer() {
         Deactivate();

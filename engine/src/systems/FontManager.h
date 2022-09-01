@@ -10,8 +10,8 @@
 #include "Shader.h"
 #include "sausage.h"
 #include "OpenGLHelpers.h"
+#include "structures/ShaderStruct.h"
 #include <limits>
-#include <cstring>
 #include FT_FREETYPE_H
 
 using namespace std;

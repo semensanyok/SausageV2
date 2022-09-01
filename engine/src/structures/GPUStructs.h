@@ -122,12 +122,16 @@ struct CommandBuffer {
   inline bool operator==(const CommandBuffer& other) { return id == other.id; }
 };
 
-struct DrawCall {
-  int mode = GL_TRIANGLES;  // GL_TRIANGLES GL_LINES
+class DrawCall {
+  friend class BufferConsumer;
+public:
+  GLenum mode = GL_TRIANGLES;  // GL_TRIANGLES GL_LINES
   BufferConsumer* buffer = nullptr;
   Shader* shader = nullptr;
-  CommandBuffer* command_buffer;
+  CommandBuffer* command_buffer = nullptr;
   unsigned int command_count = 0;
-  // custom data
-  int num_lights = 0;
+
+private:
+  DrawCall(BufferConsumer* buffer, Shader* shader, CommandBuffer* command_buffer, GLenum mode)
+    : buffer{ buffer }, shader{ shader }, command_buffer{ command_buffer }, mode{ mode } {}
 };

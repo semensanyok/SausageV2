@@ -8,6 +8,7 @@ namespace LightType {
   enum LightType { Point, Directional, Spot };
 }
 
+// GPU START ///////////////////////////////////////////////////
 struct Light {
   vec4 direction;
   vec4 position;
@@ -29,3 +30,5 @@ struct Lights {
   float padding[3] = { 0, 0, 0 };
   Light lights[];
 };
+
+// GPU END ///////////////////////////////////////////////////

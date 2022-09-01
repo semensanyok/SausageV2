@@ -7,9 +7,6 @@ using namespace glm;
 
 class BufferStorage;
 class BufferConsumer;
-class Shader;
-
-enum ShaderType { BlinnPhong, BRDF };
 
 struct Point {
   int x;
@@ -47,11 +44,3 @@ struct UINodePosition {
   int height;
 };
 
-struct Shaders {
-  Shader *blinn_phong;
-  Shader *bullet_debug;
-  Shader *stencil;
-  Shader *font_ui;
-  Shader *back_ui;
-  Shader *font_3d;
-};

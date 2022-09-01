@@ -5,7 +5,7 @@
 #include "Settings.h"
 #include "structures/MeshDataStruct.h"
 #include "structures/AnimationStruct.h"
-#include "structures/GLUniformsStruct.h"
+#include "structures/GPUUniformsStruct.h"
 #include "structures/TextureStruct.h"
 #include "structures/LightStruct.h"
 #include "Texture.h"

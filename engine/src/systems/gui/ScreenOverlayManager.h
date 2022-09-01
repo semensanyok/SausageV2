@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "structures/Structures.h"
+#include "structures/ShaderStruct.h"
 #include "ControllerUtils.h"
 #include "UIBufferConsumer.h"
 #include "FontManager.h"
@@ -135,17 +136,8 @@ public:
     command_buffer_font = buffer->CreateCommandBuffer(COMMAND_BUFFER_SIZE);
     command_buffer_back = buffer->CreateCommandBuffer(COMMAND_BUFFER_SIZE);
 
-    draw_call_text = new DrawCall();
-    draw_call_text->shader = shaders->font_ui;
-    draw_call_text->mode = GL_TRIANGLES;
-    draw_call_text->buffer = (BufferConsumer*)buffer;
-    draw_call_text->command_buffer = command_buffer_font;
-
-    draw_call_back = new DrawCall();
-    draw_call_back->shader = shaders->back_ui;
-    draw_call_back->mode = GL_TRIANGLES;
-    draw_call_back->buffer = (BufferConsumer*)buffer;
-    draw_call_back->command_buffer = command_buffer_back;
+    draw_call_text = buffer->CreateDrawCall(shaders->font_ui, command_buffer_font, GL_TRIANGLES);
+    draw_call_back = buffer->CreateDrawCall(shaders->back_ui, command_buffer_back, GL_TRIANGLES);
   };
   ~ScreenOverlayManager() {
     Deactivate();

@@ -19,4 +19,4 @@ namespace AttenuationConsts {
   const float OGRE_P_L_ATT_DIST_13Q = 0.44f;
   const float OGRE_P_L_ATT_DIST_20L = 0.22f;
   const float OGRE_P_L_ATT_DIST_20Q = 0.20f;
-}  // namespace AttenuationConsts
+};  // namespace AttenuationConsts

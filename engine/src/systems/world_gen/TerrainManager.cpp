@@ -1,5 +1,99 @@
 #include "TerrainManager.h"
 
+TerrainChunk* TerrainManager::CreateChunk(int size_x, int size_y, int noise_offset_x, int noise_offset_y)
+{
+  vector<vec3> vertices(size_x * size_y);
+  vector<unsigned int> indices;
+
+  vector<float> heightValues(size_x * size_y);
+  vector<float> moistureValues(size_x * size_y);
+  vector<float> temperatureValues(size_x * size_y);
+
+  vector<vec3> normals;
+  vector<vec2> uvs(size_x * size_y);
+
+  // TODO: generators must be constant at least for height for consistent terrain
+  //       or find a way to sew tiles together
+  fnSimplex->GenUniformGrid2D(heightValues.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
+  fnSimplex->GenUniformGrid2D(moistureValues.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
+  fnSimplex->GenUniformGrid2D(temperatureValues.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
+
+  TerrainChunk* chunk = new TerrainChunk(size_x, size_y);
+
+  // create chunk in local space, use transform matrix to apply offsetX/Y
+  // each tile has 4 vertices
+
+  // 1. fill simple array and adjastent tiles references
+  for (int y = 0; y < size_y; y++) {
+    for (int x = 0; x < size_x; x++) {
+      int x1 = x;
+      int x2 = x + 1;
+      int y1 = y;
+      int y2 = y + 1;
+      int current_row_shift = y * size_x;
+      int next_row_shift = y2 * size_x;
+
+      int ind = x1 + current_row_shift;
+      int ind_e = x2 + current_row_shift;
+      int ind_se = x2 + next_row_shift;
+      int ind_s = x1 + next_row_shift;
+
+      TerrainTile* current_tile = chunk->tiles[ind];
+      if (x == 0) {
+        int prev_row_shift = (y - 1) * size_x;
+
+        int ind_w = x1 - 1 + current_row_shift;
+        int ind_nw = (x1 - 1) + prev_row_shift;
+        int ind_n = x1 + prev_row_shift;
+        int ind_ne = (x1 + 1) + prev_row_shift;
+        int ind_sw = (x1 - 1) + next_row_shift;
+
+        AdjastentTiles& adj = current_tile->adjastent;
+
+        bool is_east_border = x2 >= size_x;
+        bool is_south_border = y2 >= size_y;
+        bool is_west_border = x1 == 0;
+        bool is_north_border = y1 == 0;
+
+        adj.e = is_east_border ? nullptr : chunk->tiles[ind_e];
+        adj.se = is_east_border || is_south_border ? nullptr : chunk->tiles[ind_se];
+        adj.s = is_south_border ? nullptr : chunk->tiles[ind_s];
+        adj.w = is_west_border ? nullptr : chunk->tiles[ind_w];
+        adj.nw = is_west_border || is_north_border ? nullptr : chunk->tiles[ind_nw];
+        adj.n = is_north_border ? nullptr : chunk->tiles[ind_n];
+        adj.ne = is_north_border || is_east_border ? nullptr : chunk->tiles[ind_ne];
+        adj.sw = is_south_border || is_west_border ? nullptr : chunk->tiles[ind_sw];
+      }
+
+      TerrainPixelValues& pixel_values = current_tile->pixel_values;
+      pixel_values.height = (
+        heightValues[ind]
+        + heightValues[ind_e]
+        + heightValues[ind_se]
+        + heightValues[ind_s]
+       ) / 4;
+      pixel_values.moisture = (
+        moistureValues[ind]
+        + moistureValues[ind_e]
+        + moistureValues[ind_se]
+        + moistureValues[ind_s]
+       ) / 4;
+      pixel_values.temperature = (
+        temperatureValues[ind]
+        + temperatureValues[ind_e]
+        + temperatureValues[ind_se]
+        + temperatureValues[ind_s]
+       ) / 4;
+    }
+  }
+  return chunk;
+}
+
+TerrainChunk* TerrainManager::BufferTerrain(int world_offset_x, int world_offset_y)
+{
+  return nullptr;
+}
+
 void TerrainManager::CreateTerrain() {
   SystemsManager* systems_manager = SystemsManager::GetInstance();
   MeshManager* mesh_manager = systems_manager->mesh_manager;
@@ -75,12 +169,10 @@ void TerrainManager::CreateTerrain() {
 
   // ----- 1. BUFFER MESH DATA AND PREPARE DRAW CALL COMMON MACHINERY   --------------------
   // add drawcall
-  auto draw_call = new DrawCall();
-  draw_call->shader = shader_manager->all_shaders->blinn_phong;
-  draw_call->mode = GL_TRIANGLES;
-  draw_call->buffer = mesh_data_buffer;
-  draw_call->command_buffer =
-    draw_call->buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND);
+  auto draw_call = mesh_data_buffer->CreateDrawCall(
+    shader_manager->all_shaders->blinn_phong,
+    mesh_data_buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND),
+    GL_TRIANGLES);
   draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
   systems_manager->renderer->AddDraw(draw_call, DrawOrder::MESH);
 

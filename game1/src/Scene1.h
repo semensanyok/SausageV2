@@ -44,12 +44,15 @@ class Scene1 : public Scene {
 
   Scene1()
       : systems_manager{ SystemsManager::GetInstance() }, shaders{systems_manager->shader_manager->all_shaders} {
-    draw_call = new DrawCall();
-    draw_call->shader = shaders->blinn_phong;
-    draw_call->mode = GL_TRIANGLES;
-    draw_call->buffer = systems_manager->buffer_manager->mesh_data_buffer;
-    draw_call->command_buffer =
-        draw_call->buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND);
+    auto buffer = systems_manager->buffer_manager->mesh_data_buffer;
+    draw_call = systems_manager->
+      buffer_manager->
+      mesh_data_buffer->
+      CreateDrawCall(
+        shaders->blinn_phong,
+        buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND),
+        GL_TRIANGLES
+      );
     draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
 
     // draw_call2 = new DrawCall(*draw_call);
@@ -87,10 +90,8 @@ class Scene1 : public Scene {
     draw_call->buffer->AddCommands(commands, draw_call->command_buffer);
     CheckGLError();
     draw_call->command_count = (unsigned int)commands.size();
-    draw_call->num_lights = (int)draw_lights.size();
 
-    systems_manager->buffer_manager->mesh_data_buffer->BufferLights(
-        draw_lights);
+    systems_manager->buffer_manager->mesh_data_buffer->BufferLights(draw_lights);
     CheckGLError();
   }
 

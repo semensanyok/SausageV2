@@ -4,6 +4,20 @@ from importlib import import_module
 
 SHADERS_RELATIVE_PATH = "shaders"
 
+'''
+each subdirectory under 'shaders/shared' contains 'parameters' variable, used by ninja to expand templates.
+
+this script takes subdirectory name and use it as prefix to find corresponding shaders templates in 'shaders' directory.
+
+Example
+-------
+shared/ui_font
+    __init__.py
+        parameters
+            dict with key - expansion variable name -> expansion value
+            Example: parameters = {"some_name"->"some_value"} substitutes '{{ "some_name" }}' with "some_value" in 'ui_font_fs.glsl' and 'ui_font_vs.glsl'
+            
+'''
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print(f"Usage: generate_shaders SHADERS_MODULE_PATH BUILD_PATH\n"
