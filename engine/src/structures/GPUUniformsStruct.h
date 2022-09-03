@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../sausage.h"
 #include "../Settings.h"

@@ -520,6 +520,53 @@ void BufferStorage::Dispose() {
   CheckGLError();
 }
 
+void BufferStorage::BufferMeshTexture(MeshData* mesh) {
+  SAUSAGE_DEBUG_ASSERT(mesh->buffer_id >= 0)
+    if (mesh->texture != nullptr) {
+      texture_ptr[mesh->buffer_id] = mesh->texture->texture_handle_ARB;
+    }
+}
+
+void BufferStorage::BufferFontTexture(MeshDataBase* mesh, Texture* texture) {
+  font_texture_ptr[mesh->buffer_id] = texture->texture_handle_ARB;
+}
+
+void BufferStorage::Buffer3DFontTransform(MeshDataOverlay3D* mesh) {
+  if (mesh->transform_offset == -1) {
+    mesh->transform_offset = _GetTransformBucketFont(mesh);
+  }
+  uniforms_3d_overlay_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
+    mesh->transform;
+  is_need_barrier = true;
+}
+
+void BufferStorage::BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y) {
+  if (mesh->transform_offset == -1) {
+    mesh->transform_offset = _GetTransformBucketFontUI(mesh);
+  }
+  uniforms_ui_ptr
+    ->min_max_x_y[mesh->transform_offset + mesh->instance_id] = { min_x, max_x, min_y, max_y };
+  is_need_barrier = true;
+}
+
+void BufferStorage::BufferUniformDataUITransform(MeshDataUI* mesh) {
+  if (mesh->transform_offset == -1) {
+    mesh->transform_offset = _GetTransformBucketFontUI(mesh);
+  }
+  uniforms_ui_ptr
+    ->transforms[mesh->transform_offset + mesh->instance_id] =
+    mesh->transform;
+  is_need_barrier = true;
+}
+
+void BufferStorage::BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click) {
+  uniforms_controller_ptr->mouse_x = mouse_x;
+  uniforms_controller_ptr->mouse_y = mouse_y;
+  uniforms_controller_ptr->is_pressed = is_pressed;
+  uniforms_controller_ptr->is_click = is_click;
+  is_need_barrier = true;
+}
+
 long BufferStorage::_GetTransformBucket(MeshData *mesh) {
   long bucket = transforms_total;
   transforms_total += mesh->command.instanceCount;

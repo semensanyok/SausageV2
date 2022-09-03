@@ -45,6 +45,9 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
         GL_UNSIGNED_BYTE,      //type
         surface->pixels);
 
+    //int max_texture_array_levels;
+    //glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_texture_array_levels);
+
     SDL_FreeSurface(surface);
     if (!tex_names.normal.empty()) {
         LoadLayer(tex_names.normal, TextureType::Normal);

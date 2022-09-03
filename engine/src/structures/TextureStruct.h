@@ -30,5 +30,5 @@ enum TextureType {
   AO,        //                        3
   Height,    //                        4 PBR
   Metal,     //                        5 PBR
-             // Opacity, //                        6 use Diffuse alpha
+             //                        6 Opacity, (switched to use Diffuse alpha)
 };

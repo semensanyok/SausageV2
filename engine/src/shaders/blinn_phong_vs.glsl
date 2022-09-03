@@ -14,6 +14,7 @@ layout (location = 6) in vec4 bone_weights;
 
 {{ mesh_buffers_capacity }}
 {{ mesh_uniforms }}
+
 uniform mat4 projection_view;
 
 out vs_out {

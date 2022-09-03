@@ -49,13 +49,6 @@ public:
   TerrainChunk(int sizeX, int sizeY) : sizeX{ sizeX }, sizeY{ sizeY }, tiles{ vector<TerrainTile*>(sizeX * sizeY) } {}
 };
 
-
-// GPU
-struct TerrainUniformData {
-  mat4 transforms[MAX_TRANSFORM];
-  unsigned int transform_offset[MAX_TRANSFORM_OFFSET];
-};
-
 struct VertexTerrain {
   vec3 Position;
   vec3 Normal;

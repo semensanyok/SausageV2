@@ -22,12 +22,12 @@ struct Light {
 
   float linear_attenuation;
   float quadratic_attenuation;
-  float padding[2] = { 0, 0 };  // OpenGL padding
+  float padding[2] = { 0, 0 };  // OpenGL padding. Aligned to vec4
 };
 
 struct Lights {
   int num_lights;
-  float padding[3] = { 0, 0, 0 };
+  float padding[3] = { 0, 0, 0 }; // OpenGL padding. Aligned to vec4
   Light lights[];
 };
 

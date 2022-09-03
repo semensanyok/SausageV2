@@ -37,7 +37,6 @@ public:
   //ActivateTerrain(TerrainChunk* chunk);
   //DeactivateTerrain(TerrainChunk* chunk);
 
-
 private:
   ~TerrainManager() {};
 };
