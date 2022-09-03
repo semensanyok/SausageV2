@@ -55,15 +55,6 @@ https://www.gamedev.net/forums/topic/683412-bindless-texturing-virtual-texture-a
 
 */
 
-class RawTextureData {
-public:
-  SDL_Surface* surface;
-  RawTextureData(SDL_Surface* surface) : surface{surface} {};
-  ~RawTextureData(){
-    SDL_FreeSurface(surface);
-  };
-};
-
 class TextureManager : public SausageSystem {
     map<size_t, Texture*> path_to_tex;
     Samplers* samplers;

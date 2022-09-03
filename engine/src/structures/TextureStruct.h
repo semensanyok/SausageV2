@@ -32,3 +32,13 @@ enum TextureType {
   Metal,     //                        5 PBR
              //                        6 Opacity, (switched to use Diffuse alpha)
 };
+
+
+class RawTextureData {
+public:
+  SDL_Surface* surface;
+  RawTextureData(SDL_Surface* surface) : surface{ surface } {};
+  ~RawTextureData() {
+    SDL_FreeSurface(surface);
+  };
+};

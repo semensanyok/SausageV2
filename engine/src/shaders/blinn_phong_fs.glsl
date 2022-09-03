@@ -4,6 +4,10 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 
 {{ light_enums }}
+{{ texture_layers_offsets }}
+{{ uniforms_locations }}
+
+{{ mesh_fs_in }}
 
 uniform vec3 view_pos;
 
@@ -16,15 +20,7 @@ float blinn_spec_pow = 32.0f;
 {{ light_uniforms }}
 {{ light_functions }}
 
-in vs_out {
-    flat int base_instance;
-    vec2 uv;
-    vec3 frag_pos;
-    mat3 TBN;
-} In;
-
 {{ texture_array }}
-
 
 void main(void) {
   vec4 mat_diffuse_with_opacity = texture(textures[In.base_instance], vec3(In.uv, DIFFUSE_TEX)).rgba;

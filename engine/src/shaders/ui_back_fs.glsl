@@ -12,9 +12,9 @@ in vs_out {
 {{ controller_uniforms_shared }}
 {{ ui_uniforms_shared }}
 {{ ui_utils }}
+{{ uniforms_locations }}
 
-
-layout (std430, binding = 1) buffer TextureArray
+layout (std430, binding = TEXTURE_UNIFORM_LOC) buffer TextureArray
 {
     sampler2DArray textures[];
 };

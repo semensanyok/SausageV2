@@ -1,14 +1,4 @@
 light = {
-    "light_enums":
-"""
-const int DIFFUSE_TEX = 0;
-const int NORMAL_TEX = 1;
-const int SPECULAR_TEX = 2;
-
-const int POINT_LIGHT = 0;
-const int DIRECTIONAL_LIGHT = 1;
-const int SPOT_LIGHT = 2;
-""",
     "light_structs":
 """
 struct Light {
