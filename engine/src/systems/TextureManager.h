@@ -53,6 +53,29 @@ https://www.gamedev.net/forums/topic/683412-bindless-texturing-virtual-texture-a
     I used it, it's simple to integrate if your hardware supports it and it gets the job done 100%.
     Performance overhead wouldnt matter that much, as I experienced similar experience as with array textures.
 
+
+UPDATE 1 --------------------------------------------------------------------------------------
+
+TODO TEXTURES MANAGING, TERRAIN INSPIRED:
+
+    add to blinn_phong mesh uniforms "BlendTexturesArray" = [(texture_id, weight)]
+
+    HAVE TO CHANGE:
+        - texture array contains texture_id -> handle, not mesh_id -> handle.
+        - Texture* contains ref count.
+            Resident when used, release when unused
+    ADVANTAGES:
+        - to reuse blinn phong for terrain in single shader / draw call
+        - to mix texture also for meshes.
+            i.e. make models "sandy"/"dirty"/"wet"/"damaged"/"bleed",
+            based on environment and effects applied.
+                each model will have list of statuses, and each status -
+                    texture;
+                    blend percent weight;
+                    mix function (i.e. dirt will be "mixed", damage - "overlayed/screened");
+
+    ONCE FINISHED: GET RID OF TERRAIN SHADER FILES (shaders/shared/terrain_fs|vs.glsl, shaders/shared/_terrain.py, ...)
+UPDATE 1 END --------------------------------------------------------------------------------------
 */
 
 class TextureManager : public SausageSystem {
@@ -63,7 +86,7 @@ public:
     /**
     * load texture array for mesh. diffuse + normal + height + specular.
     */
-    Texture* LoadTextureArray(MaterialTexNames& tex_names);
+    Texture* LoadTextureArray(MaterialTexNames* tex_names);
 
     unique_ptr<RawTextureData> LoadRawTextureData(string& path);
 private:

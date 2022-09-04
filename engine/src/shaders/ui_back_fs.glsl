@@ -14,10 +14,7 @@ in vs_out {
 {{ ui_utils }}
 {{ uniforms_locations }}
 
-layout (std430, binding = TEXTURE_UNIFORM_LOC) buffer TextureArray
-{
-    sampler2DArray textures[];
-};
+{{ texture_handle_by_mesh_id_array }}
 
 out vec4 color;
 

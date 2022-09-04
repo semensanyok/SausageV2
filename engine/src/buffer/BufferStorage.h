@@ -14,6 +14,7 @@
 using namespace std;
 using namespace glm;
 using namespace BufferSettings;
+using namespace UniformsLocations;
 
 // struct DataRangeLock {
 //    unsigned int vertex_begin;
@@ -44,20 +45,13 @@ class BufferStorage {
   ///////////
   // UNIFORMS
   ///////////
-  const unsigned long UNIFORMS_STORAGE_SIZE = sizeof(MeshUniformData);
+  const unsigned long MESH_UNIFORMS_STORAGE_SIZE = sizeof(MeshUniformData);
   const unsigned long TRANSFORM_OFFSET_STORAGE_SIZE =
       MAX_TRANSFORM_OFFSET * sizeof(unsigned int);
-  const unsigned long TEXTURE_STORAGE_SIZE = MAX_TEXTURES * sizeof(GLuint64);
+  const unsigned long TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE = MAX_TEXTURE * sizeof(GLuint64);
 
   const GLbitfield flags =
       GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-  const int UNIFORMS_LOC = 0;
-  const int TEXTURE_UNIFORM_LOC = 1;
-  const int LIGHTS_UNIFORM_LOC = 2;
-  const int FONT_UNIFORMS_LOC = 3;
-  const int FONT_TEXTURE_UNIFORM_LOC = 4;
-  const int UI_UNIFORM_LOC = 5;
-  const int CONTROLLER_UNIFORM_LOC = 6;
 
   bool is_need_barrier = false;
 
@@ -75,7 +69,7 @@ class BufferStorage {
   // UNIFORMS AND SSBO
   /////////////////////
   GLuint uniforms_buffer;
-  GLuint texture_buffer;
+  GLuint texture_handle_by_texture_id_buffer;
   GLuint light_buffer;
   vector<CommandBuffer *> command_buffers;
   map<GLuint, CommandBuffer *> mapped_command_buffers;
@@ -85,7 +79,8 @@ class BufferStorage {
   Vertex *vertex_ptr;
   unsigned int *index_ptr;
   MeshUniformData *uniforms_ptr;
-  GLuint64 *texture_ptr;
+  // gl_BaseInstanceARB->texture handle.textures of same size, 4 layers
+  GLuint64 *texture_handle_by_texture_id_ptr;
   Lights *light_ptr;
 
   float allocated_percent_vertex = 0.0;
@@ -179,7 +174,7 @@ class BufferStorage {
   void Dispose();
 
   void BufferMeshTexture(MeshData* mesh);
-  void BufferFontTexture(MeshDataBase* mesh, Texture* texture);;
+  void BufferFontTexture(MeshDataBase* mesh, Texture* texture);
   void Buffer3DFontTransform(MeshDataOverlay3D* mesh);;
   void BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
   void BufferUniformDataUITransform(MeshDataUI* mesh);;

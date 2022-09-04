@@ -19,8 +19,8 @@ int main()
 	//UIFontManagerTest().run();
   //FontManagerTest3D().run();
   //GtkGLOverlayTest().run();
-  //ScreenOverlayManagerTest().run();
-  TerrainTest().run();
+  ScreenOverlayManagerTest().run();
+  //TerrainTest().run();
 
   return 0;
 }

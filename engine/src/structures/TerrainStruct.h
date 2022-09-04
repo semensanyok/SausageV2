@@ -37,6 +37,9 @@ struct TerrainTile {
   TerrainPixelValues pixel_values;
 
   AdjastentTiles adjastent;
+
+  // TODO: 
+  MeshData* mesh_data;
 };
 
 class TerrainChunk {
@@ -47,16 +50,4 @@ public:
   vector<TerrainTile*> tiles;
 
   TerrainChunk(int sizeX, int sizeY) : sizeX{ sizeX }, sizeY{ sizeY }, tiles{ vector<TerrainTile*>(sizeX * sizeY) } {}
-};
-
-struct VertexTerrain {
-  vec3 Position;
-  vec3 Normal;
-  vec2 TexCoords;
-};
-
-struct TextureBlend {
-  float blend_weight;
-  // index into texture array
-  int texture_index;
 };

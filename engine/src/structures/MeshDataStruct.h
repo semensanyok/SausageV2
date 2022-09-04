@@ -25,7 +25,7 @@ struct Vertex {
 struct MeshLoadData {
   vector<Vertex> vertices;
   vector<unsigned int> indices;
-  MaterialTexNames tex_names;
+  MaterialTexNames* tex_names;
   Armature* armature;
   PhysicsData* physics_data;
   string name;

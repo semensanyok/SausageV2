@@ -31,6 +31,8 @@ namespace BufferType {
     MESH_VAO | VERTEX | INDEX | COMMAND;
   const BufferTypeFlag UI_BUFFERS =
     MESH_VAO | VERTEX | INDEX | COMMAND | TEXTURE | FONT_TEXTURE | UI_UNIFORMS | CONTROLLER_UNIFORMS;
+  const BufferTypeFlag TERRAIN_BUFFERS =
+    MESH_VAO | VERTEX | INDEX | LIGHT | COMMAND | TEXTURE;
 };  // namespace BufferType
 
 namespace DrawOrder {

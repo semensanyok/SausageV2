@@ -49,8 +49,8 @@ vec3 B = normalize(vec3(transform * vec4(bitangent, 0.0)));
 vec3 N = normalize(vec3(transform * res_normal));
 Out.TBN = mat3(T, B, N);
 """,
-# projection_view defined directly in shaderm not in template
 "mesh_set_gl_Position":
+# projection_view defined directly in shader not in template
 """
 gl_Position = projection_view * vec4(Out.frag_pos, 1.0);
 """

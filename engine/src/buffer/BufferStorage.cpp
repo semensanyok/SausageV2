@@ -357,15 +357,15 @@ void BufferStorage::InitMeshBuffers() {
 
   glGenBuffers(1, &uniforms_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
-  glBufferStorage(GL_SHADER_STORAGE_BUFFER, UNIFORMS_STORAGE_SIZE, NULL, flags);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, MESH_UNIFORMS_STORAGE_SIZE, NULL, flags);
   uniforms_ptr = (MeshUniformData *)glMapBufferRange(
-      GL_SHADER_STORAGE_BUFFER, 0, UNIFORMS_STORAGE_SIZE, flags);
+      GL_SHADER_STORAGE_BUFFER, 0, MESH_UNIFORMS_STORAGE_SIZE, flags);
 
-  glGenBuffers(1, &texture_buffer);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
-  glBufferStorage(GL_SHADER_STORAGE_BUFFER, TEXTURE_STORAGE_SIZE, NULL, flags);
-  texture_ptr = (GLuint64 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
-                                             TEXTURE_STORAGE_SIZE, flags);
+  glGenBuffers(1, &texture_handle_by_texture_id_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_buffer);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE, NULL, flags);
+  texture_handle_by_texture_id_ptr = (GLuint64 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
+                                             TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE, flags);
 
   glGenBuffers(1, &light_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
@@ -438,12 +438,6 @@ void BufferStorage::BindVAOandBuffers(
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, uniforms_buffer);
   }
-  if ((buffers_to_bind & BufferType::TEXTURE) &&
-      !(bound_buffers & BufferType::TEXTURE)) {
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_UNIFORM_LOC,
-                     texture_buffer);
-  }
   if ((buffers_to_bind & BufferType::LIGHT) &&
       !(bound_buffers & BufferType::LIGHT)) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
@@ -492,9 +486,9 @@ void BufferStorage::Dispose() {
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &uniforms_buffer);
   CheckGLError();
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  glDeleteBuffers(1, &texture_buffer);
+  glDeleteBuffers(1, &texture_handle_by_texture_id_buffer);
   CheckGLError();
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -523,7 +517,7 @@ void BufferStorage::Dispose() {
 void BufferStorage::BufferMeshTexture(MeshData* mesh) {
   SAUSAGE_DEBUG_ASSERT(mesh->buffer_id >= 0)
     if (mesh->texture != nullptr) {
-      texture_ptr[mesh->buffer_id] = mesh->texture->texture_handle_ARB;
+      texture_handle_by_texture_id_ptr[mesh->buffer_id] = mesh->texture->texture_handle_ARB;
     }
 }
 

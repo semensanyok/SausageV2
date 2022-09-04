@@ -169,7 +169,7 @@ Bone MeshManager::CreateBone(string bone_name, mat4& offset, mat4& trans) {
 shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<Vertex>& vertices,
                                                  vector<unsigned int>& indices,
                                                  Armature* armature) {
-  return make_shared<MeshLoadData>(vertices, indices, MaterialTexNames(),
+  return make_shared<MeshLoadData>(vertices, indices, nullptr,
                                    armature, nullptr, string(), mat4(1), 1);
 }
 
@@ -420,8 +420,8 @@ void MeshManager::_SetBoneHierarchy(Armature* armature, aiNode* parent_node,
   }
 }
 
-MaterialTexNames MeshManager::_GetTexNames(const aiMesh* mesh,
-                                           const aiScene* scene, bool is_obj) {
+MaterialTexNames* MeshManager::_GetTexNames(const aiMesh* mesh,
+                                            const aiScene* scene, bool is_obj) {
   string diffuse_name;
   string normal_name;
   string specular_name;
@@ -465,8 +465,8 @@ MaterialTexNames MeshManager::_GetTexNames(const aiMesh* mesh,
                       NULL) == AI_SUCCESS) {
     opacity_name = filesystem::path(Path.C_Str()).filename().string();
   }
-  return MaterialTexNames(diffuse_name, normal_name, specular_name, height_name,
-                          metal_name, ao_name, opacity_name);
+  return new MaterialTexNames(diffuse_name, normal_name, specular_name, height_name,
+                              metal_name, ao_name, opacity_name);
 }
 
 void MeshManager::_BlenderPostprocessLights(vector<Light*>& lights) {

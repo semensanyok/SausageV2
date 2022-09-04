@@ -4,18 +4,22 @@
 * load texture array for mesh. diffuse + normal + height + specular.
 */
 
-Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
+Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
     GLuint texture_id;
-    if (tex_names.diffuse.empty()) {
-        LOG(string("diffuse not found: ").append(tex_names.diffuse));
+    if (tex_names == nullptr) {
+      LOG(string("texture is nullptr"));
+      return nullptr;
+    }
+    if (tex_names->diffuse.empty()) {
+        LOG(string("diffuse not found: ").append(tex_names->diffuse));
         return nullptr;
     }
     // diffuse is a must. used to create storage. all textures must be same size and format.
-    string diffuse_path = GetTexturePath(tex_names.diffuse);
-    string normal_path = GetTexturePath(tex_names.normal);
-    string specular_path = GetTexturePath(tex_names.specular);
-    string height_path = GetTexturePath(tex_names.height);
-    auto key_hash = tex_names.Hash();
+    string diffuse_path = GetTexturePath(tex_names->diffuse);
+    string normal_path = GetTexturePath(tex_names->normal);
+    string specular_path = GetTexturePath(tex_names->specular);
+    string height_path = GetTexturePath(tex_names->height);
+    auto key_hash = tex_names->Hash();
 
     auto existing = path_to_tex.find(key_hash);
     if (existing != path_to_tex.end()) {
@@ -33,15 +37,15 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
         8,                    //mipmaps. 1 == no mipmaps.
-        GetTexFormat(surface->format->BytesPerPixel, true),              //Internal format
+        GetTexFormat(surface->format->BytesPerPixel, true), //Internal format
         surface->w, surface->h,//width,height
         4            //Number of layers
     );
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-        0,                     //Mipmap number
-        0, 0, (int)TextureType::Diffuse,               //xoffset, yoffset, zoffset
-        surface->w, surface->h, 1,               //width, height, depth
-        GetTexFormat(surface->format->BytesPerPixel, false),                //format
+        0,                               //Mipmap number
+        0, 0, (int)TextureType::Diffuse, //xoffset, yoffset, zoffset
+        surface->w, surface->h, 1,       //width, height, depth
+        GetTexFormat(surface->format->BytesPerPixel, false), //format
         GL_UNSIGNED_BYTE,      //type
         surface->pixels);
 
@@ -49,24 +53,24 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
     //glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_texture_array_levels);
 
     SDL_FreeSurface(surface);
-    if (!tex_names.normal.empty()) {
-        LoadLayer(tex_names.normal, TextureType::Normal);
+    if (!tex_names->normal.empty()) {
+        LoadLayer(tex_names->normal, TextureType::Normal);
     }
-    if (!tex_names.specular.empty()) {
-        LoadLayer(tex_names.specular, TextureType::Specular);
+    if (!tex_names->specular.empty()) {
+        LoadLayer(tex_names->specular, TextureType::Specular);
     }
-    if (!tex_names.height.empty()) {
-        LoadLayer(tex_names.height, TextureType::Height);
+    if (!tex_names->height.empty()) {
+        LoadLayer(tex_names->height, TextureType::Height);
     }
     // Invalid operation GL error.
-    //if (!tex_names.metal_name.empty()) {
-    //    LoadLayer(tex_names.metal_name, TextureType::Metal);
+    //if (!tex_names->metal_name.empty()) {
+    //    LoadLayer(tex_names->metal_name, TextureType::Metal);
     //}
-    if (!tex_names.ao.empty()) {
-        LoadLayer(tex_names.ao, TextureType::AO);
+    if (!tex_names->ao.empty()) {
+        LoadLayer(tex_names->ao, TextureType::AO);
     }
-    //if (!tex_names.opacity.empty()) {
-    //    LoadLayer(tex_names.opacity, TextureType::Opacity);
+    //if (!tex_names->opacity.empty()) {
+    //    LoadLayer(tex_names->opacity, TextureType::Opacity);
     //}
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
     GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers->basic_repeat);

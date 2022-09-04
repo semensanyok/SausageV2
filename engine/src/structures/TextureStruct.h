@@ -1,10 +1,12 @@
 #pragma once
 
-#include "../sausage.h"
+#include "sausage.h"
+#include "Interfaces.h"
 
 using namespace std;
 
-struct MaterialTexNames {
+struct MaterialTexNames : SausageHashable {
+public:
   string diffuse;
   string normal;
   string specular;
@@ -12,7 +14,20 @@ struct MaterialTexNames {
   string metal;
   string ao;
   string opacity;
-  inline size_t Hash() {
+  MaterialTexNames(string diffuse,
+  string normal,
+  string specular,
+  string height,
+  string metal,
+  string ao,
+  string opacity) :
+    diffuse{ diffuse },
+    normal{ normal },
+    specular{ specular },
+    height{ height },
+    metal{ metal },
+    ao{ ao } {}
+  size_t Hash() {
     return hash<string>{}(string(diffuse)
                               .append(normal)
                               .append(specular)

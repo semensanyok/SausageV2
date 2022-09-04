@@ -131,7 +131,7 @@ class MeshManager : public SausageSystem {
   void _SetBoneHierarchy(Armature* armature, aiNode* parent_node, Bone* parent,
                          bool is_dae = false);
 
-  MaterialTexNames _GetTexNames(const aiMesh* mesh, const aiScene* scene,
+  MaterialTexNames* _GetTexNames(const aiMesh* mesh, const aiScene* scene,
                                 bool is_obj = false);
   void _BlenderPostprocessLights(vector<Light*>& lights);
 };

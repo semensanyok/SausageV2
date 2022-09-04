@@ -21,8 +21,6 @@ uniform mat4 projection_view;
 {{ mesh_uniforms }}
 {{ mesh_vs_out }}
 
-
-
 void AnimTransform(inout vec4 pos, inout vec4 norm) {
   if (bone_ids[0] < 0) {
     return;

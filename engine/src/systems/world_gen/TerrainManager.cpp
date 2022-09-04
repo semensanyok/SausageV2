@@ -5,18 +5,27 @@ TerrainChunk* TerrainManager::CreateChunk(int size_x, int size_y, int noise_offs
   vector<vec3> vertices(size_x * size_y);
   vector<unsigned int> indices;
 
-  vector<float> heightValues(size_x * size_y);
-  vector<float> moistureValues(size_x * size_y);
-  vector<float> temperatureValues(size_x * size_y);
+  vector<float> height_values(size_x * size_y);
+
+  // TODO_1 (AHORA): calculate each vertex normal as mean of adjastent faces normals
+  //1 2 3
+  //  4 5 6
+  //  7 8 9
+  //  normal of vertex 5 is mean of normals of faces
+  //  [(1 2 4 5), (2 3 5 6), (4, 5, 7, 8), (5, 6, 8, 9)]
+  //normal of face 1 2 4 5 == (1 - 2) x(1 - 4), where 1 - 4 - vertices(x, y, z)
+  //  TBN IS NEEDED IN SHADER !!!
+  // vector<vec2> normals;
+
+  vector<float> moisture_values(size_x * size_y);
+  vector<float> temperature_values(size_x * size_y);
 
   vector<vec3> normals;
   vector<vec2> uvs(size_x * size_y);
 
-  // TODO: generators must be constant at least for height for consistent terrain
-  //       or find a way to sew tiles together
-  fnSimplex->GenUniformGrid2D(heightValues.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
-  fnSimplex->GenUniformGrid2D(moistureValues.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
-  fnSimplex->GenUniformGrid2D(temperatureValues.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
+  fnSimplex->GenUniformGrid2D(height_values.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
+  fnSimplex->GenUniformGrid2D(moisture_values.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
+  fnSimplex->GenUniformGrid2D(temperature_values.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
 
   TerrainChunk* chunk = new TerrainChunk(size_x, size_y);
 
@@ -67,22 +76,22 @@ TerrainChunk* TerrainManager::CreateChunk(int size_x, int size_y, int noise_offs
 
       TerrainPixelValues& pixel_values = current_tile->pixel_values;
       pixel_values.height = (
-        heightValues[ind]
-        + heightValues[ind_e]
-        + heightValues[ind_se]
-        + heightValues[ind_s]
+        height_values[ind]
+        + height_values[ind_e]
+        + height_values[ind_se]
+        + height_values[ind_s]
        ) / 4;
       pixel_values.moisture = (
-        moistureValues[ind]
-        + moistureValues[ind_e]
-        + moistureValues[ind_se]
-        + moistureValues[ind_s]
+        moisture_values[ind]
+        + moisture_values[ind_e]
+        + moisture_values[ind_se]
+        + moisture_values[ind_s]
        ) / 4;
       pixel_values.temperature = (
-        temperatureValues[ind]
-        + temperatureValues[ind_e]
-        + temperatureValues[ind_se]
-        + temperatureValues[ind_s]
+        temperature_values[ind]
+        + temperature_values[ind_e]
+        + temperature_values[ind_se]
+        + temperature_values[ind_s]
        ) / 4;
     }
   }
@@ -178,7 +187,7 @@ void TerrainManager::CreateTerrain() {
 
   // load data
   vector<shared_ptr<MeshLoadData>> load_data = { mesh_manager->CreateMesh(vertices, indices, normals, uvs) };
-  load_data[0]->tex_names = MaterialTexNames("checker1.png", EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING);
+  load_data[0]->tex_names = new MaterialTexNames("checker1.png", EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING);
   vector<MeshDataBase*> meshes = { mesh_manager->CreateMeshData(load_data[0].get()) };
   auto mesh = (MeshData*)meshes[0];
 

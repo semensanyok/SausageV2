@@ -193,15 +193,15 @@ class Scene1 : public Scene {
     {
       for (int i = 0; i < new_meshes.size(); i++) {
         auto load_data = new_meshes[i].get();
-        if (load_data->tex_names.normal.empty()) {
-          load_data->tex_names.normal = load_data->tex_names.diffuse;
-          load_data->tex_names.specular = load_data->tex_names.diffuse;
-          auto u = load_data->tex_names.diffuse.find("_");
-          auto to_replace = load_data->tex_names.diffuse.substr(
-              u + 1, load_data->tex_names.diffuse.find(".") - u - 1);
-          load_data->tex_names.normal.replace(u + 1, to_replace.size(),
+        if (load_data->tex_names->normal.empty()) {
+          load_data->tex_names->normal = load_data->tex_names->diffuse;
+          load_data->tex_names->specular = load_data->tex_names->diffuse;
+          auto u = load_data->tex_names->diffuse.find("_");
+          auto to_replace = load_data->tex_names->diffuse.substr(
+              u + 1, load_data->tex_names->diffuse.find(".") - u - 1);
+          load_data->tex_names->normal.replace(u + 1, to_replace.size(),
                                               "normal");
-          load_data->tex_names.specular.replace(u + 1, to_replace.size(),
+          load_data->tex_names->specular.replace(u + 1, to_replace.size(),
                                                 "specular");
         }
       }

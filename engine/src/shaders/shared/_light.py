@@ -1,3 +1,4 @@
+# depends on: _constants.py
 light = {
     "light_structs":
 """
@@ -21,7 +22,7 @@ struct Light {
     ,
     "light_uniforms":
 """
-layout (std430, binding = 2) buffer Lights
+layout (std430, binding = LIGHTS_UNIFORM_LOC) buffer Lights
 {
 	int num_lights;
 	float padding0;
@@ -34,7 +35,7 @@ layout (std430, binding = 2) buffer Lights
 """
 vec3 GetSpecular(in Light light, in vec3 view_dir, in vec3 light_dir, in vec3 mat_specular) {
     vec3 half_way_dir = normalize(view_dir + light_dir);
-    float spec = pow(max(dot(view_dir, half_way_dir), 0.0), blinn_spec_pow);
+    float spec = pow(max(dot(view_dir, half_way_dir), 0.0), BLINN_SPEC_POW);
     return spec * vec3(light.specular) * mat_specular;
 }
 
