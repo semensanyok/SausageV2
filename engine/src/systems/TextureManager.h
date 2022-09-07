@@ -5,6 +5,7 @@
 #include "structures/Interfaces.h"
 #include "structures/GPUStructs.h"
 #include "Texture.h"
+#include "BufferStorage.h"
 
 /**
 
@@ -80,9 +81,13 @@ UPDATE 1 END -------------------------------------------------------------------
 
 class TextureManager : public SausageSystem {
     map<size_t, Texture*> path_to_tex;
+    map<unsigned int, Texture*> id_to_tex;
     Samplers* samplers;
+    int texture_count = 0;
+    BufferStorage* buffer;
 public:
-    TextureManager(Samplers* samplers) : samplers{ samplers } {};
+  TextureManager(Samplers* samplers, BufferStorage* buffer) :
+    samplers{ samplers }, buffer{ buffer } {};
     /**
     * load texture array for mesh. diffuse + normal + height + specular.
     */

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sausage.h"
 #include "BufferConsumer.h"
 #include "BufferStorage.h"
 #include "Logging.h"
@@ -7,7 +8,8 @@
 #include "OpenGLHelpers.h"
 #include "Settings.h"
 #include "structures/Structures.h"
-#include "sausage.h"
+#include "BufferSettings.h"
+
 using namespace std;
 using namespace glm;
 

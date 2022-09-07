@@ -47,7 +47,7 @@ class BufferStorage {
   ///////////
   const unsigned long MESH_UNIFORMS_STORAGE_SIZE = sizeof(MeshUniformData);
   const unsigned long TRANSFORM_OFFSET_STORAGE_SIZE =
-      MAX_TRANSFORM_OFFSET * sizeof(unsigned int);
+      MAX_BASE_AND_INSTANCED_MESHES * sizeof(unsigned int);
   const unsigned long TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE = MAX_TEXTURE * sizeof(GLuint64);
 
   const GLbitfield flags =
@@ -173,6 +173,7 @@ class BufferStorage {
   void BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind);
   void Dispose();
 
+  void BufferTextureHandle(Texture* texture);
   void BufferMeshTexture(MeshData* mesh);
   void BufferFontTexture(MeshDataBase* mesh, Texture* texture);
   void Buffer3DFontTransform(MeshDataOverlay3D* mesh);;

@@ -7,6 +7,7 @@
 #include "OpenGLHelpers.h"
 #include "BufferStorage.h"
 #include "BufferConsumer.h"
+#include "BufferSettings.h"
 
 using namespace std;
 

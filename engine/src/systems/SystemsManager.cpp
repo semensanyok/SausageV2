@@ -18,7 +18,7 @@ void SystemsManager::InitSystems() {
 	state_manager = new StateManager(buffer_manager);
 	samplers = new Samplers();
 	samplers->Init();
-	texture_manager = new TextureManager(samplers);
+	texture_manager = new TextureManager(samplers, buffer_manager);
     shader_manager = new ShaderManager();
     shader_manager->SetupShaders();
 	font_manager = new FontManager(samplers,mesh_manager, renderer, shader_manager->all_shaders);

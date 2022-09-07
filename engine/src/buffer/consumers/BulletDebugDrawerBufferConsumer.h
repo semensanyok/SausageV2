@@ -6,6 +6,7 @@
 #include "MeshManager.h"
 #include "BufferStorage.h"
 #include "BufferConsumer.h"
+#include "BufferSettings.h"
 
 class BulletDebugDrawerBufferConsumer : public BufferConsumer {
     BufferMargins margins;

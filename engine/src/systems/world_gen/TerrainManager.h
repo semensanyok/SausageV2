@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "AssetUtils.h"
+#include "BufferSettings.h"
 #include "SystemsManager.h"
 #include "TerrainTile.h"
 #include <FastNoise/FastNoise.h>

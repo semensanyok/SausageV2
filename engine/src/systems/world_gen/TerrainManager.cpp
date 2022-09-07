@@ -122,7 +122,7 @@ void TerrainManager::CreateTerrain() {
 
   fnSimplex->GenUniformGrid2D(noiseOutput.data(), 0, 0, sizeX, sizeY, 0.02f, 1337);
   for (int y = 0; y < sizeY; y++) {
-    for (int x = 0; x < sizeX; x+=1) {
+    for (int x = 0; x < sizeX; x += 1) {
       if (x == sizeX - 1) {
         break;
       }
@@ -199,9 +199,11 @@ void TerrainManager::CreateTerrain() {
   mesh_data_buffer->BufferTransform(mesh);
 
   // load texture to buffer
-  mesh->texture = texture_manager->LoadTextureArray(load_data[0]->tex_names);
+  Texture* texture = texture_manager->LoadTextureArray(load_data[0]->tex_names);
+  texture->MakeResident();
+
+  mesh->textures = { 1, {1.0, texture->id} };
   mesh_data_buffer->BufferMeshTexture(mesh);
-  mesh->texture->MakeResident();
 
   float light_power = 1.0;
   // add light for blinn_phong to view texture

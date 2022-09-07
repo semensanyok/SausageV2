@@ -34,5 +34,5 @@ inline Texture::~Texture() {
   if (!is_destoyed) {
     Dispose();
   };
-  delete hash;
+  //delete hash;
 }

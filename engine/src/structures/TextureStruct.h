@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "Interfaces.h"
+#include "structures/GPUUniformsStruct.h"
 
 using namespace std;
 

@@ -3,6 +3,7 @@
 #include "sausage.h"
 using namespace glm;
 using namespace std;
+using namespace BufferSettings;
 
 namespace LightType {
   enum LightType { Point, Directional, Spot };
@@ -22,13 +23,12 @@ struct Light {
 
   float linear_attenuation;
   float quadratic_attenuation;
-  float padding[2] = { 0, 0 };  // OpenGL padding. Aligned to vec4
 };
 
 struct Lights {
   int num_lights;
-  float padding[3] = { 0, 0, 0 }; // OpenGL padding. Aligned to vec4
-  Light lights[];
+  Light lights[MAX_LIGHTS];
+  char pad[GetPadTo16BytesNumOfBytes(sizeof(int) + sizeof(Light) * MAX_LIGHTS)]; // OpenGL padding. Aligned to vec4
 };
 
 // GPU END ///////////////////////////////////////////////////

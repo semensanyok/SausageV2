@@ -15,14 +15,18 @@ using namespace std;
 class Texture {
     bool is_destoyed;
     bool is_resident;
-    unsigned int ref_count;
 public:
     const SausageHashable* hash;
 
+    // monotonically increasing, Sausage managed
+    const unsigned int id;
+    // GL managed
     const GLuint texture_id;
+    // GL managed
     const GLuint64 texture_handle_ARB;
-    Texture(GLuint texture_id, GLuint64 texture_handle_ARB, SausageHashable* hash) : texture_id(texture_id), texture_handle_ARB(texture_handle_ARB),
-      hash{ hash }, is_resident(false), is_destoyed(false), ref_count(0) {};
+    Texture(GLuint texture_id, GLuint64 texture_handle_ARB, SausageHashable* hash, unsigned int id)
+      : texture_id(texture_id), texture_handle_ARB(texture_handle_ARB),
+      hash{ hash }, is_resident(false), is_destoyed(false), id{ id } {};
     void MakeResident();
     void MakeNonResident();
     void BindSingleSampler(unsigned int location);

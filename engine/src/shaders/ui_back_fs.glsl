@@ -14,7 +14,7 @@ in vs_out {
 {{ ui_utils }}
 {{ uniforms_locations }}
 
-{{ texture_handle_by_mesh_id_array }}
+{{ texture_handle_by_texture_id_array }}
 
 out vec4 color;
 

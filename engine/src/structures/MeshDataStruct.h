@@ -60,17 +60,17 @@ public:
   bool is_transparent;
 
   string name;
-  Texture* texture;
+  BlendTextures textures;
   Armature* armature;
   PhysicsData* physics_data;
 
 private:
   MeshData()
-    : texture{ nullptr },
+    : textures{ {0, } },
     physics_data{ nullptr },
     is_transparent{ false } {};
   MeshData(MeshLoadData* load_data)
-    : texture{ nullptr },
+    : textures{ {0, } },
     physics_data{ load_data->physics_data },
     armature{ load_data->armature },
     name{ load_data->name },

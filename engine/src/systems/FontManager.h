@@ -11,6 +11,7 @@
 #include "sausage.h"
 #include "OpenGLHelpers.h"
 #include "structures/ShaderStruct.h"
+#include "BufferSettings.h"
 #include <limits>
 #include FT_FREETYPE_H
 

@@ -16,7 +16,7 @@ out vec4 color;
 {{ light_uniforms }}
 {{ light_functions }}
 
-{{ texture_handle_by_mesh_id_array }}
+{{ texture_handle_by_texture_id_array }}
 
 
 void main(void) {

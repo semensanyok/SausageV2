@@ -514,6 +514,11 @@ void BufferStorage::Dispose() {
   CheckGLError();
 }
 
+void BufferStorage::BufferTextureHandle(Texture* texture)
+{
+  texture_handle_by_texture_id_ptr[texture->id] = texture->texture_handle_ARB;
+}
+
 void BufferStorage::BufferMeshTexture(MeshData* mesh) {
   SAUSAGE_DEBUG_ASSERT(mesh->buffer_id >= 0)
     if (mesh->texture != nullptr) {

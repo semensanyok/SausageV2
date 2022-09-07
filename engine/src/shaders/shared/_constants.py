@@ -38,7 +38,7 @@ const uint MESH_VERT_LOC_BONE_WEIGHTS = 6;
     "uniforms_locations":
 """
 const uint UNIFORMS_LOC = 0;
-const uint TEXTURE_HANDLE_BY_MESH_ID_ARRAY_LOC = 1;
+const uint TEXTURE_HANDLE_BY_TEXTURE_ID_ARRAY_LOC = 1;
 const uint LIGHTS_UNIFORM_LOC = 2;
 const uint FONT_UNIFORMS_LOC = 3;
 const uint FONT_TEXTURE_UNIFORM_LOC = 4;

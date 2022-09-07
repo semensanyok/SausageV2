@@ -75,8 +75,10 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
     GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers->basic_repeat);
     CheckGLError();
-    Texture* texture = new Texture(texture_id, tex_handle, tex_names);
+    Texture* texture = new Texture(texture_id, tex_handle, tex_names, texture_count++);
     path_to_tex[key_hash] = texture;
+    id_to_tex[texture->id] = texture;
+    buffer->BufferTextureHandle(texture);
     return texture;
 }
 
