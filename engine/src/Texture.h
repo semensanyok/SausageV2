@@ -13,10 +13,14 @@ using namespace std;
 * Stores id and handle for texture array.
 */
 class Texture {
+  friend class TextureManager;
     bool is_destoyed;
     bool is_resident;
+    SausageHashable* hash;
+    Texture(GLuint texture_id, GLuint64 texture_handle_ARB, SausageHashable* hash, unsigned int id)
+      : texture_id(texture_id), texture_handle_ARB(texture_handle_ARB),
+      hash{ hash }, is_resident(false), is_destoyed(false), id{ id } {};
 public:
-    const SausageHashable* hash;
 
     // monotonically increasing, Sausage managed
     const unsigned int id;
@@ -24,9 +28,7 @@ public:
     const GLuint texture_id;
     // GL managed
     const GLuint64 texture_handle_ARB;
-    Texture(GLuint texture_id, GLuint64 texture_handle_ARB, SausageHashable* hash, unsigned int id)
-      : texture_id(texture_id), texture_handle_ARB(texture_handle_ARB),
-      hash{ hash }, is_resident(false), is_destoyed(false), id{ id } {};
+    void MakeHashable(SausageHashable* hash);;
     void MakeResident();
     void MakeNonResident();
     void BindSingleSampler(unsigned int location);

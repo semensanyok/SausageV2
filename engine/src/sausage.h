@@ -26,6 +26,7 @@
 #include <queue>
 #include <string>
 #include <set>
+#include <stack>
 
 #include <algorithm>
 #include <numeric>

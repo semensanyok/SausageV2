@@ -5,7 +5,9 @@
 #include "structures/Interfaces.h"
 #include "structures/GPUStructs.h"
 #include "Texture.h"
-#include "BufferStorage.h"
+#include "BufferManager.h"
+#include "Macros.h"
+#include "NumberPool.h"
 
 /**
 
@@ -79,21 +81,34 @@ TODO TEXTURES MANAGING, TERRAIN INSPIRED:
 UPDATE 1 END --------------------------------------------------------------------------------------
 */
 
+struct GLTextureHandles {
+
+};
+
 class TextureManager : public SausageSystem {
     map<size_t, Texture*> path_to_tex;
     map<unsigned int, Texture*> id_to_tex;
     Samplers* samplers;
-    int texture_count = 0;
-    BufferStorage* buffer;
+    stack<unsigned int> texture_ids;
+    BufferManager* buffer;
 public:
-  TextureManager(Samplers* samplers, BufferStorage* buffer) :
-    samplers{ samplers }, buffer{ buffer } {};
+    NumberPool* id_pool;
+  TextureManager(Samplers* samplers, BufferManager* buffer) :
+    samplers{ samplers }, buffer{ buffer }, id_pool{ new NumberPool(BufferSettings::MAX_TEXTURE) } {
+  };
     /**
     * load texture array for mesh. diffuse + normal + height + specular.
     */
     Texture* LoadTextureArray(MaterialTexNames* tex_names);
 
     unique_ptr<RawTextureData> LoadRawTextureData(string& path);
+
+    GLuint AllocateGLTextureId();
+
+    /**
+     * allocates texture id and handle, without buffered data
+    */
+    Texture* AllocateTextureWithHandle(GLuint texture_id, GLuint sampler);
 private:
     GLenum GetTexFormat(int bytes_per_pixel, bool for_storage);
 

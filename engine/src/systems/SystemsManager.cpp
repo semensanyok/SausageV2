@@ -21,7 +21,7 @@ void SystemsManager::InitSystems() {
 	texture_manager = new TextureManager(samplers, buffer_manager);
     shader_manager = new ShaderManager();
     shader_manager->SetupShaders();
-	font_manager = new FontManager(samplers,mesh_manager, renderer, shader_manager->all_shaders);
+	font_manager = new FontManager(samplers,mesh_manager, renderer, shader_manager->all_shaders, texture_manager);
 	font_manager->Init();
 	physics_manager = new PhysicsManager(state_manager);
   IF_SAUSAGE_DEBUG_DRAW_PHYSICS(

@@ -46,6 +46,7 @@ public:
   MeshDataBase()
     : vertex_offset{ -1 },
     index_offset{ -1 },
+    instance_id{ 0 },
     buffer_id{ -1 },
     base_mesh{ nullptr },
     transform_offset{ -1 } {};

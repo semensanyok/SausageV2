@@ -1,6 +1,9 @@
 #include "Texture.h"
+#include <SystemsManager.h>
 
 using namespace std;
+
+void Texture::MakeHashable(SausageHashable* hash) { hash = hash; }
 
 /**
 * Stores id and handle for texture array.
@@ -34,5 +37,6 @@ inline Texture::~Texture() {
   if (!is_destoyed) {
     Dispose();
   };
+  SystemsManager::GetInstance()->texture_manager->id_pool->ReleaseNumber(id);
   //delete hash;
 }

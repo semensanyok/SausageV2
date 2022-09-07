@@ -5,7 +5,6 @@
 */
 
 Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
-    GLuint texture_id;
     if (tex_names == nullptr) {
       LOG(string("texture is nullptr"));
       return nullptr;
@@ -33,8 +32,11 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
         LOG((ostringstream() << "Error on IMG_Load: " << SDL_GetError()).str());
         return nullptr;
     }
-    glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
+    GLuint texture_id = AllocateGLTextureId();
+    Texture* texture = AllocateTextureWithHandle(texture_id, samplers->basic_repeat);
+    texture->MakeHashable(tex_names);
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture->texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
         8,                    //mipmaps. 1 == no mipmaps.
         GetTexFormat(surface->format->BytesPerPixel, true), //Internal format
@@ -73,12 +75,11 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
     //    LoadLayer(tex_names->opacity, TextureType::Opacity);
     //}
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-    GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers->basic_repeat);
     CheckGLError();
-    Texture* texture = new Texture(texture_id, tex_handle, tex_names, texture_count++);
     path_to_tex[key_hash] = texture;
     id_to_tex[texture->id] = texture;
-    buffer->BufferTextureHandle(texture);
+    buffer->storage->BufferTextureHandle(texture);
+
     return texture;
 }
 
@@ -99,25 +100,40 @@ GLenum TextureManager::GetTexFormat(int bytes_per_pixel, bool for_storage) {
     return for_storage ? GL_RGBA8 : GL_RGBA;
 }
 
+GLuint TextureManager::AllocateGLTextureId()
+{
+  GLuint texture_id;
+  glGenTextures(1, &texture_id);
+  DEBUG_EXPR(CheckGLError());
+  return texture_id;
+}
+
+Texture* TextureManager::AllocateTextureWithHandle(GLuint texture_id, GLuint Sampler)
+{
+  GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers->basic_repeat);
+  DEBUG_EXPR(CheckGLError());
+  return new Texture(texture_id, tex_handle, nullptr, id_pool->ObtainNumber());
+}
+
 bool TextureManager::LoadLayer(string name, TextureType type) {
-    SDL_Surface* surface = IMG_Load(GetTexturePath(name).c_str());
-    if (surface == NULL)
-    {
-        LOG((ostringstream() << "Error on IMG_Load: " << SDL_GetError()).str());
-        return false;
-    }
-    else
-    {
-        CheckGLError();
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-            0,
-            0, 0, (int)type,
-            surface->w, surface->h, 1,
-            GetTexFormat(surface->format->BytesPerPixel, false),
-            GL_UNSIGNED_BYTE,
-            surface->pixels);
-        CheckGLError();
-        SDL_FreeSurface(surface);
-        return true;
-    }
+  SDL_Surface* surface = IMG_Load(GetTexturePath(name).c_str());
+  if (surface == NULL)
+  {
+    LOG((ostringstream() << "Error on IMG_Load: " << SDL_GetError()).str());
+    return false;
+  }
+  else
+  {
+    CheckGLError();
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+        0,
+        0, 0, (int)type,
+        surface->w, surface->h, 1,
+        GetTexFormat(surface->format->BytesPerPixel, false),
+        GL_UNSIGNED_BYTE,
+        surface->pixels);
+    CheckGLError();
+    SDL_FreeSurface(surface);
+    return true;
+  }
 }

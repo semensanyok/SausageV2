@@ -12,6 +12,7 @@
 #include "OpenGLHelpers.h"
 #include "structures/ShaderStruct.h"
 #include "BufferSettings.h"
+#include "TextureManager.h"
 #include <limits>
 #include FT_FREETYPE_H
 
@@ -61,7 +62,7 @@ class FontManager : public SausageSystem {
   Samplers* samplers;
   map<int, pair<Texture*, map<char, Character>>> size_chars;
   const unsigned int command_buffer_size = 1;
-
+  TextureManager* texture_manager;
   DrawCall* draw_call_3d;
   // TODO: free after all buttons / texts initialized.
   FT_Face ft_face;
@@ -69,8 +70,9 @@ class FontManager : public SausageSystem {
   FontManager(Samplers* samplers,
     MeshManager* mesh_manager,
     Renderer* renderer,
-    Shaders* shaders)
-      : samplers{samplers} {
+    Shaders* shaders,
+    TextureManager* texture_manager)
+    : samplers{ samplers }, texture_manager{texture_manager} {
   };
   ~FontManager(){};
   void Init() {
@@ -236,9 +238,11 @@ class FontManager : public SausageSystem {
   //  
   //}
   void _InitFontTexture(int font_size) {
-    GLuint texture_id;
-    glGenTextures(1, &texture_id);
-    CheckGLError();
+    Texture* texture;
+    {
+      GLuint texture_id = texture_manager->AllocateGLTextureId();
+      texture = texture_manager->AllocateTextureWithHandle(texture_id, samplers->font_sampler);
+    }
 
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
@@ -253,7 +257,7 @@ class FontManager : public SausageSystem {
     FT_Set_Pixel_Sizes(ft_face, 0, font_size);
     FT_Load_Char(ft_face, 'A', FT_LOAD_RENDER);
 
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture->texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
                    1,                    // mipmaps. 1 == no mipmaps.
                    GL_R8,                // Internal format
@@ -292,9 +296,6 @@ class FontManager : public SausageSystem {
           (ft_face->glyph->metrics.height - ft_face->glyph->metrics.horiBearingY) >> 6};
       this->size_chars[font_size].second[c] = character;
     }
-    GLuint64 tex_handle =
-        glGetTextureSamplerHandleARB(texture_id, samplers->font_sampler);
-    auto texture = new Texture(texture_id, tex_handle, {});
     this->size_chars[font_size].first = texture;
     CheckGLError();
   }

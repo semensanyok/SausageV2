@@ -520,10 +520,12 @@ void BufferStorage::BufferTextureHandle(Texture* texture)
 }
 
 void BufferStorage::BufferMeshTexture(MeshData* mesh) {
-  SAUSAGE_DEBUG_ASSERT(mesh->buffer_id >= 0)
-    if (mesh->texture != nullptr) {
-      texture_handle_by_texture_id_ptr[mesh->buffer_id] = mesh->texture->texture_handle_ARB;
-    }
+  if (mesh->transform_offset == -1) {
+    mesh->transform_offset = _GetTransformBucket(mesh);
+  }
+  uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id] =
+    mesh->textures;
+  is_need_barrier = true;
 }
 
 void BufferStorage::BufferFontTexture(MeshDataBase* mesh, Texture* texture) {

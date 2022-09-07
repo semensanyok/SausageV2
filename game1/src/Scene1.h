@@ -216,12 +216,13 @@ class Scene1 : public Scene {
             mesh);
       }
       if (MeshData* mesh = dynamic_cast<MeshData*>(new_meshes_data[i])) {
-        mesh->texture = systems_manager->texture_manager->LoadTextureArray(
+        Texture* texture = systems_manager->texture_manager->LoadTextureArray(
             new_meshes[i]->tex_names);
-        if (mesh->texture != nullptr) {
+        if (texture != nullptr) {
+          mesh->textures = { 1, {1.0, texture->id } };
           systems_manager->buffer_manager->mesh_data_buffer->BufferMeshTexture(
               mesh);
-          mesh->texture->MakeResident();
+          texture->MakeResident();
         }
       }
     }

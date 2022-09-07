@@ -9,10 +9,10 @@
 #include "OverlayBufferConsumer3D.h"
 
 class BufferManager : public SausageSystem {
-  friend class ControllerEventProcessorEditor;
-	BufferStorage* storage;
 	MeshManager* mesh_manager;
 public:
+	BufferStorage* storage;
+
 	MeshDataBufferConsumer* mesh_data_buffer;
 	UIBufferConsumer* ui_buffer;
     OverlayBufferConsumer3D* overlay_3d_buffer;
