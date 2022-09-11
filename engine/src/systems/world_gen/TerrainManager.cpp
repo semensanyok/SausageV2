@@ -202,7 +202,7 @@ void TerrainManager::CreateTerrain() {
   Texture* texture = texture_manager->LoadTextureArray(load_data[0]->tex_names);
   texture->MakeResident();
 
-  mesh->textures = { 1, {1.0, texture->id} };
+  mesh->textures = { {1.0, texture->id}, 1 };
   mesh_data_buffer->BufferMeshTexture(mesh);
 
   float light_power = 1.0;

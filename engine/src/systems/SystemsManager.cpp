@@ -24,11 +24,11 @@ void SystemsManager::InitSystems() {
 	font_manager = new FontManager(samplers,mesh_manager, renderer, shader_manager->all_shaders, texture_manager);
 	font_manager->Init();
 	physics_manager = new PhysicsManager(state_manager);
-  IF_SAUSAGE_DEBUG_DRAW_PHYSICS(
+  if (GameSettings::phys_debug_draw) {
     _CreateDebugDrawer();
     bullet_debug_drawer->Activate();
     physics_manager->SetDebugDrawer(bullet_debug_drawer);
-  );
+  };
 	anim_manager = new AnimationManager(state_manager, mesh_manager, buffer_manager);
 
 	async_manager = new AsyncTaskManager();

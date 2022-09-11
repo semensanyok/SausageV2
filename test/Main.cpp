@@ -7,6 +7,7 @@
 #include "GtkGLOverlayTest.h"
 #include "ScreenOverlayManagerTest.h"
 #include "world_gen/TerrainTest.h"
+#include "GLHelpersTest.h"
 
 #undef main
 
@@ -19,8 +20,10 @@ int main()
 	//UIFontManagerTest().run();
   //FontManagerTest3D().run();
   //GtkGLOverlayTest().run();
-  ScreenOverlayManagerTest().run();
+
+  //ScreenOverlayManagerTest().run();
   //TerrainTest().run();
 
+  GLHelpersTest().run();
   return 0;
 }

@@ -10,7 +10,7 @@ class NumberPool {
   stack<unsigned int> numbers;
 public:
   NumberPool(unsigned int max_number) : max_number{ max_number } {
-    for (unsigned int i = max_number; i > 0; i--) {
+    for (int i = max_number; i >= 0; i--) {
       numbers.push(i);
     }
   };

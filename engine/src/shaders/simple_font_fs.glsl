@@ -3,6 +3,8 @@
 #extension GL_ARB_bindless_texture : require
 #extension GL_ARB_shader_storage_buffer_object : require
 
+{{ uniforms_locations }}
+
 in vs_out {
     flat int base_instance;
     flat int glyph_id;
@@ -10,7 +12,7 @@ in vs_out {
     vec2 uv;
 } In;
 
-layout (std430, binding = 4) buffer FontTextureArray
+layout (std430, binding = FONT_TEXTURE_UNIFORM_LOC) buffer FontTextureArray
 {
     sampler2DArray glyphs[];
 };

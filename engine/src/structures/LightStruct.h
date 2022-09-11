@@ -9,6 +9,10 @@ namespace LightType {
   enum LightType { Point, Directional, Spot };
 }
 
+/**
+@see './docs/Std140_Std430_GL_alignment.md' for alignment explanation
+*/
+
 // GPU START ///////////////////////////////////////////////////
 struct Light {
   vec4 direction;
@@ -23,12 +27,12 @@ struct Light {
 
   float linear_attenuation;
   float quadratic_attenuation;
+  float pad[2]; // OpenGL padding. Aligned to largest struct elem == vec4 (std430)
 };
 
 struct Lights {
   int num_lights;
   Light lights[MAX_LIGHTS];
-  char pad[GetPadTo16BytesNumOfBytes(sizeof(int) + sizeof(Light) * MAX_LIGHTS)]; // OpenGL padding. Aligned to vec4
 };
 
 // GPU END ///////////////////////////////////////////////////

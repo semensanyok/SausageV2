@@ -205,7 +205,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/systems/gui/ScreenOverlayManager.cpp"
 "src/systems/ShaderManager.cpp"
 "src/systems/world_gen/TerrainManager.cpp"
-${source} "src/structures/Interfaces.h" "src/utils/NumberPool.cpp")
+${source} "src/structures/Interfaces.h" "src/utils/NumberPool.cpp" "src/utils/GLHelpers.cpp")
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 

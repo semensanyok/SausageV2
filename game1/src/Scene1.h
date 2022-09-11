@@ -219,7 +219,7 @@ class Scene1 : public Scene {
         Texture* texture = systems_manager->texture_manager->LoadTextureArray(
             new_meshes[i]->tex_names);
         if (texture != nullptr) {
-          mesh->textures = { 1, {1.0, texture->id } };
+          mesh->textures = { {1.0, texture->id }, 1 };
           systems_manager->buffer_manager->mesh_data_buffer->BufferMeshTexture(
               mesh);
           texture->MakeResident();

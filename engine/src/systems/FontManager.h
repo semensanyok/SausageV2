@@ -76,6 +76,7 @@ class FontManager : public SausageSystem {
   };
   ~FontManager(){};
   void Init() {
+    DEBUG_EXPR(CheckGLError());
     _InitFontTextures();
   }
   //void WriteText3D(string& text, vec3 color, mat4& transform) {
@@ -243,7 +244,7 @@ class FontManager : public SausageSystem {
       GLuint texture_id = texture_manager->AllocateGLTextureId();
       texture = texture_manager->AllocateTextureWithHandle(texture_id, samplers->font_sampler);
     }
-
+    DEBUG_EXPR(CheckGLError());
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
       std::cout << "ERROR::FREETYPE: Could not init FreeType Library"
@@ -269,7 +270,7 @@ class FontManager : public SausageSystem {
     );
     glPixelStorei(GL_UNPACK_ALIGNMENT,
                   1);  // disable byte-alignment restriction
-    CheckGLError();
+    DEBUG_EXPR(CheckGLError());
 
     for (unsigned char c = 0; c < BufferSettings::TEXTURES_SINGLE_FONT; c++) {
       // load character glyph
@@ -286,7 +287,7 @@ class FontManager : public SausageSystem {
                       GL_RED,            // format
                       GL_UNSIGNED_BYTE,  // type
                       ft_face->glyph->bitmap.buffer);
-      CheckGLError();
+      DEBUG_EXPR(CheckGLError());
       // now store character for later use
       Character character = {
           ivec2(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows),
@@ -297,6 +298,6 @@ class FontManager : public SausageSystem {
       this->size_chars[font_size].second[c] = character;
     }
     this->size_chars[font_size].first = texture;
-    CheckGLError();
+    DEBUG_EXPR(CheckGLError());
   }
 };

@@ -109,6 +109,11 @@ public:
      * allocates texture id and handle, without buffered data
     */
     Texture* AllocateTextureWithHandle(GLuint texture_id, GLuint sampler);
+
+    /**
+     * allocates texture id and handle, without buffered data
+    */
+    Texture* AddToLookups(Texture* texture);
 private:
     GLenum GetTexFormat(int bytes_per_pixel, bool for_storage);
 

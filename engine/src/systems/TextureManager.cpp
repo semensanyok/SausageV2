@@ -34,7 +34,6 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
     }
     GLuint texture_id = AllocateGLTextureId();
     Texture* texture = AllocateTextureWithHandle(texture_id, samplers->basic_repeat);
-    texture->MakeHashable(tex_names);
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture->texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
@@ -75,9 +74,9 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
     //    LoadLayer(tex_names->opacity, TextureType::Opacity);
     //}
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-    CheckGLError();
-    path_to_tex[key_hash] = texture;
-    id_to_tex[texture->id] = texture;
+    DEBUG_EXPR(CheckGLError());
+    texture->MakeHashable(tex_names);
+    AddToLookups(texture);
     buffer->storage->BufferTextureHandle(texture);
 
     return texture;
@@ -87,6 +86,15 @@ unique_ptr<RawTextureData> TextureManager::LoadRawTextureData(string& path)
 {
   SDL_Surface* surface = IMG_Load(path.c_str());
   return make_unique<RawTextureData>(surface);
+}
+
+Texture* TextureManager::AddToLookups(Texture* texture)
+{
+  this->id_to_tex[texture->id] = texture;
+  if (texture->hash != nullptr) {
+    this->path_to_tex[texture->hash->Hash()] = texture;
+  }
+  return texture;
 }
 
 GLenum TextureManager::GetTexFormat(int bytes_per_pixel, bool for_storage) {
@@ -112,7 +120,9 @@ Texture* TextureManager::AllocateTextureWithHandle(GLuint texture_id, GLuint Sam
 {
   GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers->basic_repeat);
   DEBUG_EXPR(CheckGLError());
-  return new Texture(texture_id, tex_handle, nullptr, id_pool->ObtainNumber());
+  Texture* texture = new Texture(texture_id, tex_handle, nullptr, id_pool->ObtainNumber());
+  AddToLookups(texture);
+  return texture;
 }
 
 bool TextureManager::LoadLayer(string name, TextureType type) {
@@ -124,7 +134,6 @@ bool TextureManager::LoadLayer(string name, TextureType type) {
   }
   else
   {
-    CheckGLError();
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
         0,
         0, 0, (int)type,
@@ -132,7 +141,7 @@ bool TextureManager::LoadLayer(string name, TextureType type) {
         GetTexFormat(surface->format->BytesPerPixel, false),
         GL_UNSIGNED_BYTE,
         surface->pixels);
-    CheckGLError();
+    DEBUG_EXPR(CheckGLError());
     SDL_FreeSurface(surface);
     return true;
   }

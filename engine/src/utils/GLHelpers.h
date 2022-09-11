@@ -4,6 +4,7 @@
 
 using namespace std;
 
-constexpr size_t GetPadTo16BytesNumOfBytes(size_t size_of_type) {
-	return 16 - size_of_type % 16;
-}
+// cannot be constexpr because of `va_start`
+//size_t GetPadCharsNumToLargestElement(int num, ...);
+
+//constexpr size_t GetPadCharsNumToLargestElement(vector<size_t> sizes);

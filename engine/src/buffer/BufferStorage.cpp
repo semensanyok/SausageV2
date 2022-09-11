@@ -1,4 +1,5 @@
 #include "BufferStorage.h"
+#include "Macros.h"
 
 BufferMargins BufferStorage::RequestStorage(float buffer_part_percent_vertex,
                                             float buffer_part_percent_index) {
@@ -107,6 +108,7 @@ void BufferStorage::UnmapBuffer(CommandBuffer *buf) {
   }
 }
 CommandBuffer *BufferStorage::CreateCommandBuffer(unsigned int size) {
+  DEBUG_EXPR(CheckGLError());
   auto buf = new CommandBuffer();
   buf->size = size;
   buf->buffer_lock = new BufferLock();
@@ -117,7 +119,7 @@ CommandBuffer *BufferStorage::CreateCommandBuffer(unsigned int size) {
   glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buf->id);
   glBufferStorage(GL_DRAW_INDIRECT_BUFFER,
                   size * sizeof(DrawElementsIndirectCommand), NULL, flags);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   return buf;
 }
 void BufferStorage::ActivateCommandBuffer(CommandBuffer *buf) {
@@ -208,8 +210,7 @@ void BufferStorage::BufferTransform(MeshData *mesh) {
   uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
       mesh->transform;
   if (mesh->instance_id == 0) {
-    uniforms_ptr->transform_offset[mesh->buffer_id + mesh->instance_id] =
-        mesh->transform_offset;
+    uniforms_ptr->transform_offset[mesh->buffer_id] = mesh->transform_offset;
   }
   is_need_barrier = true;
 }

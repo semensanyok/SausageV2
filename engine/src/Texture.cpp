@@ -3,7 +3,10 @@
 
 using namespace std;
 
-void Texture::MakeHashable(SausageHashable* hash) { hash = hash; }
+void Texture::MakeHashable(SausageHashable* hash) {
+  hash = hash;
+  SystemsManager::GetInstance()->texture_manager->AddToLookups(this);
+}
 
 /**
 * Stores id and handle for texture array.

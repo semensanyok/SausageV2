@@ -10,6 +10,7 @@ in vs_out {
 } In;
 
 {{ controller_uniforms_shared }}
+{{ ui_buffers_capacity }}
 {{ ui_uniforms_shared }}
 {{ ui_utils }}
 {{ uniforms_locations }}

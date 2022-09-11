@@ -1,10 +1,47 @@
 mesh = {
+    "mesh_fs_functions": 
+"""
+// TODO: choose blend color function. blend normals and specular
+//       for starter just diffuse color blend
+void SetBlendColor() {
+    vec3 light_dir = normalize(vec3(-light.direction));
+    vec3 view_dir = normalize(view_pos - In.frag_pos);
+
+    int texture_id = blend_textures[In.base_instance].textures[0]
+    vec4 mat_diffuse_with_opacity = texture(textures[texture_id], vec3(In.uv, DIFFUSE_TEX)).rgba;
+    vec3 mat_diffuse = mat_diffuse_with_opacity.rgb;
+    vec3 mat_specular = texture(textures[texture_id], vec3(In.uv, SPECULAR_TEX)).rgb;
+    vec3 mat_normal = texture(textures[texture_id], vec3(In.uv, NORMAL_TEX)).rgb * 2.0 - 1.0;
+    mat_normal = normalize(In.TBN * mat_normal);
+
+    vec3 view_dir = normalize(view_pos - In.frag_pos);
+  
+    vec3 res = mat_diffuse * AMBIENT_CONST;
+    vec3 light_diffuse = vec3(light.color) * max(dot(mat_normal, light_dir), 0.0) * mat_diffuse;
+    res += light_diffuse;
+    res += GetSpecular(light, view_dir, light_dir, mat_specular);
+    // TODO: add light color for all blend textures, before blend
+    AddLightColor(In.frag_pos, mat_normal, res, view_dir, mat_diffuse, mat_specular);
+    color = vec4(res, mat_diffuse_with_opacity.a);
+};
+""",
     "mesh_uniforms": 
 """
+struct TextureBlend {
+  float blend_weight;
+  unsigned int texture_id;
+};
+
+struct BlendTextures {
+  TextureBlend textures[MAX_BLEND_TEXTUERS];
+  unsigned int num_textures;
+};
+
 layout (std430, binding = UNIFORMS_LOC) buffer UniformData
 {
     mat4 bones_transforms[MAX_BONES];
-    mat4 transforms[MAX_TRANSFORM];
+    mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES];
+    BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
     unsigned int transform_offset[MAX_TRANSFORM_OFFSET];
 };
 """,

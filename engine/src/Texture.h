@@ -16,7 +16,7 @@ class Texture {
   friend class TextureManager;
     bool is_destoyed;
     bool is_resident;
-    SausageHashable* hash;
+    SausageHashable* hash = nullptr;
     Texture(GLuint texture_id, GLuint64 texture_handle_ARB, SausageHashable* hash, unsigned int id)
       : texture_id(texture_id), texture_handle_ARB(texture_handle_ARB),
       hash{ hash }, is_resident(false), is_destoyed(false), id{ id } {};
@@ -28,7 +28,7 @@ public:
     const GLuint texture_id;
     // GL managed
     const GLuint64 texture_handle_ARB;
-    void MakeHashable(SausageHashable* hash);;
+    void MakeHashable(SausageHashable* hash);
     void MakeResident();
     void MakeNonResident();
     void BindSingleSampler(unsigned int location);

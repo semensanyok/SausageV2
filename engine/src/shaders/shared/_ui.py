@@ -1,13 +1,14 @@
-ui = { "ui_uniforms_shared" :
+ui = { 
+    "ui_uniforms_shared" :
 """
-const uint MAX_TRANSFORM = 400;
-layout (std430, binding = 5) buffer UniformDataUI
+const uint MAX_UI_UNIFORM_TRANSFORM = 400;
+layout (std430, binding = UI_UNIFORM_LOC) buffer UniformDataUI
 {
-    ivec4 min_max_x_y[MAX_TRANSFORM];
-    vec2 transforms[MAX_TRANSFORM];
+    ivec4 min_max_x_y[MAX_UI_UNIFORM_TRANSFORM];
+    vec2 transforms[MAX_UI_UNIFORM_TRANSFORM];
 };
 """,
-"ui_utils":
+    "ui_utils":
 """
 bool IsMouseHover(int mouse_x, int mouse_y, int base_instance)
 {
@@ -17,6 +18,13 @@ bool IsMouseHover(int mouse_x, int mouse_y, int base_instance)
         && mouse_y > _min_max_x_y.z
         && mouse_y < _min_max_x_y.w;
 }
+""",
+    "3d_overlay_uniforms":
+"""
+layout (std430, binding = FONT_UNIFORMS_LOC) buffer FontUniformData
+{
+    mat4 transforms[MAX_3D_OVERLAY_TRANSFORM];
+};
 """
 }
 

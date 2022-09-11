@@ -19,11 +19,20 @@ const int SPECULAR_TEX = 2;
     "mesh_buffers_capacity": 
 """
 const uint MAX_COMMAND = 1000;
-const uint MAX_TRANSFORM = 4000;
+const unsigned long MAX_BASE_MESHES = 4000;
+const uint MAX_BASE_AND_INSTANCED_MESHES = 4000;
 const uint MAX_BONES = 100000;
-const uint MAX_TRANSFORM_OFFSET = MAX_TRANSFORM * 10;
+const uint MAX_TRANSFORM_OFFSET = MAX_BASE_AND_INSTANCED_MESHES * 10;
 const uint MAX_BLEND_TEXTUERS = 16;
-const uint MAX_TEXTURE = MAX_COMMAND;
+const uint MAX_TEXTURE = 1000;
+""",
+"ui_buffers_capacity":
+"""
+const unsigned long MAX_3D_OVERLAY_TRANSFORM = 4000;
+const unsigned long MAX_3D_OVERLAY_TRANSFORM_OFFSET = MAX_3D_OVERLAY_TRANSFORM * 10;
+const unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;
+const unsigned long MAX_UI_UNIFORM_TRANSFORM = 400;
+const unsigned long MAX_UI_UNIFORM_OFFSET = MAX_UI_UNIFORM_TRANSFORM * 10;
 """,
     "mesh_vertex_locations":
 """

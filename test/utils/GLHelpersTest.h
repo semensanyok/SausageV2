@@ -7,12 +7,17 @@
 using namespace std;
 using namespace glm;
 
-class AssetUtilsTest {
+class GLHelpersTest {
 public:
   static void run() {
-    assert(GetPadTo16BytesNumOfBytes(sizeof(vec4)) == 0);
-    assert(GetPadTo16BytesNumOfBytes(sizeof(int)) == 12);
-    assert(GetPadTo16BytesNumOfBytes(sizeof(byte)) == 15);
-    assert(GetPadTo16BytesNumOfBytes(sizeof(byte)) == 15);
+    //assert(GetPadCharsNumToLargestElement(2, sizeof(vec4), sizeof(vec4)) == 0);
+    //assert(GetPadCharsNumToLargestElement(2, sizeof(vec4), sizeof(int)) == 12);
+    //assert(GetPadCharsNumToLargestElement(2, sizeof(vec4), sizeof(char)) == 15);
+    //assert(GetPadCharsNumToLargestElement(3, sizeof(vec4), sizeof(char), sizeof(int)) == 11);
+
+    //assert(GetPadCharsNumToLargestElement({ sizeof(vec4), sizeof(vec4) }) == 0);
+    //assert(GetPadCharsNumToLargestElement({sizeof(vec4), sizeof(int)}) == 12);
+    //assert(GetPadCharsNumToLargestElement({sizeof(vec4), sizeof(char)}) == 15);
+    //assert(GetPadCharsNumToLargestElement({sizeof(vec4), sizeof(char), sizeof(int)}) == 11);
   };
 };

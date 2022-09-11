@@ -10,6 +10,10 @@ using namespace std;
 
 using namespace BufferSettings;
 
+/**
+@see './docs/Std140_Std430_GL_alignment.md' for alignment explanation
+*/
+
 namespace UniformsLocations {
   const int UNIFORMS_LOC = 0;
   const int TEXTURE_LOC = 1;
@@ -20,26 +24,28 @@ namespace UniformsLocations {
   const int CONTROLLER_UNIFORM_LOC = 6;
 }
 
+// largest base alignment value of any of its members == 4 bytes
 struct TextureBlend {
   float blend_weight; // 4 bytes
   // monotonically increasing, Sausage managed. see Texture->id.
-  unsigned int texture_id; // 4 bytes for 64 bit build (who uses 32 anyway)
+  unsigned int texture_id; // 4 bytes for 64 bit build
+  // no padding needed, as all members are of equal size
 };
 
+// largest base alignment value of any of its members == 4 bytes
 struct BlendTextures {
-  unsigned int num_textures; // 4 bytes for 64 bit build (who uses 32 anyway)
-  TextureBlend textures[MAX_BLEND_TEXTUERS];
+  TextureBlend textures[MAX_BLEND_TEXTUERS]; // alignment 4 bytes
+  unsigned int num_textures; // alignment 4 bytes for 64 bit build
+  // no padding needed, as all members are of equal size
 };
 
 // some GPU structs resides in other headers, i.e. Light.h
 struct MeshUniformData {
-  mat4 bones_transforms[MAX_BONES];
-  mat4 transforms[MAX_BASE_MESHES];
-  BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
-  unsigned int transform_offset[MAX_BASE_AND_INSTANCED_MESHES];
-  char pad[GetPadTo16BytesNumOfBytes(
-    sizeof(unsigned int) * MAX_BASE_AND_INSTANCED_MESHES
-    + sizeof(BlendTextures))];
+  mat4 bones_transforms[MAX_BONES]; // aligned to vec4 == 16 bytes
+  mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES]; // aligned to vec4 == 16 bytes
+  BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES]; // alignment 4 bytes
+  unsigned int transform_offset[MAX_BASE_MESHES]; // alignment 4 bytes
+  // no padding needed, topmost structure
 };
 
 struct UniformData3DOverlay {

@@ -15,6 +15,10 @@ struct AsyncTask {
 
 class AsyncTaskManager : public SausageSystem {
 	int MAX_THREADS = std::thread::hardware_concurrency();
+    // not cast in stone, first iteration - made simple. dedicated threads for heavy tasks, and one thread for others.
+    // for better work distribution consider:
+    //  - having a pool of threads and pool of tasks.
+    //  - have high/low priority tasks.
 	thread physics_thread;
 	thread anim_thread;
 	thread misc_thread;
