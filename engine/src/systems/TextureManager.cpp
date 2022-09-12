@@ -1,4 +1,4 @@
-#include "TextureManager.h"
+﻿#include "TextureManager.h"
 
 /**
 * load texture array for mesh. diffuse + normal + height + specular.
@@ -33,9 +33,8 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
         return nullptr;
     }
     GLuint texture_id = AllocateGLTextureId();
-    Texture* texture = AllocateTextureWithHandle(texture_id, samplers->basic_repeat);
 
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture->texture_id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
         8,                    //mipmaps. 1 == no mipmaps.
         GetTexFormat(surface->format->BytesPerPixel, true), //Internal format
@@ -75,9 +74,12 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
     //}
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
     DEBUG_EXPR(CheckGLError());
+
+    Texture* texture = AllocateTextureWithHandle(texture_id, samplers->basic_repeat);
+    buffer->storage->BufferTextureHandle(texture);
+
     texture->MakeHashable(tex_names);
     AddToLookups(texture);
-    buffer->storage->BufferTextureHandle(texture);
 
     return texture;
 }
@@ -116,9 +118,32 @@ GLuint TextureManager::AllocateGLTextureId()
   return texture_id;
 }
 
-Texture* TextureManager::AllocateTextureWithHandle(GLuint texture_id, GLuint Sampler)
+/**
+  * https://www.khronos.org/opengl/wiki/Bindless_Texture
+    Handle creation
+    Texture handles are created using glGetTextureHandleARB or glGetTextureSamplerHandleARB.
+    GLuint64 glGetTextureHandleARB(GLuint texture​);
+    GLuint64 glGetTextureSamplerHandleARB(GLuint texture​, GLuint sampler​);
+        These functions accept the name of a texture object and optionally a sampler object
+      to produce a texture handle.
+        Multiple invocations with the same texture (or texture/sampler pair) will produce the same handle.
+        Once a handle is created for a texture/sampler, none of its state can be changed.
+        For Buffer Textures, this includes the buffer object that is currently attached to it
+      (which also means that you cannot create a handle for a buffer texture
+      that does not have a buffer attached).
+        Not only that, in such cases the buffer object itself becomes immutable;
+      it cannot be reallocated with glBufferData.
+        Though just as with textures, its storage can still be mapped and have its data modified
+      by other functions as normal.
+
+    * That means -
+      call glGetTextureSamplerHandleARB
+      AFTER buffering data.
+      cannot call it beforehand
+*/
+Texture* TextureManager::AllocateTextureWithHandle(GLuint texture_id, GLuint sampler)
 {
-  GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, samplers->basic_repeat);
+  GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, sampler);
   DEBUG_EXPR(CheckGLError());
   Texture* texture = new Texture(texture_id, tex_handle, nullptr, id_pool->ObtainNumber());
   AddToLookups(texture);

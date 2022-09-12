@@ -4,8 +4,7 @@ mesh = {
 // TODO: choose blend color function. blend normals and specular
 //       for starter just diffuse color blend
 void SetBlendColor() {
-    vec3 light_dir = normalize(vec3(-light.direction));
-    vec3 view_dir = normalize(view_pos - In.frag_pos);
+    // TODO: add light color for all blend textures, before blend
 
     int texture_id = blend_textures[In.base_instance].textures[0]
     vec4 mat_diffuse_with_opacity = texture(textures[texture_id], vec3(In.uv, DIFFUSE_TEX)).rgba;
@@ -17,11 +16,8 @@ void SetBlendColor() {
     vec3 view_dir = normalize(view_pos - In.frag_pos);
   
     vec3 res = mat_diffuse * AMBIENT_CONST;
-    vec3 light_diffuse = vec3(light.color) * max(dot(mat_normal, light_dir), 0.0) * mat_diffuse;
-    res += light_diffuse;
-    res += GetSpecular(light, view_dir, light_dir, mat_specular);
-    // TODO: add light color for all blend textures, before blend
     AddLightColor(In.frag_pos, mat_normal, res, view_dir, mat_diffuse, mat_specular);
+    
     color = vec4(res, mat_diffuse_with_opacity.a);
 };
 """,

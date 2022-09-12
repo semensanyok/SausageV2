@@ -239,11 +239,7 @@ class FontManager : public SausageSystem {
   //  
   //}
   void _InitFontTexture(int font_size) {
-    Texture* texture;
-    {
-      GLuint texture_id = texture_manager->AllocateGLTextureId();
-      texture = texture_manager->AllocateTextureWithHandle(texture_id, samplers->font_sampler);
-    }
+    GLuint texture_id = texture_manager->AllocateGLTextureId();
     DEBUG_EXPR(CheckGLError());
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
@@ -258,7 +254,7 @@ class FontManager : public SausageSystem {
     FT_Set_Pixel_Sizes(ft_face, 0, font_size);
     FT_Load_Char(ft_face, 'A', FT_LOAD_RENDER);
 
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture->texture_id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
                    1,                    // mipmaps. 1 == no mipmaps.
                    GL_R8,                // Internal format
@@ -297,6 +293,7 @@ class FontManager : public SausageSystem {
           (ft_face->glyph->metrics.height - ft_face->glyph->metrics.horiBearingY) >> 6};
       this->size_chars[font_size].second[c] = character;
     }
+    Texture* texture = texture_manager->AllocateTextureWithHandle(texture_id, samplers->font_sampler);
     this->size_chars[font_size].first = texture;
     DEBUG_EXPR(CheckGLError());
   }

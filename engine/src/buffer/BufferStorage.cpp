@@ -108,7 +108,6 @@ void BufferStorage::UnmapBuffer(CommandBuffer *buf) {
   }
 }
 CommandBuffer *BufferStorage::CreateCommandBuffer(unsigned int size) {
-  DEBUG_EXPR(CheckGLError());
   auto buf = new CommandBuffer();
   buf->size = size;
   buf->buffer_lock = new BufferLock();
