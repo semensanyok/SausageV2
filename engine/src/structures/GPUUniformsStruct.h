@@ -34,7 +34,7 @@ struct TextureBlend {
 
 // largest base alignment value of any of its members == 4 bytes
 struct BlendTextures {
-  TextureBlend textures[MAX_BLEND_TEXTUERS]; // alignment 4 bytes
+  TextureBlend textures[MAX_BLEND_TEXTURES]; // alignment 4 bytes
   unsigned int num_textures; // alignment 4 bytes for 64 bit build
   // no padding needed, as all members are of equal size
 };

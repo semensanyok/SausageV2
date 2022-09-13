@@ -6,7 +6,7 @@ mesh = {
 void SetBlendColor() {
     // TODO: add light color for all blend textures, before blend
 
-    int texture_id = blend_textures[In.base_instance].textures[0]
+    uint texture_id = blend_textures[In.base_instance].textures[0].texture_id;
     vec4 mat_diffuse_with_opacity = texture(textures[texture_id], vec3(In.uv, DIFFUSE_TEX)).rgba;
     vec3 mat_diffuse = mat_diffuse_with_opacity.rgb;
     vec3 mat_specular = texture(textures[texture_id], vec3(In.uv, SPECULAR_TEX)).rgb;
@@ -25,12 +25,12 @@ void SetBlendColor() {
 """
 struct TextureBlend {
   float blend_weight;
-  unsigned int texture_id;
+  uint texture_id;
 };
 
 struct BlendTextures {
-  TextureBlend textures[MAX_BLEND_TEXTUERS];
-  unsigned int num_textures;
+  TextureBlend textures[MAX_BLEND_TEXTURES];
+  uint num_textures;
 };
 
 layout (std430, binding = UNIFORMS_LOC) buffer UniformData
@@ -38,13 +38,13 @@ layout (std430, binding = UNIFORMS_LOC) buffer UniformData
     mat4 bones_transforms[MAX_BONES];
     mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES];
     BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
-    unsigned int transform_offset[MAX_TRANSFORM_OFFSET];
+    uint transform_offset[MAX_TRANSFORM_OFFSET];
 };
 """,
     "mesh_vs_out": 
 """
 out vs_out {
-    int base_instance;
+    flat uint base_instance;
     vec2 uv;
     vec3 frag_pos;
     mat3 TBN;
@@ -53,7 +53,7 @@ out vs_out {
     "mesh_fs_in": 
 """
 in vs_out {
-    flat int base_instance;
+    flat uint base_instance;
     vec2 uv;
     vec3 frag_pos;
     mat3 TBN;

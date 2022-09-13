@@ -9,11 +9,11 @@ in vs_out {
     vec2 uv;
 } In;
 
+{{ uniforms_locations }}
 {{ controller_uniforms_shared }}
 {{ ui_buffers_capacity }}
 {{ ui_uniforms_shared }}
 {{ ui_utils }}
-{{ uniforms_locations }}
 
 {{ texture_handle_by_texture_id_array }}
 

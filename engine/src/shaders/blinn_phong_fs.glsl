@@ -9,6 +9,9 @@ out vec4 color;
 {{ light_constants }}
 {{ texture_layers_offsets }}
 {{ uniforms_locations }}
+{{ mesh_buffers_capacity }}
+
+{{ mesh_uniforms }}
 
 {{ mesh_fs_in }}
 

@@ -23,11 +23,12 @@ const unsigned long MAX_BASE_MESHES = 4000;
 const uint MAX_BASE_AND_INSTANCED_MESHES = 4000;
 const uint MAX_BONES = 100000;
 const uint MAX_TRANSFORM_OFFSET = MAX_BASE_AND_INSTANCED_MESHES * 10;
-const uint MAX_BLEND_TEXTUERS = 16;
+const uint MAX_BLEND_TEXTURES = 16;
 const uint MAX_TEXTURE = 1000;
 """,
 "ui_buffers_capacity":
 """
+const unsigned long TEXTURES_SINGLE_FONT = 128;
 const unsigned long MAX_3D_OVERLAY_TRANSFORM = 4000;
 const unsigned long MAX_3D_OVERLAY_TRANSFORM_OFFSET = MAX_3D_OVERLAY_TRANSFORM * 10;
 const unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;

@@ -1,7 +1,6 @@
 ui = { 
     "ui_uniforms_shared" :
 """
-const uint MAX_UI_UNIFORM_TRANSFORM = 400;
 layout (std430, binding = UI_UNIFORM_LOC) buffer UniformDataUI
 {
     ivec4 min_max_x_y[MAX_UI_UNIFORM_TRANSFORM];
