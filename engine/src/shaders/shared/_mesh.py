@@ -6,7 +6,10 @@ mesh = {
 void SetBlendColor() {
     // TODO: add light color for all blend textures, before blend
 
-    uint texture_id = blend_textures[In.base_instance].textures[0].texture_id;
+    // TODO: fix texture id always 0
+    //uint texture_id = blend_textures[In.base_instance].textures[0].texture_id;
+    uint texture_id = 1;
+    
     vec4 mat_diffuse_with_opacity = texture(textures[texture_id], vec3(In.uv, DIFFUSE_TEX)).rgba;
     vec3 mat_diffuse = mat_diffuse_with_opacity.rgb;
     vec3 mat_specular = texture(textures[texture_id], vec3(In.uv, SPECULAR_TEX)).rgb;

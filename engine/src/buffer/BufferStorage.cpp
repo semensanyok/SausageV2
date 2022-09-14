@@ -104,7 +104,7 @@ void BufferStorage::UnmapBuffer(CommandBuffer *buf) {
   buf->buffer_lock->is_mapped_cv.notify_all();
   // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
   if (!glUnmapNamedBuffer(buf->id)) {
-    CheckGLError();
+    DEBUG_EXPR(CheckGLError());
   }
 }
 CommandBuffer *BufferStorage::CreateCommandBuffer(unsigned int size) {
@@ -250,7 +250,7 @@ void BufferStorage::BufferMeshData(vector<MeshDataBase *> &load_data_meshes,
   }
   // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
   is_need_barrier = true;
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
 }
 
 void BufferStorage::BufferMeshData(MeshDataBase *mesh,
@@ -438,6 +438,12 @@ void BufferStorage::BindVAOandBuffers(
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, uniforms_buffer);
   }
+  if ((buffers_to_bind & BufferType::TEXTURE) &&
+    !(bound_buffers & BufferType::TEXTURE)) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_LOC,
+                     texture_handle_by_texture_id_buffer);
+  }
   if ((buffers_to_bind & BufferType::LIGHT) &&
       !(bound_buffers & BufferType::LIGHT)) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
@@ -473,45 +479,45 @@ void BufferStorage::Dispose() {
   SyncGPUBufAndUnmap();
   glDisableVertexAttribArray(0);
   glDeleteVertexArrays(1, &mesh_VAO);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
   glUnmapBuffer(GL_ARRAY_BUFFER);
   glDeleteBuffers(1, &vertex_buffer);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
   glDeleteBuffers(1, &index_buffer);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &uniforms_buffer);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &texture_handle_by_texture_id_buffer);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &light_buffer);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   for (auto command_buffer : command_buffers) {
     glDeleteBuffers(1, &(command_buffer->id));
     delete command_buffer;
   }
   command_buffers.clear();
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &uniforms_ui_buffer);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_3d_overlay_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &uniforms_3d_overlay_buffer);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &font_texture_buffer);
-  CheckGLError();
+  DEBUG_EXPR(CheckGLError());
 }
 
 void BufferStorage::BufferTextureHandle(Texture* texture)
@@ -525,6 +531,7 @@ void BufferStorage::BufferMeshTexture(MeshData* mesh) {
   }
   uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id] =
     mesh->textures;
+  uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id].textures[0] = { 1.0, mesh->textures.textures[0].texture_id };
   is_need_barrier = true;
 }
 

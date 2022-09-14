@@ -1,10 +1,10 @@
 #include "Texture.h"
-#include <SystemsManager.h>
+#include "SystemsManager.h"
 
 using namespace std;
 
 void Texture::MakeHashable(SausageHashable* hash) {
-  hash = hash;
+  this->hash = hash;
   SystemsManager::GetInstance()->texture_manager->AddToLookups(this);
 }
 
@@ -20,6 +20,7 @@ void Texture::MakeResident() {
 		glMakeTextureHandleResidentARB(texture_handle_ARB);
 		is_resident = true;
 	}
+  DEBUG_EXPR(CheckGLError());
 }
 void Texture::MakeNonResident() {
 	if (is_resident) {

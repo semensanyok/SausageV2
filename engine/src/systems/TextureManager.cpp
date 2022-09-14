@@ -144,7 +144,7 @@ GLuint TextureManager::AllocateGLTextureId()
 Texture* TextureManager::AllocateTextureWithHandle(GLuint texture_id, GLuint sampler)
 {
   GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, sampler);
-  DEBUG_EXPR(CheckGLError());
+  CheckGLError();
   Texture* texture = new Texture(texture_id, tex_handle, nullptr, id_pool->ObtainNumber());
   AddToLookups(texture);
   return texture;

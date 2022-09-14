@@ -6,6 +6,7 @@
 #include "Logging.h"
 #include "OpenGLHelpers.h"
 #include "structures/TextureStruct.h"
+#include "Macros.h"
 
 using namespace std;
 
