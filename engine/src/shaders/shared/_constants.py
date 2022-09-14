@@ -35,16 +35,6 @@ const unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;
 const unsigned long MAX_UI_UNIFORM_TRANSFORM = 400;
 const unsigned long MAX_UI_UNIFORM_OFFSET = MAX_UI_UNIFORM_TRANSFORM * 10;
 """,
-    "mesh_vertex_locations":
-"""
-const uint MESH_VERT_LOC_POSITION = 0;
-const uint MESH_VERT_LOC_NORMAL = 1;
-const uint MESH_VERT_LOC_UV = 2;
-const uint MESH_VERT_LOC_TANGENT = 3;
-const uint MESH_VERT_LOC_BITANGENT = 4;
-const uint MESH_VERT_LOC_BONE_IDS = 5;
-const uint MESH_VERT_LOC_BONE_WEIGHTS = 6;
-""",
     "uniforms_locations":
 """
 const uint UNIFORMS_LOC = 0;

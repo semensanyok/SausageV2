@@ -4,16 +4,15 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 #extension GL_ARB_shader_draw_parameters : require
 
-{{ mesh_vertex_locations }}
 {{ uniforms_locations }}
 
-layout (location = MESH_VERT_LOC_POSITION) in vec3 position;
-layout (location = MESH_VERT_LOC_NORMAL) in vec3 normal;
-layout (location = MESH_VERT_LOC_UV) in vec2 uv;
-layout (location = MESH_VERT_LOC_TANGENT) in vec3 tangent;
-layout (location = MESH_VERT_LOC_BITANGENT) in vec3 bitangent;
-layout (location = MESH_VERT_LOC_BONE_IDS) in ivec4 bone_ids; 
-layout (location = MESH_VERT_LOC_BONE_WEIGHTS) in vec4 bone_weights; 
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec2 uv;
+layout (location = 3) in vec3 tangent;
+layout (location = 4) in vec3 bitangent;
+layout (location = 5) in ivec4 bone_ids; 
+layout (location = 6) in vec4 bone_weights; 
 
 uniform mat4 projection_view;
 
