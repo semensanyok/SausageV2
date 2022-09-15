@@ -523,20 +523,24 @@ void BufferStorage::Dispose() {
 void BufferStorage::BufferTextureHandle(Texture* texture)
 {
   texture_handle_by_texture_id_ptr[texture->id] = texture->texture_handle_ARB;
+  // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
+  is_need_barrier = true;
 }
 
 void BufferStorage::BufferMeshTexture(MeshData* mesh) {
   if (mesh->transform_offset == -1) {
     mesh->transform_offset = _GetTransformBucket(mesh);
   }
-  uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id] =
-    mesh->textures;
-  uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id].textures[0] = { 1.0, mesh->textures.textures[0].texture_id };
+  //uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id] =
+    //mesh->textures;
+  uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id].textures[0].texture_id = mesh->textures.textures[0].texture_id;
   is_need_barrier = true;
 }
 
 void BufferStorage::BufferFontTexture(MeshDataBase* mesh, Texture* texture) {
   font_texture_ptr[mesh->buffer_id] = texture->texture_handle_ARB;
+  // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
+  is_need_barrier = true;
 }
 
 void BufferStorage::Buffer3DFontTransform(MeshDataOverlay3D* mesh) {

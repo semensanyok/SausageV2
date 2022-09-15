@@ -52,6 +52,10 @@ private:
 	void CreateProgram();
 	void CompileFS();
 	void CompileVS();
+	void CompileShader(std::string& code,
+      GLuint shader_type,
+      bool& out_is_shader_updated,
+      GLuint& out_shader_id);
 	void _Dispose();
 public:
 	void Use();

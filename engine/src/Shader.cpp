@@ -55,13 +55,7 @@ void Shader::CompileFS() {
   auto code = _LoadCode(fragment_path);
   if (!code.empty()) {
     auto code_c = code.c_str();
-    fs = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fs, 1, &code_c, NULL);
-    glCompileShader(fs);
-    auto is_success = CheckCompileErrors(fs, format("FRAGMENT {}",this->fragment_path));
-    if (is_success && CheckGLError() == false) {
-      is_fs_updated = true;
-    }
+    CompileShader(code, GL_FRAGMENT_SHADER, is_fs_updated, fs);
   }
 }
 void Shader::CompileVS() {
@@ -70,16 +64,31 @@ void Shader::CompileVS() {
   }
   auto code = _LoadCode(vertex_path);
   if (!code.empty()) {
-    auto code_c = code.c_str();
-    vs = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vs, 1, &code_c, NULL);
-    glCompileShader(vs);
-    auto is_success = CheckCompileErrors(vs, format("VERTEX {}",this->vertex_path));
-    if (is_success && CheckCompileErrors(vs, format("VERTEX {}",this->vertex_path)) && (CheckGLError() == false)) {
-      is_vs_updated = true;
-    }
+    CompileShader(code, GL_VERTEX_SHADER, is_vs_updated, vs);
   }
 }
+void Shader::CompileShader(
+  std::string& code,
+  GLuint shader_type,
+  bool& out_is_shader_updated,
+  GLuint& out_shader_id
+)
+{
+  auto code_c = code.c_str();
+  GLuint shader_id = glCreateShader(shader_type);
+  glShaderSource(shader_id, 1, &code_c, NULL);
+  glCompileShader(shader_id);
+  auto is_success = CheckCompileErrors(shader_id,
+    format("{} {}",
+      shader_type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT",
+      this->vertex_path
+    ));
+  if (is_success && CheckGLError() == false) {
+    out_is_shader_updated = true;
+    out_shader_id = shader_id;
+  }
+}
+
 void Shader::_Dispose() {
   glDetachShader(id, vs_in_use);
   glDetachShader(id, fs_in_use);
