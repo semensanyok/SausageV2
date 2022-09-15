@@ -54,7 +54,6 @@ void Shader::CompileFS() {
   }
   auto code = _LoadCode(fragment_path);
   if (!code.empty()) {
-    auto code_c = code.c_str();
     CompileShader(code, GL_FRAGMENT_SHADER, is_fs_updated, fs);
   }
 }
