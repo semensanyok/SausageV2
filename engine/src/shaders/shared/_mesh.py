@@ -23,7 +23,8 @@ void SetBlendColor() {
     vec3 res = mat_diffuse * AMBIENT_CONST;
     AddLightColor(In.frag_pos, mat_normal, res, view_dir, mat_diffuse, mat_specular);
     
-    color = vec4(res, mat_diffuse_with_opacity.a);
+    // color = vec4(res, mat_diffuse_with_opacity.a);
+    color = vec4(255.0,0.0,0.0,0.3);
 };
 """,
     "mesh_uniforms": 
@@ -40,9 +41,9 @@ struct BlendTextures {
 
 layout (std430, binding = UNIFORMS_LOC) buffer UniformData
 {
+    BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
     mat4 bones_transforms[MAX_BONES];
     mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES];
-    BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
     uint transform_offset[MAX_TRANSFORM_OFFSET];
 };
 """,
