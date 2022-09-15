@@ -30,6 +30,7 @@ struct TextureBlend {
   // monotonically increasing, Sausage managed. see Texture->id.
   unsigned int texture_id; // 4 bytes for 64 bit build
   // no padding needed, as all members are of equal size
+  float pad[2];
 };
 
 // largest base alignment value of any of its members == 4 bytes
@@ -37,6 +38,7 @@ struct BlendTextures {
   TextureBlend textures[MAX_BLEND_TEXTURES]; // alignment 4 bytes
   unsigned int num_textures; // alignment 4 bytes for 64 bit build
   // no padding needed, as all members are of equal size
+  float pad[3];
 };
 
 // some GPU structs resides in other headers, i.e. Light.h
@@ -55,6 +57,7 @@ struct UniformData3DOverlay {
 struct UniformDataUI {
   ivec4 min_max_x_y[MAX_UI_UNIFORM_TRANSFORM];
   vec2 transforms[MAX_UI_UNIFORM_TRANSFORM];
+  // no padding needed, topmost structure
 };
 
 struct ControllerUniformData {

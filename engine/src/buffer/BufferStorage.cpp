@@ -531,9 +531,8 @@ void BufferStorage::BufferMeshTexture(MeshData* mesh) {
   if (mesh->transform_offset == -1) {
     mesh->transform_offset = _GetTransformBucket(mesh);
   }
-  //uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id] =
-    //mesh->textures;
-  uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id].textures[0].texture_id = mesh->textures.textures[0].texture_id;
+  //uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id] = mesh->textures;
+  uniforms_ptr->blend_textures[0].textures[0].texture_id = 1;
   is_need_barrier = true;
 }
 

@@ -6,10 +6,12 @@ mesh = {
 void SetBlendColor() {
     // TODO: add light color for all blend textures, before blend
 
-    // TODO: fix texture id always 0
+    // TODO: fix texture id not fetched correctly /////////////////////////////////////
     // uint texture_id = blend_textures[In.base_instance].textures[0].texture_id;
-    uint texture_id = 1;
     
+    // uint texture_id = 1;
+    uint texture_id = blend_textures[0].textures[0].texture_id;
+    ///////////////////////////////////////////////////////////////////
     vec4 mat_diffuse_with_opacity = texture(textures[texture_id], vec3(In.uv, DIFFUSE_TEX)).rgba;
     vec3 mat_diffuse = mat_diffuse_with_opacity.rgb;
     vec3 mat_specular = texture(textures[texture_id], vec3(In.uv, SPECULAR_TEX)).rgb;
@@ -78,7 +80,7 @@ vec4 res_normal = vec4(normal, 0.0);
 "mesh_set_vs_out":
 """
 Out.frag_pos = vec3(transform * res_position);
-Out.base_instance = transform_offset[gl_BaseInstanceARB] + gl_InstanceID;
+Out.base_instance = gl_BaseInstanceARB;
 Out.uv = uv;
 vec3 T = normalize(vec3(transform * vec4(tangent, 0.0)));
 vec3 B = normalize(vec3(transform * vec4(bitangent, 0.0)));
