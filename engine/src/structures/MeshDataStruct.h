@@ -1,7 +1,10 @@
 #pragma once
 
+#include "sausage.h"
+#include "Vertex.h"
 #include "Structures.h"
 #include "GPUStructs.h"
+#include "GPUUniformsStruct.h"
 #include "Interfaces.h"
 #include "TextureStruct.h"
 
@@ -11,16 +14,6 @@ using namespace glm;
 class   Texture;
 class   Armature;
 class   PhysicsData;
-
-struct Vertex {
-  vec3 Position;
-  vec3 Normal;
-  vec2 TexCoords;
-  vec3 Tangent;
-  vec3 Bitangent;
-  ivec4 BoneIds;
-  vec4 BoneWeights;
-};
 
 struct MeshLoadData {
   vector<Vertex> vertices;
@@ -67,11 +60,11 @@ public:
 
 private:
   MeshData()
-    : textures{ {0, } },
+    : textures{ {0, {}} },
     physics_data{ nullptr },
     is_transparent{ false } {};
   MeshData(MeshLoadData* load_data)
-    : textures{ {0, } },
+    : textures{ {0, {}} },
     physics_data{ load_data->physics_data },
     armature{ load_data->armature },
     name{ load_data->name },

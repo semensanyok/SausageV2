@@ -2,7 +2,7 @@
 
 #include "sausage.h"
 #include "Interfaces.h"
-#include "structures/GPUUniformsStruct.h"
+#include "BufferSettings.h"
 
 using namespace std;
 
@@ -57,4 +57,20 @@ public:
   ~RawTextureData() {
     SDL_FreeSurface(surface);
   };
+};
+
+
+// largest base alignment value of any of its members == 4 bytes
+struct TextureBlend {
+  float blend_weight; // 4 bytes
+  // monotonically increasing, Sausage managed. see Texture->id.
+  unsigned int texture_id; // 4 bytes for 64 bit build
+  // no padding needed, as all members are of equal size
+};
+
+// largest base alignment value of any of its members == 4 bytes
+struct BlendTextures {
+  TextureBlend textures[BufferSettings::MAX_BLEND_TEXTURES]; // alignment 4 bytes
+  unsigned int num_textures; // alignment 4 bytes for 64 bit build
+  // no padding needed, as all members are of equal size
 };

@@ -1,5 +1,4 @@
 #include "BufferStorage.h"
-#include "Macros.h"
 
 BufferMargins BufferStorage::RequestStorage(float buffer_part_percent_vertex,
                                             float buffer_part_percent_index) {
@@ -337,6 +336,7 @@ void BufferStorage::BufferMeshData(MeshDataBase* mesh,
   //  }
   //}
 }
+
 void BufferStorage::InitMeshBuffers() {
   glGenVertexArrays(1, &mesh_VAO);
   glBindVertexArray(
@@ -358,8 +358,14 @@ void BufferStorage::InitMeshBuffers() {
   glGenBuffers(1, &uniforms_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
   glBufferStorage(GL_SHADER_STORAGE_BUFFER, MESH_UNIFORMS_STORAGE_SIZE, NULL, flags);
-  uniforms_ptr = (MeshUniformData *)glMapBufferRange(
+  uniforms_ptr = (MeshUniform*)glMapBufferRange(
       GL_SHADER_STORAGE_BUFFER, 0, MESH_UNIFORMS_STORAGE_SIZE, flags);
+
+  glGenBuffers(1, &blend_textures_by_mesh_id_buffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, blend_textures_by_mesh_id_buffer);
+  glBufferStorage(GL_SHADER_STORAGE_BUFFER, BLEND_TEXTURES_BY_MESH_ID_SIZE, NULL, flags);
+  blend_textures_by_mesh_id_ptr = (BlendTexturesByMeshIdUniform*)glMapBufferRange(
+      GL_SHADER_STORAGE_BUFFER, 0, BLEND_TEXTURES_BY_MESH_ID_SIZE, flags);
 
   glGenBuffers(1, &texture_handle_by_texture_id_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_buffer);
@@ -370,7 +376,7 @@ void BufferStorage::InitMeshBuffers() {
   glGenBuffers(1, &light_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
   glBufferStorage(GL_SHADER_STORAGE_BUFFER, LIGHT_STORAGE_SIZE, NULL, flags);
-  light_ptr = (Lights *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
+  light_ptr = (LightsUniform *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0,
                                          LIGHT_STORAGE_SIZE, flags);
 
   // Font buffers
@@ -438,6 +444,13 @@ void BufferStorage::BindVAOandBuffers(
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, uniforms_buffer);
   }
+
+  if ((buffers_to_bind & BufferType::BLEND_TEXTURES_BY_MESH_ID) &&
+      !(bound_buffers & BufferType::BLEND_TEXTURES_BY_MESH_ID)) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, blend_textures_by_mesh_id_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLEND_TEXTURES_BY_MESH_ID_LOC, blend_textures_by_mesh_id_buffer);
+  }
+
   if ((buffers_to_bind & BufferType::TEXTURE) &&
     !(bound_buffers & BufferType::TEXTURE)) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_buffer);
@@ -531,8 +544,9 @@ void BufferStorage::BufferMeshTexture(MeshData* mesh) {
   if (mesh->transform_offset == -1) {
     mesh->transform_offset = _GetTransformBucket(mesh);
   }
-  //uniforms_ptr->blend_textures[mesh->transform_offset + mesh->instance_id] = mesh->textures;
-  uniforms_ptr->blend_textures[0].textures[0].texture_id = 1;
+  blend_textures_by_mesh_id_ptr->blend_textures[mesh->transform_offset + mesh->instance_id] =
+    mesh->textures;
+  //uniforms_ptr->blend_textures[0].textures[0].texture_id = 1;
   is_need_barrier = true;
 }
 

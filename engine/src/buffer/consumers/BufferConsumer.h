@@ -1,6 +1,6 @@
 #pragma once
 #include "sausage.h"
-#include "structures/GPUStructs.h"
+#include "GPUStructs.h"
 #include "BufferStorage.h"
 
 class BufferConsumer {

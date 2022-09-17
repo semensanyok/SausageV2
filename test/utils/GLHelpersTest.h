@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sausage.h>
-#include <GLHelpers.h>
+#include <OpenGLHelpers.h>
 #include <assert.h>
 
 using namespace std;

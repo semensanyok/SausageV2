@@ -7,7 +7,7 @@
 #include "MeshManager.h"
 #include "OpenGLHelpers.h"
 #include "Settings.h"
-#include "structures/Structures.h"
+#include "Structures.h"
 #include "BufferSettings.h"
 
 using namespace std;

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "sausage.h"
-#include "structures/Structures.h"
-#include "structures/Interfaces.h"
-#include "structures/GPUStructs.h"
+#include "Structures.h"
+#include "Interfaces.h"
+#include "GPUStructs.h"
 #include "Texture.h"
 #include "BufferManager.h"
 #include "Macros.h"

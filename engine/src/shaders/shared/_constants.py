@@ -44,5 +44,6 @@ const uint FONT_UNIFORMS_LOC = 3;
 const uint FONT_TEXTURE_UNIFORM_LOC = 4;
 const uint UI_UNIFORM_LOC = 5;
 const uint CONTROLLER_UNIFORM_LOC = 6;
+const uint BLEND_TEXTURES_BY_MESH_ID_LOC = 7;
 """
 }

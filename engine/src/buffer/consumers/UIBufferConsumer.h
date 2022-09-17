@@ -8,8 +8,8 @@
 #include "MeshManager.h"
 #include "OpenGLHelpers.h"
 #include "Settings.h"
-#include "structures/Structures.h"
-#include "structures/GPUStructs.h"
+#include "Structures.h"
+#include "GPUStructs.h"
 
 using namespace std;
 using namespace glm;

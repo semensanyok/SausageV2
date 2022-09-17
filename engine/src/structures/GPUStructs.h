@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../sausage.h"
-#include "../OpenGLHelpers.h"
+#include "sausage.h"
+#include "OpenGLHelpers.h"
 #include "Interfaces.h"
 
 class BufferConsumer;
@@ -24,15 +24,17 @@ namespace BufferType {
   const BufferTypeFlag UI_UNIFORMS = 1 << 8;
   const BufferTypeFlag CONTROLLER_UNIFORMS = 1 << 9;
 
+  const BufferTypeFlag BLEND_TEXTURES_BY_MESH_ID = 1 << 10;
+
   // COMPOSITE FLAGS
   const BufferTypeFlag MESH_BUFFERS =
-    MESH_VAO | VERTEX | INDEX | UNIFORMS | TEXTURE | LIGHT | COMMAND;
+    MESH_VAO | VERTEX | INDEX | UNIFORMS | TEXTURE | LIGHT | COMMAND | BLEND_TEXTURES_BY_MESH_ID;
   const BufferTypeFlag PHYSICS_DEBUG_BUFFERS =
     MESH_VAO | VERTEX | INDEX | COMMAND;
   const BufferTypeFlag UI_BUFFERS =
     MESH_VAO | VERTEX | INDEX | COMMAND | TEXTURE | FONT_TEXTURE | UI_UNIFORMS | CONTROLLER_UNIFORMS;
   const BufferTypeFlag TERRAIN_BUFFERS =
-    MESH_VAO | VERTEX | INDEX | LIGHT | COMMAND | TEXTURE;
+    MESH_VAO | VERTEX | INDEX | LIGHT | COMMAND | TEXTURE | BLEND_TEXTURES_BY_MESH_ID;
 };  // namespace BufferType
 
 namespace DrawOrder {

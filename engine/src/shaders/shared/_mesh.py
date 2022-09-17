@@ -39,12 +39,17 @@ struct BlendTextures {
   uint num_textures;
 };
 
-layout (std430, binding = UNIFORMS_LOC) buffer UniformData
+layout (std430, binding = BLEND_TEXTURES_BY_MESH_ID_LOC) buffer BlendTexturesByMeshIdUniform
 {
     BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
+};
+
+layout (std430, binding = UNIFORMS_LOC) buffer MeshUniform
+{
     mat4 bones_transforms[MAX_BONES];
     mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES];
     uint transform_offset[MAX_TRANSFORM_OFFSET];
+    // BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
 };
 """,
     "mesh_vs_out": 

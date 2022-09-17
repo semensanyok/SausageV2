@@ -1,9 +1,9 @@
 #pragma once
 
 #include "sausage.h"
-#include "structures/Structures.h"
-#include "structures/Interfaces.h"
-#include "structures/PhysicsStruct.h"
+#include "Structures.h"
+#include "Interfaces.h"
+#include "PhysicsStruct.h"
 #include "buffer/BufferStorage.h"
 #include "BulletDebugDrawer.h"
 #include "Settings.h"

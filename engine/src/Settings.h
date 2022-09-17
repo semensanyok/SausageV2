@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sausage.h"
-#include "OpenGLHelpers.h"
 #include <SDL.h>
 
 namespace GameSettings {

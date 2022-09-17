@@ -18,7 +18,6 @@ namespace BufferSettings {
   const unsigned long MAX_UI_UNIFORM_TRANSFORM = 400;
   const unsigned long MAX_UI_UNIFORM_OFFSET = MAX_UI_UNIFORM_TRANSFORM * 10;
 
-  // parts of buffer;
   namespace Margins {
     const float MESH_DATA_VERTEX_PART = 0.65;
     const float MESH_DATA_INDEX_PART = 0.65;

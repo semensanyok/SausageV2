@@ -10,7 +10,7 @@
 #include "Shader.h"
 #include "sausage.h"
 #include "OpenGLHelpers.h"
-#include "structures/ShaderStruct.h"
+#include "ShaderStruct.h"
 #include "BufferSettings.h"
 #include "TextureManager.h"
 #include <limits>

@@ -163,7 +163,7 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
 "${ENGINE_SRC_DIR}/buffer/" 
 "${ENGINE_SRC_DIR}/buffer/consumers/" 
 "${ENGINE_SRC_DIR}/systems/world_gen/" 
-"${ENGINE_SRC_DIR}/src/structures/" 
+"${ENGINE_SRC_DIR}/structures/" 
 ${IMGUI_HEADERS} 
 ${DEPENDENCIES_INCLUDE_DIRS})
 
@@ -186,7 +186,7 @@ ${PGK_CONF_FOUND_LIBS}
 CACHE INTERNAL "${PROJECT_NAME} libraries" FORCE)
 
 add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES} 
-"src/systems/Camera.cpp" "src/OpenGLHelpers.cpp" "src/Logging.cpp" 
+"src/systems/Camera.cpp" "src/utils/OpenGLHelpers.cpp" "src/Logging.cpp" 
 "src/FileWatcher.cpp" "src/Shader.cpp" "src/Texture.cpp" "src/systems/Animation.cpp" "src/systems/AsyncTaskManager.cpp" 
 "src/buffer/BufferStorage.cpp" "src/systems/Renderer.cpp" "src/systems/SystemsManager.cpp" 
 "src/buffer/consumers/BulletDebugDrawerBufferConsumer.cpp" "src/systems/physics/BulletDebugDrawer.cpp" 
@@ -205,7 +205,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/systems/gui/ScreenOverlayManager.cpp"
 "src/systems/ShaderManager.cpp"
 "src/systems/world_gen/TerrainManager.cpp"
-${source} "src/structures/Interfaces.h" "src/utils/NumberPool.cpp" "src/utils/GLHelpers.cpp")
+${source} "src/structures/Interfaces.h" "src/utils/NumberPool.cpp" )
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 

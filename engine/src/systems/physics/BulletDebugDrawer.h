@@ -1,8 +1,8 @@
 #pragma once
 
 #include "sausage.h"
-#include "structures/Structures.h"
-#include "structures/ShaderStruct.h"
+#include "Structures.h"
+#include "ShaderStruct.h"
 #include "Shader.h"
 #include "Renderer.h"
 #include "Settings.h"

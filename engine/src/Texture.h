@@ -5,7 +5,7 @@
 #include "SDL_image.h"
 #include "Logging.h"
 #include "OpenGLHelpers.h"
-#include "structures/TextureStruct.h"
+#include "TextureStruct.h"
 #include "Macros.h"
 
 using namespace std;

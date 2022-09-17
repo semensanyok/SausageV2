@@ -3,18 +3,21 @@
 #include "Logging.h"
 #include "OpenGLHelpers.h"
 #include "Settings.h"
-#include "structures/MeshDataStruct.h"
-#include "structures/AnimationStruct.h"
-#include "structures/GPUUniformsStruct.h"
-#include "structures/TextureStruct.h"
-#include "structures/LightStruct.h"
+#include "MeshDataStruct.h"
+#include "AnimationStruct.h"
+#include "GPUUniformsStruct.h"
+#include "TextureStruct.h"
+#include "LightStruct.h"
 #include "Texture.h"
 #include "sausage.h"
+#include "Macros.h"
+
 
 using namespace std;
 using namespace glm;
 using namespace BufferSettings;
 using namespace UniformsLocations;
+using namespace BufferSizes;
 
 // struct DataRangeLock {
 //    unsigned int vertex_begin;
@@ -37,19 +40,6 @@ class BufferStorage {
   friend class OverlayBufferConsumer3D;
 
  private:
-  const unsigned long VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
-  const unsigned long INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
-  const unsigned long COMMAND_STORAGE_SIZE =
-      MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
-  const unsigned long LIGHT_STORAGE_SIZE = MAX_LIGHTS * sizeof(Light);
-  ///////////
-  // UNIFORMS
-  ///////////
-  const unsigned long MESH_UNIFORMS_STORAGE_SIZE = sizeof(MeshUniformData);
-  const unsigned long TRANSFORM_OFFSET_STORAGE_SIZE =
-      MAX_BASE_AND_INSTANCED_MESHES * sizeof(unsigned int);
-  const unsigned long TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE = MAX_TEXTURE * sizeof(GLuint64);
-
   const GLbitfield flags =
       GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 
@@ -69,6 +59,7 @@ class BufferStorage {
   // UNIFORMS AND SSBO
   /////////////////////
   GLuint uniforms_buffer;
+  GLuint blend_textures_by_mesh_id_buffer;
   GLuint texture_handle_by_texture_id_buffer;
   GLuint light_buffer;
   vector<CommandBuffer *> command_buffers;
@@ -78,25 +69,17 @@ class BufferStorage {
   //////////////////////////
   Vertex *vertex_ptr;
   unsigned int *index_ptr;
-  MeshUniformData *uniforms_ptr;
+  MeshUniform *uniforms_ptr;
+  BlendTexturesByMeshIdUniform* blend_textures_by_mesh_id_ptr;
   // gl_BaseInstanceARB->texture handle.textures of same size, 4 layers
   GLuint64 *texture_handle_by_texture_id_ptr;
-  Lights *light_ptr;
+  LightsUniform *light_ptr;
 
   float allocated_percent_vertex = 0.0;
   float allocated_percent_index = 0.0;
 
   BufferType::BufferTypeFlag bound_buffers;
 
-  // FONT buffers
-  const unsigned long FONT_TEXTURE_STORAGE_SIZE =
-      MAX_FONT_TEXTURES * sizeof(GLuint64);
-  const unsigned long UNIFORMS_3D_OVERLAY_STORAGE_SIZE = sizeof(UniformData3DOverlay);
-  const unsigned long TRANSFORM_3D_OVERLAY_OFFSET_STORAGE_SIZE =
-      MAX_3D_OVERLAY_TRANSFORM_OFFSET * sizeof(unsigned int);
-  const unsigned long UNIFORMS_UI_STORAGE_SIZE = sizeof(UniformDataUI);
-  const unsigned long TRANSFORM_OFFSET_UI_STORAGE_SIZE =
-      MAX_UI_UNIFORM_OFFSET * sizeof(unsigned int);
   GLuint font_texture_buffer;
   GLuint64 *font_texture_ptr;
   GLuint uniforms_3d_overlay_buffer;

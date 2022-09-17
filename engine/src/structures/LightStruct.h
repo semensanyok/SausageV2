@@ -1,9 +1,9 @@
 #pragma once
 
 #include "sausage.h"
+
 using namespace glm;
 using namespace std;
-using namespace BufferSettings;
 
 namespace LightType {
   enum LightType { Point, Directional, Spot };
@@ -28,11 +28,6 @@ struct Light {
   float linear_attenuation;
   float quadratic_attenuation;
   float pad[2]; // OpenGL padding. Aligned to largest struct elem == vec4 (std430)
-};
-
-struct Lights {
-  int num_lights;
-  Light lights[MAX_LIGHTS];
 };
 
 // GPU END ///////////////////////////////////////////////////

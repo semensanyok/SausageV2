@@ -6,7 +6,7 @@
 #include "BufferStorage.h"
 #include "OpenGLHelpers.h"
 #include "Shader.h"
-#include "structures/Structures.h"
+#include "Structures.h"
 #include "ImguiGui.h"
 #include "TestShapes.h"
 #include "ThreadSafeQueue.h"

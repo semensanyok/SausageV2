@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sausage.h"
-#include "structures/TerrainStruct.h"
+#include "TerrainStruct.h"
 
 using namespace std;
 

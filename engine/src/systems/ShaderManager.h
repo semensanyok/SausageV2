@@ -2,7 +2,7 @@
 
 #include "sausage.h"
 #include "SystemsManager.h"
-#include "structures/ShaderStruct.h"
+#include "ShaderStruct.h"
 #include "FileWatcher.h"
 #include "Renderer.h"
 
