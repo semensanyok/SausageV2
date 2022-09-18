@@ -48,7 +48,7 @@ layout (std430, binding = UNIFORMS_LOC) buffer MeshUniform
 {
     mat4 bones_transforms[MAX_BONES];
     mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES];
-    uint transform_offset[MAX_TRANSFORM_OFFSET];
+    uint transform_offset[MAX_BASE_MESHES];
     // BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
 };
 """,

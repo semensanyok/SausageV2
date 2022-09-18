@@ -19,8 +19,8 @@ const int SPECULAR_TEX = 2;
     "mesh_buffers_capacity": 
 """
 const uint MAX_COMMAND = 1000;
-const unsigned long MAX_BASE_MESHES = 4000;
-const uint MAX_BASE_AND_INSTANCED_MESHES = 4000;
+const uint MAX_BASE_MESHES = 4000;
+const uint MAX_BASE_AND_INSTANCED_MESHES = MAX_BASE_MESHES * 10;
 const uint MAX_BONES = 100000;
 const uint MAX_TRANSFORM_OFFSET = MAX_BASE_AND_INSTANCED_MESHES * 10;
 const uint MAX_BLEND_TEXTURES = 16;
