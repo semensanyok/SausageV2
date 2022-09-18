@@ -6,12 +6,7 @@ mesh = {
 void SetBlendColor() {
     // TODO: add light color for all blend textures, before blend
 
-    // TODO: fix texture id not fetched correctly /////////////////////////////////////
-    // uint texture_id = blend_textures[In.base_instance].textures[0].texture_id;
-    
-    // uint texture_id = 1;
-    uint texture_id = blend_textures[0].textures[0].texture_id;
-    ///////////////////////////////////////////////////////////////////
+    uint texture_id = blend_textures[transform_offset[In.base_instance] + In.instance_id].textures[0].texture_id;
     vec4 mat_diffuse_with_opacity = texture(textures[texture_id], vec3(In.uv, DIFFUSE_TEX)).rgba;
     vec3 mat_diffuse = mat_diffuse_with_opacity.rgb;
     vec3 mat_specular = texture(textures[texture_id], vec3(In.uv, SPECULAR_TEX)).rgb;
@@ -23,27 +18,12 @@ void SetBlendColor() {
     vec3 res = mat_diffuse * AMBIENT_CONST;
     AddLightColor(In.frag_pos, mat_normal, res, view_dir, mat_diffuse, mat_specular);
     
-    // color = vec4(res, mat_diffuse_with_opacity.a);
-    color = vec4(255.0,0.0,0.0,0.3);
+    color = vec4(res, mat_diffuse_with_opacity.a);
+    // color = vec4(255.0,0.0,0.0,0.3);
 };
 """,
     "mesh_uniforms": 
 """
-struct TextureBlend {
-  float blend_weight;
-  uint texture_id;
-};
-
-struct BlendTextures {
-  TextureBlend textures[MAX_BLEND_TEXTURES];
-  uint num_textures;
-};
-
-layout (std430, binding = BLEND_TEXTURES_BY_MESH_ID_LOC) buffer BlendTexturesByMeshIdUniform
-{
-    BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
-};
-
 layout (std430, binding = UNIFORMS_LOC) buffer MeshUniform
 {
     mat4 bones_transforms[MAX_BONES];
@@ -56,6 +36,7 @@ layout (std430, binding = UNIFORMS_LOC) buffer MeshUniform
 """
 out vs_out {
     flat uint base_instance;
+    flat uint instance_id;
     vec2 uv;
     vec3 frag_pos;
     mat3 TBN;
@@ -65,6 +46,7 @@ out vs_out {
 """
 in vs_out {
     flat uint base_instance;
+    flat uint instance_id;
     vec2 uv;
     vec3 frag_pos;
     mat3 TBN;
@@ -87,6 +69,7 @@ vec4 res_normal = vec4(normal, 0.0);
 """
 Out.frag_pos = vec3(transform * res_position);
 Out.base_instance = gl_BaseInstanceARB;
+Out.instance_id = gl_InstanceID;
 Out.uv = uv;
 vec3 T = normalize(vec3(transform * vec4(tangent, 0.0)));
 vec3 B = normalize(vec3(transform * vec4(bitangent, 0.0)));

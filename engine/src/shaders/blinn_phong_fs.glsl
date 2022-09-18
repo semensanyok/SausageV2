@@ -12,6 +12,7 @@ out vec4 color;
 {{ mesh_buffers_capacity }}
 
 {{ mesh_uniforms }}
+{{ blend_textures_by_mesh_id }}
 
 {{ mesh_fs_in }}
 

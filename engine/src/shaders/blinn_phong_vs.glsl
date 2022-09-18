@@ -38,6 +38,7 @@ void AnimTransform(inout vec4 pos, inout vec4 norm) {
 }
 
 void main(void) {
+  {{ mesh_set_base_instance_with_instance_offset }}
   {{ mesh_set_transform }}
   {{ mesh_set_res_position }}
   {{ mesh_set_res_normal }}
