@@ -30,27 +30,13 @@ struct BlendTexturesByMeshIdUniform {
   BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES]; // alignment 4 bytes
 };
 
-// TODO (HIGHEST PRIORITY):
-//  when 2 mat4 transforms at the start - we get correct transform, but cant get correct texture id
-//  when transforms matrices at MeshUniformData bottom - we dont get correct transforms
-//  FIX LAYOUT OR SPLIT TO DIFFERENT UNIFORM TO VERIFY OFFSET ISSUE
-
 // some GPU structs resides in other headers, i.e. Light.h
 struct MeshUniform {
   mat4 bones_transforms[MAX_BONES]; // aligned to vec4 == 16 bytes
   mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES]; // aligned to vec4 == 16 bytes
   unsigned int transform_offset[MAX_BASE_MESHES]; // alignment 4 bytes
-  // BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES]; // alignment 4 bytes 
   // no padding needed, topmost structure
 };
-
-//struct MeshUniformData {
-//  mat4 bones_transforms[MAX_BONES]; // aligned to vec4 == 16 bytes
-//  mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES]; // aligned to vec4 == 16 bytes
-//  BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES]; // alignment 4 bytes
-//  unsigned int transform_offset[MAX_BASE_MESHES]; // alignment 4 bytes
-//  // no padding needed, topmost structure
-//};
 
 struct UniformData3DOverlay {
   mat4 transforms[MAX_3D_OVERLAY_TRANSFORM];
@@ -71,8 +57,8 @@ struct ControllerUniformData {
 
 struct LightsUniform {
   int num_lights;
-  float pad[3];
-  Light lights[MAX_LIGHTS];
+  float pad[3]; // because Light class is aligned to vec4, all structure members offsets aligned to vec4
+  Light lights[MAX_LIGHTS]; // aligned to vec4
 };
 
 namespace BufferSizes {
