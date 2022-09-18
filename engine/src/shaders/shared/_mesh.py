@@ -17,8 +17,8 @@ void SetBlendColor() {
   
     vec3 res = mat_diffuse * AMBIENT_CONST;
     AddLightColor(In.frag_pos, mat_normal, res, view_dir, mat_diffuse, mat_specular);
-    
     color = vec4(res, mat_diffuse_with_opacity.a);
+    
     // color = vec4(255.0,0.0,0.0,0.3);
 };
 """,

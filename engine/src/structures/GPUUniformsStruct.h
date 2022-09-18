@@ -71,6 +71,7 @@ struct ControllerUniformData {
 
 struct LightsUniform {
   int num_lights;
+  float pad[3];
   Light lights[MAX_LIGHTS];
 };
 

@@ -15,8 +15,7 @@ struct Light {
 
     float linear_attenuation;
     float quadratic_attenuation;
-    float padding0;
-    float padding1;
+    float pad[2];
 };
 """
     ,
@@ -25,9 +24,7 @@ struct Light {
 layout (std430, binding = LIGHTS_UNIFORM_LOC) buffer Lights
 {
 	int num_lights;
-	float padding0;
-    float padding1;
-	float padding2;
+    float pad[3];
     Light lights[];
 };
 """,
@@ -66,7 +63,7 @@ void AddSpotLight(in vec3 frag_pos, in Light light, in vec3 view_dir, in vec3 ma
     float theta = dot(light_dir, normalize(-vec3(light.direction))); 
     float epsilon = light.spot_inner_cone_cos - light.spot_outer_cone_cos;
     float intensity = clamp((theta - light.spot_outer_cone_cos) / epsilon, 0.0, 1.0);
-    
+
     res += (light_diffuse + GetSpecular(light, view_dir, light_dir, mat_specular)) * attenuation * intensity;
 };
 
