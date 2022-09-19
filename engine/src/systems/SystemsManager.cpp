@@ -15,6 +15,7 @@ void SystemsManager::InitSystems() {
 	renderer_context_manager->InitContext();
 	buffer_manager = new BufferManager(mesh_manager);
 	buffer_manager->Init();
+    terrain_manager = new TerrainManager(buffer_manager);
 	state_manager = new StateManager(buffer_manager);
 	samplers = new Samplers();
 	samplers->Init();

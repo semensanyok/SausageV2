@@ -157,7 +157,6 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
 "${ENGINE_SRC_DIR}/systems/" 
 "${ENGINE_SRC_DIR}/systems/controller/" 
 "${ENGINE_SRC_DIR}/systems/physics/" 
-"${ENGINE_SRC_DIR}/systems/world_gen"
 "${ENGINE_SRC_DIR}/systems/gui/"
 "${ENGINE_SRC_DIR}/utils/" 
 "${ENGINE_SRC_DIR}/buffer/" 

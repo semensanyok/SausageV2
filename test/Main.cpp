@@ -22,8 +22,8 @@ int main()
   //GtkGLOverlayTest().run();
 
   //ScreenOverlayManagerTest().run();
-  //TerrainTest().run();
+  TerrainTest().run();
 
-  GLHelpersTest().run();
+  //GLHelpersTest().run();
   return 0;
 }

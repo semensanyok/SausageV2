@@ -33,7 +33,9 @@ void MeshDataBufferConsumer::SetBaseMeshForInstancedCommand(
   for (int i = 0; i < load_data.size(); i++) {
     auto mesh = load_data[i].get();
     auto key =
-        mesh->tex_names->Hash() + mesh->vertices.size() + mesh->indices.size();
+      (mesh->tex_names == nullptr ? 0 : mesh->tex_names->Hash())
+      + mesh->vertices.size()
+      + mesh->indices.size();
     auto base_mesh_ptr = instanced_data_lookup.find(key);
     if (base_mesh_ptr == instanced_data_lookup.end()) {
       instanced_data_lookup[key] = i;

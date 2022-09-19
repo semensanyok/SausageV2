@@ -31,23 +31,30 @@ struct TerrainPixelValues {
 };
 
 struct TerrainTile {
-  Point x0y0, x1y0, x0y1, x1y1;
-
+public:
+  // local space offsets from origin of TerrainChunk to origin of this tile.
+  vec3 x0y0z, x1y0z, x0y1z, x1y1z;
+  // number of vertices by axes.
+  // for test assume minimal size of 4 vertices
+  int sizeX = 2, sizeY = 2;
   // used only on generation, TODO: pass as paramer and dispose.
+  //    or keep to maybe modify terrain height per vertex at runtime
+  //      (not just tile transform, which affects all vertices simultaneously)
   TerrainPixelValues pixel_values;
 
   AdjastentTiles adjastent;
 
-  // TODO: 
+  // TODO: make sure it becomes instanced when Buffer it. (thousands rectangular patches)
   MeshData* mesh_data;
 };
 
 class TerrainChunk {
-  int sizeX;
-  int sizeY;
-
 public:
+  // number of TerrainTile patches by axes.
+  int sizeX, sizeY;
+  // distance between `tiles<TerrainTile>` vertices
+  int scale = 1;
   vector<TerrainTile*> tiles;
 
-  TerrainChunk(int sizeX, int sizeY) : sizeX{ sizeX }, sizeY{ sizeY }, tiles{ vector<TerrainTile*>(sizeX * sizeY) } {}
+  TerrainChunk(int sizeX, int sizeY, int scale) : sizeX{ sizeX }, sizeY{ sizeY }, scale{ scale }, tiles{ vector<TerrainTile*>(sizeX * sizeY) } {}
 };

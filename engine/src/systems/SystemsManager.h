@@ -18,6 +18,7 @@
 #include "BufferManager.h"
 #include "ScreenOverlayManager.h"
 #include "ShaderManager.h"
+#include "TerrainManager.h"
 
 class SystemsManager
 {
@@ -41,6 +42,7 @@ public:
   ScreenOverlayManager* screen_overlay_manager = nullptr;
   ShaderManager* shader_manager = nullptr;
   BufferManager* buffer_manager = nullptr;
+  TerrainManager* terrain_manager = nullptr;
 
   static SystemsManager* GetInstance() {
     static SystemsManager* instance = new SystemsManager();

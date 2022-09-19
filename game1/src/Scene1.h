@@ -193,7 +193,8 @@ class Scene1 : public Scene {
     {
       for (int i = 0; i < new_meshes.size(); i++) {
         auto load_data = new_meshes[i].get();
-        if (load_data->tex_names->normal.empty()) {
+        if (load_data->tex_names != nullptr
+          && load_data->tex_names->normal.empty()) {
           load_data->tex_names->normal = load_data->tex_names->diffuse;
           load_data->tex_names->specular = load_data->tex_names->diffuse;
           auto u = load_data->tex_names->diffuse.find("_");

@@ -6,17 +6,6 @@ TerrainChunk* TerrainManager::CreateChunk(int size_x, int size_y, int noise_offs
   vector<unsigned int> indices;
 
   vector<float> height_values(size_x * size_y);
-
-  // TODO_1 (AHORA): calculate each vertex normal as mean of adjastent faces normals
-  //1 2 3
-  //  4 5 6
-  //  7 8 9
-  //  normal of vertex 5 is mean of normals of faces
-  //  [(1 2 4 5), (2 3 5 6), (4, 5, 7, 8), (5, 6, 8, 9)]
-  //normal of face 1 2 4 5 == (1 - 2) x(1 - 4), where 1 - 4 - vertices(x, y, z)
-  //  TBN IS NEEDED IN SHADER !!!
-  // vector<vec2> normals;
-
   vector<float> moisture_values(size_x * size_y);
   vector<float> temperature_values(size_x * size_y);
 
@@ -27,7 +16,8 @@ TerrainChunk* TerrainManager::CreateChunk(int size_x, int size_y, int noise_offs
   fnSimplex->GenUniformGrid2D(moisture_values.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
   fnSimplex->GenUniformGrid2D(temperature_values.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
 
-  TerrainChunk* chunk = new TerrainChunk(size_x, size_y);
+  const int SIZE = 1;
+  TerrainChunk* chunk = new TerrainChunk(size_x, size_y, SIZE);
 
   // create chunk in local space, use transform matrix to apply offsetX/Y
   // each tile has 4 vertices
@@ -35,74 +25,122 @@ TerrainChunk* TerrainManager::CreateChunk(int size_x, int size_y, int noise_offs
   // 1. fill simple array and adjastent tiles references
   for (int y = 0; y < size_y; y++) {
     for (int x = 0; x < size_x; x++) {
-      int x1 = x;
-      int x2 = x + 1;
-      int y1 = y;
-      int y2 = y + 1;
+      int x0 = x;
+      int x1 = x + 1;
+      int y0 = y;
+      int y1 = y + 1;
       int current_row_shift = y * size_x;
-      int next_row_shift = y2 * size_x;
+      int next_row_shift = y1 * size_x;
 
-      int ind = x1 + current_row_shift;
-      int ind_e = x2 + current_row_shift;
-      int ind_se = x2 + next_row_shift;
-      int ind_s = x1 + next_row_shift;
+      int ind = x0 + current_row_shift;
+      int ind_e = x1 + current_row_shift;
+      int ind_ne = x1 + next_row_shift;
+      int ind_n = x0 + next_row_shift;
 
       TerrainTile* current_tile = chunk->tiles[ind];
+      current_tile->x0y0z = { x0, y0, height_values[ind] };
+      current_tile->x0y1z = { x0, y1, height_values[ind_n] };
+      current_tile->x1y0z = { x1, y0, height_values[ind_e] };
+      current_tile->x1y1z = { x1, y1, height_values[ind_ne] };
+
       if (x == 0) {
         int prev_row_shift = (y - 1) * size_x;
 
-        int ind_w = x1 - 1 + current_row_shift;
-        int ind_nw = (x1 - 1) + prev_row_shift;
-        int ind_n = x1 + prev_row_shift;
-        int ind_ne = (x1 + 1) + prev_row_shift;
-        int ind_sw = (x1 - 1) + next_row_shift;
+        int ind_w = x0 - 1 + current_row_shift;
+        int ind_sw = (x0 - 1) + prev_row_shift;
+        int ind_s = x0 + prev_row_shift;
+        int ind_se = (x0 + 1) + prev_row_shift;
+        int ind_nw = (x0 - 1) + next_row_shift;
 
         AdjastentTiles& adj = current_tile->adjastent;
 
-        bool is_east_border = x2 >= size_x;
-        bool is_south_border = y2 >= size_y;
-        bool is_west_border = x1 == 0;
-        bool is_north_border = y1 == 0;
+        bool is_east_border = x1 >= size_x;
+        bool is_south_border = y0 == 0;
+        bool is_west_border = x0 == 0;
+        bool is_north_border = y1 >= size_y;
 
         adj.e = is_east_border ? nullptr : chunk->tiles[ind_e];
         adj.se = is_east_border || is_south_border ? nullptr : chunk->tiles[ind_se];
         adj.s = is_south_border ? nullptr : chunk->tiles[ind_s];
         adj.w = is_west_border ? nullptr : chunk->tiles[ind_w];
         adj.nw = is_west_border || is_north_border ? nullptr : chunk->tiles[ind_nw];
-        adj.n = is_north_border ? nullptr : chunk->tiles[ind_n];
-        adj.ne = is_north_border || is_east_border ? nullptr : chunk->tiles[ind_ne];
-        adj.sw = is_south_border || is_west_border ? nullptr : chunk->tiles[ind_sw];
+        adj.n = is_north_border ? nullptr : chunk->tiles[ind_s];
+        adj.ne = is_north_border || is_east_border ? nullptr : chunk->tiles[ind_se];
+        adj.sw = is_south_border || is_west_border ? nullptr : chunk->tiles[ind_nw];
       }
 
       TerrainPixelValues& pixel_values = current_tile->pixel_values;
       pixel_values.height = (
         height_values[ind]
         + height_values[ind_e]
-        + height_values[ind_se]
-        + height_values[ind_s]
+        + height_values[ind_ne]
+        + height_values[ind_n]
        ) / 4;
       pixel_values.moisture = (
         moisture_values[ind]
         + moisture_values[ind_e]
-        + moisture_values[ind_se]
-        + moisture_values[ind_s]
+        + moisture_values[ind_ne]
+        + moisture_values[ind_n]
        ) / 4;
       pixel_values.temperature = (
         temperature_values[ind]
         + temperature_values[ind_e]
-        + temperature_values[ind_se]
-        + temperature_values[ind_s]
+        + temperature_values[ind_ne]
+        + temperature_values[ind_n]
        ) / 4;
     }
   }
   return chunk;
 }
 
-TerrainChunk* TerrainManager::BufferTerrain(int world_offset_x, int world_offset_y)
+void TerrainManager::BufferTerrain(TerrainChunk* chunk)
 {
-  return nullptr;
+  // TODO: from TerrainPixelValues assign BlendTextures. then buffer.
+  vector<MeshData*> meshes(chunk->tiles.size());
+  for (int i = 0; i < chunk->tiles.size(); i++) {
+    meshes[i] = chunk->tiles[i]->mesh_data;
+  }
+  //mesh_data_buffer->
+  //  BufferMeshData(meshes, load_data);
+  //mesh_data_buffer->
+  //  SetBaseMeshForInstancedCommand(meshes, load_data);
+  mesh_data_buffer->BufferTransform(mesh);
 }
 
+shared_ptr<MeshLoadData> GetMeshLoadData(TerrainChunk* chunk) {
+  /**
+      TODO:
+        Buffer single plain as base mesh
+        other plains are parts of intanced DrawCall
+        for each glInstanceId buffer transform offset/matrix + blend textures
+      */
+
+  // EACH VERTEX SHARED AMONG 1 - 4 TILES (CORNER 1 TILE, TOP/BOTTOM/LEFT/RIGHT BORDER - 2 TILES, OTHER - 4 TILES)
+  // TODO: calculate size properly
+  vector<vec3> vertices(chunk->sizeX * chunk->sizeY);
+  // each tile is 2 triangles, 3 vertices each -> 6 indices
+  vector<unsigned int> indices(6 * chunk->sizeX * chunk->sizeY);
+  // TODO_1 (AHORA): calculate each vertex normal as mean of adjastent faces normals
+  //1 2 3
+  //  4 5 6
+  //  7 8 9
+  //  normal of vertex 5 is mean of normals of faces
+  //  [(1 2 4 5), (2 3 5 6), (4, 5, 7, 8), (5, 6, 8, 9)]
+  //normal of face 1 2 4 5 == (1 - 2) x(1 - 4), where 1 - 4 - vertices(x, y, z)
+  //  TBN IS NEEDED IN SHADER !!!
+  // vector<vec2> normals;
+  vector<vec3> normals;
+  for (int y = 0; y < chunk->sizeY; y++) {
+    for (int x = 0; x < chunk->sizeX; x += 1) {
+      TerrainTile* tile = chunk->tiles[x * y];
+      tile->mesh_data = new MeshData();
+      tile->mesh_data->transform = translate(mat4(1.0), vec3(x * chunk->scale, y * chunk->scale, 0));
+
+    }
+  }
+}
+
+// Test create terrain, first prototype
 void TerrainManager::CreateTerrain() {
   SystemsManager* systems_manager = SystemsManager::GetInstance();
   MeshManager* mesh_manager = systems_manager->mesh_manager;
@@ -111,8 +149,9 @@ void TerrainManager::CreateTerrain() {
   ShaderManager* shader_manager = systems_manager->shader_manager;
   MeshDataBufferConsumer* mesh_data_buffer = buffer_manager->mesh_data_buffer;
 
-  int sizeX = 100;
-  int sizeY = 100;
+  const int SCALE = 1;
+  const int sizeX = 100;
+  const int sizeY = 100;
 
   vector<vec3> vertices(sizeX * sizeY);
   vector<unsigned int> indices;
