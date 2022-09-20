@@ -8,7 +8,7 @@
 
 class ShaderManager : public SausageSystem {
   friend class SystemsManager;
-  map<unsigned int, Shader*> initialized_shaders;
+  unordered_map<unsigned int, Shader*> initialized_shaders;
 public:
   Shaders* all_shaders = nullptr;
   ShaderManager() {};

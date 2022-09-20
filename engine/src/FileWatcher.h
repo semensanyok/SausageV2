@@ -17,5 +17,5 @@ public:
 	~FileWatcher();
 
 private:
-	map<string, pair<chrono::system_clock::duration, vector<function<void()>>>> watchers;
+  unordered_map<string, pair<chrono::system_clock::duration, vector<function<void()>>>> watchers;
 };

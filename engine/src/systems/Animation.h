@@ -21,7 +21,7 @@ struct FinalTransform {
 class AnimationManager : public SausageSystem {
     vector<Animation*> anims;
     vector<AnimMesh*> all_anim_meshes;
-    map<unsigned int, AnimMesh*> active_anims;
+    unordered_map<unsigned int, AnimMesh*> active_anims;
     atomic<unsigned long> anim_count{ 0 };
     StateManager* state_manager;
     MeshManager* mesh_manager;
@@ -42,7 +42,7 @@ public:
         Bone* bone,
         vector<ActiveAnimation>& blend_anims,
         mat4& parent_transform,
-        map<unsigned int, mat4>& final_transforms,
+        unordered_map<unsigned int, mat4>& final_transforms,
         bool is_parent_anim = false);
     mat4 _GetBoneAnimation(Bone* bone, vector<ActiveAnimation>& blend_anims, bool& out_is_bone_anim);
     Animation* CreateAnimation(string& anim_name, double duration, double ticks_per_seconds);

@@ -101,7 +101,7 @@ private:
   int total_cells_x, total_cells_y;
   ScreenCell* all_cells;
 
-  map<int, set<UINode*, decltype([](UINode* lhs, UINode* rhs) {
+  unordered_map<int, set<UINode*, decltype([](UINode* lhs, UINode* rhs) {
         return lhs->open_order > rhs->open_order;
     })>> open_order_to_nodes;
 

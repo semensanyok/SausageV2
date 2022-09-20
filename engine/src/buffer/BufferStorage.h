@@ -63,7 +63,7 @@ class BufferStorage {
   GLuint texture_handle_by_texture_id_buffer;
   GLuint light_buffer;
   vector<CommandBuffer *> command_buffers;
-  map<GLuint, CommandBuffer *> mapped_command_buffers;
+  unordered_map<GLuint, CommandBuffer *> mapped_command_buffers;
   //////////////////////////
   // Mapped buffers pointers
   //////////////////////////
@@ -147,7 +147,7 @@ class BufferStorage {
                       unsigned long &vertex_total, unsigned long &index_total,
                       unsigned long &meshes_total, BufferMargins &margins,
                       vector<MeshDataBase *> &instances);
-  void BufferBoneTransform(map<unsigned int, mat4> &id_to_transform);
+  void BufferBoneTransform(unordered_map<unsigned int, mat4> &id_to_transform);
   void BufferBoneTransform(Bone *bone, mat4 &trans, unsigned int num_bones = 1);
   void BufferTransform(MeshData *mesh);
   void BufferTransform(vector<MeshData *> &mesh);

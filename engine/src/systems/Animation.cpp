@@ -26,7 +26,7 @@ void AnimationManager::PlayAnim() {
             continue;
         }
         auto anim_mesh = active_anim->second;
-        map<unsigned int, mat4> final_transforms;
+        unordered_map<unsigned int, mat4> final_transforms;
         for (auto& blend_anims : anim_mesh->active_animations) {
             // FBX time, TODO: dae/gltf time.
             auto root_bone_parent = mat4(1);
@@ -46,7 +46,7 @@ void AnimationManager::SetTransformForHierarchy(
     Bone* bone,
     vector<ActiveAnimation>& blend_anims,
     mat4& parent_transform,
-    map<unsigned int, mat4>& final_transforms,
+    unordered_map<unsigned int, mat4>& final_transforms,
     bool is_parent_anim) {
     bool is_bone_anim = false;
     auto anim_trans = _GetBoneAnimation(bone, blend_anims, is_bone_anim);

@@ -188,7 +188,7 @@ int BufferStorage::AddCommand(DrawElementsIndirectCommand &command,
   return -1;
 }
 void BufferStorage::BufferBoneTransform(
-    map<unsigned int, mat4> &id_to_transform) {
+    unordered_map<unsigned int, mat4> &id_to_transform) {
   for (auto &id_trans : id_to_transform) {
     uniforms_ptr->bones_transforms[id_trans.first] = id_trans.second;
   }
@@ -311,7 +311,7 @@ void BufferStorage::BufferMeshData(MeshDataBase* mesh,
   }
   DrawElementsIndirectCommand& command = mesh->command;
   command.count = indices.size();
-  command.instanceCount = raw->instance_count;
+  command.instanceCount = mesh->instance_count;
   command.firstIndex = mesh->index_offset;
   command.baseVertex = mesh->vertex_offset;
   command.baseInstance = mesh->buffer_id;
@@ -335,6 +335,7 @@ void BufferStorage::BufferMeshData(MeshDataBase* mesh,
   //                        mesh->armature->num_bones);
   //  }
   //}
+  is_need_barrier = true;
 }
 
 void BufferStorage::InitMeshBuffers() {

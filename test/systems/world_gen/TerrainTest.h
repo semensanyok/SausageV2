@@ -6,7 +6,7 @@ class TerrainTest {
   class TestScene : public Scene {
   public:
     void Init() {
-      auto ter = new TerrainManager();
+      auto ter = new TerrainManager(nullptr, nullptr);
       ter->CreateTerrain();
     };
     void PrepareDraws() {

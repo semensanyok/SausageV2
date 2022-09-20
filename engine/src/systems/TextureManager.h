@@ -86,8 +86,8 @@ struct GLTextureHandles {
 };
 
 class TextureManager : public SausageSystem {
-    map<size_t, Texture*> path_to_tex;
-    map<unsigned int, Texture*> id_to_tex;
+    unordered_map<size_t, Texture*> path_to_tex;
+    unordered_map<unsigned int, Texture*> id_to_tex;
     Samplers* samplers;
     stack<unsigned int> texture_ids;
     BufferManager* buffer;

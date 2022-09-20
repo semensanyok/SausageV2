@@ -17,8 +17,8 @@ public:
 	GLuint vs_in_use = 0, fs_in_use = 0;
 	bool is_vs_updated = false;
 	bool is_fs_updated = false;
-	map<string, mat4*> mat4_uniforms;
-	map<string, vec3*> vec3_uniforms;
+	unordered_map<string, mat4*> mat4_uniforms;
+	unordered_map<string, vec3*> vec3_uniforms;
 
 	inline bool operator==(Shader& other) {
 		return id == other.id;

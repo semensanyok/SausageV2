@@ -116,13 +116,17 @@ TODO_999 (far compartment): noise generators must be constant at least for heigh
 class TerrainManager
 {
   MeshDataBufferConsumer* mesh_data_buffer;
-
+  MeshManager* mesh_manager;
   // TEST VALUES
   FastNoise::SmartNode<FastNoise::FractalFBm> fnFractal;
   FastNoise::SmartNode<FastNoise::Simplex> fnSimplex;
+  unordered_map<TileSizeParameters, shared_ptr<MeshLoadData>> planes_for_instanced_meshes;
 
 public:
-  TerrainManager(BufferManager* buffer_manager) : mesh_data_buffer{buffer_manager->mesh_data_buffer} {
+  TerrainManager(BufferManager* buffer_manager,
+    MeshManager* mesh_manager) :
+    mesh_data_buffer{ buffer_manager->mesh_data_buffer },
+    mesh_manager{ mesh_manager } {
     //FastNoise::SmartNode<FastNoise::Simplex>
     fnSimplex = FastNoise::New<FastNoise::Simplex>();
     FastNoise::SmartNode sm = fnSimplex;
@@ -135,11 +139,13 @@ public:
   // testing purposes
   void CreateTerrain();
 
-  TerrainChunk* CreateChunk(int size_x, int size_y, int noise_offset_x, int noise_offset_y);
+  TerrainChunk* CreateChunk(vec3 pos, int size_x, int size_y, int noise_offset_x, int noise_offset_y);
   void BufferTerrain(TerrainChunk* chunk);
   //ActivateTerrain(TerrainChunk* chunk);
   //DeactivateTerrain(TerrainChunk* chunk);
 
 private:
+  void BufferTerrain(TerrainChunk* chunk);
+  shared_ptr<MeshLoadData> GetPlaneBySize(TileSizeParameters size, int scale_x, int scale_y);
   ~TerrainManager() {};
 };

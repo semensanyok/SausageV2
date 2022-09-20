@@ -12,6 +12,15 @@ void MeshDataBufferConsumer::BufferMeshData(
   }
 }
 
+void MeshDataBufferConsumer::BufferMeshData(
+    MeshDataBase* load_data_mesh,
+    shared_ptr<MeshLoadData> load_data) {
+  buffer->BufferMeshData(load_data_mesh, load_data, vertex_total, index_total,
+                         meshes_total, margins);
+  buffer->BufferTransform((MeshData*)load_data_mesh);
+}
+
+
 void MeshDataBufferConsumer::Init() {
   margins =
       buffer->RequestStorage(BufferSettings::Margins::MESH_DATA_VERTEX_PART,
@@ -29,7 +38,7 @@ void MeshDataBufferConsumer::Reset() {
 void MeshDataBufferConsumer::SetBaseMeshForInstancedCommand(
     vector<MeshDataBase*>& load_data_meshes,
     vector<shared_ptr<MeshLoadData>>& load_data) {
-  map<size_t, int> instanced_data_lookup;
+  unordered_map<size_t, int> instanced_data_lookup;
   for (int i = 0; i < load_data.size(); i++) {
     auto mesh = load_data[i].get();
     auto key =
@@ -42,9 +51,9 @@ void MeshDataBufferConsumer::SetBaseMeshForInstancedCommand(
       continue;
     }
     auto base_mesh_ind = (*base_mesh_ptr).second;
-    auto base_mesh = load_data[base_mesh_ind];
-    auto& instance_count = base_mesh->instance_count;
+    auto base_mesh_data = load_data_meshes[base_mesh_ind];
     auto mesh_data = load_data_meshes[i];
+    auto& instance_count = base_mesh_data->instance_count;
     mesh_data->instance_id = instance_count++;
     mesh_data->base_mesh = load_data_meshes[base_mesh_ind];
   }

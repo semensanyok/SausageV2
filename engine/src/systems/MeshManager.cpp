@@ -165,6 +165,42 @@ Bone MeshManager::CreateBone(string bone_name, mat4& offset, mat4& trans) {
   return {bone_count++, bone_name, offset, trans, nullptr, {}};
 }
 
+MeshData* MeshManager::CreateMeshData() {
+    auto mesh = new MeshData();
+    mesh->id = mesh_count++;
+    mesh->buffer_id = -1;
+    mesh->instance_id = 0;
+    meshes.push_back(mesh);
+    return mesh;
+}
+
+MeshData* MeshManager::CreateMeshData(MeshLoadData* load_data) {
+  auto mesh = new MeshData(load_data);
+  mesh->id = mesh_count++;
+  mesh->buffer_id = -1;
+  mesh->instance_id = 0;
+  meshes.push_back(mesh);
+  return mesh;
+}
+
+MeshDataOverlay3D* MeshManager::CreateMeshDataFont3D(string& text, mat4& transform) {
+  auto mesh = new MeshDataOverlay3D(text, transform);
+  mesh->id = mesh_count++;
+  mesh->buffer_id = -1;
+  mesh->instance_id = 0;
+  meshes.push_back(mesh);
+  return mesh;
+}
+
+MeshDataUI* MeshManager::CreateMeshDataFontUI(vec2 transform, Texture* texture) {
+  auto mesh = new MeshDataUI(transform, texture);
+  mesh->id = mesh_count++;
+  mesh->buffer_id = -1;
+  mesh->instance_id = 0;
+  mesh->transform = transform;
+  meshes.push_back(mesh);
+  return mesh;
+}
 
 shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<Vertex>& vertices,
                                                  vector<unsigned int>& indices,
@@ -261,7 +297,7 @@ shared_ptr<MeshLoadData> MeshManager::ProcessMesh(aiMesh* mesh,
           ? new Armature{{}, is_load_armature ? mesh->mNumBones : 0, bones}
           : nullptr;
 
-  map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>
+  unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>
       vertex_index_to_weights;
   if (is_load_armature) {
     for (size_t i = 0; i < mesh->mNumBones; i++) {
@@ -347,7 +383,7 @@ void MeshManager::_IterChildren(aiNode* ainode) {
 
 void MeshManager::_ProcessVertex(
     aiMesh* mesh, int i, vector<Vertex>& vertices,
-    map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
+    unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
         vertex_index_to_weights,
     bool is_load_armature) {
   Vertex vertex;
@@ -373,7 +409,7 @@ void MeshManager::_ProcessVertex(
 
 void MeshManager::_SetVertexBones(
     Vertex& vertex, int i,
-    map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
+    unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
         vertex_index_to_weights) {
   vertex.BoneIds = ivec4(-1);
   vertex.BoneWeights = vec4(0.0);

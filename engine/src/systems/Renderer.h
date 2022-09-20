@@ -20,7 +20,7 @@ private:
 	RendererContextManager* context_manager;
 	ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;
 
-	map<unsigned int, map<DrawOrder::DrawOrder, vector<DrawCall*>>> buffer_to_draw_call;
+  unordered_map<unsigned int, map<DrawOrder::DrawOrder, vector<DrawCall*>>> buffer_to_draw_call;
 public:
 	SDL_Renderer* renderer;
 	Renderer(

@@ -60,7 +60,7 @@ class FontManager : public SausageSystem {
   friend class ScreenOverlayManagerTest;
   //DrawCall* draw_call_3d;
   Samplers* samplers;
-  map<int, pair<Texture*, map<char, Character>>> size_chars;
+  unordered_map<int, pair<Texture*, map<char, Character>>> size_chars;
   const unsigned int command_buffer_size = 1;
   TextureManager* texture_manager;
   DrawCall* draw_call_3d;

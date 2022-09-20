@@ -23,7 +23,6 @@ struct MeshLoadData {
   PhysicsData* physics_data = nullptr;
   string name;
   mat4 transform;
-  unsigned int instance_count;
 };
 
 class MeshDataBase {
@@ -35,6 +34,7 @@ public:
   long index_offset;
   long transform_offset;
   MeshDataBase* base_mesh;
+  long instance_count;
   DrawElementsIndirectCommand command;
   MeshDataBase()
     : vertex_offset{ -1 },
@@ -42,7 +42,8 @@ public:
     instance_id{ 0 },
     buffer_id{ -1 },
     base_mesh{ nullptr },
-    transform_offset{ -1 } {};
+    transform_offset{ -1 },
+    instance_count{ 1 } {};
   virtual ~MeshDataBase() {};
 };
 
@@ -62,7 +63,8 @@ private:
   MeshData()
     : textures{ {0, {}} },
     physics_data{ nullptr },
-    is_transparent{ false } {};
+    is_transparent{ false },
+    transform{ mat4(1.0) } {};
   MeshData(MeshLoadData* load_data)
     : textures{ {0, {}} },
     physics_data{ load_data->physics_data },

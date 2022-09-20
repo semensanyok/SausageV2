@@ -31,7 +31,7 @@ struct Animation {
   double duration;
   double ticks_per_second;
 
-  map<string, BoneKeyFrames> bone_frames;
+  unordered_map<string, BoneKeyFrames> bone_frames;
 };
 
 struct Armature {
@@ -39,9 +39,9 @@ struct Armature {
   unsigned int num_bones;
   Bone* bones;
   mat4 transform;
-  map<string, Bone*> name_to_bone;
-  map<unsigned int, Bone*> id_to_bone;
-  map<string, Animation*> name_to_anim;
+  unordered_map<string, Bone*> name_to_bone;
+  unordered_map<unsigned int, Bone*> id_to_bone;
+  unordered_map<string, Animation*> name_to_anim;
 };
 
 // not blended channels

@@ -1,6 +1,6 @@
 #include "TerrainManager.h"
 
-TerrainChunk* TerrainManager::CreateChunk(int size_x, int size_y, int noise_offset_x, int noise_offset_y)
+TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int size_x, int size_y, int noise_offset_x, int noise_offset_y)
 {
   vector<vec3> vertices(size_x * size_y);
   vector<unsigned int> indices;
@@ -17,7 +17,7 @@ TerrainChunk* TerrainManager::CreateChunk(int size_x, int size_y, int noise_offs
   fnSimplex->GenUniformGrid2D(temperature_values.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
 
   const int SIZE = 1;
-  TerrainChunk* chunk = new TerrainChunk(size_x, size_y, SIZE);
+  TerrainChunk* chunk = new TerrainChunk(size_x, size_y, SIZE, pos);
 
   // create chunk in local space, use transform matrix to apply offsetX/Y
   // each tile has 4 vertices
@@ -96,18 +96,14 @@ TerrainChunk* TerrainManager::CreateChunk(int size_x, int size_y, int noise_offs
 void TerrainManager::BufferTerrain(TerrainChunk* chunk)
 {
   // TODO: from TerrainPixelValues assign BlendTextures. then buffer.
-  vector<MeshData*> meshes(chunk->tiles.size());
-  for (int i = 0; i < chunk->tiles.size(); i++) {
-    meshes[i] = chunk->tiles[i]->mesh_data;
-  }
+  auto load_data = BufferTerrain(chunk);
   //mesh_data_buffer->
   //  BufferMeshData(meshes, load_data);
   //mesh_data_buffer->
   //  SetBaseMeshForInstancedCommand(meshes, load_data);
-  mesh_data_buffer->BufferTransform(mesh);
 }
 
-shared_ptr<MeshLoadData> GetMeshLoadData(TerrainChunk* chunk) {
+void TerrainManager::BufferTerrain(TerrainChunk* chunk) {
   /**
       TODO:
         Buffer single plain as base mesh
@@ -130,13 +126,48 @@ shared_ptr<MeshLoadData> GetMeshLoadData(TerrainChunk* chunk) {
   //  TBN IS NEEDED IN SHADER !!!
   // vector<vec2> normals;
   vector<vec3> normals;
-  for (int y = 0; y < chunk->sizeY; y++) {
-    for (int x = 0; x < chunk->sizeX; x += 1) {
-      TerrainTile* tile = chunk->tiles[x * y];
-      tile->mesh_data = new MeshData();
-      tile->mesh_data->transform = translate(mat4(1.0), vec3(x * chunk->scale, y * chunk->scale, 0));
 
-    }
+  auto tile0 = chunk->tiles[0];
+  auto base_mesh = mesh_manager->CreateMeshData();
+  tile0->mesh_data = base_mesh;
+  base_mesh->transform = translate(mat4(1), chunk->pos);
+  base_mesh->instance_count = chunk->tiles.size();
+  mesh_data_buffer->BufferMeshData(base_mesh, GetPlaneBySize(tile0->size,
+    chunk->scale, chunk->scale));
+
+  for (int i = 1; i < chunk->tiles.size(); i++) {
+    auto tile = chunk->tiles[i];
+    auto mesh_data = mesh_manager->CreateMeshData();
+    mesh_data->base_mesh = base_mesh;
+    mesh_data->instance_id = base_mesh->instance_count++;
+    
+    tile->mesh_data = mesh_data;
+    mesh_data->transform = translate(base_mesh->transform, tile->x0y0z);
+    mesh_data_buffer->BufferTransform(mesh_data);
+  }
+}
+
+shared_ptr<MeshLoadData> TerrainManager::GetPlaneBySize(TileSizeParameters size, int scale_x, int scale_y) {
+  auto existing = planes_for_instanced_meshes.find(size);
+  if (existing == planes_for_instanced_meshes.end()) {
+
+    // TODO: for any number of vertices, not just hardcoded 2
+    float half_size_x = (float)scale_x / 2;
+    float half_size_y = (float)scale_y / 2;
+    std::vector<float> vertices2 = {
+        half_size_x,  half_size_y, 0.0f,  // top right
+        half_size_x, -half_size_y, 0.0f,  // bottom right
+		-half_size_x, -half_size_y, 0.0f,  // bottom left
+		-half_size_x,  half_size_y, 0.0f   // top left 
+	};
+	std::vector<unsigned int> indices2 = {
+		0, 1, 3,  // first Triangle
+		1, 2, 3   // second Triangle
+	};
+    // TODO: add normals, should be unit up vector?
+	return mesh_manager->CreateMesh(vertices2, indices2);
+  } else {
+    return existing->second;
   }
 }
 

@@ -51,39 +51,10 @@ class MeshManager : public SausageSystem {
                            vector<unsigned int>& out_mMeshes_indices);
 
   Bone CreateBone(string bone_name, mat4& offset, mat4& trans);
-  MeshData* CreateMeshData() {
-    auto mesh = new MeshData();
-    mesh->id = mesh_count++;
-    mesh->buffer_id = -1;
-    mesh->instance_id = 0;
-    meshes.push_back(mesh);
-    return mesh;
-  };
-  MeshData* CreateMeshData(MeshLoadData* load_data) {
-    auto mesh = new MeshData(load_data);
-    mesh->id = mesh_count++;
-    mesh->buffer_id = -1;
-    mesh->instance_id = 0;
-    meshes.push_back(mesh);
-    return mesh;
-  };
-  MeshDataOverlay3D* CreateMeshDataFont3D(string& text, mat4& transform) {
-    auto mesh = new MeshDataOverlay3D(text, transform);
-    mesh->id = mesh_count++;
-    mesh->buffer_id = -1;
-    mesh->instance_id = 0;
-    meshes.push_back(mesh);
-    return mesh;
-  };
-  MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr) {
-    auto mesh = new MeshDataUI(transform, texture);
-    mesh->id = mesh_count++;
-    mesh->buffer_id = -1;
-    mesh->instance_id = 0;
-    mesh->transform = transform;
-    meshes.push_back(mesh);
-    return mesh;
-  };
+  MeshData* CreateMeshData();
+  MeshData* CreateMeshData(MeshLoadData* load_data);
+  MeshDataOverlay3D* CreateMeshDataFont3D(string& text, mat4& transform);
+  MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr);
   shared_ptr<MeshLoadData> CreateMesh(vector<Vertex>& vertices,
                                       vector<unsigned int>& indices,
                                       Armature* armature = nullptr);
@@ -121,12 +92,12 @@ class MeshManager : public SausageSystem {
   void _IterChildren(aiNode* ainode);
   void _ProcessVertex(
       aiMesh* mesh, int i, vector<Vertex>& vertices,
-      map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
+      unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
           vertex_index_to_weights,
       bool is_load_armature = false);
   void _SetVertexBones(
       Vertex& vertex, int i,
-      map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
+      unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
           vertex_index_to_weights);
   void _SetBoneHierarchy(Armature* armature, aiNode* parent_node, Bone* parent,
                          bool is_dae = false);

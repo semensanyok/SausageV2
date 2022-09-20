@@ -26,6 +26,7 @@ public:
     };
     void BufferMeshData(vector<MeshDataBase*>& load_data_meshes,
                         vector<shared_ptr<MeshLoadData>>& load_data);
+    void BufferMeshData(MeshDataBase* load_data_mesh, shared_ptr<MeshLoadData> load_data);
     void Init();
     void Reset();
     void SetBaseMeshForInstancedCommand(
@@ -39,7 +40,7 @@ public:
     void BufferMeshTexture(MeshData* mesh) {
       buffer->BufferMeshTexture(mesh);
     };
-    void BufferBoneTransform(map<unsigned int, mat4>& bones_transforms) {
+    void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms) {
       buffer->BufferBoneTransform(bones_transforms);
     };
 };
