@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sausage.h"
+#include "Settings.h"
 
 class TerrainTile;
 /*
@@ -46,7 +47,7 @@ public:
   vec3 x0y0z, x1y0z, x0y1z, x1y1z;
   // number of vertices by axes.
   // for test assume minimal size of 4 vertices
-  TileSizeParameters size = { 2, 2 };
+  TileSizeParameters size = { Terrain::VerticesSize::TILE_X, Terrain::VerticesSize::TILE_Y };
   /*
   average values of all vertices, included in tile
 
@@ -58,7 +59,6 @@ public:
 
   AdjastentTiles adjastent;
 
-  // TODO: make sure it becomes instanced when Buffer it. (thousands rectangular patches)
   MeshData* mesh_data;
 };
 

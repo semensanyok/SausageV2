@@ -7,6 +7,8 @@
 #include "GPUUniformsStruct.h"
 #include "Interfaces.h"
 #include "TextureStruct.h"
+#include "BufferSettings.h"
+#include "Arena.h"
 
 using namespace std;
 using namespace glm;
@@ -30,9 +32,9 @@ public:
   unsigned long id;
   long buffer_id;
   unsigned long instance_id;
-  long vertex_offset;
-  long index_offset;
-  long transform_offset;
+  MemorySlot vertex_offset;
+  MemorySlot index_offset;
+  MemorySlot transform_offset;
   MeshDataBase* base_mesh;
   long instance_count;
   DrawElementsIndirectCommand command;
@@ -74,6 +76,11 @@ private:
     is_transparent{ false } {};
   ~MeshData() {
     delete physics_data;
+    command.instanceCount = 0;
+
+    // armature can be reused between meshes
+    // need to delete somewhere, or make shared_ptr
+    //delete armature;
   };
 };
 

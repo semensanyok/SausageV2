@@ -19,6 +19,7 @@
 #include "ScreenOverlayManager.h"
 #include "ShaderManager.h"
 #include "TerrainManager.h"
+#include "DrawCallManager.h"
 
 class SystemsManager
 {
@@ -43,6 +44,7 @@ public:
   ShaderManager* shader_manager = nullptr;
   BufferManager* buffer_manager = nullptr;
   TerrainManager* terrain_manager = nullptr;
+  DrawCallManager* draw_call_manager = nullptr;
 
   static SystemsManager* GetInstance() {
     static SystemsManager* instance = new SystemsManager();

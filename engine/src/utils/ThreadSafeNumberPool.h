@@ -5,11 +5,13 @@
 
 using namespace std;
 
-class NumberPool {
+// refactor to not keep array
+class ThreadSafeNumberPool {
   const unsigned int max_number;
   stack<unsigned int> numbers;
+  mutex mtx;
 public:
-  NumberPool(unsigned int max_number) : max_number{ max_number } {
+  ThreadSafeNumberPool(unsigned int max_number) : max_number{ max_number } {
     for (int i = max_number; i >= 0; i--) {
       numbers.push(i);
     }

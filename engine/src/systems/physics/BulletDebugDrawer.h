@@ -9,6 +9,7 @@
 #include "StateManager.h"
 #include "BulletDebugDrawerBufferConsumer.h"
 #include "Renderer.h"
+#include "DrawCallManager.h"
 
 using namespace std;
 
@@ -20,7 +21,6 @@ static struct PersistDrawRay {
 class BulletDebugDrawer : public btIDebugDraw
 {
     DrawCall* draw_call;
-    Shader* debug_shader;
     Renderer* renderer;
     BulletDebugDrawerBufferConsumer* buffer;
     StateManager* state_manager;
@@ -36,14 +36,13 @@ class BulletDebugDrawer : public btIDebugDraw
 public:
     BulletDebugDrawer(Renderer* renderer,
         BulletDebugDrawerBufferConsumer* buffer,
-        Shaders* shaders,
+        DrawCallManager* draw_call_manager,
         StateManager* state_manager) :
         renderer{ renderer },
         buffer{ buffer },
-        debug_shader{ shaders->bullet_debug },
       state_manager{ state_manager } {
-      draw_call = buffer->CreateDrawCall(shaders->bullet_debug, buffer->CreateCommandBuffer(command_buffer_size), GL_LINES);
-      draw_call->command_count = 1;
+      draw_call = draw_call_manager->physics_debug_dc;
+      draw_call
       Activate();
       CheckGLError();
     };

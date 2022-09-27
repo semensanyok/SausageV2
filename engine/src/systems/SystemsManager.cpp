@@ -11,7 +11,7 @@ void SystemsManager::InitSystems() {
 	file_watcher = new FileWatcher();
 	camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
     renderer_context_manager = new RendererContextManager();
-	renderer = new Renderer(renderer_context_manager);
+	renderer = new Renderer(renderer_context_manager, buffer_manager);
 	renderer_context_manager->InitContext();
 	buffer_manager = new BufferManager(mesh_manager);
 	buffer_manager->Init();
@@ -22,7 +22,8 @@ void SystemsManager::InitSystems() {
 	texture_manager = new TextureManager(samplers, buffer_manager);
     shader_manager = new ShaderManager();
     shader_manager->SetupShaders();
-	font_manager = new FontManager(samplers,mesh_manager, renderer, shader_manager->all_shaders, texture_manager);
+    draw_call_manager = new DrawCallManager(shader_manager);
+	font_manager = new FontManager(samplers, mesh_manager, renderer, draw_call_manager, texture_manager);
 	font_manager->Init();
 	physics_manager = new PhysicsManager(state_manager);
   if (GameSettings::phys_debug_draw) {
@@ -33,7 +34,7 @@ void SystemsManager::InitSystems() {
 	anim_manager = new AnimationManager(state_manager, mesh_manager, buffer_manager);
 
 	async_manager = new AsyncTaskManager();
-    screen_overlay_manager = new ScreenOverlayManager(buffer_manager->ui_buffer, shader_manager->all_shaders,mesh_manager,font_manager,renderer);
+    screen_overlay_manager = new ScreenOverlayManager(buffer_manager->ui_buffer, draw_call_manager,mesh_manager,font_manager,renderer);
     screen_overlay_manager->Init();
 	controller_event_processor = new ControllerEventProcessorEditor(camera, screen_overlay_manager, buffer_manager);
     controller = new Controller(camera, state_manager, physics_manager);

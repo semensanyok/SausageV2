@@ -12,15 +12,8 @@
 using namespace std;
 
 class MeshDataBufferConsumer : public BufferConsumer {
-    BufferMargins margins;
-    unsigned long vertex_total = 0;
-    unsigned long index_total = 0;
-    unsigned long meshes_total = 0;
 public:
     MeshDataBufferConsumer(BufferStorage* buffer) : BufferConsumer(buffer, BufferType::MESH_BUFFERS) {
-        unsigned long vertex_total = 0;
-        unsigned long index_total = 0;
-        unsigned long meshes_total = 0;
     };
     ~MeshDataBufferConsumer() {
     };
@@ -33,14 +26,8 @@ public:
         vector<MeshDataBase*>& load_data_meshes,
         vector<shared_ptr<MeshLoadData>>& load_data);
     void BufferTransform(vector<MeshData*>& meshes);
-    void BufferTransform(MeshData* mesh) {
-      buffer->BufferTransform(mesh);
-    }
+    void BufferTransform(MeshData* mesh);
     void BufferLights(vector<Light*>& lights);
-    void BufferMeshTexture(MeshData* mesh) {
-      buffer->BufferMeshTexture(mesh);
-    };
-    void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms) {
-      buffer->BufferBoneTransform(bones_transforms);
-    };
+    void BufferMeshTexture(MeshData* mesh);;
+    void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms);;
 };

@@ -133,8 +133,6 @@ public:
     mesh_manager{mesh_manager},
     font_manager{font_manager},
     renderer {renderer} {
-    command_buffer_font = buffer->CreateCommandBuffer(COMMAND_BUFFER_SIZE);
-    command_buffer_back = buffer->CreateCommandBuffer(COMMAND_BUFFER_SIZE);
 
     draw_call_text = buffer->CreateDrawCall(shaders->font_ui, command_buffer_font, GL_TRIANGLES);
     draw_call_back = buffer->CreateDrawCall(shaders->back_ui, command_buffer_back, GL_TRIANGLES);
@@ -145,15 +143,11 @@ public:
   void Init() {
     _InitScreenLayout();
     renderer->AddDraw(draw_call_text, DrawOrder::UI_TEXT);
-    draw_call_text->buffer->ActivateCommandBuffer(draw_call_text->command_buffer);
     renderer->AddDraw(draw_call_back, DrawOrder::UI_BACK);
-    draw_call_back->buffer->ActivateCommandBuffer(draw_call_back->command_buffer);
   }
   void Deactivate() {
     renderer->RemoveDraw(draw_call_text, DrawOrder::UI_TEXT);
-    draw_call_text->buffer->RemoveCommandBuffer(draw_call_text->command_buffer);
     renderer->RemoveDraw(draw_call_back, DrawOrder::UI_BACK);
-    draw_call_back->buffer->RemoveCommandBuffer(draw_call_back->command_buffer);
   }
   void KeyCallback(int scan_code) {
     if (scan_code == KeyboardLayout::PauseMenu) {
@@ -267,7 +261,7 @@ private:
       buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
       buffer->BufferTransform(mesh);
       buffer->BufferSize(mesh, batch->x_min, batch->x_max, batch->y_min, batch->y_max);
-      buffer->AddCommand(mesh->command, draw_call_text->command_buffer,total_draw_commands_text++);
+      buffer->AddCommand(mesh->command, total_draw_commands_text++);
       drawn_ui_elements.push_back(mesh);
   }
   void _SubmitDrawBack(
@@ -284,7 +278,7 @@ private:
       max.y += batch->y_max;
 
       buffer->BufferSize(mesh, min.x, max.x, min.y, max.y);
-      buffer->AddCommand(mesh->command, draw_call_back->command_buffer,total_draw_commands_back++);
+      buffer->AddCommand(mesh->command, total_draw_commands_back++);
       drawn_ui_elements.push_back(mesh);
   }
   pair<unique_ptr<BatchDataUI>, MeshDataUI*> _GetTextMesh(

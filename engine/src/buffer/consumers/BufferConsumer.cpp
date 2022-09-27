@@ -1,31 +1,22 @@
 #include "BufferConsumer.h"
 
-void BufferConsumer::PreDraw(BufferType::BufferTypeFlag used_buffers) {
-    buffer->SyncGPUBufAndUnmap();
-    buffer->BindVAOandBuffers(used_buffers); // TODO: one buffer, no rebind
+void BufferConsumer::Init()
+{
+  buffer->AddUsedBuffers(used_buffers);
 }
 
-void BufferConsumer::PostDraw() {
-    buffer->fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    buffer->MapBuffers();
+void BufferConsumer::PreDraw()
+{
 }
 
-void BufferConsumer::ActivateCommandBuffer(CommandBuffer* buf) {
-    buffer->ActivateCommandBuffer(buf);
+void BufferConsumer::PostDraw()
+{
 }
 
-CommandBuffer* BufferConsumer::CreateCommandBuffer(unsigned int size) {
-    return buffer->CreateCommandBuffer(size);
+int BufferConsumer::AddCommands(vector<DrawElementsIndirectCommand>& active_commands, int command_offset) {
+    return buffer-> BufferCommands(active_commands, command_offset);
 }
 
-void BufferConsumer::RemoveCommandBuffer(CommandBuffer* to_remove) {
-    buffer->RemoveCommandBuffer(to_remove);
-}
-
-int BufferConsumer::AddCommands(vector<DrawElementsIndirectCommand>& active_commands, CommandBuffer* buf, int command_offset) {
-    return buffer->AddCommands(active_commands, buf, command_offset);
-}
-
-int BufferConsumer::AddCommand(DrawElementsIndirectCommand& command, CommandBuffer* buf, int command_offset) {
-    return buffer->AddCommand(command, buf, command_offset);
+int BufferConsumer::AddCommand(DrawElementsIndirectCommand& command, int command_offset) {
+    return buffer->BufferCommand(command, command_offset);
 }

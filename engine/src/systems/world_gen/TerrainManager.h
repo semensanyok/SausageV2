@@ -8,6 +8,7 @@
 #include "TerrainTile.h"
 #include "MeshDataBufferConsumer.h"
 #include <FastNoise/FastNoise.h>
+#include "Constants.h"
 
 using namespace std;
 
@@ -120,7 +121,8 @@ class TerrainManager
   // TEST VALUES
   FastNoise::SmartNode<FastNoise::FractalFBm> fnFractal;
   FastNoise::SmartNode<FastNoise::Simplex> fnSimplex;
-  unordered_map<TileSizeParameters, shared_ptr<MeshLoadData>> planes_for_instanced_meshes;
+  unordered_map<TileSizeParameters, pair<MeshData*, shared_ptr<MeshLoadData>>>
+    planes_for_instanced_meshes;
 
 public:
   TerrainManager(BufferManager* buffer_manager,
@@ -139,13 +141,21 @@ public:
   // testing purposes
   void CreateTerrain();
 
-  TerrainChunk* CreateChunk(vec3 pos, int size_x, int size_y, int noise_offset_x, int noise_offset_y);
+  TerrainChunk* CreateChunk(
+    vec3 pos,
+    int noise_offset_x,
+    int noise_offset_y,
+    int size_x,
+    int size_y
+  );
   void BufferTerrain(TerrainChunk* chunk);
   //ActivateTerrain(TerrainChunk* chunk);
   //DeactivateTerrain(TerrainChunk* chunk);
 
 private:
   void BufferTerrain(TerrainChunk* chunk);
-  shared_ptr<MeshLoadData> GetPlaneBySize(TileSizeParameters size, int scale_x, int scale_y);
+  void BufferTerrainDraw(TerrainChunk* chunk);
+  pair<MeshData*, shared_ptr<MeshLoadData>> GetBaseMeshPlaneBySize(
+    TerrainChunk* chunk, TerrainTile* tile);
   ~TerrainManager() {};
 };

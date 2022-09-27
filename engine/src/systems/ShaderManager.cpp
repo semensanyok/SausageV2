@@ -22,7 +22,7 @@ void ShaderManager::SetupShaders() {
 
   all_shaders->back_ui->SetMat4Uniform(string("projection_ortho"), &(camera->projection_matrix_ortho));
 
-  all_shaders->font_3d->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
+  all_shaders->overlay_3d->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
 }
 
 Shader* ShaderManager::_RegisterShader(const char* vs_name, const char* fs_name) {

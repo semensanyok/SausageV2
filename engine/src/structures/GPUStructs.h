@@ -3,6 +3,7 @@
 #include "sausage.h"
 #include "OpenGLHelpers.h"
 #include "Interfaces.h"
+#include "Macros.h"
 
 class BufferConsumer;
 class Shader;
@@ -25,7 +26,7 @@ namespace BufferType {
   const BufferTypeFlag CONTROLLER_UNIFORMS = 1 << 9;
 
   const BufferTypeFlag BLEND_TEXTURES_BY_MESH_ID = 1 << 10;
-
+    
   // COMPOSITE FLAGS
   const BufferTypeFlag MESH_BUFFERS =
     MESH_VAO | VERTEX | INDEX | UNIFORMS | TEXTURE | LIGHT | COMMAND | BLEND_TEXTURES_BY_MESH_ID;
@@ -44,13 +45,6 @@ namespace DrawOrder {
     UI_TEXT,
   };
 }
-
-struct BufferMargins {
-  unsigned long start_vertex;
-  unsigned long end_vertex;
-  unsigned long start_index;
-  unsigned long end_index;
-};
 
 struct BufferLock {
   mutex data_mutex;
@@ -121,21 +115,11 @@ public:
 struct CommandBuffer {
   GLuint id;
   DrawElementsIndirectCommand* ptr;
-  unsigned int size;
+  // we have to use lock here
+  // because command buffer must be "unmapped" before each drawcall
   BufferLock* buffer_lock;
   inline bool operator==(const CommandBuffer& other) { return id == other.id; }
-};
-
-class DrawCall {
-  friend class BufferConsumer;
-public:
-  GLenum mode = GL_TRIANGLES;  // GL_TRIANGLES GL_LINES
-  BufferConsumer* buffer = nullptr;
-  Shader* shader = nullptr;
-  CommandBuffer* command_buffer = nullptr;
-  unsigned int command_count = 0;
-
-private:
-  DrawCall(BufferConsumer* buffer, Shader* shader, CommandBuffer* command_buffer, GLenum mode)
-    : buffer{ buffer }, shader{ shader }, command_buffer{ command_buffer }, mode{ mode } {}
+  ~CommandBuffer() {
+    delete buffer_lock;
+  }
 };

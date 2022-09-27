@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "sausage.h"
 #include "AssimpHelper.h"
+#include "ThreadSafeNumberPool.h"
 
 #define AI_MAX_BONE_WEIGHTS 4
 using namespace std;
@@ -29,14 +30,16 @@ Light* FromAi(aiLight* light);
 
 class MeshManager : public SausageSystem {
  public:
-  MeshManager(){};
+   MeshManager();;
   ~MeshManager(){};
-  atomic<unsigned long> mesh_count{0};
-  atomic<unsigned long> bone_count{0};
+  ThreadSafeNumberPool* mesh_id_pool;
+  ThreadSafeNumberPool* bone_id_pool;
 
   vector<MeshDataBase*> meshes;
   vector<Armature*> armatures;
   vector<Light*> all_lights;
+
+  void DeleteMeshData(MeshDataBase* mesh);
 
   void Reset();
   
@@ -46,9 +49,6 @@ class MeshManager : public SausageSystem {
                   bool is_load_transform = true,
                   bool is_load_aabb = true,
                   bool is_load_armature = false);
-
-  void __LoadMeshesIndices(aiNode* child,
-                           vector<unsigned int>& out_mMeshes_indices);
 
   Bone CreateBone(string bone_name, mat4& offset, mat4& trans);
   MeshData* CreateMeshData();
@@ -74,7 +74,6 @@ class MeshManager : public SausageSystem {
                                       vector<vec3>& normals,
                                       vector<vec2>& uvs,
                                       vector<vec3>& tangents);
-  ;
   string GetBoneName(const char* bone, Armature* armature, bool is_dae = false);
 
  private:
@@ -89,6 +88,8 @@ class MeshManager : public SausageSystem {
                                        bool is_dae = false);
   aiNode* _GetBoneNode(Armature* armature, const char* bone_name,
                        const aiScene* scene, bool is_dae);
+  void _LoadMeshesIndices(aiNode* child,
+                           vector<unsigned int>& out_mMeshes_indices);
   void _IterChildren(aiNode* ainode);
   void _ProcessVertex(
       aiMesh* mesh, int i, vector<Vertex>& vertices,

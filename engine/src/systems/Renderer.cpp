@@ -3,7 +3,7 @@
 
 using namespace std;
 
-void Renderer::Render(Camera *camera) {
+void Renderer::Render(Camera* camera) {
   IF_PROFILE_ENABLED(auto proft1 = chrono::steady_clock::now(););
   _ExecuteCommands();
   IF_PROFILE_ENABLED(auto proft2 = chrono::steady_clock::now(););
@@ -13,56 +13,39 @@ void Renderer::Render(Camera *camera) {
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   {
-    for (auto buffer_shader_order : buffer_to_draw_call) {
-      for (auto buffer_shader : buffer_shader_order.second) {
-        if (buffer_shader.second.empty()) {
-          continue;
-        }
-        auto draw_call_iter = buffer_shader.second.begin();
-        auto buffer_consumer = (*draw_call_iter)->buffer;
-        auto used_buffers = buffer_consumer->GetUsedBuffers();
-        draw_call_iter++;
-        while (draw_call_iter != buffer_shader.second.end()) {
-          used_buffers |= (*draw_call_iter)->buffer->GetUsedBuffers();
-          draw_call_iter++;
-        }
-        {
-          buffer_consumer->PreDraw(used_buffers);
-          for (auto draw : buffer_shader.second) {
-            if (draw->command_count > 0) {
-              glUseProgram(draw->shader->id);
-              glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer->id);
-              draw->shader->SetUniforms();
-              glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
-                                          draw->command_count, 0);
-            }
-          }
-          buffer_consumer->PostDraw();
-        }
-        CheckGLError();
+    for (auto order_shader : draw_calls) {
+      if (order_shader.second.empty()) {
+        continue;
       }
+      {
+        buffer->PreDraw();
+        for (auto draw : order_shader.second) {
+          if (draw->command_count > 0) {
+            glUseProgram(draw->shader->id);
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer->command_buffer->id);
+            draw->shader->SetUniforms();
+            glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
+                                        draw->command_count, draw->command_offset);
+          }
+        }
+        buffer->PostDraw();
+      }
+      CheckGLError();
     }
-    IF_PROFILE_ENABLED(auto proft3 = chrono::steady_clock::now(););
-    Gui::RenderGui(context_manager->window, camera);
-    IF_PROFILE_ENABLED(auto proft4 = chrono::steady_clock::now(););
-    SDL_GL_SwapWindow(context_manager->window);
-    IF_PROFILE_ENABLED(
-      auto proft5 = chrono::steady_clock::now();
-      ProfTime::render_total_ns = proft5 - proft1;
-      ProfTime::render_commands_ns = proft2 - proft1;
-      ProfTime::render_draw_ns = proft3 - proft2;
-      ProfTime::render_gui_ns = proft4 - proft3;
-      ProfTime::render_swap_window_ns = proft5 - proft4;
-    );
   }
+  IF_PROFILE_ENABLED(auto proft3 = chrono::steady_clock::now(););
+  Gui::RenderGui(context_manager->window, camera);
+  IF_PROFILE_ENABLED(auto proft4 = chrono::steady_clock::now(););
+  SDL_GL_SwapWindow(context_manager->window);
+  IF_PROFILE_ENABLED(
+    auto proft5 = chrono::steady_clock::now();
+  ProfTime::render_total_ns = proft5 - proft1;
+  ProfTime::render_commands_ns = proft2 - proft1;
+  ProfTime::render_draw_ns = proft3 - proft2;
+  ProfTime::render_gui_ns = proft4 - proft3;
+  ProfTime::render_swap_window_ns = proft5 - proft4;
+  );
   Events::end_render_frame_event.notify_all();
-}
-
-void Renderer::RemoveBuffer(BufferStorage *buffer) {
-  auto buf = buffer_to_draw_call.find(buffer->id);
-  if (buf != buffer_to_draw_call.end()) {
-    buffer_to_draw_call.erase(buffer->id);
-  }
 }
 
 void Renderer::AddGlCommand(function<void()> &f, bool is_persistent) {
@@ -84,7 +67,7 @@ bool Renderer::AddDraw(DrawCall *draw, DrawOrder::DrawOrder draw_order) {
   //	LOG((ostringstream() << "Draw for shader: " << draw->shader->id << "
   //buffer:" << draw->buffer->id << "already exists").str()); 	return false;
   //}
-  buffer_to_draw_call[draw->buffer->GetBufferId()][draw_order].push_back(draw);
+  draw_calls[draw_order].push_back(draw);
   return true;
 }
 

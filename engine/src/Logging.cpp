@@ -2,7 +2,7 @@
 
 using namespace std;
 
-static ofstream logstream("LOG.log");
+static ofstream log_file_stream("LOG.log");
 
 static struct LogEntry {
   string message;
@@ -11,6 +11,8 @@ static struct LogEntry {
 
 static ThreadSafeQueue<LogEntry> log_queue;
 
+// make stderr/stdout switch, separate methods or flag
+// (stderr doesnt print immediately, bufferring output until OS decides to flush. good for perf, bad for emergency/crashes)
 void LOG(const ostringstream& s,
          const std::source_location& location) {
   LOG(s.str(), location);
@@ -41,7 +43,7 @@ namespace Sausage {
       auto& message = log.message;
 
 			_LogMessage(cout, location, message);
-      _LogMessage(logstream, location, message);
+            _LogMessage(log_file_stream, location, message);
 			logs.pop();
 		}
 	}

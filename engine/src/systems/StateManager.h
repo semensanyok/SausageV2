@@ -30,7 +30,7 @@ public:
 			Events::end_render_frame_event.wait(end_render_frame_lock);
 		}
 	}
-	void BufferBoneTransformUpdate(map<unsigned int, mat4>& bones_transforms) {
+	void BufferBoneTransformUpdate(unordered_map<unsigned int, mat4>& bones_transforms) {
 		mesh_data_buffer->BufferBoneTransform(bones_transforms);
 	}
 	void UpdateDeltaTimeTimings() {

@@ -5,14 +5,11 @@ void BulletDebugDrawerBufferConsumer::BufferMeshData(vector<vec3>& vertices,
   vector<vec3>& colors)
 {
     shared_ptr<MeshLoadData> load_data = mesh_manager->CreateMesh(vertices, indices, colors);
-    buffer->BufferMeshData(mesh, load_data, vertex_total, index_total, meshes_total,
-      margins);
+    buffer->BufferMeshData(mesh, load_data);
 }
 
 void BulletDebugDrawerBufferConsumer::Init() {
-    margins = buffer->RequestStorage(BufferSettings::Margins::DEBUG_PHYS_VERTEX_PART, BufferSettings::Margins::DEBUG_PHYS_INDEX_PART);
-    vertex_total = margins.start_vertex;
-    index_total = margins.start_index;
+    BufferConsumer::Init();
     mesh = mesh_manager->CreateMeshData();
 }
 

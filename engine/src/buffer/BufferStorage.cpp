@@ -1,56 +1,16 @@
 #include "BufferStorage.h"
 
-BufferMargins BufferStorage::RequestStorage(float buffer_part_percent_vertex,
-                                            float buffer_part_percent_index) {
-  if (buffer_part_percent_vertex + allocated_percent_vertex > 1.0) {
-    LOG((
-            ostringstream()
-            << "BufferStorage::RequestStorage failed for vertex. requested '"
-            << buffer_part_percent_vertex << "' + allocated '"
-            << allocated_percent_vertex << "' > 1")
-            .str());
-    return {};
-  }
-  if (buffer_part_percent_index + allocated_percent_index > 1.0) {
-    LOG((
-            ostringstream()
-            << "BufferStorage::RequestStorage failed for index. requested '"
-            << buffer_part_percent_index << "' + allocated '"
-            << allocated_percent_index << "' > 1")
-            .str());
-    return {};
-  }
-  auto start_vertex = allocated_percent_vertex * MAX_VERTEX;
-  auto start_index = allocated_percent_index * MAX_INDEX;
-  auto end_vertex =
-      (allocated_percent_vertex + buffer_part_percent_vertex) * MAX_VERTEX;
-  auto end_index =
-      (allocated_percent_index + buffer_part_percent_index) * MAX_INDEX;
-
-  BufferMargins margins =
-      BufferMargins(start_vertex, end_vertex, start_index, end_index);
-  allocated_percent_vertex += buffer_part_percent_vertex;
-  allocated_percent_index += buffer_part_percent_index;
-  return margins;
-}
-
 // map buffers that updated asyncronously
-void BufferStorage::MapBuffers() {
-  for (auto buf : command_buffers) {
-    lock_guard<mutex> data_lock(buf->buffer_lock->data_mutex);
-    MapBuffer(buf);
-  }
-}
-void BufferStorage::MapBuffer(CommandBuffer *buf) {
-  if (buf->buffer_lock->is_mapped == true) {
+void BufferStorage::MapBuffer() {
+  lock_guard<mutex> data_lock(command_buffer->buffer_lock->data_mutex);
+  if (command_buffer->buffer_lock->is_mapped == true) {
     return;
   }
   // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-  buf->ptr = (DrawElementsIndirectCommand *)glMapNamedBufferRange(
-      buf->id, 0, buf->size * sizeof(DrawElementsIndirectCommand), flags);
-  mapped_command_buffers[buf->id] = buf;
-  buf->buffer_lock->is_mapped = true;
-  buf->buffer_lock->is_mapped_cv.notify_all();
+  command_buffer->ptr = (DrawElementsIndirectCommand *)glMapNamedBufferRange(
+      command_buffer->id, 0, COMMAND_STORAGE_SIZE, flags);
+  command_buffer->buffer_lock->is_mapped = true;
+  command_buffer->buffer_lock->is_mapped_cv.notify_all();
 }
 
 void BufferStorage::WaitGPU(GLsync fence_sync,
@@ -83,109 +43,69 @@ void BufferStorage::WaitGPU(GLsync fence_sync,
   glDeleteSync(fence_sync);
   fence_sync = 0;
 }
+void BufferStorage::ActivateCommandBuffer() {
+  MapBuffer();
+}
 void BufferStorage::SyncGPUBufAndUnmap() {
   WaitGPU(fence_sync);
   if (is_need_barrier) {
     glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
     is_need_barrier = false;
   }
-  for (auto &buf : mapped_command_buffers) {
-    lock_guard<mutex> data_lock(buf.second->buffer_lock->data_mutex);
-    UnmapBuffer(buf.second);
-  }
-  mapped_command_buffers.clear();
+  lock_guard<mutex> data_lock(command_buffer->buffer_lock->data_mutex);
+  _UnmapBuffer();
 }
-void BufferStorage::UnmapBuffer(CommandBuffer *buf) {
-  if (buf->buffer_lock->is_mapped == false) {
+void BufferStorage::_UnmapBuffer() {
+  lock_guard<mutex> data_lock(command_buffer->buffer_lock->data_mutex);
+  if (command_buffer->buffer_lock->is_mapped == false) {
     return;
   }
-  buf->buffer_lock->is_mapped = false;
-  buf->buffer_lock->is_mapped_cv.notify_all();
+  command_buffer->buffer_lock->is_mapped = false;
+  command_buffer->buffer_lock->is_mapped_cv.notify_all();
   // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
-  if (!glUnmapNamedBuffer(buf->id)) {
+  if (!glUnmapNamedBuffer(command_buffer->id)) {
     DEBUG_EXPR(CheckGLError());
   }
 }
-CommandBuffer *BufferStorage::CreateCommandBuffer(unsigned int size) {
+CommandBuffer *BufferStorage::_CreateCommandBuffer() {
   auto buf = new CommandBuffer();
-  buf->size = size;
   buf->buffer_lock = new BufferLock();
   buf->buffer_lock->is_mapped = false;
 
   // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
   glGenBuffers(1, &buf->id);
   glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buf->id);
-  glBufferStorage(GL_DRAW_INDIRECT_BUFFER,
-                  size * sizeof(DrawElementsIndirectCommand), NULL, flags);
+  glBufferStorage(GL_DRAW_INDIRECT_BUFFER, COMMAND_STORAGE_SIZE, NULL, flags);
   DEBUG_EXPR(CheckGLError());
   return buf;
 }
-void BufferStorage::ActivateCommandBuffer(CommandBuffer *buf) {
-  lock_guard<mutex> data_lock(buf->buffer_lock->data_mutex);
-  command_buffers.push_back(buf);
-  MapBuffer(buf);
+void BufferStorage::_DeleteCommandBuffer() {
+  lock_guard<mutex> data_lock(command_buffer->buffer_lock->data_mutex);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffer->id);
+  glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
+  DEBUG_EXPR(CheckGLError());
+  delete command_buffer;
 }
-void BufferStorage::RemoveCommandBuffer(CommandBuffer *to_remove) {
-  lock_guard<mutex> data_lock(to_remove->buffer_lock->data_mutex);
-  auto cur_buf = command_buffers.begin();
-  while (cur_buf != command_buffers.end()) {
-    if (*cur_buf == to_remove) {
-      command_buffers.erase(cur_buf);
-      mapped_command_buffers.erase(to_remove->id);
-      // UnmapBuffer(to_remove);
-      break;
-    }
-    cur_buf++;
+int BufferStorage::BufferCommands(
+    vector<DrawElementsIndirectCommand>& active_commands, int command_offset) {
+  unique_lock<mutex> data_lock(command_buffer->buffer_lock->data_mutex);
+  if (!command_buffer->buffer_lock->is_mapped) {
+    command_buffer->buffer_lock->Wait(data_lock);
   }
-}
-void BufferStorage::DeleteCommandBuffer(CommandBuffer *to_delete) {
-  lock_guard<mutex> data_lock(to_delete->buffer_lock->data_mutex);
-  auto cur_buf = command_buffers.begin();
-  while (cur_buf != command_buffers.end()) {
-    if (*cur_buf == to_delete) {
-      command_buffers.erase(cur_buf);
-      mapped_command_buffers.erase(to_delete->id);
-      UnmapBuffer(to_delete);
-      glDeleteBuffers(1, &(to_delete->id));
-      break;
-    }
-    cur_buf++;
-  }
-  delete to_delete->buffer_lock;
-  delete to_delete;
-}
-int BufferStorage::AddCommands(
-    vector<DrawElementsIndirectCommand> &active_commands, CommandBuffer *buf,
-    int command_offset) {
-  unique_lock<mutex> data_lock(buf->buffer_lock->data_mutex);
-  if (!buf->buffer_lock->is_mapped) {
-    buf->buffer_lock->Wait(data_lock);
-  }
-  auto mapped_buffer = mapped_command_buffers.find(buf->id);
   int command_start = command_offset == -1 ? 0 : command_offset;
-  if (mapped_buffer != mapped_command_buffers.end()) {
-    {
-      memcpy(&(mapped_buffer->second->ptr[command_start]),
-             active_commands.data(),
-             active_commands.size() * sizeof(DrawElementsIndirectCommand));
-    }
-    return command_start;
-  }
-  return -1;
+  memcpy(&(command_buffer->ptr[command_start]),
+         active_commands.data(),
+         active_commands.size() * sizeof(DrawElementsIndirectCommand));
+  return command_start;
 }
-int BufferStorage::AddCommand(DrawElementsIndirectCommand &command,
-                              CommandBuffer *buf, int command_offset) {
-  unique_lock<mutex> data_lock(buf->buffer_lock->data_mutex);
-  while (!buf->buffer_lock->is_mapped) {
-    buf->buffer_lock->Wait(data_lock);
+int BufferStorage::BufferCommand(DrawElementsIndirectCommand& command, int command_offset) {
+  unique_lock<mutex> data_lock(command_buffer->buffer_lock->data_mutex);
+  while (!command_buffer->buffer_lock->is_mapped) {
+    command_buffer->buffer_lock->Wait(data_lock);
   }
-  auto mapped_buffer = mapped_command_buffers.find(buf->id);
-  if (mapped_buffer != mapped_command_buffers.end()) {
-    int command_start = command_offset == -1 ? 0 : command_offset;
-    buf->ptr[command_start] = command;
-    return command_start;
-  }
-  return -1;
+  int command_start = command_offset == -1 ? 0 : command_offset;
+  command_buffer->ptr[command_start] = command;
+  return command_start;
 }
 void BufferStorage::BufferBoneTransform(
     unordered_map<unsigned int, mat4> &id_to_transform) {
@@ -233,15 +153,10 @@ void BufferStorage::BufferLights(vector<Light *> &lights) {
 }
 
 void BufferStorage::BufferMeshData(vector<MeshDataBase *> &load_data_meshes,
-                                   vector<shared_ptr<MeshLoadData>> &load_data,
-                                   unsigned long &vertex_total,
-                                   unsigned long &index_total,
-                                   unsigned long &meshes_total,
-                                   BufferMargins &margins) {
+                                   vector<shared_ptr<MeshLoadData>> &load_data) {
   vector<MeshDataBase *> instances;
   for (int i = 0; i < load_data.size(); i++) {
-    BufferMeshData(load_data_meshes[i], load_data[i], vertex_total, index_total,
-                   meshes_total, margins, instances);
+    BufferMeshData(load_data_meshes[i], load_data[i], instances);
   }
   for (auto &instance : instances) {
     instance->buffer_id = instance->base_mesh->buffer_id;
@@ -253,21 +168,13 @@ void BufferStorage::BufferMeshData(vector<MeshDataBase *> &load_data_meshes,
 }
 
 void BufferStorage::BufferMeshData(MeshDataBase *mesh,
-                                   shared_ptr<MeshLoadData> load_data,
-                                   unsigned long &vertex_total,
-                                   unsigned long &index_total,
-                                   unsigned long &meshes_total,
-                                   BufferMargins &margins) {
+                                   shared_ptr<MeshLoadData> load_data) {
   vector<MeshDataBase*> dev_null;
-  BufferMeshData(mesh, load_data, vertex_total, index_total, meshes_total, margins, dev_null);
+  BufferMeshData(mesh, load_data, dev_null);
 }
 
 void BufferStorage::BufferMeshData(MeshDataBase* mesh,
                                    shared_ptr<MeshLoadData> load_data,
-                                   unsigned long& vertex_total,
-                                   unsigned long& index_total,
-                                   unsigned long& meshes_total,
-                                   BufferMargins& margins,
                                    vector<MeshDataBase*>& instances) {
   auto raw = load_data.get();
   bool is_instance = mesh->base_mesh != nullptr;
@@ -279,54 +186,25 @@ void BufferStorage::BufferMeshData(MeshDataBase* mesh,
   auto& indices = raw->indices;
   // if offset initialized - reload data. (if vertices/indices size > existing -
   // will corrupt other meshes)
-  bool is_new_mesh = mesh->buffer_id < 0;
 
-  bool is_vertex_offset_provided = mesh->vertex_offset >= 0;
-  bool is_index_offset_provided = mesh->index_offset >= 0;
-  if (!is_vertex_offset_provided) {
-    mesh->vertex_offset = vertex_total;
-  }
-  if (!is_index_offset_provided) {
-    mesh->index_offset = index_total;
-  }
 
-  if (vertices.size() + mesh->vertex_offset > margins.end_vertex) {
-    LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total="
-      << vertex_total << "asked=" << vertices.size()
-      << "max=" << margins.end_vertex
-      << " vertex offset=" << mesh->vertex_offset)
-            .str());
-    return;
-  }
-  if (indices.size() + mesh->index_offset > MAX_INDEX) {
-    LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total="
-      << index_total << "asked=" << indices.size()
-      << "max=" << margins.end_index
-      << " index offset=" << mesh->index_offset)
-            .str());
-    return;
-  }
-  if (is_new_mesh) {
-    mesh->buffer_id = meshes_total++;
-  }
-  DrawElementsIndirectCommand& command = mesh->command;
-  command.count = indices.size();
-  command.instanceCount = mesh->instance_count;
-  command.firstIndex = mesh->index_offset;
-  command.baseVertex = mesh->vertex_offset;
-  command.baseInstance = mesh->buffer_id;
+  //bool is_new_mesh = mesh->buffer_id < 0;
+  //if (is_new_mesh) {
+  //  mesh->buffer_id = meshes_total++;
+  //}
+  //DrawElementsIndirectCommand& command = mesh->command;
+  //command.count = indices.size();
+  //command.instanceCount = mesh->instance_count;
+  //command.firstIndex = mesh->index_offset;
+  //command.baseVertex = mesh->vertex_offset;
+  //command.baseInstance = mesh->buffer_id;
+
   // copy to GPU
   memcpy(&vertex_ptr[mesh->vertex_offset], vertices.data(),
          vertices.size() * sizeof(Vertex));
   memcpy(&index_ptr[mesh->index_offset], indices.data(),
          indices.size() * sizeof(unsigned int));
 
-  if (!is_vertex_offset_provided) {
-    vertex_total += vertices.size();
-  }
-  if (!is_index_offset_provided) {
-    index_total += indices.size();
-  }
   // if (mesh->armature != nullptr && mesh->armature != NULL) {
   //  int num_bones = mesh->armature->num_bones;
   //  if (mesh->armature->bones != NULL) {
@@ -336,6 +214,61 @@ void BufferStorage::BufferMeshData(MeshDataBase* mesh,
   //  }
   //}
   is_need_barrier = true;
+}
+
+DrawElementsIndirectCommand BufferStorage::RequestStorage(
+  MeshDataBase* mesh,
+  unsigned long vertices_size,
+  unsigned long indices_size
+) {
+
+  // unreasoned guess.
+  // TODO: exact slot when define types of slots and their memory (SMALL/LARGE_SLOT>100000 verts)
+  int max_excess_vertices;
+  if (vertices_size) = vertices_size / vertices_size10;
+
+  auto slot = vertex_slots.PopInRange({ 0, vertices_size }, { 0, vertices_size + max_excess_vertices });
+
+  if (slot == vertex_slots.End()) {
+    if (vertex_total + vertices_size > MAX_VERTEX) {
+      LOG((ostringstream() << "ERROR BufferMeshData allocation. vertices total="
+        << vertex_total << "asked=" << vertices_size
+        << "max=" << MAX_VERTEX
+        << " vertex offset=" << vertex_total)
+              .str());
+      return;
+    }
+    mesh->vertex_offset = { vertex_total, vertices_size };
+    vertex_total += vertices_size;
+  } else {
+
+  }
+
+    mesh->index_offset = { index_total, indices_size };
+    index_total += indices.size();
+  if (indices.size() + mesh->index_offset > MAX_INDEX) {
+    LOG((ostringstream() << "ERROR BufferMeshData allocation. indices total="
+      << index_total << "asked=" << indices.size()
+      << "max=" << MAX_INDEX
+      << " index offset=" << mesh->index_offset)
+            .str());
+    return;
+  }
+
+  bool is_new_mesh = mesh->buffer_id < 0;
+  if (is_new_mesh) {
+    mesh->buffer_id = meshes_total++;
+  }
+  DrawElementsIndirectCommand& command = mesh->command;
+  command.count = indices.size();
+  command.instanceCount = mesh->instance_count;
+  command.firstIndex = mesh->index_offset;
+  command.baseVertex = mesh->vertex_offset;
+  command.baseInstance = mesh->buffer_id;
+}
+
+void BufferStorage::ReleaseStorage(MeshDataBase* mesh) {
+
 }
 
 void BufferStorage::InitMeshBuffers() {
@@ -407,6 +340,8 @@ void BufferStorage::InitMeshBuffers() {
                   flags);
   uniforms_controller_ptr = (ControllerUniformData *)glMapBufferRange(
       GL_SHADER_STORAGE_BUFFER, 0, sizeof(ControllerUniformData), flags);
+
+  _CreateCommandBuffer();
 }
 
 void BufferStorage::BindVAOandBuffers(
@@ -491,43 +426,48 @@ void BufferStorage::BindVAOandBuffers(
 }
 void BufferStorage::Dispose() {
   SyncGPUBufAndUnmap();
+
   glDisableVertexAttribArray(0);
   glDeleteVertexArrays(1, &mesh_VAO);
   DEBUG_EXPR(CheckGLError());
+
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
   glUnmapBuffer(GL_ARRAY_BUFFER);
   glDeleteBuffers(1, &vertex_buffer);
   DEBUG_EXPR(CheckGLError());
+
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
   glDeleteBuffers(1, &index_buffer);
   DEBUG_EXPR(CheckGLError());
+
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &uniforms_buffer);
   DEBUG_EXPR(CheckGLError());
+
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &texture_handle_by_texture_id_buffer);
   DEBUG_EXPR(CheckGLError());
+
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &light_buffer);
   DEBUG_EXPR(CheckGLError());
-  for (auto command_buffer : command_buffers) {
-    glDeleteBuffers(1, &(command_buffer->id));
-    delete command_buffer;
-  }
-  command_buffers.clear();
-  DEBUG_EXPR(CheckGLError());
+
+  _DeleteCommandBuffer();
+
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &uniforms_ui_buffer);
   DEBUG_EXPR(CheckGLError());
+
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_3d_overlay_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &uniforms_3d_overlay_buffer);
   DEBUG_EXPR(CheckGLError());
+
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, font_texture_buffer);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   glDeleteBuffers(1, &font_texture_buffer);
@@ -609,4 +549,18 @@ long BufferStorage::_GetTransformBucketFontUI(MeshDataUI *mesh) {
   long bucket = transforms_total_font_ui;
   transforms_total_font_ui += mesh->command.instanceCount;
   return bucket;
+}
+
+void BufferStorage::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {
+  this->used_buffers |= used_buffers;
+}
+
+void BufferStorage::PreDraw() {
+  SyncGPUBufAndUnmap();
+  BindVAOandBuffers(used_buffers); // TODO: one buffer, no rebind
+}
+
+void BufferStorage::PostDraw() {
+  fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+  MapBuffer();
 }

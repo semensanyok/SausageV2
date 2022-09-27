@@ -7,7 +7,7 @@
 #include "Texture.h"
 #include "BufferManager.h"
 #include "Macros.h"
-#include "NumberPool.h"
+#include "ThreadSafeNumberPool.h"
 
 /**
 
@@ -89,12 +89,11 @@ class TextureManager : public SausageSystem {
     unordered_map<size_t, Texture*> path_to_tex;
     unordered_map<unsigned int, Texture*> id_to_tex;
     Samplers* samplers;
-    stack<unsigned int> texture_ids;
     BufferManager* buffer;
+    ThreadSafeNumberPool* id_pool;
 public:
-    NumberPool* id_pool;
   TextureManager(Samplers* samplers, BufferManager* buffer) :
-    samplers{ samplers }, buffer{ buffer }, id_pool{ new NumberPool(BufferSettings::MAX_TEXTURE) } {
+    samplers{ samplers }, buffer{ buffer }, id_pool{ new ThreadSafeNumberPool(BufferSettings::MAX_TEXTURE) } {
   };
     /**
     * load texture array for mesh. diffuse + normal + height + specular.

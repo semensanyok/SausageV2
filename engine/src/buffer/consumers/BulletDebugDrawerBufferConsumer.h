@@ -9,10 +9,6 @@
 #include "BufferSettings.h"
 
 class BulletDebugDrawerBufferConsumer : public BufferConsumer {
-    BufferMargins margins;
-    unsigned long vertex_total = 0;
-    unsigned long index_total = 0;
-    unsigned long meshes_total = 1;
 public:
     MeshData* mesh = nullptr;
     MeshManager* mesh_manager;

@@ -50,7 +50,6 @@ class Scene1 : public Scene {
       mesh_data_buffer->
       CreateDrawCall(
         shaders->blinn_phong,
-        buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND),
         GL_TRIANGLES
       );
     draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
@@ -87,9 +86,9 @@ class Scene1 : public Scene {
         commands.push_back(draw_meshes[i]->command);
       }
     }
+    draw_call->command_count = (unsigned int)commands.size();
     draw_call->buffer->AddCommands(commands, draw_call->command_buffer);
     CheckGLError();
-    draw_call->command_count = (unsigned int)commands.size();
 
     systems_manager->buffer_manager->mesh_data_buffer->BufferLights(draw_lights);
     CheckGLError();

@@ -67,7 +67,7 @@ Light* FromAi(aiLight* light) {
 void MeshManager::Reset() {
   for (auto mesh : meshes) {
     if (mesh != NULL && mesh != nullptr)
-      delete mesh;
+      DeleteMeshData(mesh);
   }
   for (auto armature : armatures) {
     if (armature != NULL && armature != nullptr)
@@ -80,8 +80,6 @@ void MeshManager::Reset() {
   meshes.clear();
   armatures.clear();
   all_lights.clear();
-  mesh_count = 0;
-  bone_count = 0;
 }
 
 void MeshManager::LoadMeshes(
@@ -111,11 +109,11 @@ void MeshManager::LoadMeshes(
     auto child = scene->mRootNode->mChildren[i];
     auto transform = FromAi(child->mTransformation);
     vector<unsigned int> mMeshes_indices;
-    __LoadMeshesIndices(child, mMeshes_indices);
+    _LoadMeshesIndices(child, mMeshes_indices);
     // if armature - no meshes, but child has meshes. (.dae and .gltf)
     if (mMeshes_indices.empty()) {
       for (unsigned int j = 0; j < child->mNumChildren; j++) {
-        __LoadMeshesIndices(child->mChildren[j], mMeshes_indices);
+        _LoadMeshesIndices(child->mChildren[j], mMeshes_indices);
       }
     }
     for (unsigned int j = 0; j < mMeshes_indices.size(); j++) {
@@ -152,7 +150,7 @@ void MeshManager::LoadMeshes(
   _BlenderPostprocessLights(out_lights);
 }
 
-void MeshManager::__LoadMeshesIndices(
+void MeshManager::_LoadMeshesIndices(
     aiNode* child, vector<unsigned int>& out_mMeshes_indices) {
   if (child->mNumMeshes > 0) {
     for (unsigned int j = 0; j < child->mNumMeshes; j++) {
@@ -162,12 +160,12 @@ void MeshManager::__LoadMeshesIndices(
 }
 
 Bone MeshManager::CreateBone(string bone_name, mat4& offset, mat4& trans) {
-  return {bone_count++, bone_name, offset, trans, nullptr, {}};
+  return {bone_id_pool->ObtainNumber(), bone_name, offset, trans, nullptr, {}};
 }
 
 MeshData* MeshManager::CreateMeshData() {
     auto mesh = new MeshData();
-    mesh->id = mesh_count++;
+    mesh->id = mesh_id_pool->ObtainNumber();
     mesh->buffer_id = -1;
     mesh->instance_id = 0;
     meshes.push_back(mesh);
@@ -176,16 +174,26 @@ MeshData* MeshManager::CreateMeshData() {
 
 MeshData* MeshManager::CreateMeshData(MeshLoadData* load_data) {
   auto mesh = new MeshData(load_data);
-  mesh->id = mesh_count++;
+  mesh->id = mesh_id_pool->ObtainNumber();
   mesh->buffer_id = -1;
   mesh->instance_id = 0;
   meshes.push_back(mesh);
   return mesh;
 }
 
+MeshManager::MeshManager() {
+  mesh_id_pool = new ThreadSafeNumberPool(MAX_BASE_AND_INSTANCED_MESHES);
+  bone_id_pool = new ThreadSafeNumberPool(MAX_BONES);
+}
+
+void MeshManager::DeleteMeshData(MeshDataBase* mesh) {
+  mesh_id_pool->ReleaseNumber(mesh->id);
+  delete mesh;
+}
+
 MeshDataOverlay3D* MeshManager::CreateMeshDataFont3D(string& text, mat4& transform) {
   auto mesh = new MeshDataOverlay3D(text, transform);
-  mesh->id = mesh_count++;
+  mesh->id = mesh_id_pool->ObtainNumber();
   mesh->buffer_id = -1;
   mesh->instance_id = 0;
   meshes.push_back(mesh);
@@ -194,7 +202,7 @@ MeshDataOverlay3D* MeshManager::CreateMeshDataFont3D(string& text, mat4& transfo
 
 MeshDataUI* MeshManager::CreateMeshDataFontUI(vec2 transform, Texture* texture) {
   auto mesh = new MeshDataUI(transform, texture);
-  mesh->id = mesh_count++;
+  mesh->id = mesh_id_pool->ObtainNumber();
   mesh->buffer_id = -1;
   mesh->instance_id = 0;
   mesh->transform = transform;

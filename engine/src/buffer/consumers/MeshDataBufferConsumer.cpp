@@ -5,8 +5,7 @@ using namespace std;
 void MeshDataBufferConsumer::BufferMeshData(
     vector<MeshDataBase*>& load_data_meshes,
     vector<shared_ptr<MeshLoadData>>& load_data) {
-  buffer->BufferMeshData(load_data_meshes, load_data, vertex_total, index_total,
-                         meshes_total, margins);
+  buffer->BufferMeshData(load_data_meshes, load_data);
   for (auto& mesh : load_data_meshes) {
     buffer->BufferTransform((MeshData*)mesh);
   }
@@ -15,24 +14,16 @@ void MeshDataBufferConsumer::BufferMeshData(
 void MeshDataBufferConsumer::BufferMeshData(
     MeshDataBase* load_data_mesh,
     shared_ptr<MeshLoadData> load_data) {
-  buffer->BufferMeshData(load_data_mesh, load_data, vertex_total, index_total,
-                         meshes_total, margins);
+  buffer->BufferMeshData(load_data_mesh, load_data);
   buffer->BufferTransform((MeshData*)load_data_mesh);
 }
 
 
 void MeshDataBufferConsumer::Init() {
-  margins =
-      buffer->RequestStorage(BufferSettings::Margins::MESH_DATA_VERTEX_PART,
-                             BufferSettings::Margins::MESH_DATA_INDEX_PART);
-  vertex_total = margins.start_vertex;
-  index_total = margins.start_index;
+  BufferConsumer::Init();
 }
 
 void MeshDataBufferConsumer::Reset() {
-  vertex_total = 0;
-  index_total = 0;
-  meshes_total = 0;
 }
 
 void MeshDataBufferConsumer::SetBaseMeshForInstancedCommand(
@@ -63,6 +54,18 @@ void MeshDataBufferConsumer::BufferTransform(vector<MeshData*>& meshes) {
   buffer->BufferTransform(meshes);
 }
 
+void MeshDataBufferConsumer::BufferTransform(MeshData* mesh) {
+  buffer->BufferTransform(mesh);
+}
+
 void MeshDataBufferConsumer::BufferLights(vector<Light*>& lights) {
   buffer->BufferLights(lights);
+}
+
+void MeshDataBufferConsumer::BufferMeshTexture(MeshData* mesh) {
+  buffer->BufferMeshTexture(mesh);
+}
+
+void MeshDataBufferConsumer::BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms) {
+  buffer->BufferBoneTransform(bones_transforms);
 }
