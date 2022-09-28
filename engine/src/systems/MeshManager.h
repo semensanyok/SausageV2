@@ -30,13 +30,13 @@ Light* FromAi(aiLight* light);
 
 class MeshManager : public SausageSystem {
  public:
-   MeshManager();;
-  ~MeshManager(){};
+   MeshManager();
+   ~MeshManager();
   ThreadSafeNumberPool* mesh_id_pool;
   ThreadSafeNumberPool* bone_id_pool;
 
-  vector<MeshDataBase*> meshes;
-  vector<Armature*> armatures;
+  vector<MeshDataBase*> all_meshes;
+  vector<Armature*> all_armatures;
   vector<Light*> all_lights;
 
   void DeleteMeshData(MeshDataBase* mesh);

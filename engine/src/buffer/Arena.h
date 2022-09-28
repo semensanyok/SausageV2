@@ -16,68 +16,25 @@ decltype([](const MemorySlot& lhs, const MemorySlot& rhs) {
     lhs.offset > rhs.offset : lhs.count > rhs.count;
 });
 
-// make sure to be multiples of each other, to allocate contigious memory regions in BufferStorage
-// numbers interpreted as num of vertices/indices/commands/... in BufferStorage
-namespace SausageArena {
-  // SMALL
-  const unsigned int S_4 = 4;
-  const unsigned int S_8 = 8;
-  const unsigned int S_16 = 16;
-  const unsigned int S_32 = 32;
-  const unsigned int S_64 = 64;
-  const unsigned int S_128 = 128;
-  const unsigned int S_256 = 256;
-  const unsigned int S_512 = 512;
-  const unsigned int S_1024 = 1024;
-  const unsigned int S_2048 = 2048;
-
-  // MEDIUM
-  const unsigned int M_4096 = 4096;
-  const unsigned int M_8192 = 8192;
-  const unsigned int M_16384 = 16384;
-
-  // LARGE
-  const unsigned int L_32768 = 32768;
-  const unsigned int L_65536 = 65536;
-
-  const unsigned int MAX = L_65536;
-
-  const set<unsigned int> ARENA_SLOTS =
-  {
-    S_4,
-    S_16,
-    S_32,
-    S_64,
-    S_128,
-    S_256,
-    S_512,
-    S_1024,
-    S_2048,
-    M_4096,
-    M_8192,
-    M_16384
-  };
-  // unreasoned, initial guess
-  const set<unsigned int> ARENA_SIZES =
-  { S_64, S_512, S_1024, M_4096, M_16384, L_65536 };
-};
-
-
+/**
+ * @brief allocates slots of powers of 2,
+ *  to always be divisible to split large slots for smaller meshes
+ * For simplier single number allocation look for ThreadSafeNumberPool.cpp
+*/
 class Arena {
+  const static inline MemorySlot NULL_SLOT = { 0, 0 };
   // Arena::Release must be called only by aquired class
   // to avoid extra validations
   friend class MeshDataBase;
 
-  const unsigned int max;
   unsigned int allocated;
+  mutex mtx;
+  set<MemorySlot, memory_slot_count_first_comparator> free_gaps_slots;
+public:
+  const unsigned int max;
   // offset into BufferStorage GPU buffer
   const unsigned int offset;
 
-  mutex mtx;
-
-  set<MemorySlot, memory_slot_count_first_comparator> allocated_slots;
-  set<MemorySlot, memory_slot_count_first_comparator> free_gaps_slots;
-public:
   Arena(
     const unsigned int max,
     const unsigned int offset
@@ -85,26 +42,41 @@ public:
   }
   unsigned int GetFreeSpace() {
     lock_guard(mtx);
-    return max - allocated;
+    return _GetFreeSpace();
   }
   MemorySlot Allocate(const unsigned int size) {
     lock_guard(mtx);
-    DEBUG_ASSERT(GetFreeSpace() >= size);
-    MemorySlot res;
+    unsigned int free_space = _GetFreeSpace();
+    auto size_encompassing_power_of_2 = _GetSmallestEncompassingPowerOf2(size);
     if (free_gaps_slots.empty()) {
-      res = _GetNewSlot(size);
+      MemorySlot res = _AllocateNewSlotIfHasSpace(size_encompassing_power_of_2);
       allocated += res.count;
-    } else {
-      auto maybe_gap = free_gaps_slots.lower_bound({ 0, size });
-      if (maybe_gap == free_gaps_slots.end()) {
-        res = _GetNewSlot(size);
-        allocated += res.count;
-      } else {
-        res = *maybe_gap;
+    }
+    else {
+      auto maybe_gap = free_gaps_slots.lower_bound({ 0, size_encompassing_power_of_2 });
+      bool is_exact = maybe_gap->count == size_encompassing_power_of_2;
+      if (is_exact) {
+        MemorySlot res = *maybe_gap;
+        free_gaps_slots.erase(maybe_gap);
+        return res;
+      }
+      else {
+        MemorySlot gap = *free_gaps_slots.erase(maybe_gap);
+        MemorySlot res = { gap.offset, size_encompassing_power_of_2 };
+        gap.count -= size_encompassing_power_of_2;
+        gap.offset += size_encompassing_power_of_2;
+        free_gaps_slots.insert(gap);
+        return res;
       }
     }
   }
+  void Reset() {
+    lock_guard(mtx);
+    allocated = 0;
+    free_gaps_slots = {};
+  }
 private:
+  // TODO: call from MeshData friend class
   void Release(MemorySlot slot) {
     lock_guard(mtx);
     DEBUG_ASSERT(slot.offset + slot.count <= allocated);
@@ -114,14 +86,31 @@ private:
     }
     free_gaps_slots.insert({ slot.offset, slot.count });
   }
-  MemorySlot _GetNewSlot(const unsigned int size)
+
+  unsigned int _GetFreeSpace() {
+    return max - allocated;
+  }
+  /**
+   * @param size_to_alloc power of 2 slot, encompassing size to allocate
+   *        (to reduce amount of calculations)
+  */
+  MemorySlot _AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc)
   {
-    auto lb = SausageArena::ARENA_SLOTS.lower_bound(size);
-    if (lb == SausageArena::ARENA_SLOTS.end()) {
-      return { 0, 0 };
+    // caller responsible for argument correctness
+    // size_to_alloc = _GetSmallestEncompassingPowerOf2(size_to_alloc);
+    if (size_to_alloc > _GetFreeSpace()) {
+      return NULL_SLOT;
     }
-    else {
-      return { offset + allocated, *lb };
+    unsigned int offset = allocated;
+    allocated += size_to_alloc;
+    return { offset, size_to_alloc };
+
+  }
+  unsigned int _GetSmallestEncompassingPowerOf2(const unsigned int size) {
+    unsigned int res = 1;
+    while (res < size) {
+      res <<= 1;
     }
+    return res;
   }
 };

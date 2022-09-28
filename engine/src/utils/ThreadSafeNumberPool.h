@@ -5,17 +5,17 @@
 
 using namespace std;
 
-// refactor to not keep array
 class ThreadSafeNumberPool {
   const unsigned int max_number;
-  stack<unsigned int> numbers;
+  unsigned int allocated;
+  stack<unsigned int> released_slots;
   mutex mtx;
 public:
-  ThreadSafeNumberPool(unsigned int max_number) : max_number{ max_number } {
-    for (int i = max_number; i >= 0; i--) {
-      numbers.push(i);
-    }
+  ThreadSafeNumberPool(unsigned int max_number) :
+    max_number{ max_number },
+    allocated{ 0 } {
   };
   unsigned int ObtainNumber();
   void ReleaseNumber(unsigned int number);
+  void Reset();
 };

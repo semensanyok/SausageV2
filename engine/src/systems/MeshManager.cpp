@@ -65,11 +65,11 @@ Light* FromAi(aiLight* light) {
 }
 
 void MeshManager::Reset() {
-  for (auto mesh : meshes) {
+  for (auto mesh : all_meshes) {
     if (mesh != NULL && mesh != nullptr)
       DeleteMeshData(mesh);
   }
-  for (auto armature : armatures) {
+  for (auto armature : all_armatures) {
     if (armature != NULL && armature != nullptr)
       delete armature;
   }
@@ -77,8 +77,8 @@ void MeshManager::Reset() {
     if (light != NULL && light != nullptr)
       delete light;
   }
-  meshes.clear();
-  armatures.clear();
+  all_meshes.clear();
+  all_armatures.clear();
   all_lights.clear();
 }
 
@@ -168,7 +168,7 @@ MeshData* MeshManager::CreateMeshData() {
     mesh->id = mesh_id_pool->ObtainNumber();
     mesh->buffer_id = -1;
     mesh->instance_id = 0;
-    meshes.push_back(mesh);
+    all_meshes.push_back(mesh);
     return mesh;
 }
 
@@ -177,13 +177,18 @@ MeshData* MeshManager::CreateMeshData(MeshLoadData* load_data) {
   mesh->id = mesh_id_pool->ObtainNumber();
   mesh->buffer_id = -1;
   mesh->instance_id = 0;
-  meshes.push_back(mesh);
+  all_meshes.push_back(mesh);
   return mesh;
 }
 
 MeshManager::MeshManager() {
   mesh_id_pool = new ThreadSafeNumberPool(MAX_BASE_AND_INSTANCED_MESHES);
   bone_id_pool = new ThreadSafeNumberPool(MAX_BONES);
+}
+
+MeshManager::~MeshManager() {
+  delete mesh_id_pool;
+  delete mesh_id_pool;
 }
 
 void MeshManager::DeleteMeshData(MeshDataBase* mesh) {
@@ -196,7 +201,7 @@ MeshDataOverlay3D* MeshManager::CreateMeshDataFont3D(string& text, mat4& transfo
   mesh->id = mesh_id_pool->ObtainNumber();
   mesh->buffer_id = -1;
   mesh->instance_id = 0;
-  meshes.push_back(mesh);
+  all_meshes.push_back(mesh);
   return mesh;
 }
 
@@ -206,7 +211,7 @@ MeshDataUI* MeshManager::CreateMeshDataFontUI(vec2 transform, Texture* texture) 
   mesh->buffer_id = -1;
   mesh->instance_id = 0;
   mesh->transform = transform;
-  meshes.push_back(mesh);
+  all_meshes.push_back(mesh);
   return mesh;
 }
 

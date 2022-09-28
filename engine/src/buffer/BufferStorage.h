@@ -12,6 +12,8 @@
 #include "sausage.h"
 #include "Macros.h"
 #include "ThreadSafeSet.h"
+#include "ThreadSafeNumberPool.h"
+#include "Arena.h"
 
 /**
 Only command buffer must be contigious
@@ -55,19 +57,13 @@ class BufferStorage {
 
   bool is_need_barrier = false;
 
-  unsigned long vertex_total = 0;
-  unsigned long index_total = 0;
-  unsigned long meshes_total = 0;
-
-  // TODO: better "memory slots" for indices/vertices/commands
-  //       with fixed size (SMALL(<10 <100 verts?)/MEDIUM(<10000 verts)/LARGE(==100 000+) verts slots)
-  //       to avoid memory fragmentation and limitless buffer growth
-  //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
+  ThreadSafeNumberPool* transforms_total;
+  ThreadSafeNumberPool* transforms_total_font;
+  ThreadSafeNumberPool* transforms_total_font_ui;
+  //  TODO: each drawcall uses contigious range of commands. Need to allocate in advance for shader.
   //    or place shader with dynamic number of meshes at the end
-  ThreadSafeSet<MemorySlot, memory_slot_count_first_comparator> index_slots;
-  ThreadSafeSet<MemorySlot, memory_slot_count_first_comparator> vertex_slots;
-  // includes instances (TODO: reserve some for terrain patches. when exceed - add new command or resize?)
-  ThreadSafeSet<MemorySlot, memory_slot_count_first_comparator> transform_slots;
+  Arena* index_arena;
+  Arena* vertex_arena;
 
   ///////////
   /// Buffers
@@ -108,25 +104,44 @@ class BufferStorage {
   BufferType::BufferTypeFlag used_buffers;
 
  public:
-  unsigned long transforms_total = 0;
-  unsigned long transforms_total_font = 0;
-  unsigned long transforms_total_font_ui = 0;
 
   GLsync fence_sync = 0;
 
   BufferStorage() {
-    static int count = 0;
-    transforms_total = 0;
-    bound_buffers = 0;
+    transforms_total = new ThreadSafeNumberPool(MAX_BASE_AND_INSTANCED_MESHES);
+    transforms_total_font = new ThreadSafeNumberPool(MAX_3D_OVERLAY_TRANSFORM);
+    transforms_total_font_ui = new ThreadSafeNumberPool(MAX_UI_UNIFORM_TRANSFORM);
+
+    // TODO: better "memory slots" for indices/vertices/commands
+    //       with fixed size (SMALL(<10 <100 verts?)/MEDIUM(<10000 verts)/LARGE(==100 000+) verts slots)
+    //       to avoid memory fragmentation and limitless buffer growth
+    //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
+    //    or place shader with dynamic number of meshes at the end
+
+    /**
+    * had idea to have multiple arenas for each storage
+    * to store large objects in one, smaller in other
+    * now for simplicity - keep 1 Arena per buffer(with offset = 0)
+    **/
+    unsigned int offset = 0;
+    Arena* index_arena = new Arena(MAX_INDEX, offset);
+    Arena* vertex_arena = new Arena(MAX_VERTEX, offset);
+    // includes instances (TODO: reserve some for terrain patches. when exceed - add new command or resize?)
   };
-  ~BufferStorage(){};
+  ~BufferStorage(){
+    delete transforms_total;
+    delete transforms_total_font;
+    delete transforms_total_font_ui;
+  };
   void Reset() {
     fence_sync = 0;
-    vertex_total = 0;
-    index_total = 0;
-    transforms_total = 0;
-    transforms_total_font = 0;
-    transforms_total_font_ui = 0;
+    transforms_total -> Reset();
+    transforms_total_font -> Reset();
+    transforms_total_font_ui -> Reset();
+
+    index_arena->Reset();
+    vertex_arena->Reset();
+
     bound_buffers = 0;
   };
 

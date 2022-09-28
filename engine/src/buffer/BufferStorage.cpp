@@ -255,10 +255,6 @@ DrawElementsIndirectCommand BufferStorage::RequestStorage(
     return;
   }
 
-  bool is_new_mesh = mesh->buffer_id < 0;
-  if (is_new_mesh) {
-    mesh->buffer_id = meshes_total++;
-  }
   DrawElementsIndirectCommand& command = mesh->command;
   command.count = indices.size();
   command.instanceCount = mesh->instance_count;

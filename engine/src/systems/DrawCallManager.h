@@ -69,23 +69,14 @@ public:
   DrawCall* physics_debug_dc;
 
   // key == draw call id
-  unordered_map<unsigned int, DrawCall*> calls;
+  map<unsigned int, DrawCall*> calls;
   // freed offsets for removed call commands
+  // TODO: Arena, as in BufferStorage
   unordered_map<unsigned int, set<unsigned int>> calls_slots_offsets;
 
   DrawCallManager(
     ShaderManager* shader_manager
   ) : shader_manager{ shader_manager } {
-    mesh_dc = _CreateDrawCall(
-          shader_manager->all_shaders->blinn_phong,
-          GL_TRIANGLES
-    );
-    calls[mesh_dc->id] = mesh_dc;
-    back_ui_dc = _CreateDrawCall(
-          shader_manager->all_shaders->back_ui,
-          GL_TRIANGLES
-    );
-    calls[back_ui_dc->id] = back_ui_dc;
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES
@@ -95,12 +86,25 @@ public:
       shader_manager->all_shaders->bullet_debug,
       GL_LINES
     );
+    // also dynamic, 
     calls[physics_debug_dc->id] = physics_debug_dc;
     overlay_3d_dc = _CreateDrawCall(
       shader_manager->all_shaders->overlay_3d,
       GL_TRIANGLES
     );
     calls[overlay_3d_dc->id] = overlay_3d_dc;
+    back_ui_dc = _CreateDrawCall(
+          shader_manager->all_shaders->back_ui,
+          GL_TRIANGLES
+    );
+    calls[back_ui_dc->id] = back_ui_dc;
+    // dynamic commands number for mesh draw call
+    // thus, set it to the end
+    mesh_dc = _CreateDrawCall(
+          shader_manager->all_shaders->blinn_phong,
+          GL_TRIANGLES
+    );
+    calls[mesh_dc->id] = mesh_dc;
   }
   void SetCommandToDraw(
     Shader* shader,
