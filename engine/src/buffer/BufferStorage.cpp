@@ -255,6 +255,7 @@ DrawElementsIndirectCommand BufferStorage::RequestStorage(
     return;
   }
 
+  // TODO: set up in DrawCallManager
   DrawElementsIndirectCommand& command = mesh->command;
   command.count = indices.size();
   command.instanceCount = mesh->instance_count;

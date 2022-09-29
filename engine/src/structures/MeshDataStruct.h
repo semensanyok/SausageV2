@@ -35,9 +35,11 @@ public:
   MemorySlot vertex_offset;
   MemorySlot index_offset;
   MemorySlot transform_offset;
+  // for instanced meshes not allocated vertex/index offsets(?)
   MeshDataBase* base_mesh;
   long instance_count;
-  DrawElementsIndirectCommand command;
+  // commands are now managed via DrawCallManager
+  //DrawElementsIndirectCommand command;
   MeshDataBase()
     : vertex_offset{ -1 },
     index_offset{ -1 },

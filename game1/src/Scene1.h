@@ -86,7 +86,7 @@ class Scene1 : public Scene {
         commands.push_back(draw_meshes[i]->command);
       }
     }
-    draw_call->command_count = (unsigned int)commands.size();
+    draw_call->commands_used = (unsigned int)commands.size();
     draw_call->buffer->AddCommands(commands, draw_call->command_buffer);
     CheckGLError();
 

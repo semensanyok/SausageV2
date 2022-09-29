@@ -5,6 +5,10 @@
 #include "ShaderManager.h"
 #include "BufferStorage.h"
 
+/**
+ * DrawCall (Shader) uses contigious part of commands from indirect command buffer
+*/
+
 class Shader;
 
 using namespace std;
@@ -19,18 +23,16 @@ public:
   GLenum mode = GL_TRIANGLES;  // GL_TRIANGLES GL_LINES
   Shader* shader = nullptr;
   unsigned int GetCommandCount() {
-    return command_count;
+    return commands_used;
   }
   void IncrementCommandCount(int num) {
-    DEBUG_ASSERT((command_count + num - command_offset) > (command_count + num_commands_to_reserve_in_buffer));
-    command_count += num;
+    DEBUG_ASSERT((commands_used + num) < (command_buffer_slot.count));
+    commands_used += num;
   }
 private:
-  unsigned int command_count = 0;
-  // offset into command_buffer, to draw command_count draw commands
-  unsigned int command_offset = 0;
-  // for performance, to not rebuffer after each command_count change.
-  const int num_commands_to_reserve_in_buffer;
+  MemorySlot command_buffer_slot;
+  Arena* command_buffer_sub_arena;
+  unsigned int commands_used = 0;
   /**
    * @brief
    * @param shader
@@ -45,12 +47,13 @@ private:
   DrawCall(unsigned int id,
     Shader* shader,
     GLenum mode,
-    int num_commands_to_reserve_in_buffer = 0) :
+    MemorySlot command_buffer_slot) :
     id{ id },
     shader{ shader },
     mode{ mode },
-    // number choosen randomly
-    num_commands_to_reserve_in_buffer{ num_commands_to_reserve_in_buffer } {
+    command_buffer_slot{ command_buffer_slot },
+    // offset is 0 because 
+    command_buffer_sub_arena{ new Arena(command_buffer_slot) } {
   }
 };
 
@@ -68,50 +71,59 @@ public:
 
   DrawCall* physics_debug_dc;
 
-  // key == draw call id
-  map<unsigned int, DrawCall*> calls;
-  // freed offsets for removed call commands
-  // TODO: Arena, as in BufferStorage
-  unordered_map<unsigned int, set<unsigned int>> calls_slots_offsets;
+  Arena* command_buffer_arena;
+
+  map<unsigned int, DrawCall*> draw_call_by_id;
+  // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
+  // for simlicity - keep 1 command for now
+  unordered_map<unsigned int, DrawArraysIndirectCommand> command_by_mesh_id;
 
   DrawCallManager(
     ShaderManager* shader_manager
   ) : shader_manager{ shader_manager } {
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
-      GL_TRIANGLES
+      GL_TRIANGLES,
+      command_buffer_arena->Allocate(1)
     );
-    calls[font_ui_dc->id] = font_ui_dc;
-    physics_debug_dc = _CreateDrawCall(
-      shader_manager->all_shaders->bullet_debug,
-      GL_LINES
-    );
-    // also dynamic, 
-    calls[physics_debug_dc->id] = physics_debug_dc;
+    draw_call_by_id[font_ui_dc->id] = font_ui_dc;
+
     overlay_3d_dc = _CreateDrawCall(
       shader_manager->all_shaders->overlay_3d,
-      GL_TRIANGLES
+      GL_TRIANGLES,
+      command_buffer_arena->Allocate(1)
     );
-    calls[overlay_3d_dc->id] = overlay_3d_dc;
+    draw_call_by_id[overlay_3d_dc->id] = overlay_3d_dc;
+
     back_ui_dc = _CreateDrawCall(
-          shader_manager->all_shaders->back_ui,
-          GL_TRIANGLES
+      shader_manager->all_shaders->back_ui,
+      GL_TRIANGLES,
+      command_buffer_arena->Allocate(1)
     );
-    calls[back_ui_dc->id] = back_ui_dc;
+    draw_call_by_id[back_ui_dc->id] = back_ui_dc;
+
+    physics_debug_dc = _CreateDrawCall(
+      shader_manager->all_shaders->bullet_debug,
+      GL_LINES,
+      command_buffer_arena->Allocate(1)
+    );
+    draw_call_by_id[physics_debug_dc->id] = physics_debug_dc;
+
     // dynamic commands number for mesh draw call
     // thus, set it to the end
     mesh_dc = _CreateDrawCall(
-          shader_manager->all_shaders->blinn_phong,
-          GL_TRIANGLES
+      shader_manager->all_shaders->blinn_phong,
+      GL_TRIANGLES,
+      command_buffer_arena->Allocate(MAX_BASE_MESHES)
     );
-    calls[mesh_dc->id] = mesh_dc;
+    draw_call_by_id[mesh_dc->id] = mesh_dc;
   }
   void SetCommandToDraw(
     Shader* shader,
     DrawElementsIndirectCommand& command,
     unsigned int in_offset = -1
   ) {
-    auto call = calls[shader->id];
+    auto call = draw_call_by_id[shader->id];
     lock_guard(call->mtx);
     unsigned int offset = in_offset == -1 ? call->GetCommandCount() : in_offset;
     buffer->BufferCommand(command, offset);
@@ -124,7 +136,7 @@ public:
     vector<DrawElementsIndirectCommand> commands,
     unsigned int in_offset = -1
   ) {
-    auto call = calls[shader->id];
+    auto call = draw_call_by_id[shader->id];
     lock_guard(call->mtx);
     unsigned int offset = offset == -1 ? call->GetCommandCount() : offset;
     buffer->BufferCommands(commands, offset);
@@ -141,8 +153,8 @@ public:
   }
 private:
   int total_draw_calls = 0;
-  DrawCall* _CreateDrawCall(Shader* shader, GLenum mode)
+  DrawCall* _CreateDrawCall(Shader* shader, GLenum mode, MemorySlot command_buffer_slot)
   {
-    return new DrawCall(total_draw_calls++, shader, mode);
+    return new DrawCall(total_draw_calls++, shader, mode, command_buffer_slot);
   }
 };

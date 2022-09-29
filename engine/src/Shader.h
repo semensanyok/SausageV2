@@ -8,9 +8,6 @@ using namespace std;
 
 class Shader
 {
-public:
-	GLuint	id = 0;
-	bool is_active = true;
 	string vertex_path;
 	string fragment_path;
 	GLuint vs = 0, fs = 0;
@@ -19,10 +16,22 @@ public:
 	bool is_fs_updated = false;
 	unordered_map<string, mat4*> mat4_uniforms;
 	unordered_map<string, vec3*> vec3_uniforms;
+public:
+	GLuint	id = 0;
+	bool is_active = true;
 
-	inline bool operator==(Shader& other) {
+	bool operator==(Shader& other) {
 		return id == other.id;
 	}
+    // comparison for map/set
+    int operator<(Shader& other) {
+      return id < other.id;
+    }
+    // hash function for unordered map
+    size_t operator()(const Shader& s) const
+    {
+      return s.id;
+    }
 	inline friend ostream &operator<<(ostream& stream, const Shader& shader) {
 		stream << "Shader(id=" << shader.id << ",vertex shader name=" << shader.vertex_path << ",fragment shader name=" << shader.fragment_path << ")";
 		return stream;
@@ -48,16 +57,6 @@ public:
 			setVec3(name_uni.first, *(name_uni.second));
 		}
 	}
-private:
-	void CreateProgram();
-	void CompileFS();
-	void CompileVS();
-	void CompileShader(std::string& code,
-      GLuint shader_type,
-      bool& out_is_shader_updated,
-      GLuint& out_shader_id);
-	void _Dispose();
-public:
 	void Use();
 	// utility uniform functions
 	// ------------------------------------------------------------------------
@@ -82,6 +81,14 @@ public:
 	// ------------------------------------------------------------------------
 	void setMat4(const string& name, const glm::mat4& mat) const;
 private:
+	void CreateProgram();
+	void CompileFS();
+	void CompileVS();
+	void CompileShader(std::string& code,
+      GLuint shader_type,
+      bool& out_is_shader_updated,
+      GLuint& out_shader_id);
+	void _Dispose();
 	string _LoadCode(string& path);
 	// utility function for checking shader compilation/linking errors.
 	// ------------------------------------------------------------------------

@@ -31,14 +31,9 @@ class Arena {
   mutex mtx;
   set<MemorySlot, memory_slot_count_first_comparator> free_gaps_slots;
 public:
-  const unsigned int max;
-  // offset into BufferStorage GPU buffer
-  const unsigned int offset;
+  MemorySlot base_slot;
 
-  Arena(
-    const unsigned int max,
-    const unsigned int offset
-  ) : max{ max }, allocated{ 0 }, offset{ offset }  {
+  Arena(MemorySlot slot) : base_slot{ slot }, allocated{ 0 }  {
   }
   unsigned int GetFreeSpace() {
     lock_guard(mtx);
@@ -50,10 +45,14 @@ public:
     auto size_encompassing_power_of_2 = _GetSmallestEncompassingPowerOf2(size);
     if (free_gaps_slots.empty()) {
       MemorySlot res = _AllocateNewSlotIfHasSpace(size_encompassing_power_of_2);
-      allocated += res.count;
+      return res;
     }
     else {
       auto maybe_gap = free_gaps_slots.lower_bound({ 0, size_encompassing_power_of_2 });
+      if (maybe_gap == free_gaps_slots.end()) {
+        MemorySlot res = _AllocateNewSlotIfHasSpace(size_encompassing_power_of_2);
+        return res;
+      }
       bool is_exact = maybe_gap->count == size_encompassing_power_of_2;
       if (is_exact) {
         MemorySlot res = *maybe_gap;
@@ -88,7 +87,7 @@ private:
   }
 
   unsigned int _GetFreeSpace() {
-    return max - allocated;
+    return base_slot.count - allocated;
   }
   /**
    * @param size_to_alloc power of 2 slot, encompassing size to allocate
@@ -101,7 +100,7 @@ private:
     if (size_to_alloc > _GetFreeSpace()) {
       return NULL_SLOT;
     }
-    unsigned int offset = allocated;
+    unsigned int offset = allocated + base_slot.offset;
     allocated += size_to_alloc;
     return { offset, size_to_alloc };
 

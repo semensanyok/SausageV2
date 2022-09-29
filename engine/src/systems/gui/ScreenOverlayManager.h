@@ -244,13 +244,13 @@ public:
     }
   }
   void ActivatePauseMenu() {
-    draw_call_text->command_count = total_draw_commands_text;
-    draw_call_back->command_count = total_draw_commands_back;
+    draw_call_text->commands_used = total_draw_commands_text;
+    draw_call_back->commands_used = total_draw_commands_back;
     is_pause_menu_active = true;
   }
   void DectivatePauseMenu() {
-    draw_call_text->command_count = 0;
-    draw_call_back->command_count = 0;
+    draw_call_text->commands_used = 0;
+    draw_call_back->commands_used = 0;
     is_pause_menu_active = false;
   }
 private:

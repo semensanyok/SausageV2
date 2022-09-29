@@ -79,12 +79,12 @@ void BulletDebugDrawer::flushLines() {
         }
         persist_draws = keep_persist;
         buffer->BufferMeshData(vertices, indices, colors);
-        draw_call->command_count = 1;
+        draw_call->commands_used = 1;
         int command_offset = buffer->AddCommand(buffer->mesh->command);
         clear();
     }
     else {
-        draw_call->command_count = 0;
+        draw_call->commands_used = 0;
     }
 }
 ;
