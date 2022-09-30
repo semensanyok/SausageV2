@@ -78,7 +78,6 @@ private:
     is_transparent{ false } {};
   ~MeshData() {
     delete physics_data;
-    command.instanceCount = 0;
 
     // armature can be reused between meshes
     // need to delete somewhere, or make shared_ptr

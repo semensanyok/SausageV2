@@ -12,6 +12,8 @@ void LOG(const string& s,
 void LOG(const ostringstream& s,
          const std::source_location& location = std::source_location::current());
 
+void LOG(const char* s, const std::source_location& location = std::source_location::current());
+
 namespace Sausage {
 	void LogIO();
 

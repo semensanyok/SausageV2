@@ -4,6 +4,7 @@
 #include "Macros.h"
 #include "ShaderManager.h"
 #include "BufferStorage.h"
+#include "Logging.h"
 
 /**
  * DrawCall (Shader) uses contigious part of commands from indirect command buffer
@@ -14,36 +15,20 @@ class Shader;
 using namespace std;
 
 class DrawCall {
-  friend class DrawCallManager;
-  friend class Renderer;
-public:
-  const unsigned int id;
-  // caller must aquire it on write
-  mutex mtx;
-  GLenum mode = GL_TRIANGLES;  // GL_TRIANGLES GL_LINES
-  Shader* shader = nullptr;
-  unsigned int GetCommandCount() {
-    return commands_used;
-  }
-  void IncrementCommandCount(int num) {
-    DEBUG_ASSERT((commands_used + num) < (command_buffer_slot.count));
-    commands_used += num;
-  }
-private:
   MemorySlot command_buffer_slot;
   Arena* command_buffer_sub_arena;
-  unsigned int commands_used = 0;
+public:
   /**
-   * @brief
-   * @param shader
-   * @param mode
-   * @param is_reserve_command_count_in_buffer
-   *            set this flag when expect
-   *          to add more DrawElementsIndirectCommand
-   *          to this draw_call.
-   *            false when not expect to change.
-   *          i.e. single instanced draw call, where only instance count changes.
-  */
+ * @brief
+ * @param shader
+ * @param mode
+ * @param is_reserve_command_count_in_buffer
+ *            set this flag when expect
+ *          to add more DrawElementsIndirectCommand
+ *          to this draw_call.
+ *            false when not expect to change.
+ *          i.e. single instanced draw call, where only instance count changes.
+*/
   DrawCall(unsigned int id,
     Shader* shader,
     GLenum mode,
@@ -54,6 +39,22 @@ private:
     command_buffer_slot{ command_buffer_slot },
     // offset is 0 because 
     command_buffer_sub_arena{ new Arena(command_buffer_slot) } {
+  }
+  const unsigned int id;
+  // caller must aquire it on write
+  const mutex mtx;
+  const GLenum mode;  // GL_TRIANGLES GL_LINES
+  const Shader* shader;
+  unsigned int GetCommandCount() {
+    return command_buffer_sub_arena->GetUsed();
+  }
+  MemorySlot Allocate(unsigned int command_count) {
+    MemorySlot slot = command_buffer_sub_arena->Allocate(command_count);
+    DEBUG_ASSERT(slot != Arena::NULL_SLOT);
+    return slot;
+  }
+  void Release(MemorySlot slot) {
+    command_buffer_sub_arena->Release(slot);
   }
 };
 
@@ -76,7 +77,8 @@ public:
   map<unsigned int, DrawCall*> draw_call_by_id;
   // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
   // for simlicity - keep 1 command for now
-  unordered_map<unsigned int, DrawArraysIndirectCommand> command_by_mesh_id;
+  unordered_map<unsigned int, DrawElementsIndirectCommand> command_by_mesh_id;
+  unordered_map<unsigned int, DrawCall*> dc_by_mesh_id;
 
   DrawCallManager(
     ShaderManager* shader_manager
@@ -118,38 +120,46 @@ public:
     );
     draw_call_by_id[mesh_dc->id] = mesh_dc;
   }
-  void SetCommandToDraw(
-    Shader* shader,
+  MemorySlot SetCommandToDrawGetCBufferOffset(
+    DrawCall* shader,
     DrawElementsIndirectCommand& command,
     unsigned int in_offset = -1
   ) {
     auto call = draw_call_by_id[shader->id];
     lock_guard(call->mtx);
-    unsigned int offset = in_offset == -1 ? call->GetCommandCount() : in_offset;
-    buffer->BufferCommand(command, offset);
-    if (in_offset == -1) {
-      call->IncrementCommandCount(1);
-    }
+    MemorySlot slot = in_offset == -1 ? MemorySlot{in_offset, 1} : call->Allocate(1);
+    buffer->BufferCommand(command, slot.offset);
+    return slot;
   }
-  void SetCommandsToDraw(
-    Shader* shader,
+  MemorySlot SetCommandsToDrawGetCBufferOffset(
+    DrawCall* dc,
     vector<DrawElementsIndirectCommand> commands,
     unsigned int in_offset = -1
   ) {
-    auto call = draw_call_by_id[shader->id];
+    auto call = draw_call_by_id[dc->id];
     lock_guard(call->mtx);
-    unsigned int offset = offset == -1 ? call->GetCommandCount() : offset;
-    buffer->BufferCommands(commands, offset);
-    if (in_offset == -1) {
-      call->IncrementCommandCount(commands.size());
-    }
+    MemorySlot slot = in_offset == -1 ?
+      MemorySlot{ in_offset, (unsigned long)commands.size() } : call->Allocate(commands.size());
+    buffer->BufferCommands(commands, slot.offset);
+    return slot;
   }
-  void DisableCommand(Shader* shader, DrawElementsIndirectCommand command, unsigned int in_offset) {
-    command.instanceCount = 0;
-    calls_slots_offsets.insert({ in_offset, {} });
-    SetCommandToDraw(shader, command, in_offset);
-    auto a = calls_slots_offsets[in_offset];
-    a.insert(in_offset);
+  void DisableCommand(unsigned int mesh_id, unsigned int offset) {
+    auto draw_command = command_by_mesh_id.find(mesh_id);
+    auto draw_call = dc_by_mesh_id.find(mesh_id);
+    if (draw_command == command_by_mesh_id.end()) {
+      LOG(format("Skip DisableCommand. not found DrawArraysIndirectCommand for mesh_id={}", mesh_id));
+      return;
+    }
+    if (draw_call == dc_by_mesh_id.end()) {
+      LOG(format("Skip DisableCommand. not found DrawCall for mesh_id={}", mesh_id));
+      return;
+    }
+    draw_command->second.count = 0;
+    SetCommandToDrawGetCBufferOffset(
+      draw_call->second,
+      draw_command->second,
+      offset);
+    draw_call->second->Release({ offset, 1 });
   }
 private:
   int total_draw_calls = 0;
