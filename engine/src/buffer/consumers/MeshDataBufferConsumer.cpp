@@ -3,15 +3,6 @@
 using namespace std;
 
 void MeshDataBufferConsumer::BufferMeshData(
-    vector<MeshDataBase*>& load_data_meshes,
-    vector<shared_ptr<MeshLoadData>>& load_data) {
-  buffer->BufferMeshData(load_data_meshes, load_data);
-  for (auto& mesh : load_data_meshes) {
-    buffer->BufferTransform((MeshData*)mesh);
-  }
-}
-
-void MeshDataBufferConsumer::BufferMeshData(
     MeshDataBase* load_data_mesh,
     shared_ptr<MeshLoadData> load_data) {
   buffer->BufferMeshData(load_data_mesh, load_data);
@@ -26,6 +17,9 @@ void MeshDataBufferConsumer::Init() {
 void MeshDataBufferConsumer::Reset() {
 }
 
+/**
+ * @brief for automatic optimization/instansing of meshes, loaded from scene file
+*/
 void MeshDataBufferConsumer::SetBaseMeshForInstancedCommand(
     vector<MeshDataBase*>& load_data_meshes,
     vector<shared_ptr<MeshLoadData>>& load_data) {

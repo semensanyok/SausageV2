@@ -5,6 +5,10 @@ unsigned int Arena::GetFreeSpace() {
   return _GetFreeSpace();
 }
 
+unsigned int Arena::GetBaseOffset() {
+  return base_slot.offset;
+}
+
 MemorySlot Arena::Allocate(const unsigned int size) {
   lock_guard(mtx);
   unsigned int free_space = _GetFreeSpace();

@@ -40,13 +40,16 @@ public:
     // offset is 0 because 
     command_buffer_sub_arena{ new Arena(command_buffer_slot) } {
   }
-  const unsigned int id;
+  unsigned int id;
   // caller must aquire it on write
-  const mutex mtx;
-  const GLenum mode;  // GL_TRIANGLES GL_LINES
-  const Shader* shader;
+  mutex mtx;
+  GLenum mode;  // GL_TRIANGLES GL_LINES
+  Shader* shader;
   unsigned int GetCommandCount() {
     return command_buffer_sub_arena->GetUsed();
+  }
+  unsigned int GetBaseOffset() {
+    return command_buffer_sub_arena->GetBaseOffset();
   }
   MemorySlot Allocate(unsigned int command_count) {
     MemorySlot slot = command_buffer_sub_arena->Allocate(command_count);
@@ -57,7 +60,6 @@ public:
     command_buffer_sub_arena->Release(slot);
   }
 };
-
 
 class DrawCallManager {
   ShaderManager* shader_manager;
@@ -120,46 +122,37 @@ public:
     );
     draw_call_by_id[mesh_dc->id] = mesh_dc;
   }
-  MemorySlot SetCommandToDrawGetCBufferOffset(
-    DrawCall* shader,
+  void AllocateAndBufferCommand(
     DrawElementsIndirectCommand& command,
-    unsigned int in_offset = -1
+    DrawCall* out_call,
+    MeshDataBase* out_mesh
   ) {
-    auto call = draw_call_by_id[shader->id];
-    lock_guard(call->mtx);
-    MemorySlot slot = in_offset == -1 ? MemorySlot{in_offset, 1} : call->Allocate(1);
-    buffer->BufferCommand(command, slot.offset);
-    return slot;
-  }
-  MemorySlot SetCommandsToDrawGetCBufferOffset(
-    DrawCall* dc,
-    vector<DrawElementsIndirectCommand> commands,
-    unsigned int in_offset = -1
-  ) {
-    auto call = draw_call_by_id[dc->id];
-    lock_guard(call->mtx);
-    MemorySlot slot = in_offset == -1 ?
-      MemorySlot{ in_offset, (unsigned long)commands.size() } : call->Allocate(commands.size());
-    buffer->BufferCommands(commands, slot.offset);
-    return slot;
-  }
-  void DisableCommand(unsigned int mesh_id, unsigned int offset) {
-    auto draw_command = command_by_mesh_id.find(mesh_id);
-    auto draw_call = dc_by_mesh_id.find(mesh_id);
-    if (draw_command == command_by_mesh_id.end()) {
-      LOG(format("Skip DisableCommand. not found DrawArraysIndirectCommand for mesh_id={}", mesh_id));
-      return;
+    lock_guard(out_call->mtx);
+    if (out_mesh->command_offset == -1) {
+      MemorySlot slot = out_call->Allocate(1);
+      out_mesh->command_offset = slot.offset;
     }
+    buffer->BufferCommand(command, out_mesh->command_offset);
+  }
+  void DisableCommand(MeshDataBase* mesh) {
+    // skip validation
+    
+    //auto draw_command = command_by_mesh_id.find(mesh->id);
+    //if (draw_command == command_by_mesh_id.end()) {
+    //  LOG(format("Skip DisableCommand. not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
+    //  return;
+    //}
+    auto draw_call = dc_by_mesh_id.find(mesh->id);
     if (draw_call == dc_by_mesh_id.end()) {
-      LOG(format("Skip DisableCommand. not found DrawCall for mesh_id={}", mesh_id));
+      LOG(format("Skip DisableCommand. not found DrawCall for mesh_id={}", mesh->id));
       return;
     }
-    draw_command->second.count = 0;
-    SetCommandToDrawGetCBufferOffset(
+    auto empty_command = DrawElementsIndirectCommand();
+    AllocateAndBufferCommand(
+      empty_command,
       draw_call->second,
-      draw_command->second,
-      offset);
-    draw_call->second->Release({ offset, 1 });
+      mesh);
+    draw_call->second->Release({ (unsigned long)mesh->command_offset, 1 });
   }
 private:
   int total_draw_calls = 0;

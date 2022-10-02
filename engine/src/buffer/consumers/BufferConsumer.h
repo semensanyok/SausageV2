@@ -2,20 +2,20 @@
 #include "sausage.h"
 #include "GPUStructs.h"
 #include "BufferStorage.h"
+#include "DrawCallManager.h"
 
 class BufferConsumer {
 protected:
   BufferStorage* buffer = nullptr;
   BufferType::BufferTypeFlag used_buffers;
+  DrawCallManager* draw_call_manager;
 public:
-  BufferConsumer(BufferStorage* buffer, BufferType::BufferTypeFlag used_buffers) :
-    buffer{ buffer }
+  BufferConsumer(BufferStorage* buffer, DrawCallManager*  draw_call_manager, BufferType::BufferTypeFlag used_buffers) :
+    buffer{ buffer }, draw_call_manager{ draw_call_manager }
   {
   }
-  int GetBufferId() { return buffer->id; }
   void Init();
   void PreDraw();
   void PostDraw();
-  int AddCommands(vector<DrawElementsIndirectCommand>& active_commands, int command_offset = -1);
   int AddCommand(DrawElementsIndirectCommand& command, int command_offset = -1);
 };

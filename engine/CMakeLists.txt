@@ -214,7 +214,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "src/utils/AnimHelpers.cpp" 
 "src/utils/GLMHelpers.cpp" 
 "src/utils/ThreadSafeQueue.cpp" 
-${source})
+${source} "src/buffer/GLBuffers.cpp")
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 

@@ -30,37 +30,45 @@ struct MeshLoadData {
 class MeshDataBase {
 public:
   unsigned long id;
+  // in glsl == gl_BaseInstanceARB
   long buffer_id;
+  // in glsl == gl_InstanceID
   unsigned long instance_id;
-  MemorySlot vertex_offset;
-  MemorySlot index_offset;
-  MemorySlot transform_offset;
+  // Buffer offsets /////////////////////
+  MemorySlot vertex_slot;
+  MemorySlot index_slot;
+  int transform_offset;
+  // commands are now managed via DrawCallManager
+  //DrawElementsIndirectCommand command;
+  long command_offset;
+  //////////////////////////////////////
   // for instanced meshes not allocated vertex/index offsets(?)
   MeshDataBase* base_mesh;
   long instance_count;
-  // commands are now managed via DrawCallManager
-  //DrawElementsIndirectCommand command;
   MeshDataBase()
-    : vertex_offset{ -1 },
-    index_offset{ -1 },
+    : vertex_slot{ Arena::NULL_SLOT },
+    index_slot{ Arena::NULL_SLOT },
     instance_id{ 0 },
     buffer_id{ -1 },
     base_mesh{ nullptr },
     transform_offset{ -1 },
-    instance_count{ 1 } {};
+    command_offset{ -1 },
+    instance_count{ 1 }
+  {};
   virtual ~MeshDataBase() {};
 };
 
 class MeshData : public MeshDataBase, public SausageUserPointer {
   friend class MeshManager;
-  friend class MeshDataClickable;
 public:
   mat4 transform;
   bool is_transparent;
 
   string name;
   BlendTextures textures;
+  // _t_odo make reusable
   Armature* armature;
+  // _t_odo make reusable
   PhysicsData* physics_data;
 
 private:
@@ -77,11 +85,6 @@ private:
     transform{ load_data->transform },
     is_transparent{ false } {};
   ~MeshData() {
-    delete physics_data;
-
-    // armature can be reused between meshes
-    // need to delete somewhere, or make shared_ptr
-    //delete armature;
   };
 };
 

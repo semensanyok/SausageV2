@@ -47,6 +47,7 @@ public:
   }
   inline unsigned int GetUsed() { return allocated; };
   unsigned int GetFreeSpace();
+  unsigned int GetBaseOffset();
   MemorySlot Allocate(const unsigned int size);
   void Release(MemorySlot slot);
   void Reset();

@@ -20,12 +20,11 @@ void Renderer::Render(Camera* camera) {
       {
         buffer->PreDraw();
         for (auto draw : order_shader.second) {
-          if (draw->commands_used > 0) {
+          if (draw->GetCommandCount() > 0) {
             glUseProgram(draw->shader->id);
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer->command_buffer->id);
             draw->shader->SetUniforms();
             glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
-                                        draw->commands_used, draw->command_buffer_slot);
+                                        draw->GetCommandCount(), draw->GetOffset());
           }
         }
         buffer->PostDraw();

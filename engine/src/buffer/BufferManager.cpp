@@ -2,7 +2,7 @@
 
 void BufferManager::Init() {
 	storage = new BufferStorage();
-	storage->InitMeshBuffers();
+	storage->Init();
 	mesh_data_buffer = new MeshDataBufferConsumer(storage);
 	mesh_data_buffer->Init();
 	ui_buffer = new UIBufferConsumer(storage, mesh_manager);

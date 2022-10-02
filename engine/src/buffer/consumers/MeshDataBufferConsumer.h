@@ -17,9 +17,11 @@ public:
     };
     ~MeshDataBufferConsumer() {
     };
-    void BufferMeshData(vector<MeshDataBase*>& load_data_meshes,
-                        vector<shared_ptr<MeshLoadData>>& load_data);
     void BufferMeshData(MeshDataBase* load_data_mesh, shared_ptr<MeshLoadData> load_data);
+    void DeleteMesh(MeshDataBase* mesh) {
+      buffer->ReleaseStorage(mesh);
+      
+    }
     void Init();
     void Reset();
     void SetBaseMeshForInstancedCommand(
