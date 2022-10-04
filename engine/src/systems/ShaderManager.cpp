@@ -10,9 +10,6 @@ void ShaderManager::SetupShaders() {
     _RegisterShader("ui_back_vs.glsl", "ui_back_fs.glsl"),
     _RegisterShader("3d_font_vs.glsl", "3d_font_fs.glsl"),
   };
-  SystemsManager* systems_manager = SystemsManager::GetInstance();
-
-  Camera* camera = systems_manager->camera;
   all_shaders->blinn_phong->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
   all_shaders->blinn_phong->SetVec3Uniform(string("view_pos"), &(camera->pos));
 
@@ -26,9 +23,6 @@ void ShaderManager::SetupShaders() {
 }
 
 Shader* ShaderManager::_RegisterShader(const char* vs_name, const char* fs_name) {
-  SystemsManager* systems_manager = SystemsManager::GetInstance();
-  auto file_watcher = systems_manager->file_watcher;
-  auto renderer = systems_manager->renderer;
   auto shader = _CreateShader(vs_name, fs_name);
 
   bool is_persistent_command = false;

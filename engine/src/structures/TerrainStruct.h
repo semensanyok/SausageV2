@@ -45,9 +45,7 @@ struct TerrainTile {
 public:
   // local space offsets from origin of TerrainChunk to origin of this tile.
   vec3 x0y0z, x1y0z, x0y1z, x1y1z;
-  // number of vertices by axes.
-  // for test assume minimal size of 4 vertices
-  TileSizeParameters size = { Terrain::VerticesSize::TILE_X, Terrain::VerticesSize::TILE_Y };
+  
   /*
   average values of all vertices, included in tile
 
@@ -67,6 +65,9 @@ public:
   vec3 pos;
   // number of TerrainTile patches by axes.
   int sizeX, sizeY;
+  // number of vertices by axes.
+  // for test assume minimal size of 4 vertices (4 == x0y0z, x1y0z, x0y1z, x1y1z in TerrainTile)
+  TileSizeParameters tile_size = { 2, 2 };
   // distance between `tiles<TerrainTile>` vertices
   int scale = 1;
   vector<TerrainTile*> tiles;

@@ -42,7 +42,7 @@ namespace SausageGameLoop {
         ImGui_ImplSDL2_ProcessEvent(&e);
         systems_manager->controller->ProcessEvent(&e);
       }
-      systems_manager->Render();
+      systems_manager->renderer->Render();
       systems_manager->Update();
       IF_PROFILE_ENABLED(ProfTime::total_frame_ns = chrono::steady_clock::now() - proft1;);
       CheckGLError();

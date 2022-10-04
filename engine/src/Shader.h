@@ -8,6 +8,7 @@ using namespace std;
 
 class Shader
 {
+  friend class ShaderManager;
 	string vertex_path;
 	string fragment_path;
 	GLuint vs = 0, fs = 0;

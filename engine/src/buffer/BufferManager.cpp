@@ -1,7 +1,7 @@
 #include "BufferManager.h"
 
 void BufferManager::Init() {
-	storage = new BufferStorage();
+	storage = BufferStorage::GetInstance();
 	storage->Init();
 	mesh_data_buffer = new MeshDataBufferConsumer(storage);
 	mesh_data_buffer->Init();

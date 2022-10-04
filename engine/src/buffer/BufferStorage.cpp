@@ -67,21 +67,6 @@ void BufferStorage::BufferLights(vector<Light *> &lights) {
   gl_buffers->SetSyncBarrier();
 }
 
-void BufferStorage::BufferMeshData(vector<MeshDataBase *> &load_data_meshes,
-                                   vector<shared_ptr<MeshLoadData>> &load_data) {
-  vector<MeshDataBase *> instances;
-  for (int i = 0; i < load_data.size(); i++) {
-    BufferMeshData(load_data_meshes[i], load_data[i], instances);
-  }
-  for (auto &instance : instances) {
-    instance->buffer_id = instance->base_mesh->buffer_id;
-    instance->transform_offset = instance->base_mesh->transform_offset;
-  }
-  // ids_ptr is SSBO. call after SSBO write (GL_SHADER_STORAGE_BUFFER).
-  gl_buffers->SetSyncBarrier();
-  DEBUG_EXPR(CheckGLError());
-}
-
 void BufferStorage::BufferMeshData(MeshDataBase* mesh,
                                    shared_ptr<MeshLoadData> load_data) {
   auto mesh_data = load_data.get();
@@ -103,18 +88,23 @@ bool BufferStorage::RequestStorageSetOffsets(
 ) {
   auto vertex_slot = vertex_arena->Allocate(vertices_size);
   if (vertex_slot == Arena::NULL_SLOT) {
+    LOG("Error RequestStorageSetOffsets vertex allocation.");
     return false;
   }
   auto index_slot = index_arena->Allocate(indices_size);
   if (index_slot == Arena::NULL_SLOT) {
     vertex_arena->Release(vertex_slot);
+    LOG("Error RequestStorageSetOffsets index allocation.");
     return false;
   }
   mesh->vertex_slot = vertex_slot;
   mesh->index_slot = index_slot;
 
+  bool is_new_mesh = mesh->buffer_id < 0;
+  if (is_new_mesh) {
+    mesh->buffer_id = mesh_id_slots->ObtainNumber();
+  }
   out_command.count = indices_size;
-  out_command.instanceCount = index_slot.count;
   out_command.firstIndex = index_slot.offset;
   out_command.baseVertex = vertex_slot.offset;
   out_command.baseInstance = mesh->buffer_id;
@@ -124,6 +114,7 @@ bool BufferStorage::RequestStorageSetOffsets(
 void BufferStorage::ReleaseStorage(MeshDataBase* mesh) {
   vertex_arena->Release(mesh->vertex_slot);
   index_arena->Release(mesh->index_slot);
+  mesh_id_slots->ReleaseNumber(mesh->buffer_id);
 }
 
 void BufferStorage::Init() {
@@ -140,8 +131,9 @@ void BufferStorage::BufferTextureHandle(Texture* texture)
 
 void BufferStorage::BufferMeshTexture(MeshData* mesh) {
   gl_buffers->
-    blend_textures_by_mesh_id_ptr->blend_textures[mesh->transform_offset + mesh->instance_id] =
-      mesh->textures;
+    blend_textures_by_mesh_id_ptr->
+      blend_textures[mesh->transform_offset + mesh->instance_id] =
+        mesh->textures;
   //uniforms_ptr->blend_textures[0].textures[0].texture_id = 1;
   gl_buffers->SetSyncBarrier();
 }
@@ -149,28 +141,27 @@ void BufferStorage::BufferMeshTexture(MeshData* mesh) {
 void BufferStorage::BufferFontTexture(MeshDataBase* mesh, Texture* texture) {
   gl_buffers->
     font_texture_ptr[mesh->buffer_id] = texture->texture_handle_ARB;
-  // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
   gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::Buffer3DFontTransform(MeshDataOverlay3D* mesh) {
   gl_buffers->
-    uniforms_3d_overlay_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
-        mesh->transform;
+    uniforms_3d_overlay_ptr->
+      transforms[mesh->transform_offset + mesh->instance_id] = mesh->transform;
   gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y) {
-  gl_buffers->uniforms_ui_ptr
-    ->min_max_x_y[mesh->transform_offset + mesh->instance_id] =
-      { min_x, max_x, min_y, max_y };
+  gl_buffers->
+    uniforms_ui_ptr->
+      min_max_x_y[mesh->transform_offset + mesh->instance_id] = { min_x, max_x, min_y, max_y };
   gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::BufferUniformDataUITransform(MeshDataUI* mesh) {
-  gl_buffers
-    ->uniforms_ui_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
-      mesh->transform;
+  gl_buffers->
+    uniforms_ui_ptr->
+      transforms[mesh->transform_offset + mesh->instance_id] = mesh->transform;
   gl_buffers->SetSyncBarrier();
 }
 

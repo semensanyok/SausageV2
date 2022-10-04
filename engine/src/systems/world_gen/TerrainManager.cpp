@@ -1,8 +1,5 @@
 #include "TerrainManager.h"
 
-
-  // TODO: assign textures
-
 TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y, int size_x, int size_y)
 {
   vector<vec3> vertices(size_x * size_y);
@@ -121,17 +118,15 @@ void TerrainManager::BufferTerrain(TerrainChunk* chunk) {
   vector<vec3> normals;
 
   auto tile0 = chunk->tiles[0];
-  auto base_mesh_with_load_data = GetBaseMeshPlaneBySize(chunk, tile0);
+  auto base_mesh_with_load_data = GetOrCreateInstancedPlane(chunk, tile0);
 
   auto base_mesh = base_mesh_with_load_data.first;
-
-  mesh_data_buffer->BufferMeshData(base_mesh, base_mesh_with_load_data.second);
 
   for (int i = 1; i < chunk->tiles.size(); i++) {
     auto tile = chunk->tiles[i];
     auto mesh_data = mesh_manager->CreateMeshData();
     mesh_data->base_mesh = base_mesh;
-    mesh_data->instance_id = base_mesh->instance_count++;
+    mesh_data->instance_id = mesh_data_buffer->draw_call_manager->AddNewInstanceGetInstanceId(mesh_data);
     
     tile->mesh_data = mesh_data;
     mesh_data->transform = translate(base_mesh->transform, tile->x0y0z);
@@ -139,16 +134,9 @@ void TerrainManager::BufferTerrain(TerrainChunk* chunk) {
   }
 }
 
-void TerrainManager::BufferTerrainDraw(TerrainChunk* chunk) {
-  mesh_data_buffer->AddCommand()
-  chunk->tiles
-
-}
-
-
-pair<MeshData*, shared_ptr<MeshLoadData>> TerrainManager::GetBaseMeshPlaneBySize(
+MeshData* TerrainManager::GetOrCreateInstancedPlane(
   TerrainChunk* chunk, TerrainTile* tile) {
-  auto existing = planes_for_instanced_meshes.find(tile->size);
+  auto existing = planes_for_instanced_meshes.find(chunk->tile_size);
   if (existing == planes_for_instanced_meshes.end()) {
 
     // TODO: for any number of vertices, not just hardcoded 2
@@ -169,89 +157,89 @@ pair<MeshData*, shared_ptr<MeshLoadData>> TerrainManager::GetBaseMeshPlaneBySize
     auto base_mesh = mesh_manager->CreateMeshData();
 
     base_mesh->transform = translate(mat4(1), chunk->pos);
-    base_mesh->instance_count = chunk->tiles.size();
+    mesh_data_buffer->BufferMeshData()
+
     tile->mesh_data = base_mesh;
 
-    planes_for_instanced_meshes[tile->size] = { base_mesh, load_data };
-    return planes_for_instanced_meshes[tile->size];
+    planes_for_instanced_meshes[chunk->tile_size] = { base_mesh, load_data };
+    return planes_for_instanced_meshes[chunk->tile_size];
 
   } else {
 
     auto base_mesh = existing->second.first;
-    base_mesh->instance_count += chunk->tiles.size();
     return existing->second;
   }
 }
 
 // Test create terrain, first prototype
 void TerrainManager::CreateTerrain() {
-  SystemsManager* systems_manager = SystemsManager::GetInstance();
-  MeshManager* mesh_manager = systems_manager->mesh_manager;
-  BufferManager* buffer_manager = systems_manager->buffer_manager;
-  TextureManager* texture_manager = systems_manager->texture_manager;
-  ShaderManager* shader_manager = systems_manager->shader_manager;
-  MeshDataBufferConsumer* mesh_data_buffer = buffer_manager->mesh_data_buffer;
+  //SystemsManager* systems_manager = SystemsManager::GetInstance();
+  //MeshManager* mesh_manager = systems_manager->mesh_manager;
+  //BufferManager* buffer_manager = systems_manager->buffer_manager;
+  //TextureManager* texture_manager = systems_manager->texture_manager;
+  //ShaderManager* shader_manager = systems_manager->shader_manager;
+  //MeshDataBufferConsumer* mesh_data_buffer = buffer_manager->mesh_data_buffer;
 
-  const int SCALE = 1;
-  const int sizeX = 100;
-  const int sizeY = 100;
+  //const int SCALE = 1;
+  //const int sizeX = 100;
+  //const int sizeY = 100;
 
-  vector<vec3> vertices(sizeX * sizeY);
-  vector<unsigned int> indices;
-  vector<float> noiseOutput(sizeX * sizeY);
-  vector<vec3> normals;
-  vector<vec2> uvs(sizeX * sizeY);
+  //vector<vec3> vertices(sizeX * sizeY);
+  //vector<unsigned int> indices;
+  //vector<float> noiseOutput(sizeX * sizeY);
+  //vector<vec3> normals;
+  //vector<vec2> uvs(sizeX * sizeY);
 
-  fnSimplex->GenUniformGrid2D(noiseOutput.data(), 0, 0, sizeX, sizeY, 0.02f, 1337);
-  for (int y = 0; y < sizeY; y++) {
-    for (int x = 0; x < sizeX; x += 1) {
-      if (x == sizeX - 1) {
-        break;
-      }
-      int x1 = x;
-      int x2 = x + 1;
-      int current_row_shift = y * sizeX;
-      int ind1 = x1 + current_row_shift;
-      int ind2 = x2 + current_row_shift;
+  //fnSimplex->GenUniformGrid2D(noiseOutput.data(), 0, 0, sizeX, sizeY, 0.02f, 1337);
+  //for (int y = 0; y < sizeY; y++) {
+  //  for (int x = 0; x < sizeX; x += 1) {
+  //    if (x == sizeX - 1) {
+  //      break;
+  //    }
+  //    int x1 = x;
+  //    int x2 = x + 1;
+  //    int current_row_shift = y * sizeX;
+  //    int ind1 = x1 + current_row_shift;
+  //    int ind2 = x2 + current_row_shift;
 
-      vec3& vert1 = vertices[ind1];
-      vert1.x = SCALE * x;
-      vert1.y = SCALE * noiseOutput[ind1];
-      vert1.z = SCALE * y;
+  //    vec3& vert1 = vertices[ind1];
+  //    vert1.x = SCALE * x;
+  //    vert1.y = SCALE * noiseOutput[ind1];
+  //    vert1.z = SCALE * y;
 
-      vec3& vert2 = vertices[ind2];
-      vert2.x = SCALE * x2;
-      vert2.y = SCALE * noiseOutput[ind2];
-      vert2.z = SCALE * y;
+  //    vec3& vert2 = vertices[ind2];
+  //    vert2.x = SCALE * x2;
+  //    vert2.y = SCALE * noiseOutput[ind2];
+  //    vert2.z = SCALE * y;
 
 
-      // 2 vertices in current row + 2 vertices next row
-      // to form rectangle
-      // and assign repeated texture UV's
-      // skip last row
-      if (y < sizeY - 1) {
-        int next_row_shift = (y + 1) * sizeX;
-        int ind1_next_row = x1 + next_row_shift;
-        int ind2_next_row = x2 + next_row_shift;
+  //    // 2 vertices in current row + 2 vertices next row
+  //    // to form rectangle
+  //    // and assign repeated texture UV's
+  //    // skip last row
+  //    if (y < sizeY - 1) {
+  //      int next_row_shift = (y + 1) * sizeX;
+  //      int ind1_next_row = x1 + next_row_shift;
+  //      int ind2_next_row = x2 + next_row_shift;
 
-        // 1 triangle
-        indices.push_back(ind1);
-        indices.push_back(ind1_next_row);
-        indices.push_back(ind2);
-        // 2 triangle
-        indices.push_back(ind2);
-        indices.push_back(ind2_next_row);
-        indices.push_back(ind1_next_row);
+  //      // 1 triangle
+  //      indices.push_back(ind1);
+  //      indices.push_back(ind1_next_row);
+  //      indices.push_back(ind2);
+  //      // 2 triangle
+  //      indices.push_back(ind2);
+  //      indices.push_back(ind2_next_row);
+  //      indices.push_back(ind1_next_row);
 
-        if (x % 2 == 0 && y % 2 == 0) {
-          uvs[ind1] = { 0.0, 0.0 };
-          uvs[ind2] = { 0.0, 1.0 };
-          uvs[ind1_next_row] = { 1.0, 0.0 };
-          uvs[ind2_next_row] = { 1.0, 1.0 };
-        }
-      }
-    }
-  }
+  //      if (x % 2 == 0 && y % 2 == 0) {
+  //        uvs[ind1] = { 0.0, 0.0 };
+  //        uvs[ind2] = { 0.0, 1.0 };
+  //        uvs[ind1_next_row] = { 1.0, 0.0 };
+  //        uvs[ind2_next_row] = { 1.0, 1.0 };
+  //      }
+  //    }
+  //  }
+  //}
 
   /*
   * TODO:
@@ -260,50 +248,50 @@ void TerrainManager::CreateTerrain() {
 
   // ----- 1. BUFFER MESH DATA AND PREPARE DRAW CALL COMMON MACHINERY   --------------------
   // add drawcall
-  auto draw_call = mesh_data_buffer->CreateDrawCall(
-    shader_manager->all_shaders->blinn_phong,
-    mesh_data_buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND),
-    GL_TRIANGLES);
-  draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
-  systems_manager->renderer->AddDraw(draw_call, DrawOrder::MESH);
+  //auto draw_call = mesh_data_buffer->CreateDrawCall(
+  //  shader_manager->all_shaders->blinn_phong,
+  //  mesh_data_buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND),
+  //  GL_TRIANGLES);
+  //draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
+  //systems_manager->renderer->AddDraw(draw_call, DrawOrder::MESH);
 
-  // load data
-  vector<shared_ptr<MeshLoadData>> load_data = { mesh_manager->CreateMesh(vertices, indices, normals, uvs) };
-  load_data[0]->tex_names = new MaterialTexNames("checker1.png", EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING);
-  vector<MeshDataBase*> meshes = { mesh_manager->CreateMeshData(load_data[0].get()) };
-  auto mesh = (MeshData*)meshes[0];
+  //// load data
+  //vector<shared_ptr<MeshLoadData>> load_data = { mesh_manager->CreateMesh(vertices, indices, normals, uvs) };
+  //load_data[0]->tex_names = new MaterialTexNames("checker1.png", EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_STRING);
+  //vector<MeshDataBase*> meshes = { mesh_manager->CreateMeshData(load_data[0].get()) };
+  //auto mesh = (MeshData*)meshes[0];
 
-  // buffer data
-  mesh_data_buffer->
-    BufferMeshData(meshes, load_data);
-  mesh_data_buffer->
-    SetBaseMeshForInstancedCommand(meshes, load_data);
-  mesh_data_buffer->BufferTransform(mesh);
+  //// buffer data
+  //mesh_data_buffer->
+  //  BufferMeshData(meshes, load_data);
+  //mesh_data_buffer->
+  //  SetBaseMeshForInstancedCommand(meshes, load_data);
+  //mesh_data_buffer->BufferTransform(mesh);
 
-  // load texture to buffer
-  Texture* texture = texture_manager->LoadTextureArray(load_data[0]->tex_names);
-  texture->MakeResident();
+  //// load texture to buffer
+  //Texture* texture = texture_manager->LoadTextureArray(load_data[0]->tex_names);
+  //texture->MakeResident();
 
-  mesh->textures = { {1.0, texture->id}, 1 };
-  mesh_data_buffer->BufferMeshTexture(mesh);
+  //mesh->textures = { {1.0, texture->id}, 1 };
+  //mesh_data_buffer->BufferMeshTexture(mesh);
 
-  float light_power = 1.0;
-  // add light for blinn_phong to view texture
-  vector<Light*> light1 = { new Light{ {0,-1,0,0},
-                       { 0.0, 5.4625, 0.0,0},
-                       {light_power ,light_power ,light_power ,0},
-                       {light_power ,light_power ,light_power ,0},
-                       LightType::Directional,
-                       1.00000000,
-                       0.699999988,
-                       0.699999988,
-                       10,
-                       10 } };
-  mesh_data_buffer->BufferLights(light1);
-  // add command to drawcall
-  vector<DrawElementsIndirectCommand> commands = { mesh->command };
-  draw_call->command_count = commands.size();
-  draw_call->buffer->AddCommands(commands, draw_call->command_buffer);
-  CheckGLError();
+  //float light_power = 1.0;
+  //// add light for blinn_phong to view texture
+  //vector<Light*> light1 = { new Light{ {0,-1,0,0},
+  //                     { 0.0, 5.4625, 0.0,0},
+  //                     {light_power ,light_power ,light_power ,0},
+  //                     {light_power ,light_power ,light_power ,0},
+  //                     LightType::Directional,
+  //                     1.00000000,
+  //                     0.699999988,
+  //                     0.699999988,
+  //                     10,
+  //                     10 } };
+  //mesh_data_buffer->BufferLights(light1);
+  //// add command to drawcall
+  //vector<DrawElementsIndirectCommand> commands = { mesh->command };
+  //draw_call->command_count = commands.size();
+  //draw_call->buffer->AddCommands(commands, draw_call->command_buffer);
+  //CheckGLError();
   // -------- 1. END ---------------------------------------------------------------------
 }

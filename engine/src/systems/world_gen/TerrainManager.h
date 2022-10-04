@@ -4,8 +4,9 @@
 #include "AssetUtils.h"
 #include "BufferSettings.h"
 #include "OpenGLHelpers.h"
-#include "SystemsManager.h"
 #include "TerrainTile.h"
+#include "DrawCallManager.h"
+#include "BufferManager.h"
 #include "MeshDataBufferConsumer.h"
 #include <FastNoise/FastNoise.h>
 #include "Constants.h"
@@ -113,6 +114,10 @@ TODO_1 (AHORA): calculate each vertex normal as mean of adjastent faces normals
 TODO_2 (AHORA): fuse mesh and terrain MeshData* into single draw call, since they are using same blinn_phong shader
 
 TODO_999 (far compartment): noise generators must be constant at least for height for consistent terrain, or find a way to sew tiles together
+
+TODO ???: dont store thousands of tiles with transform matrices in memory.
+          on gen step buffer instances tranforms, noise values and discard - free memory,
+                                                              only reside in GPU uniform
 */
 class TerrainManager
 {
@@ -121,14 +126,14 @@ class TerrainManager
   // TEST VALUES
   FastNoise::SmartNode<FastNoise::FractalFBm> fnFractal;
   FastNoise::SmartNode<FastNoise::Simplex> fnSimplex;
-  unordered_map<TileSizeParameters, pair<MeshData*, shared_ptr<MeshLoadData>>>
-    planes_for_instanced_meshes;
-
+  unordered_map<TileSizeParameters, MeshData*> planes_for_instanced_meshes;
+  DrawCall* mesh_dc;
 public:
   TerrainManager(BufferManager* buffer_manager,
     MeshManager* mesh_manager) :
     mesh_data_buffer{ buffer_manager->mesh_data_buffer },
-    mesh_manager{ mesh_manager } {
+    mesh_manager{ mesh_manager },
+    mesh_dc{ buffer_manager->mesh_data_buffer->draw_call_manager->mesh_dc } {
     //FastNoise::SmartNode<FastNoise::Simplex>
     fnSimplex = FastNoise::New<FastNoise::Simplex>();
     FastNoise::SmartNode sm = fnSimplex;
@@ -154,8 +159,7 @@ public:
 
 private:
   void BufferTerrain(TerrainChunk* chunk);
-  void BufferTerrainDraw(TerrainChunk* chunk);
-  pair<MeshData*, shared_ptr<MeshLoadData>> GetBaseMeshPlaneBySize(
-    TerrainChunk* chunk, TerrainTile* tile);
+  void BufferTerrain(TerrainChunk* chunk);
+  MeshData* GetOrCreateInstancedPlane(TerrainChunk* chunk, TerrainTile* tile);
   ~TerrainManager() {};
 };

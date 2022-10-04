@@ -1,26 +1,22 @@
 #include "SystemsManager.h"
 #include "Macros.h"
 
-void SystemsManager::Render() {
-	renderer->Render(camera);
-}
-
 void SystemsManager::InitSystems() {
 	main_thread_id = this_thread::get_id();
 	mesh_manager = new MeshManager();
 	file_watcher = new FileWatcher();
 	camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
     renderer_context_manager = new RendererContextManager();
-	renderer = new Renderer(renderer_context_manager, buffer_manager);
 	renderer_context_manager->InitContext();
 	buffer_manager = new BufferManager(mesh_manager);
 	buffer_manager->Init();
+	renderer = new Renderer(renderer_context_manager, buffer_manager);
     terrain_manager = new TerrainManager(buffer_manager);
 	state_manager = new StateManager(buffer_manager);
 	samplers = new Samplers();
 	samplers->Init();
 	texture_manager = new TextureManager(samplers, buffer_manager);
-    shader_manager = new ShaderManager();
+    shader_manager = new ShaderManager(file_watcher, renderer, camera);
     shader_manager->SetupShaders();
     draw_call_manager = new DrawCallManager(shader_manager);
 	font_manager = new FontManager(samplers, mesh_manager, renderer, draw_call_manager, texture_manager);
