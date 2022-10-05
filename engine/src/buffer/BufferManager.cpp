@@ -3,7 +3,7 @@
 void BufferManager::Init() {
 	storage = BufferStorage::GetInstance();
 	storage->Init();
-	mesh_data_buffer = new MeshDataBufferConsumer(storage);
+	mesh_data_buffer = new MeshDataBufferConsumer(storage, draw_call_manager);
 	mesh_data_buffer->Init();
 	ui_buffer = new UIBufferConsumer(storage, mesh_manager);
 	ui_buffer->Init();
@@ -13,6 +13,7 @@ void BufferManager::Init() {
 	bullet_debug_drawer_buffer->Init();
 }
 void BufferManager::Reset() {
+  storage->Reset();
   mesh_data_buffer->Reset();
   ui_buffer->Reset();
   overlay_3d_buffer->Reset();

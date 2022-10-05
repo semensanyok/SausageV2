@@ -52,6 +52,7 @@ class MeshManager : public SausageSystem {
 
   Bone CreateBone(string bone_name, mat4& offset, mat4& trans);
   MeshData* CreateMeshData();
+  MeshData* CreateInstancedMesh(MeshData* base_mesh);;
   MeshData* CreateMeshData(MeshLoadData* load_data);
   MeshDataOverlay3D* CreateMeshDataFont3D(string& text, mat4& transform);
   MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr);

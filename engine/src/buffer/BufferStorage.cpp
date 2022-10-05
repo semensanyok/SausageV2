@@ -86,6 +86,14 @@ bool BufferStorage::RequestStorageSetOffsets(
   unsigned long vertices_size,
   unsigned long indices_size
 ) {
+  // rellease if slot existed, to reallocate anew
+  if (mesh->vertex_slot != Arena::NULL_SLOT) {
+    vertex_arena->Release(mesh->vertex_slot);
+  }
+  if (mesh->index_slot != Arena::NULL_SLOT) {
+    index_arena->Release(mesh->index_slot);
+  }
+
   auto vertex_slot = vertex_arena->Allocate(vertices_size);
   if (vertex_slot == Arena::NULL_SLOT) {
     LOG("Error RequestStorageSetOffsets vertex allocation.");
@@ -102,7 +110,7 @@ bool BufferStorage::RequestStorageSetOffsets(
 
   bool is_new_mesh = mesh->buffer_id < 0;
   if (is_new_mesh) {
-    mesh->buffer_id = mesh_id_slots->ObtainNumber();
+    mesh->buffer_id = command_slots->ObtainNumber();
   }
   out_command.count = indices_size;
   out_command.firstIndex = index_slot.offset;
@@ -114,7 +122,7 @@ bool BufferStorage::RequestStorageSetOffsets(
 void BufferStorage::ReleaseStorage(MeshDataBase* mesh) {
   vertex_arena->Release(mesh->vertex_slot);
   index_arena->Release(mesh->index_slot);
-  mesh_id_slots->ReleaseNumber(mesh->buffer_id);
+  command_slots->ReleaseNumber(mesh->buffer_id);
 }
 
 void BufferStorage::Init() {

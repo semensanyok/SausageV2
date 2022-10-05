@@ -94,80 +94,76 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
 }
 
 void TerrainManager::BufferTerrain(TerrainChunk* chunk) {
-  /**
-      TODO:
-        Buffer single plain as base mesh
-        other plains are parts of intanced DrawCall
-        for each glInstanceId buffer transform offset/matrix + blend textures
-      */
-
   // EACH VERTEX SHARED AMONG 1 - 4 TILES (CORNER 1 TILE, TOP/BOTTOM/LEFT/RIGHT BORDER - 2 TILES, OTHER - 4 TILES)
-  // TODO: calculate size properly
-  vector<vec3> vertices(chunk->sizeX * chunk->sizeY);
-  // each tile is 2 triangles, 3 vertices each -> 6 indices
-  vector<unsigned int> indices(6 * chunk->sizeX * chunk->sizeY);
-  // TODO_1 (AHORA): calculate each vertex normal as mean of adjastent faces normals
-  //1 2 3
-  //  4 5 6
-  //  7 8 9
-  //  normal of vertex 5 is mean of normals of faces
-  //  [(1 2 4 5), (2 3 5 6), (4, 5, 7, 8), (5, 6, 8, 9)]
-  //normal of face 1 2 4 5 == (1 - 2) x(1 - 4), where 1 - 4 - vertices(x, y, z)
-  //  TBN IS NEEDED IN SHADER !!!
-  // vector<vec2> normals;
-  vector<vec3> normals;
 
-  auto tile0 = chunk->tiles[0];
-  auto base_mesh_with_load_data = GetOrCreateInstancedPlane(chunk, tile0);
 
-  auto base_mesh = base_mesh_with_load_data.first;
 
-  for (int i = 1; i < chunk->tiles.size(); i++) {
+  for (int i = 0; i < chunk->tiles.size(); i++) {
     auto tile = chunk->tiles[i];
-    auto mesh_data = mesh_manager->CreateMeshData();
-    mesh_data->base_mesh = base_mesh;
-    mesh_data->instance_id = mesh_data_buffer->draw_call_manager->AddNewInstanceGetInstanceId(mesh_data);
-    
-    tile->mesh_data = mesh_data;
-    mesh_data->transform = translate(base_mesh->transform, tile->x0y0z);
+    auto mesh_data = GetInstancedPlaneWithBaseMeshTransform(chunk, tile);
+    mesh_data->transform = translate(mesh_data->transform, tile->x0y0z);
     mesh_data_buffer->BufferTransform(mesh_data);
+    // TODO: assign blend textures
   }
 }
 
-MeshData* TerrainManager::GetOrCreateInstancedPlane(
-  TerrainChunk* chunk, TerrainTile* tile) {
+MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
+  TerrainChunk* chunk, TerrainTile* tile
+  //, vec2& out_face_normal
+) {
   auto existing = planes_for_instanced_meshes.find(chunk->tile_size);
   if (existing == planes_for_instanced_meshes.end()) {
 
     // TODO: for any number of vertices, not just hardcoded 2
     float half_size_x = (float)chunk->scale / 2;
     float half_size_y = (float)chunk->scale / 2;
-    std::vector<float> vertices2 = {
-        half_size_x,  half_size_y, 0.0f,  // top right
-        half_size_x, -half_size_y, 0.0f,  // bottom right
-		-half_size_x, -half_size_y, 0.0f,  // bottom left
-		-half_size_x,  half_size_y, 0.0f   // top left 
-	};
-	std::vector<unsigned int> indices2 = {
-		0, 1, 3,  // first Triangle
-		1, 2, 3   // second Triangle
-	};
-    // TODO: add normals, should be unit up vector?
-	auto load_data = mesh_manager->CreateMesh(vertices2, indices2);
+    std::vector<vec3> vertices2 = {
+        vec3(half_size_x,  half_size_y, 0.0f),  // top right
+        vec3(half_size_x, -half_size_y, 0.0f),  // bottom right
+        vec3(- half_size_x, -half_size_y, 0.0f),  // bottom left
+        vec3(-half_size_x,  half_size_y, 0.0f)   // top left 
+    };
+    std::vector<unsigned int> indices2 = {
+      0, 1, 3,  // first Triangle
+      1, 2, 3   // second Triangle
+    };
+
+    // need to calculate vertex normal as mean of 4 faces normals
+    // but we have instanced draw call, same normal for all tiles...
+    // but transform mat4 should adjust each vertex normal to be equal to face normal
+    // TODO: check that:
+    //  expected to see seems between tiles and not smooth shading, each tile having constant light, no interpolation
+    //  normal texture should make it a bit less visible though
+    //out_face_normal = cross(vertices2[0] - vertices2[1], vertices2[2] - vertices2[3]);
+    vec3 face_normal = cross(vertices2[0] - vertices2[1], vertices2[2] - vertices2[3]);
+    vector<vec3> normals = {
+      face_normal,
+      face_normal,
+      face_normal,
+      face_normal
+    };
+
+    auto load_data = mesh_manager->CreateMesh(vertices2, indices2, normals);
     auto base_mesh = mesh_manager->CreateMeshData();
 
     base_mesh->transform = translate(mat4(1), chunk->pos);
-    mesh_data_buffer->BufferMeshData()
+    DrawElementsIndirectCommand command;
+    mesh_data_buffer->BufferMeshData(command, base_mesh, load_data);
+    draw_call_manager->mesh_dc->BufferCommand(command, base_mesh);
 
     tile->mesh_data = base_mesh;
 
-    planes_for_instanced_meshes[chunk->tile_size] = { base_mesh, load_data };
+    planes_for_instanced_meshes[chunk->tile_size] = base_mesh;
     return planes_for_instanced_meshes[chunk->tile_size];
 
-  } else {
+  }
+  else {
 
-    auto base_mesh = existing->second.first;
-    return existing->second;
+    auto base_mesh = existing->second;
+    auto instanced_mesh = mesh_manager->CreateInstancedMesh(base_mesh);
+    instanced_mesh->transform = base_mesh->transform;
+    draw_call_manager->AddNewInstanceSetInstanceId(instanced_mesh);
+    return instanced_mesh;
   }
 }
 

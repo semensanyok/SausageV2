@@ -16,7 +16,6 @@ bool MeshDataBufferConsumer::BufferMeshData(
   }
 }
 
-
 void MeshDataBufferConsumer::Init() {
   BufferConsumer::Init();
 }
@@ -68,7 +67,7 @@ void MeshDataBufferConsumer::SetBaseMeshForInstancedCommand(
     auto mesh_data = load_data_meshes[i];
     
     //auto& instance_count = base_mesh_data->instance_count;
-    mesh_data->instance_id = draw_call_manager->AddNewInstanceGetInstanceId(mesh_data);
+    mesh_data->instance_id = draw_call_manager->AddInstanceGetInstanceId(mesh_data);
     DEBUG_ASSERT(mesh_data->instance_id != -1);
     mesh_data->base_mesh = load_data_meshes[base_mesh_ind];
   }

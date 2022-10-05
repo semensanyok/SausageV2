@@ -54,7 +54,7 @@ class BufferStorage {
 
  private:
 
-  ThreadSafeNumberPool* mesh_id_slots;
+  ThreadSafeNumberPool* command_slots;
   ThreadSafeNumberPool* transforms_slots;
   ThreadSafeNumberPool* transforms_font_slots;
   ThreadSafeNumberPool* transforms_font_ui_slots;
@@ -113,7 +113,7 @@ class BufferStorage {
  private:
    BufferStorage() {
      gl_buffers = new GLBuffers();
-     mesh_id_slots = new ThreadSafeNumberPool(MAX_BASE_MESHES);
+     command_slots = new ThreadSafeNumberPool(MAX_BASE_MESHES);
      transforms_slots = new ThreadSafeNumberPool(MAX_BASE_AND_INSTANCED_MESHES);
      transforms_font_slots = new ThreadSafeNumberPool(MAX_3D_OVERLAY_TRANSFORM);
      transforms_font_ui_slots = new ThreadSafeNumberPool(MAX_UI_UNIFORM_TRANSFORM);

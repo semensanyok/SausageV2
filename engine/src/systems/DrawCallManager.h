@@ -60,6 +60,8 @@ public:
     if (out_mesh->command_offset == -1) {
       MemorySlot slot = Allocate(1);
       out_mesh->command_offset = slot.offset;
+      // expected to buffer base mesh first. then increment instance count via DrawCallManager
+      command.instanceCount = 1;
     }
     BufferStorage::GetInstance()->
       BufferCommand(command, out_mesh->command_offset);
@@ -135,13 +137,16 @@ public:
     );
     draw_call_by_id[mesh_dc->id] = mesh_dc;
   }
-  long AddNewInstanceGetInstanceId(MeshDataBase* mesh) {
-    auto draw_command = command_by_mesh_id.find(mesh->id);
-    if (draw_command == command_by_mesh_id.end()) {
+  void AddNewInstanceSetInstanceId(MeshDataBase* mesh) {
+    auto command_iter = command_by_mesh_id.find(mesh->id);
+    if (command_iter == command_by_mesh_id.end()) {
       LOG(format("Skip IncrementInstanceCount. not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
-      return -1;
+      return;
     }
-    return draw_command->second.instanceCount++;
+    auto& command = command_iter->second;
+    // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
+    mesh->instance_id = command.instanceCount++;
+    BufferStorage::GetInstance()->BufferCommand(command, mesh->buffer_id);
   }
   void DisableCommand(MeshDataBase* mesh) {
     auto draw_call = dc_by_mesh_id.find(mesh->id);

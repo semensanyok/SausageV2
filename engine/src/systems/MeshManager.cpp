@@ -172,6 +172,18 @@ MeshData* MeshManager::CreateMeshData() {
     return mesh;
 }
 
+MeshData* MeshManager::CreateInstancedMesh(MeshData* base_mesh) {
+  auto* mesh = new MeshData();
+  mesh->id = mesh_id_pool->ObtainNumber();
+  mesh->buffer_id = base_mesh->buffer_id;
+  mesh->base_mesh = base_mesh;
+  // caller must set instance_id
+  // via DrawCallManager.AddInstanceGetInstanceId
+  mesh->instance_id = 0;
+  all_meshes.push_back(mesh);
+  return mesh;
+}
+
 MeshData* MeshManager::CreateMeshData(MeshLoadData* load_data) {
   auto mesh = new MeshData(load_data);
   mesh->id = mesh_id_pool->ObtainNumber();
@@ -188,7 +200,7 @@ MeshManager::MeshManager() {
 
 MeshManager::~MeshManager() {
   delete mesh_id_pool;
-  delete mesh_id_pool;
+  delete bone_id_pool;
 }
 
 void MeshManager::DeleteMeshData(MeshDataBase* mesh) {

@@ -75,12 +75,12 @@ public:
 
 private:
   MeshData()
-    : textures{ {0, {}} },
+    : MeshDataBase(), textures{ {0, {}} },
     physics_data{ nullptr },
     is_transparent{ false },
     transform{ mat4(1.0) } {};
   MeshData(MeshLoadData* load_data)
-    : textures{ {0, {}} },
+    : MeshDataBase(), textures{ {0, {}} },
     physics_data{ load_data->physics_data },
     armature{ load_data->armature },
     name{ load_data->name },

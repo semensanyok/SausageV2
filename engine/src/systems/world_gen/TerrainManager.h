@@ -12,6 +12,7 @@
 #include "Constants.h"
 
 using namespace std;
+using namespace glm;
 
 /**
 
@@ -127,13 +128,13 @@ class TerrainManager
   FastNoise::SmartNode<FastNoise::FractalFBm> fnFractal;
   FastNoise::SmartNode<FastNoise::Simplex> fnSimplex;
   unordered_map<TileSizeParameters, MeshData*> planes_for_instanced_meshes;
-  DrawCall* mesh_dc;
+  DrawCallManager* draw_call_manager;
 public:
   TerrainManager(BufferManager* buffer_manager,
     MeshManager* mesh_manager) :
     mesh_data_buffer{ buffer_manager->mesh_data_buffer },
     mesh_manager{ mesh_manager },
-    mesh_dc{ buffer_manager->mesh_data_buffer->draw_call_manager->mesh_dc } {
+    draw_call_manager{ buffer_manager->mesh_data_buffer->draw_call_manager } {
     //FastNoise::SmartNode<FastNoise::Simplex>
     fnSimplex = FastNoise::New<FastNoise::Simplex>();
     FastNoise::SmartNode sm = fnSimplex;
@@ -160,6 +161,6 @@ public:
 private:
   void BufferTerrain(TerrainChunk* chunk);
   void BufferTerrain(TerrainChunk* chunk);
-  MeshData* GetOrCreateInstancedPlane(TerrainChunk* chunk, TerrainTile* tile);
+  MeshData* GetInstancedPlaneWithBaseMeshTransform(TerrainChunk* chunk, TerrainTile* tile);
   ~TerrainManager() {};
 };
