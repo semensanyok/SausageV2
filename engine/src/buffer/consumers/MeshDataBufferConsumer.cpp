@@ -16,6 +16,10 @@ bool MeshDataBufferConsumer::BufferMeshData(
   }
 }
 
+void MeshDataBufferConsumer::ReleaseStorage(MeshDataBase* mesh) {
+  buffer->ReleaseStorage(mesh);
+}
+
 void MeshDataBufferConsumer::Init() {
   BufferConsumer::Init();
 }
@@ -49,12 +53,14 @@ void MeshDataBufferConsumer::BufferBoneTransform(unordered_map<unsigned int, mat
   */
 void MeshDataBufferConsumer::SetBaseMeshForInstancedCommand(
     vector<MeshDataBase*>& load_data_meshes,
-    vector<shared_ptr<MeshLoadData>>& load_data) {
+    vector<shared_ptr<MeshLoadData>>& load_data,
+    vector<MaterialTexNames>& load_data_textures) {
   unordered_map<size_t, int> instanced_data_lookup;
   for (int i = 0; i < load_data.size(); i++) {
     auto mesh = load_data[i].get();
+    hash<MaterialTexNames> tex_hash;
     auto key =
-      (mesh->tex_names == nullptr ? 0 : mesh->tex_names->Hash())
+      tex_hash(load_data_textures[i])
       + mesh->vertices.size()
       + mesh->indices.size();
     auto base_mesh_ptr = instanced_data_lookup.find(key);

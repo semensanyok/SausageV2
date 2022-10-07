@@ -86,8 +86,8 @@ struct GLTextureHandles {
 };
 
 class TextureManager : public SausageSystem {
-    unordered_map<size_t, Texture*> path_to_tex;
-    unordered_map<unsigned int, Texture*> id_to_tex;
+    unordered_map<unsigned int, unsigned int> texture_used_count_by_id;
+    unordered_map<size_t, Texture*> texture_by_material_tex_names_hash;
     Samplers* samplers;
     BufferManager* buffer;
     ThreadSafeNumberPool* id_pool;
@@ -98,7 +98,7 @@ public:
     /**
     * load texture array for mesh. diffuse + normal + height + specular.
     */
-    Texture* LoadTextureArray(MaterialTexNames* tex_names);
+    Texture* LoadTextureArray(MaterialTexNames& tex_names);
 
     unique_ptr<RawTextureData> LoadRawTextureData(string& path);
 
@@ -109,10 +109,7 @@ public:
     */
     Texture* AllocateTextureWithHandle(GLuint texture_id, GLuint sampler);
 
-    /**
-     * allocates texture id and handle, without buffered data
-    */
-    Texture* AddToLookups(Texture* texture);
+    void Dispose(Texture* texture);
 private:
     GLenum GetTexFormat(int bytes_per_pixel, bool for_storage);
 

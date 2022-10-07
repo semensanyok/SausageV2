@@ -93,10 +93,13 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   return chunk;
 }
 
+void TerrainManager::DeactivateTerrain(TerrainChunk* chunk)
+{
+  draw_call_manager->DisableCommand(chunk->tiles[0]->mesh_data);
+}
+
 void TerrainManager::BufferTerrain(TerrainChunk* chunk) {
   // EACH VERTEX SHARED AMONG 1 - 4 TILES (CORNER 1 TILE, TOP/BOTTOM/LEFT/RIGHT BORDER - 2 TILES, OTHER - 4 TILES)
-
-
 
   for (int i = 0; i < chunk->tiles.size(); i++) {
     auto tile = chunk->tiles[i];

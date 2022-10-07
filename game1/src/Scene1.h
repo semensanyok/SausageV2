@@ -17,9 +17,6 @@ class Scene1 : public Scene {
  public:
   SystemsManager* systems_manager;
 
-  DrawCall* draw_call;
-
-  Shaders* shaders;
   // custom draws per shader
   vector<MeshDataBase*> all_meshes;
   vector<MeshDataBase*> all_transparent_meshes;
@@ -43,16 +40,8 @@ class Scene1 : public Scene {
   };
 
   Scene1()
-      : systems_manager{ SystemsManager::GetInstance() }, shaders{systems_manager->shader_manager->all_shaders} {
+      : systems_manager{ SystemsManager::GetInstance() } {
     auto buffer = systems_manager->buffer_manager->mesh_data_buffer;
-    draw_call = systems_manager->
-      buffer_manager->
-      mesh_data_buffer->
-      CreateDrawCall(
-        shaders->blinn_phong,
-        GL_TRIANGLES
-      );
-    draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
 
     // draw_call2 = new DrawCall(*draw_call);
     ////draw_call2->shader = shaders.stencil;
@@ -99,11 +88,12 @@ class Scene1 : public Scene {
     vector<MeshDataBase*> new_mesh_data;
     vector<shared_ptr<MeshLoadData>> new_meshes;
     vector<Light*> new_lights;
+    vector<MaterialTexNames> new_tex_names;
     _LoadGui();
-    _LoadMeshes(scene_path, new_mesh_data, new_meshes, new_lights);
+    _LoadMeshes(scene_path, new_mesh_data, new_meshes, new_tex_names, new_lights);
     
     systems_manager->buffer_manager->mesh_data_buffer
-        ->SetBaseMeshForInstancedCommand(new_mesh_data, new_meshes);
+        ->SetBaseMeshForInstancedCommand(new_mesh_data, new_meshes, new_tex_names);
     _BufferMeshes(new_mesh_data, new_meshes);
     for (auto mesh_base : new_mesh_data) {
       all_meshes.push_back(mesh_base);
@@ -117,9 +107,10 @@ class Scene1 : public Scene {
   }
   void _LoadMeshes(string& path, vector<MeshDataBase*>& out_new_mesh_data,
                    vector<shared_ptr<MeshLoadData>>& out_new_meshes,
+                   vector<MaterialTexNames>& out_tex_names,
                    vector<Light*>& out_new_lights) {
     systems_manager->mesh_manager->LoadMeshes(path, out_new_lights,
-                                              out_new_meshes, true, true, true);
+      out_new_meshes, out_tex_names, true, true, true);
     for (auto& load_data : out_new_meshes) {
       auto mesh =
           systems_manager->mesh_manager->CreateMeshData(load_data.get());
@@ -187,25 +178,8 @@ class Scene1 : public Scene {
   }
 
   void _BufferMeshes(vector<MeshDataBase*>& new_meshes_data,
-                     vector<shared_ptr<MeshLoadData>>& new_meshes) {
-    // dae only imports albedo name. temporary fix. TODO: delete
-    {
-      for (int i = 0; i < new_meshes.size(); i++) {
-        auto load_data = new_meshes[i].get();
-        if (load_data->tex_names != nullptr
-          && load_data->tex_names->normal.empty()) {
-          load_data->tex_names->normal = load_data->tex_names->diffuse;
-          load_data->tex_names->specular = load_data->tex_names->diffuse;
-          auto u = load_data->tex_names->diffuse.find("_");
-          auto to_replace = load_data->tex_names->diffuse.substr(
-              u + 1, load_data->tex_names->diffuse.find(".") - u - 1);
-          load_data->tex_names->normal.replace(u + 1, to_replace.size(),
-                                              "normal");
-          load_data->tex_names->specular.replace(u + 1, to_replace.size(),
-                                                "specular");
-        }
-      }
-    }
+                     vector<shared_ptr<MeshLoadData>>& new_meshes,
+                     vector<MaterialTexNames>& tex_names) {
     CheckGLError();
     systems_manager->buffer_manager->mesh_data_buffer->BufferMeshData(
         new_meshes_data, new_meshes);
@@ -217,7 +191,7 @@ class Scene1 : public Scene {
       }
       if (MeshData* mesh = dynamic_cast<MeshData*>(new_meshes_data[i])) {
         Texture* texture = systems_manager->texture_manager->LoadTextureArray(
-            new_meshes[i]->tex_names);
+            tex_names[i]);
         if (texture != nullptr) {
           mesh->textures = { {1.0, texture->id }, 1 };
           systems_manager->buffer_manager->mesh_data_buffer->BufferMeshTexture(

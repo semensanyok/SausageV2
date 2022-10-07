@@ -6,38 +6,38 @@
 
 using namespace std;
 
-struct MaterialTexNames : SausageHashable {
-public:
-  string diffuse;
-  string normal;
-  string specular;
-  string height;
-  string metal;
-  string ao;
-  string opacity;
-  MaterialTexNames(string diffuse,
-  string normal,
-  string specular,
-  string height,
-  string metal,
-  string ao,
-  string opacity) :
-    diffuse{ diffuse },
-    normal{ normal },
-    specular{ specular },
-    height{ height },
-    metal{ metal },
-    ao{ ao } {}
-  size_t Hash() {
-    return hash<string>{}(string(diffuse)
-                              .append(normal)
-                              .append(specular)
-                              .append(height)
-                              .append(metal)
-                              .append(ao)
-                              .append(opacity));
+struct MaterialTexNames {
+  const string diffuse;
+  const string normal;
+  const string specular;
+  const string height;
+  const string metal;
+  const string ao;
+  const string opacity;
+};
+
+/*
+* diffuse considered as index
+* other textures are auxiliary
+*
+* add other textures to hash/container funcions when needed
+*/
+// hash function for unordered map
+template<> struct std::hash<MaterialTexNames> {
+  size_t operator()(MaterialTexNames const& t) const {
+    return hash<string>{}(string(t.diffuse));
   }
 };
+
+// eq for hashmap/hashset
+bool operator==(MaterialTexNames& lhs, MaterialTexNames& rhs) {
+  std::hash<MaterialTexNames> hash_fn;
+  return lhs.diffuse == rhs.diffuse;
+}
+// compare for map/set
+bool operator<(MaterialTexNames& lhs, MaterialTexNames& rhs) {
+  return lhs.diffuse < rhs.diffuse;
+}
 
 enum TextureType {
   Diffuse,   // sampler2DArray   index 0

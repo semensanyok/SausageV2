@@ -20,7 +20,6 @@ class   PhysicsData;
 struct MeshLoadData {
   vector<Vertex> vertices;
   vector<unsigned int> indices;
-  MaterialTexNames* tex_names = nullptr;
   Armature* armature = nullptr;
   PhysicsData* physics_data = nullptr;
   string name;

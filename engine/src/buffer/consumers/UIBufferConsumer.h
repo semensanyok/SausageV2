@@ -10,7 +10,6 @@
 #include "Settings.h"
 #include "Structures.h"
 #include "GPUStructs.h"
-#include "DrawCallManager.h"
 
 using namespace std;
 using namespace glm;
@@ -20,9 +19,8 @@ class UIBufferConsumer : public BufferConsumer {
 
  public:
   UIBufferConsumer(BufferStorage* buffer,
-    DrawCallManager* draw_call_manager,
     MeshManager* mesh_manager)
-      : BufferConsumer(buffer, draw_call_manager, BufferType::UI_BUFFERS),
+      : BufferConsumer(buffer, BufferType::UI_BUFFERS),
         mesh_manager{mesh_manager} {}
   ~UIBufferConsumer() {}
   // TODO:

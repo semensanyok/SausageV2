@@ -6,8 +6,9 @@ class TerrainTest {
   class TestScene : public Scene {
   public:
     void Init() {
-      auto ter = new TerrainManager(nullptr, nullptr);
-      ter->CreateTerrain();
+      auto tm = SystemsManager::GetInstance()->terrain_manager;
+      auto chunk = tm->CreateChunk({ 0,0,0 }, 0, 0, 10, 10);
+      tm->BufferTerrain(chunk);
     };
     void PrepareDraws() {
     };

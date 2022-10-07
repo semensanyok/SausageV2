@@ -4,27 +4,24 @@
 * load texture array for mesh. diffuse + normal + height + specular.
 */
 
-Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
-    if (tex_names == nullptr) {
-      LOG(string("texture is nullptr"));
-      return nullptr;
-    }
-    if (tex_names->diffuse.empty()) {
-        LOG(string("diffuse not found: ").append(tex_names->diffuse));
+Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
+    if (tex_names.diffuse.empty()) {
+        LOG(string("diffuse not found: ").append(tex_names.diffuse));
         return nullptr;
     }
     // diffuse is a must. used to create storage. all textures must be same size and format.
-    string diffuse_path = GetTexturePath(tex_names->diffuse);
-    string normal_path = GetTexturePath(tex_names->normal);
-    string specular_path = GetTexturePath(tex_names->specular);
-    string height_path = GetTexturePath(tex_names->height);
-    auto key_hash = tex_names->Hash();
+    string diffuse_path = GetTexturePath(tex_names.diffuse);
+    string normal_path = GetTexturePath(tex_names.normal);
+    string specular_path = GetTexturePath(tex_names.specular);
+    string height_path = GetTexturePath(tex_names.height);
 
-    auto existing = path_to_tex.find(key_hash);
-    if (existing != path_to_tex.end()) {
+    hash<MaterialTexNames> mtn_hash;
+    auto existing = texture_by_material_tex_names_hash.find(mtn_hash(tex_names));
+    if (existing != texture_by_material_tex_names_hash.end()) {
         LOG((ostringstream() << "Texture array already loaded: " <<
             diffuse_path + ", " + normal_path + ", " + specular_path + ", " + height_path).str());
-        return (*existing).second;
+        texture_used_count_by_id[existing->second->id]++;
+        return existing->second;
     }
     SDL_Surface* surface = IMG_Load(diffuse_path.c_str());
     if (surface == NULL)
@@ -53,24 +50,24 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
     //glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_texture_array_levels);
 
     SDL_FreeSurface(surface);
-    if (!tex_names->normal.empty()) {
-        LoadLayer(tex_names->normal, TextureType::Normal);
+    if (!tex_names.normal.empty()) {
+        LoadLayer(tex_names.normal, TextureType::Normal);
     }
-    if (!tex_names->specular.empty()) {
-        LoadLayer(tex_names->specular, TextureType::Specular);
+    if (!tex_names.specular.empty()) {
+        LoadLayer(tex_names.specular, TextureType::Specular);
     }
-    if (!tex_names->height.empty()) {
-        LoadLayer(tex_names->height, TextureType::Height);
+    if (!tex_names.height.empty()) {
+        LoadLayer(tex_names.height, TextureType::Height);
     }
     // Invalid operation GL error.
-    //if (!tex_names->metal_name.empty()) {
-    //    LoadLayer(tex_names->metal_name, TextureType::Metal);
+    //if (!tex_names.metal_name.empty()) {
+    //    LoadLayer(tex_names.metal_name, TextureType::Metal);
     //}
-    if (!tex_names->ao.empty()) {
-        LoadLayer(tex_names->ao, TextureType::AO);
+    if (!tex_names.ao.empty()) {
+        LoadLayer(tex_names.ao, TextureType::AO);
     }
-    //if (!tex_names->opacity.empty()) {
-    //    LoadLayer(tex_names->opacity, TextureType::Opacity);
+    //if (!tex_names.opacity.empty()) {
+    //    LoadLayer(tex_names.opacity, TextureType::Opacity);
     //}
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
     DEBUG_EXPR(CheckGLError());
@@ -78,8 +75,10 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames* tex_names) {
     Texture* texture = AllocateTextureWithHandle(texture_id, samplers->basic_repeat);
     buffer->storage->BufferTextureHandle(texture);
 
-    texture->MakeHashable(tex_names);
-    AddToLookups(texture);
+    hash<MaterialTexNames> mtn_hash;
+    texture->material_tex_names_hash = new size_t(mtn_hash(tex_names));
+    texture_by_material_tex_names_hash[mtn_hash(tex_names)] = texture;
+    texture_used_count_by_id[texture->id] = 1;
 
     return texture;
 }
@@ -88,15 +87,6 @@ unique_ptr<RawTextureData> TextureManager::LoadRawTextureData(string& path)
 {
   SDL_Surface* surface = IMG_Load(path.c_str());
   return make_unique<RawTextureData>(surface);
-}
-
-Texture* TextureManager::AddToLookups(Texture* texture)
-{
-  this->id_to_tex[texture->id] = texture;
-  if (texture->hash != nullptr) {
-    this->path_to_tex[texture->hash->Hash()] = texture;
-  }
-  return texture;
 }
 
 GLenum TextureManager::GetTexFormat(int bytes_per_pixel, bool for_storage) {
@@ -145,11 +135,26 @@ Texture* TextureManager::AllocateTextureWithHandle(GLuint texture_id, GLuint sam
 {
   GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, sampler);
   CheckGLError();
-  Texture* texture = new Texture(texture_id, tex_handle, nullptr, id_pool->ObtainNumber());
-  AddToLookups(texture);
+  Texture* texture = new Texture(texture_id, tex_handle, id_pool->ObtainNumber());
+  texture_used_count_by_id[texture->id] = 1;
   return texture;
 }
 
+void TextureManager::Dispose(Texture* texture)
+{
+  texture_used_count_by_id[texture->id] = texture_used_count_by_id[texture->id] - 1;
+  if (texture_used_count_by_id[texture->id] < 1) {
+    texture->Dispose();
+    id_pool->ReleaseNumber(texture->id);
+    if (texture->material_tex_names_hash != nullptr) {
+      texture_by_material_tex_names_hash.erase(*(texture->material_tex_names_hash));
+    }
+  }
+}
+
+/**
+ * @brief glBindTexture must be called beforehand with texture_id for which to buffer data
+*/
 bool TextureManager::LoadLayer(string name, TextureType type) {
   SDL_Surface* surface = IMG_Load(GetTexturePath(name).c_str());
   if (surface == NULL)

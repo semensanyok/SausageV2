@@ -3,11 +3,6 @@
 
 using namespace std;
 
-void Texture::MakeHashable(SausageHashable* hash) {
-  this->hash = hash;
-  SystemsManager::GetInstance()->texture_manager->AddToLookups(this);
-}
-
 /**
 * Stores id and handle for texture array.
 */
@@ -35,12 +30,12 @@ void Texture::Dispose() {
 	MakeNonResident();
 	glDeleteTextures(1, &texture_id);
 	is_destoyed = true;
+    delete material_tex_names_hash;
 }
 
-inline Texture::~Texture() {
+Texture::~Texture() {
   if (!is_destoyed) {
     Dispose();
   };
-  SystemsManager::GetInstance()->texture_manager->id_pool->ReleaseNumber(id);
   //delete hash;
 }

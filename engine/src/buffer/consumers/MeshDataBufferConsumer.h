@@ -8,15 +8,13 @@
 #include "BufferStorage.h"
 #include "BufferConsumer.h"
 #include "BufferSettings.h"
-#include "DrawCallManager.h"
 
 using namespace std;
 
 class MeshDataBufferConsumer : public BufferConsumer {
 public:
-  MeshDataBufferConsumer(BufferStorage* buffer,
-    DrawCallManager* draw_call_manager) :
-    BufferConsumer(buffer, draw_call_manager, BufferType::MESH_BUFFERS) {
+  MeshDataBufferConsumer(BufferStorage* buffer) :
+    BufferConsumer(buffer, BufferType::MESH_BUFFERS) {
   };
   ~MeshDataBufferConsumer() {
   };
@@ -24,15 +22,13 @@ public:
     DrawElementsIndirectCommand& command,
     MeshDataBase* mesh,
     shared_ptr<MeshLoadData> load_data);
-  void DeleteMesh(MeshDataBase* mesh) {
-    buffer->ReleaseStorage(mesh);
-    draw_call_manager->DisableCommand(mesh);
-  }
+  void ReleaseStorage(MeshDataBase* mesh);
   void Init();
   void Reset();
   void SetBaseMeshForInstancedCommand(
       vector<MeshDataBase*>& load_data_meshes,
-      vector<shared_ptr<MeshLoadData>>& load_data);
+      vector<shared_ptr<MeshLoadData>>& load_data,
+      vector<MaterialTexNames>& load_data_textures);
   void BufferTransform(vector<MeshData*>& meshes);
   void BufferTransform(MeshData* mesh);
   void BufferLights(vector<Light*>& lights);

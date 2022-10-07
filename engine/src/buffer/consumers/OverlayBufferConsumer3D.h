@@ -9,7 +9,6 @@
 #include "Settings.h"
 #include "Structures.h"
 #include "BufferSettings.h"
-#include "DrawCallManager.h"
 
 using namespace std;
 using namespace glm;
@@ -19,9 +18,8 @@ class OverlayBufferConsumer3D : public BufferConsumer {
 
  public:
   OverlayBufferConsumer3D(BufferStorage* buffer,
-    DrawCallManager* draw_call_manager,
     MeshManager* mesh_manager)
-      : BufferConsumer(buffer, draw_call_manager, BufferType::UI_BUFFERS),
+      : BufferConsumer(buffer, BufferType::UI_BUFFERS),
         mesh_manager{mesh_manager} {}
   ~OverlayBufferConsumer3D() {}
   // TODO:

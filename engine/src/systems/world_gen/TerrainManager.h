@@ -131,7 +131,8 @@ class TerrainManager
   DrawCallManager* draw_call_manager;
 public:
   TerrainManager(BufferManager* buffer_manager,
-    MeshManager* mesh_manager) :
+    MeshManager* mesh_manager,
+    Renderer* renderer) :
     mesh_data_buffer{ buffer_manager->mesh_data_buffer },
     mesh_manager{ mesh_manager },
     draw_call_manager{ buffer_manager->mesh_data_buffer->draw_call_manager } {
@@ -155,8 +156,10 @@ public:
     int size_y
   );
   void BufferTerrain(TerrainChunk* chunk);
-  //ActivateTerrain(TerrainChunk* chunk);
-  //DeactivateTerrain(TerrainChunk* chunk);
+  // each tile is a single instanced draw command
+  // buffered and disabled alltogether.
+  // same size plane is reused between all commands
+  void DeactivateTerrain(TerrainChunk* chunk);
 
 private:
   void BufferTerrain(TerrainChunk* chunk);

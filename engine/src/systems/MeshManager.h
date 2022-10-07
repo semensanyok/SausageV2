@@ -46,6 +46,7 @@ class MeshManager : public SausageSystem {
   void LoadMeshes(const string& file_name,
                   vector<Light*>& out_lights,
                   vector<shared_ptr<MeshLoadData>>& out_mesh_load_data,
+                  vector<MaterialTexNames>& out_tex_names,
                   bool is_load_transform = true,
                   bool is_load_aabb = true,
                   bool is_load_armature = false);
@@ -104,7 +105,7 @@ class MeshManager : public SausageSystem {
   void _SetBoneHierarchy(Armature* armature, aiNode* parent_node, Bone* parent,
                          bool is_dae = false);
 
-  MaterialTexNames* _GetTexNames(const aiMesh* mesh, const aiScene* scene,
+  MaterialTexNames _GetTexNames(const aiMesh* mesh, const aiScene* scene,
                                 bool is_obj = false);
   void _BlenderPostprocessLights(vector<Light*>& lights);
 };

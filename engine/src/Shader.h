@@ -18,20 +18,15 @@ class Shader
 	unordered_map<string, mat4*> mat4_uniforms;
 	unordered_map<string, vec3*> vec3_uniforms;
 public:
-	GLuint	id = 0;
+	const GLuint	id = 0;
 	bool is_active = true;
-
-	bool operator==(Shader& other) {
+    // eq for hashmap/hashset
+	bool operator==(Shader& other) const {
 		return id == other.id;
 	}
     // comparison for map/set
-    int operator<(Shader& other) {
+    int operator<(Shader& other) const {
       return id < other.id;
-    }
-    // hash function for unordered map
-    size_t operator()(const Shader& s) const
-    {
-      return s.id;
     }
 	inline friend ostream &operator<<(ostream& stream, const Shader& shader) {
 		stream << "Shader(id=" << shader.id << ",vertex shader name=" << shader.vertex_path << ",fragment shader name=" << shader.fragment_path << ")";
@@ -94,4 +89,11 @@ private:
 	// utility function for checking shader compilation/linking errors.
 	// ------------------------------------------------------------------------
 	bool CheckCompileErrors(GLuint shader, string type);
+};
+
+// hash function for unordered map
+template<> struct std::hash<Shader> {
+  size_t operator()(Shader const& t) const {
+    return t.id;
+  }
 };

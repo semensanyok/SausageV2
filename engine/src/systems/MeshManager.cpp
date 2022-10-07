@@ -84,7 +84,9 @@ void MeshManager::Reset() {
 
 void MeshManager::LoadMeshes(
     const string& file_name, vector<Light*>& out_lights,
-    vector<shared_ptr<MeshLoadData>>& out_mesh_load_data, bool is_load_armature,
+    vector<shared_ptr<MeshLoadData>>& out_mesh_load_data,
+    vector<MaterialTexNames>& out_tex_names,
+    bool is_load_armature,
     bool is_load_transform, bool is_load_aabb) {
   bool is_obj = file_name.ends_with(".obj");
   bool is_dae = file_name.ends_with(".dae");
@@ -132,8 +134,8 @@ void MeshManager::LoadMeshes(
             new PhysicsData(FromAi(mesh->mAABB.mMin), FromAi(mesh->mAABB.mMax));
       }
       data->name = string(mesh->mName.C_Str());
-      data->tex_names = _GetTexNames(mesh, scene, is_obj);
       out_mesh_load_data.push_back(data_ptr);
+      out_tex_names.push_back(_GetTexNames(mesh, scene, is_obj));
     }
   }
 
@@ -481,7 +483,7 @@ void MeshManager::_SetBoneHierarchy(Armature* armature, aiNode* parent_node,
   }
 }
 
-MaterialTexNames* MeshManager::_GetTexNames(const aiMesh* mesh,
+MaterialTexNames MeshManager::_GetTexNames(const aiMesh* mesh,
                                             const aiScene* scene, bool is_obj) {
   string diffuse_name;
   string normal_name;
@@ -526,8 +528,8 @@ MaterialTexNames* MeshManager::_GetTexNames(const aiMesh* mesh,
                       NULL) == AI_SUCCESS) {
     opacity_name = filesystem::path(Path.C_Str()).filename().string();
   }
-  return new MaterialTexNames(diffuse_name, normal_name, specular_name, height_name,
-                              metal_name, ao_name, opacity_name);
+  return { diffuse_name, normal_name, specular_name, height_name,
+                          metal_name, ao_name, opacity_name };
 }
 
 void MeshManager::_BlenderPostprocessLights(vector<Light*>& lights) {
