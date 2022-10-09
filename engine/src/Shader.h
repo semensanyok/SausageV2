@@ -20,14 +20,6 @@ class Shader
 public:
 	const GLuint	id = 0;
 	bool is_active = true;
-    // eq for hashmap/hashset
-	bool operator==(Shader& other) const {
-		return id == other.id;
-	}
-    // comparison for map/set
-    int operator<(Shader& other) const {
-      return id < other.id;
-    }
 	inline friend ostream &operator<<(ostream& stream, const Shader& shader) {
 		stream << "Shader(id=" << shader.id << ",vertex shader name=" << shader.vertex_path << ",fragment shader name=" << shader.fragment_path << ")";
 		return stream;
@@ -97,3 +89,13 @@ template<> struct std::hash<Shader> {
     return t.id;
   }
 };
+
+// eq for hashmap/hashset
+bool operator==(Shader& lhs, Shader& rhs) {
+  std::hash<Shader> hash_fn;
+  return lhs.id == rhs.id;
+}
+// compare for map/set
+bool operator<(Shader& lhs, Shader& rhs) {
+  return lhs.id < rhs.id;
+}

@@ -7,83 +7,85 @@
 #include "Renderer.h"
 #include "Settings.h"
 #include "StateManager.h"
-#include "BulletDebugDrawerBufferConsumer.h"
-#include "Renderer.h"
+#include "BufferManager.h"
 #include "DrawCallManager.h"
 
 using namespace std;
+using namespace glm;
 
 static struct PersistDrawRay {
-    uint32_t remove_time_millis;
-    vec3 vertices[2];
-    vec3 color;
+  uint32_t remove_time_millis;
+  vec3 vertices[2];
+  vec3 color;
 };
 class BulletDebugDrawer : public btIDebugDraw
 {
-    DrawCall* draw_call;
-    Renderer* renderer;
-    BulletDebugDrawerBufferConsumer* buffer;
-    StateManager* state_manager;
-    int m_debugMode;
+  DrawCallManager* draw_call_manager;
+  BulletDebugDrawerBufferConsumer* buffer;
+  StateManager* state_manager;
+  int m_debugMode;
 
-    vector<vec3> vertices;
-    vector<unsigned int> indices;
-    vector<vec3> colors;
+  vector<vec3> vertices;
+  vector<unsigned int> indices;
+  vector<vec3> colors;
 
-    vector<PersistDrawRay> persist_draws;
+  vector<PersistDrawRay> persist_draws;
 
-    const unsigned int command_buffer_size = 1;
+  const unsigned int command_buffer_size = 1;
 public:
-    BulletDebugDrawer(Renderer* renderer,
-        BulletDebugDrawerBufferConsumer* buffer,
-        DrawCallManager* draw_call_manager,
-        StateManager* state_manager) :
-        renderer{ renderer },
-        buffer{ buffer },
-      state_manager{ state_manager } {
-      draw_call = draw_call_manager->physics_debug_dc;
-      draw_call
-      Activate();
-      CheckGLError();
-    };
-    ~BulletDebugDrawer() {
-        Deactivate();
-    };
+  BulletDebugDrawer(
+      BufferManager* buffer_manager,
+      DrawCallManager* draw_call_manager,
+      StateManager* state_manager) :
+    buffer{ buffer_manager->GetPhysDebugDrawer() },
+    state_manager{ state_manager },
+    draw_call_manager{ draw_call_manager }{
+    buffer->Init();
+    draw_call_manager->AddNewCommandToDrawCall(buffer->mesh, draw_call_manager->physics_debug_dc);
+  };
 
-    void   drawLine(const btVector3& from, const btVector3& to, const btVector3& color);
+  ~BulletDebugDrawer() {
+    Deactivate();
+  };
 
-    void   drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color);
+  // btIDebugDraw functions ////////////////////////////////////////////////////////////////////
+  void   drawLine(const btVector3& from, const btVector3& to, const btVector3& color);
 
-    void   reportErrorWarning(const char* warningString) {
-    }
+  void   drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color);
 
-    void   draw3dText(const btVector3& location, const char* textString) {
-    }
+  void   reportErrorWarning(const char* warningString) {
+  }
 
-    void   setDebugMode(int debugMode) {
-        m_debugMode = debugMode;
-    }
+  void   draw3dText(const btVector3& location, const char* textString) {
+  }
 
-    int    getDebugMode() const { return m_debugMode; }
+  void   setDebugMode(int debugMode) {
+    m_debugMode = debugMode;
+  }
 
-    void flushLines();
-    
-    void Activate() {
-      renderer->AddDraw(draw_call, DrawOrder::MESH);
-    }
-    void Deactivate() {
-        clearPersist();
-        clear();
-        renderer->RemoveDraw(draw_call, DrawOrder::MESH);
-    }
-    void   drawLinePersist(const btVector3& from, const btVector3& to, const btVector3& color);
-private: 
-    void clearPersist() {
-        persist_draws.clear();
-    };
-    void clear() {
-        vertices.clear();
-        indices.clear();
-        colors.clear();
-    }
+  int    getDebugMode() const { return m_debugMode; }
+
+  void flushLines();
+
+  void   drawLinePersist(const btVector3& from, const btVector3& to, const btVector3& color);
+
+  /////////////////////////////////////////////////////////////////////////////////////////////
+
+  void Activate() {
+    draw_call_manager->physics_debug_dc->is_enabled = true;
+  }
+  void Deactivate() {
+    clearPersist();
+    clear();
+    draw_call_manager->physics_debug_dc->is_enabled = false;
+  }
+private:
+  void clearPersist() {
+    persist_draws.clear();
+  };
+  void clear() {
+    vertices.clear();
+    indices.clear();
+    colors.clear();
+  }
 };

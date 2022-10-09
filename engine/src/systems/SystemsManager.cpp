@@ -10,15 +10,15 @@ void SystemsManager::InitSystems() {
 	renderer_context_manager->InitContext();
 	buffer_manager = new BufferManager(mesh_manager);
 	buffer_manager->Init();
-	renderer = new Renderer(renderer_context_manager, buffer_manager);
-    terrain_manager = new TerrainManager(buffer_manager);
+	renderer = new Renderer(renderer_context_manager, buffer_manager->storage);
+    shader_manager = new ShaderManager(file_watcher, renderer, camera);
+    shader_manager->SetupShaders();
+    draw_call_manager = new DrawCallManager(shader_manager);
+    terrain_manager = new TerrainManager(buffer_manager, mesh_manager, renderer, draw_call_manager);
 	state_manager = new StateManager(buffer_manager);
 	samplers = new Samplers();
 	samplers->Init();
 	texture_manager = new TextureManager(samplers, buffer_manager);
-    shader_manager = new ShaderManager(file_watcher, renderer, camera);
-    shader_manager->SetupShaders();
-    draw_call_manager = new DrawCallManager(shader_manager);
 	font_manager = new FontManager(samplers, mesh_manager, renderer, draw_call_manager, texture_manager);
 	font_manager->Init();
 	physics_manager = new PhysicsManager(state_manager);
@@ -94,13 +94,11 @@ void SystemsManager::_SubmitAsyncTasks() {
 	function<void()> phys_sym_task = bind(&PhysicsManager::Simulate, physics_manager);
 	function<void()> phys_update_task = bind(&PhysicsManager::UpdateTransforms, physics_manager);
 	function<void()> play_anim = bind(&AnimationManager::PlayAnim, anim_manager);
-	function<void()> buffer_mesh_update = bind(&StateManager::BufferUpdates, state_manager);
 
 	async_manager->SubmitMiscTask(log_io_task, true);
 	async_manager->SubmitMiscTask(file_watcher_task, true);
 	async_manager->SubmitPhysTask(phys_sym_task, true);
 	async_manager->SubmitPhysTask(phys_update_task, true);
-	async_manager->SubmitPhysTask(buffer_mesh_update, true);
 	async_manager->SubmitAnimTask(play_anim, true);
 	function<void()> change_state_update = bind(&SystemsManager::ChangeStateUpdate, this);
 	async_manager->SubmitMiscTask(change_state_update, true);

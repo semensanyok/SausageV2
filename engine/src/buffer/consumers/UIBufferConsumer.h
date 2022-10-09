@@ -23,8 +23,6 @@ class UIBufferConsumer : public BufferConsumer {
       : BufferConsumer(buffer, BufferType::UI_BUFFERS),
         mesh_manager{mesh_manager} {}
   ~UIBufferConsumer() {}
-  // TODO:
-  // track available buckets.
   void BufferMeshData(MeshDataUI* mesh,
                       vector<vec3>& vertices,
                       vector<unsigned int>& indices,

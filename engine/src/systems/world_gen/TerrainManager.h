@@ -132,10 +132,11 @@ class TerrainManager
 public:
   TerrainManager(BufferManager* buffer_manager,
     MeshManager* mesh_manager,
-    Renderer* renderer) :
+    Renderer* renderer,
+    DrawCallManager* draw_call_manager) :
     mesh_data_buffer{ buffer_manager->mesh_data_buffer },
     mesh_manager{ mesh_manager },
-    draw_call_manager{ buffer_manager->mesh_data_buffer->draw_call_manager } {
+    draw_call_manager{ draw_call_manager } {
     //FastNoise::SmartNode<FastNoise::Simplex>
     fnSimplex = FastNoise::New<FastNoise::Simplex>();
     FastNoise::SmartNode sm = fnSimplex;
@@ -162,7 +163,6 @@ public:
   void DeactivateTerrain(TerrainChunk* chunk);
 
 private:
-  void BufferTerrain(TerrainChunk* chunk);
   void BufferTerrain(TerrainChunk* chunk);
   MeshData* GetInstancedPlaneWithBaseMeshTransform(TerrainChunk* chunk, TerrainTile* tile);
   ~TerrainManager() {};

@@ -8,6 +8,11 @@ using namespace glm;
 class BufferStorage;
 class BufferConsumer;
 
+struct Point {
+  int x;
+  int y;
+};
+
 inline std::ostream& operator<<(std::ostream& in, const Point& pt){
   in << "(" << pt.x << "," << pt.y << ")";
   return in;

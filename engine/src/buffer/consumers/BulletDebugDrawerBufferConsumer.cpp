@@ -4,16 +4,14 @@ void BulletDebugDrawerBufferConsumer::BufferMeshData(vector<vec3>& vertices,
   vector<unsigned int>& indices,
   vector<vec3>& colors)
 {
-    shared_ptr<MeshLoadData> load_data = mesh_manager->CreateMesh(vertices, indices, colors);
-    buffer->BufferMeshData(mesh, load_data);
+  shared_ptr<MeshLoadData> load_data = mesh_manager->CreateMesh(vertices, indices, colors);
+  buffer->BufferMeshData(mesh, load_data);
 }
 
 void BulletDebugDrawerBufferConsumer::Init() {
-    BufferConsumer::Init();
-    mesh = mesh_manager->CreateMeshData();
+  BufferConsumer::Init();
+  mesh = mesh_manager->CreateMeshData();
+  buffer->RequestBuffersOffsets(mesh, vertices_size, indices_size);
 }
 
-void BulletDebugDrawerBufferConsumer::Reset() {
-    mesh = nullptr;
-    Init();
-}
+void BulletDebugDrawerBufferConsumer::Reset() { Init(); }

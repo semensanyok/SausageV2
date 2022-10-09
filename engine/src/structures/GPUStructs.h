@@ -38,14 +38,6 @@ namespace BufferType {
     MESH_VAO | VERTEX | INDEX | LIGHT | COMMAND | TEXTURE | BLEND_TEXTURES_BY_MESH_ID;
 };  // namespace BufferType
 
-namespace DrawOrder {
-  enum DrawOrder {
-    MESH,
-    UI_BACK,
-    UI_TEXT,
-  };
-}
-
 struct BufferLock {
   mutex data_mutex;
   condition_variable is_mapped_cv;
@@ -63,6 +55,9 @@ struct DrawArraysIndirectCommand {
   GLuint first;
   GLuint baseInstance;
 };
+/**
+ * @brief all instances managed via DrawCallManager
+*/
 struct DrawElementsIndirectCommand {
   GLuint count;
   GLuint instanceCount;

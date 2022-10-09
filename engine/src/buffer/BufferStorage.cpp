@@ -34,23 +34,20 @@ void BufferStorage::BufferBoneTransform(Bone *bone, mat4 &trans,
   }
   gl_buffers->SetSyncBarrier();
 }
+void BufferStorage::BufferTransform(vector<MeshData *> &mesh) {
+  for (int i = 0; i < mesh.size(); i++) {
+    BufferTransform(mesh[i]);
+  }
+}
 void BufferStorage::BufferTransform(MeshData *mesh) {
   auto uniforms_ptr = gl_buffers->uniforms_ptr;
-  // TODO: set up transform offset once in BufferMeshData
-  //if (mesh->transform_offset == -1) {
-  //  mesh->transform_offset = _GetTransformBucket(mesh);
-  //}
+  DEBUG_ASSERT(mesh->buffer_id > 0);
   gl_buffers->uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
       mesh->transform;
   if (mesh->instance_id == 0) {
     gl_buffers->uniforms_ptr->transform_offset[mesh->buffer_id] = mesh->transform_offset;
   }
   gl_buffers->SetSyncBarrier();
-}
-void BufferStorage::BufferTransform(vector<MeshData *> &mesh) {
-  for (int i = 0; i < mesh.size(); i++) {
-    BufferTransform(mesh[i]);
-  }
 }
 void BufferStorage::BufferLights(vector<Light *> &lights) {
   if (lights.size() > MAX_LIGHTS) {
@@ -69,6 +66,8 @@ void BufferStorage::BufferLights(vector<Light *> &lights) {
 
 void BufferStorage::BufferMeshData(MeshDataBase* mesh,
                                    shared_ptr<MeshLoadData> load_data) {
+  DEBUG_ASSERT(mesh->index_slot.count > 0);
+  DEBUG_ASSERT(mesh->vertex_slot.count > 0);
   auto mesh_data = load_data.get();
   auto& vertices = mesh_data->vertices;
   auto& indices = mesh_data->indices;
@@ -80,18 +79,17 @@ void BufferStorage::BufferMeshData(MeshDataBase* mesh,
   gl_buffers->SetSyncBarrier();
 }
 
-bool BufferStorage::RequestStorageSetOffsets(
-  DrawElementsIndirectCommand& out_command,
-  MeshDataBase* mesh,
+bool BufferStorage::RequestBuffersOffsets(
+  MeshDataBase* out_mesh,
   unsigned long vertices_size,
   unsigned long indices_size
 ) {
   // rellease if slot existed, to reallocate anew
-  if (mesh->vertex_slot != Arena::NULL_SLOT) {
-    vertex_arena->Release(mesh->vertex_slot);
+  if (out_mesh->vertex_slot != Arena::NULL_SLOT) {
+    vertex_arena->Release(out_mesh->vertex_slot);
   }
-  if (mesh->index_slot != Arena::NULL_SLOT) {
-    index_arena->Release(mesh->index_slot);
+  if (out_mesh->index_slot != Arena::NULL_SLOT) {
+    index_arena->Release(out_mesh->index_slot);
   }
 
   auto vertex_slot = vertex_arena->Allocate(vertices_size);
@@ -105,17 +103,13 @@ bool BufferStorage::RequestStorageSetOffsets(
     LOG("Error RequestStorageSetOffsets index allocation.");
     return false;
   }
-  mesh->vertex_slot = vertex_slot;
-  mesh->index_slot = index_slot;
+  out_mesh->vertex_slot = vertex_slot;
+  out_mesh->index_slot = index_slot;
 
-  bool is_new_mesh = mesh->buffer_id < 0;
+  bool is_new_mesh = out_mesh->buffer_id < 0;
   if (is_new_mesh) {
-    mesh->buffer_id = command_slots->ObtainNumber();
+    out_mesh->buffer_id = command_slots->ObtainNumber();
   }
-  out_command.count = indices_size;
-  out_command.firstIndex = index_slot.offset;
-  out_command.baseVertex = vertex_slot.offset;
-  out_command.baseInstance = mesh->buffer_id;
   return true;
 }
 

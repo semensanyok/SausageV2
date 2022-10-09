@@ -6,7 +6,7 @@
 #include "ControllerUtils.h"
 #include "UIBufferConsumer.h"
 #include "FontManager.h"
-#include "Renderer.h"
+#include "DrawCallManager.h"
 
 /*
 Screen splitted to equaly sized cells;
@@ -38,15 +38,15 @@ public:
     int back_indent,
     vec3 text_color,
     vec3 back_color) :
-    button_font_size{button_font_size},
-    back_indent{back_indent},
-    text_color{text_color},
-    back_color{back_color} {
+    button_font_size{ button_font_size },
+    back_indent{ back_indent },
+    text_color{ text_color },
+    back_color{ back_color } {
     button_width = button_font_size * 4 + 2 * back_indent;
     button_height = button_font_size + 2 * back_indent;
   }
 };
-  
+
 
 class UINode
 {
@@ -71,11 +71,11 @@ private:
     int open_order,
     MeshDataUI* text,
     MeshDataUI* background) :
-    node_position{node_position},
-    start_cell{start_cell},
-    open_order {open_order},
-    text {text},
-    background {background} {}
+    node_position{ node_position },
+    start_cell{ start_cell },
+    open_order{ open_order },
+    text{ text },
+    background{ background } {}
 };
 
 class ScreenCell
@@ -86,9 +86,9 @@ public:
   ScreenCell* bottom;
   ScreenCell* left;
   ScreenCell* right;
-  set<UINode*, decltype([](UINode* lhs, UINode* rhs) {
-        return lhs->open_order > rhs->open_order;
-})> nodes;
+  set < UINode*, decltype([](UINode* lhs, UINode* rhs) {
+    return lhs->open_order > rhs->open_order;
+}) > nodes;
 };
 
 class ScreenOverlayManager : public SausageSystem
@@ -101,9 +101,9 @@ private:
   int total_cells_x, total_cells_y;
   ScreenCell* all_cells;
 
-  unordered_map<int, set<UINode*, decltype([](UINode* lhs, UINode* rhs) {
-        return lhs->open_order > rhs->open_order;
-    })>> open_order_to_nodes;
+  unordered_map<int, set < UINode*, decltype([](UINode* lhs, UINode* rhs) {
+    return lhs->open_order > rhs->open_order;
+    }) >> open_order_to_nodes;
 
   vector<MeshDataUI*> drawn_ui_elements;
   vector<UINode*> active_ui_elements;
@@ -111,11 +111,9 @@ private:
   UIBufferConsumer* buffer;
   MeshManager* mesh_manager;
   FontManager* font_manager;
-  DrawCall* draw_call_text;
-  DrawCall* draw_call_back;
+  DrawCallManager* draw_call_manager;
   CommandBuffer* command_buffer_font;
   CommandBuffer* command_buffer_back;
-  Renderer* renderer;
 
   const unsigned int COMMAND_BUFFER_SIZE = 100;
   int total_draw_commands_text = 0;
@@ -128,34 +126,32 @@ public:
     Shaders* shaders,
     MeshManager* mesh_manager,
     FontManager* font_manager,
-    Renderer* renderer) :
-    buffer{buffer},
-    mesh_manager{mesh_manager},
-    font_manager{font_manager},
-    renderer {renderer} {
-
-    draw_call_text = buffer->CreateDrawCall(shaders->font_ui, command_buffer_font, GL_TRIANGLES);
-    draw_call_back = buffer->CreateDrawCall(shaders->back_ui, command_buffer_back, GL_TRIANGLES);
+    DrawCallManager* draw_call_manager) :
+    buffer{ buffer },
+    mesh_manager{ mesh_manager },
+    font_manager{ font_manager },
+    draw_call_manager{ draw_call_manager } {
   };
   ~ScreenOverlayManager() {
     Deactivate();
   }
   void Init() {
     _InitScreenLayout();
-    renderer->AddDraw(draw_call_text, DrawOrder::UI_TEXT);
-    renderer->AddDraw(draw_call_back, DrawOrder::UI_BACK);
+    //renderer->AddDraw(draw_call_text, DrawOrder::UI_TEXT);
+    //renderer->AddDraw(draw_call_back, DrawOrder::UI_BACK);
   }
   void Deactivate() {
-    renderer->RemoveDraw(draw_call_text, DrawOrder::UI_TEXT);
-    renderer->RemoveDraw(draw_call_back, DrawOrder::UI_BACK);
+    //renderer->RemoveDraw(draw_call_text, DrawOrder::UI_TEXT);
+    //renderer->RemoveDraw(draw_call_back, DrawOrder::UI_BACK);
   }
   void KeyCallback(int scan_code) {
     if (scan_code == KeyboardLayout::PauseMenu) {
-        if (is_pause_menu_active) {
-          DectivatePauseMenu();
-        } else {
-          ActivatePauseMenu();
-        }
+      if (is_pause_menu_active) {
+        DectivatePauseMenu();
+      }
+      else {
+        ActivatePauseMenu();
+      }
     }
   }
   void OnResize() { // NOT TESTED
@@ -173,7 +169,7 @@ public:
     cell_width = cell_width * width_delta;
     cell_height = cell_height * height_delta;
     for (int w = 0; w < total_cells_x; w++) {
-      for (int h = 0; h < total_cells_y; h++)  {
+      for (int h = 0; h < total_cells_y; h++) {
         auto cell = _GetCellAtPointById(w, h);
         cell->pos.x *= width_delta;
         cell->pos.y *= height_delta;
@@ -202,7 +198,7 @@ public:
       (*(cell->nodes.begin()))->OnHover();
     }
   }
-  void InitPauseMenu(PauseMenuSettings pause_menu_settings = {FontSizes::STANDART, FontSizes::STANDART / 2, {255,0,0},{0,0,0}}) {
+  void InitPauseMenu(PauseMenuSettings pause_menu_settings = { FontSizes::STANDART, FontSizes::STANDART / 2, {255,0,0},{0,0,0} }) {
     const int button_font_size = pause_menu_settings.button_font_size;
     const int back_indent = pause_menu_settings.back_indent;
     const int button_width = pause_menu_settings.button_width;
@@ -232,7 +228,7 @@ public:
       auto text_mesh = text.second;
 
       _SubmitDrawText(text.first.get(), text_mesh);
-      _SubmitDrawBack(back.first.get(),back_mesh);
+      _SubmitDrawBack(back.first.get(), back_mesh);
 
       _AddUINode(text_mesh, back_mesh,
                  back.first->x_max,
@@ -244,13 +240,13 @@ public:
     }
   }
   void ActivatePauseMenu() {
-    draw_call_text->commands_used = total_draw_commands_text;
-    draw_call_back->commands_used = total_draw_commands_back;
+    draw_call_manager->font_ui_dc->is_enabled = true;
+    draw_call_manager->font_ui_dc->is_enabled = true;
     is_pause_menu_active = true;
   }
   void DectivatePauseMenu() {
-    draw_call_text->commands_used = 0;
-    draw_call_back->commands_used = 0;
+    draw_call_manager->font_ui_dc->is_enabled = false;
+    draw_call_manager->font_ui_dc->is_enabled = false;
     is_pause_menu_active = false;
   }
 private:
@@ -258,28 +254,31 @@ private:
     BatchDataUI* batch,
     MeshDataUI* mesh
   ) {
-      buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
-      buffer->BufferTransform(mesh);
-      buffer->BufferSize(mesh, batch->x_min, batch->x_max, batch->y_min, batch->y_max);
-      buffer->AddCommand(mesh->command, total_draw_commands_text++);
-      drawn_ui_elements.push_back(mesh);
+    buffer->RequestBuffersOffsets(mesh, batch->vertices.size(), batch->indices.size());
+    buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
+    buffer->BufferTransform(mesh);
+    buffer->BufferSize(mesh, batch->x_min, batch->x_max, batch->y_min, batch->y_max);
+
+    draw_call_manager->AddNewCommandToDrawCall(mesh, draw_call_manager->font_ui_dc);
+    drawn_ui_elements.push_back(mesh);
   }
   void _SubmitDrawBack(
     BatchDataUI* batch,
     MeshDataUI* mesh
   ) {
-      buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
-      buffer->BufferTransform(mesh);
-      auto min = mesh->transform;
-      min.x += batch->x_min;
-      min.y += batch->y_min;
-      auto max = mesh->transform;
-      max.x += batch->x_max;
-      max.y += batch->y_max;
+    buffer->RequestBuffersOffsets(mesh, batch->vertices.size(), batch->indices.size());
+    buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
+    buffer->BufferTransform(mesh);
+    auto min = mesh->transform;
+    min.x += batch->x_min;
+    min.y += batch->y_min;
+    auto max = mesh->transform;
+    max.x += batch->x_max;
+    max.y += batch->y_max;
+    buffer->BufferSize(mesh, min.x, max.x, min.y, max.y);
 
-      buffer->BufferSize(mesh, min.x, max.x, min.y, max.y);
-      buffer->AddCommand(mesh->command, total_draw_commands_back++);
-      drawn_ui_elements.push_back(mesh);
+    draw_call_manager->AddNewCommandToDrawCall(mesh, draw_call_manager->back_ui_dc);
+    drawn_ui_elements.push_back(mesh);
   }
   pair<unique_ptr<BatchDataUI>, MeshDataUI*> _GetTextMesh(
     string text,
@@ -289,10 +288,10 @@ private:
   ) {
     // create UI mesh pointer
     unique_ptr<BatchDataUI> batch = font_manager->GetMeshTextUI(text, color, font_size);
-    MeshDataUI* mesh_data = mesh_manager->CreateMeshDataFontUI(vec2(screen_x, screen_y),batch->texture);
+    MeshDataUI* mesh_data = mesh_manager->CreateMeshDataFontUI(vec2(screen_x, screen_y), batch->texture);
     mesh_data->texture = batch->texture;
 
-    return {std::move(batch), mesh_data};
+    return { std::move(batch), mesh_data };
   }
   // do enhancements in the shader. here just set base color.
   pair<unique_ptr<BatchDataUI>, MeshDataUI*> _GetBackgroundMesh(
@@ -300,14 +299,14 @@ private:
     float screen_x, float screen_y,
     int size_x, int size_y) {
     auto batch = make_unique<BatchDataUI>();
-    batch->vertices = {{0,0,-1},{0,size_y,-1},{size_x,0,-1},{size_x,size_y,-1}};
-    batch->indices = {1,0,2,1,2,3};
-    batch->colors = {color,color,color,color};
+    batch->vertices = { {0,0,-1},{0,size_y,-1},{size_x,0,-1},{size_x,size_y,-1} };
+    batch->indices = { 1,0,2,1,2,3 };
+    batch->colors = { color,color,color,color };
 
-    batch->uvs.push_back({0, size_y});
-    batch->uvs.push_back({0, 0});
-    batch->uvs.push_back({size_x, size_y});
-    batch->uvs.push_back({size_x, 0});
+    batch->uvs.push_back({ 0, size_y });
+    batch->uvs.push_back({ 0, 0 });
+    batch->uvs.push_back({ size_x, size_y });
+    batch->uvs.push_back({ size_x, 0 });
 
     batch->x_min = 0;
     batch->x_max = size_x;
@@ -315,23 +314,23 @@ private:
     batch->y_max = size_y;
 
     MeshDataUI* mesh_data = mesh_manager->CreateMeshDataFontUI(vec2(screen_x, screen_y));
-    return {std::move(batch), mesh_data};
+    return { std::move(batch), mesh_data };
   }
   UINode* _AddUINode(
     MeshDataUI* text,
     MeshDataUI* background,
     //BatchDataUI* batch,
-    int x_max, int x_min, int y_max, int y_min, 
+    int x_max, int x_min, int y_max, int y_min,
     AnchorRelativeToNodePosition::AnchorRelativeToNodePosition anchor,
     int open_order
   ) {
     auto biggest_mesh = background == nullptr ? text : background;
-    Point anchor_position = {biggest_mesh->transform.x, biggest_mesh->transform.y};
+    Point anchor_position = { biggest_mesh->transform.x, biggest_mesh->transform.y };
     UINodePosition node_position = {
       anchor_position,
       {anchor},
       x_max - x_min,
-      y_max - y_min};
+      y_max - y_min };
     ScreenCell* start_cell = _GetCellAtPoint(biggest_mesh->transform.x, biggest_mesh->transform.y);
     UINode* ui_node = new UINode(node_position, start_cell, open_order, text, background);
     active_ui_elements.push_back(ui_node);
@@ -363,8 +362,8 @@ private:
   inline void _IterNodeCells(UINode* ui_node, std::function<void(ScreenCell*)> CellCallBack) {
     auto iter_x_max = std::min(ui_node->node_position.anchor_position.x + ui_node->node_position.width, GameSettings::SCR_WIDTH);
     auto iter_y_max = std::min(ui_node->node_position.anchor_position.y + ui_node->node_position.height, GameSettings::SCR_HEIGHT);
-    for (int x = ui_node->start_cell->pos.x; x < iter_x_max; x+=cell_width) {
-      for (int y = ui_node->start_cell->pos.y; y < iter_y_max; y+=cell_height) {
+    for (int x = ui_node->start_cell->pos.x; x < iter_x_max; x += cell_width) {
+      for (int y = ui_node->start_cell->pos.y; y < iter_y_max; y += cell_height) {
         CellCallBack(_GetCellAtPoint(x, y));
       }
     }
@@ -372,11 +371,11 @@ private:
   void _InitScreenLayout() {
     init_screen_width = GameSettings::SCR_WIDTH;
     init_screen_height = GameSettings::SCR_HEIGHT;
-    total_cells_x = GameSettings::SCR_WIDTH/cell_width;
-    total_cells_y = GameSettings::SCR_HEIGHT/cell_height;
+    total_cells_x = GameSettings::SCR_WIDTH / cell_width;
+    total_cells_y = GameSettings::SCR_HEIGHT / cell_height;
     all_cells = new ScreenCell[total_cells_x * total_cells_y];
     for (int w = 0; w < total_cells_x; w++) {
-      for (int h = 0; h < total_cells_y; h++)  {
+      for (int h = 0; h < total_cells_y; h++) {
         auto cell = _GetCellAtPointById(w, h);
         cell->pos.x = w * cell_width;
         cell->pos.y = h * cell_height;

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "sausage.h"
 #include "GLBuffers.h"
-#include "Logging.h"
 #include "OpenGLHelpers.h"
 #include "Settings.h"
 #include "MeshDataStruct.h"
@@ -10,11 +10,11 @@
 #include "TextureStruct.h"
 #include "LightStruct.h"
 #include "Texture.h"
-#include "sausage.h"
 #include "Macros.h"
 #include "ThreadSafeSet.h"
 #include "ThreadSafeNumberPool.h"
 #include "Arena.h"
+#include "Logging.h"
 
 /**
 Only command buffer must be contigious
@@ -87,8 +87,8 @@ class BufferStorage {
   void BufferCommands(vector<DrawElementsIndirectCommand> &active_commands, int command_offset);
   void BufferCommand(DrawElementsIndirectCommand &command, int command_offset);
   void BufferMeshData(MeshDataBase* mesh, shared_ptr<MeshLoadData> load_data);
-  bool RequestStorageSetOffsets(DrawElementsIndirectCommand& out_command,
-    MeshDataBase* mesh,
+  bool RequestBuffersOffsets(
+    MeshDataBase* out_mesh,
     unsigned long vertices_size,
     unsigned long indices_size);
   void ReleaseStorage(MeshDataBase* mesh);

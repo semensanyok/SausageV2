@@ -37,13 +37,12 @@ public:
   MemorySlot vertex_slot;
   MemorySlot index_slot;
   int transform_offset;
+  //////////////////////////////////////
   //    commands are now managed via DrawCallManager
   //    instance_count set in DrawElementsIndirectCommand. dont duplicate counter here.
   //    (refer to DrawCallManager->...command to get instance count)
   // DrawElementsIndirectCommand command;
   // long instance_count;
-  long command_offset;
-  //////////////////////////////////////
   // for instanced meshes not allocated vertex/index offsets(?)
   MeshDataBase* base_mesh;
   MeshDataBase()
@@ -52,8 +51,7 @@ public:
     instance_id{ 0 },
     buffer_id{ -1 },
     base_mesh{ nullptr },
-    transform_offset{ -1 },
-    command_offset{ -1 }
+    transform_offset{ -1 }
     //instance_count{ 1 }
   {};
   virtual ~MeshDataBase() {};

@@ -8,6 +8,7 @@
 #include "BufferStorage.h"
 #include "BufferConsumer.h"
 #include "BufferSettings.h"
+#include "MeshDataStruct.h"
 
 using namespace std;
 
@@ -18,20 +19,21 @@ public:
   };
   ~MeshDataBufferConsumer() {
   };
-  bool BufferMeshData(
+  void BufferMeshData(
     DrawElementsIndirectCommand& command,
     MeshDataBase* mesh,
     shared_ptr<MeshLoadData> load_data);
   void ReleaseStorage(MeshDataBase* mesh);
   void Init();
   void Reset();
-  void SetBaseMeshForInstancedCommand(
-      vector<MeshDataBase*>& load_data_meshes,
-      vector<shared_ptr<MeshLoadData>>& load_data,
-      vector<MaterialTexNames>& load_data_textures);
   void BufferTransform(vector<MeshData*>& meshes);
   void BufferTransform(MeshData* mesh);
   void BufferLights(vector<Light*>& lights);
   void BufferMeshTexture(MeshData* mesh);
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms);
+
+  void SetBaseMeshForInstancedCommand(
+      vector<MeshDataBase*>& load_data_meshes,
+      vector<shared_ptr<MeshLoadData>>& load_data,
+      vector<MaterialTexNames>& load_data_textures);
 };

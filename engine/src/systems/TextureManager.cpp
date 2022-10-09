@@ -75,7 +75,6 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
     Texture* texture = AllocateTextureWithHandle(texture_id, samplers->basic_repeat);
     buffer->storage->BufferTextureHandle(texture);
 
-    hash<MaterialTexNames> mtn_hash;
     texture->material_tex_names_hash = new size_t(mtn_hash(tex_names));
     texture_by_material_tex_names_hash[mtn_hash(tex_names)] = texture;
     texture_used_count_by_id[texture->id] = 1;

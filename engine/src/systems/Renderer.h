@@ -12,17 +12,20 @@
 #include "ThreadSafeQueue.h"
 #include "BufferConsumer.h"
 #include "RendererContextManager.h"
-#include "DrawCallManager.h"
+#include "DrawCallStruct.h"
 
 using namespace std;
-
+/**
+ * Responsible for issuing all GL commands
+ * must be called from main thread (gl context thread)
+*/
 class Renderer : public SausageSystem {
 private:
 	RendererContextManager* context_manager;
     BufferStorage* buffer;
 	ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;
 
-  map<DrawOrder::DrawOrder, vector<DrawCall*>> draw_calls;
+  map<DrawOrder, unordered_set<DrawCall*>> draw_calls;
 public:
 	SDL_Renderer* renderer;
 	Renderer(
@@ -32,8 +35,8 @@ public:
 	~Renderer() {};
 	void Render(Camera* camera);
 	void AddGlCommand(function<void()>& f, bool is_persistent);
-	bool AddDraw(DrawCall* draw, DrawOrder::DrawOrder draw_order);
-	bool RemoveDraw(DrawCall* draw, DrawOrder::DrawOrder draw_order);
+	bool AddDraw(DrawCall* draw, DrawOrder draw_order);
+	bool RemoveDraw(DrawCall* draw, DrawOrder draw_order);
 private:
 	void _ExecuteCommands();
 };

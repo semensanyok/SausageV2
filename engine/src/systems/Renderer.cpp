@@ -20,11 +20,11 @@ void Renderer::Render(Camera* camera) {
       {
         buffer->PreDraw();
         for (auto draw : order_shader.second) {
-          if (draw->GetCommandCount() > 0) {
+          if (draw->is_enabled && draw->GetCommandCount() > 0) {
             glUseProgram(draw->shader->id);
             draw->shader->SetUniforms();
             glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
-                                        draw->GetCommandCount(), draw->GetOffset());
+                                        draw->GetCommandCount(), draw->GetBaseOffset());
           }
         }
         buffer->PostDraw();
@@ -51,47 +51,23 @@ void Renderer::AddGlCommand(function<void()> &f, bool is_persistent) {
   gl_commands.Push(pair(f, is_persistent));
 }
 
-bool Renderer::AddDraw(DrawCall *draw, DrawOrder::DrawOrder draw_order) {
-  // MAYBE NEEDED SAFE CHECK  
-  //if (!shaders.contains(draw->shader->id)) {
-  //  LOG((ostringstream() << "Unable to add draw for unregistered shader: "
-  //                       << draw->shader->id
-  //                       << " vs:" << draw->shader->vertex_path
-  //                       << " fs:" << draw->shader->fragment_path)
-  //          .str());
-  //  return false;
-  //}
-
-  // if (buf_shad_ids.contains(buf_shad_id)) {
-  //	LOG((ostringstream() << "Draw for shader: " << draw->shader->id << "
-  //buffer:" << draw->buffer->id << "already exists").str()); 	return false;
-  //}
-  draw_calls[draw_order].push_back(draw);
+bool Renderer::AddDraw(DrawCall *draw, DrawOrder draw_order) {
+  draw_calls[draw_order].insert(draw);
   return true;
 }
 
-bool Renderer::RemoveDraw(DrawCall *draw, DrawOrder::DrawOrder draw_order) {
-  auto btd_ptr = buffer_to_draw_call.find(draw->buffer->GetBufferId());
-  if (btd_ptr == buffer_to_draw_call.end()) {
-    LOG("Unable to remove draw, buffer not found");
+bool Renderer::RemoveDraw(DrawCall *draw, DrawOrder draw_order) {
+  auto calls = draw_calls.find(draw_order);
+  if (calls == draw_calls.end()) {
+    LOG("Unable to remove draw, DrawOrder not found");
     return false;
   }
-  if (btd_ptr->second.find(draw_order) == btd_ptr->second.end()) {
-    LOG((ostringstream()
-      << "Unable to remove draw, draw order '"
-      << draw_order << "' for buffer not found").str());
+  auto erased = calls->second.erase(draw);
+  if (erased < 1) {
+    LOG("Unable to remove draw. Active DrawCall not found, possibly inactive");
     return false;
   }
-  auto &draws = btd_ptr->second[draw_order];
-  auto cur_draw = draws.begin();
-  while (!(cur_draw == draws.end())) {
-    if (*cur_draw == draw) {
-      draws.erase(cur_draw);
-      return true;
-    }
-    cur_draw++;
-  }
-  return false;
+  return true;
 }
 
 void Renderer::_ExecuteCommands() {

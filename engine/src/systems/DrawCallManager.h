@@ -5,80 +5,18 @@
 #include "ShaderManager.h"
 #include "BufferStorage.h"
 #include "Logging.h"
-
-/**
- * DrawCall (Shader) uses contigious part of commands from indirect command buffer
-*/
-
-class Shader;
+#include "DrawCallStruct.h"
+#include "Renderer.h"
 
 using namespace std;
 
-class DrawCall {
-  friend class DrawCallManager;
-  MemorySlot command_buffer_slot;
-  Arena* command_buffer_sub_arena;
-public:
-  /**
-   * @brief
-   * @param shader
-   * @param mode
-   * @param is_reserve_command_count_in_buffer
-   *            set this flag when expect
-   *          to add more DrawElementsIndirectCommand
-   *          to this draw_call.
-   *            false when not expect to change.
-   *          i.e. single instanced draw call, where only instance count changes.
-   */
-  DrawCall(unsigned int id,
-    Shader* shader,
-    GLenum mode,
-    MemorySlot command_buffer_slot) :
-    id{ id },
-    shader{ shader },
-    mode{ mode },
-    command_buffer_slot{ command_buffer_slot },
-    // offset is 0 because 
-    command_buffer_sub_arena{ new Arena(command_buffer_slot) } {
-  }
-  unsigned int id;
-  // caller must aquire it on write
-  mutex mtx;
-  GLenum mode;  // GL_TRIANGLES GL_LINES
-  Shader* shader;
-  unsigned int GetCommandCount() {
-    return command_buffer_sub_arena->GetUsed();
-  }
-  unsigned int GetBaseOffset() {
-    return command_buffer_sub_arena->GetBaseOffset();
-  }
-  void BufferCommand(
-    DrawElementsIndirectCommand& command,
-    MeshDataBase* out_mesh
-  ) {
-    lock_guard(mtx);
-    if (out_mesh->command_offset == -1) {
-      MemorySlot slot = Allocate(1);
-      out_mesh->command_offset = slot.offset;
-      // expected to buffer base mesh first. then increment instance count via DrawCallManager
-      command.instanceCount = 1;
-    }
-    BufferStorage::GetInstance()->
-      BufferCommand(command, out_mesh->command_offset);
-  }
-private:
-  MemorySlot Allocate(unsigned int command_count) {
-    MemorySlot slot = command_buffer_sub_arena->Allocate(command_count);
-    DEBUG_ASSERT(slot != Arena::NULL_SLOT);
-    return slot;
-  }
-  void Release(MemorySlot slot) {
-    command_buffer_sub_arena->Release(slot);
-  }
+struct DrawCommandWithMeshMeta {
+  DrawElementsIndirectCommand command;
+  unsigned int command_buffer_offset;
 };
 
 class DrawCallManager {
-  ShaderManager* shader_manager;
+  Renderer* renderer;
 public:
   DrawCall* mesh_dc;
 
@@ -94,81 +32,155 @@ public:
   map<unsigned int, DrawCall*> draw_call_by_id;
   // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
   // for simlicity - keep 1 command for now
-  unordered_map<unsigned int, DrawElementsIndirectCommand> command_by_mesh_id;
+  unordered_map<unsigned int, DrawCommandWithMeshMeta> command_by_mesh_id;
   unordered_map<unsigned int, DrawCall*> dc_by_mesh_id;
 
   DrawCallManager(
-    ShaderManager* shader_manager
-  ) : shader_manager{ shader_manager } {
+    ShaderManager* shader_manager,
+    Renderer* renderer
+  ) : renderer{ renderer } {
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
-      command_buffer_arena->Allocate(1)
+      command_buffer_arena->Allocate(1),
+      false
     );
     draw_call_by_id[font_ui_dc->id] = font_ui_dc;
-
-    overlay_3d_dc = _CreateDrawCall(
-      shader_manager->all_shaders->overlay_3d,
-      GL_TRIANGLES,
-      command_buffer_arena->Allocate(1)
-    );
-    draw_call_by_id[overlay_3d_dc->id] = overlay_3d_dc;
 
     back_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->back_ui,
       GL_TRIANGLES,
-      command_buffer_arena->Allocate(1)
+      command_buffer_arena->Allocate(1),
+      false
     );
     draw_call_by_id[back_ui_dc->id] = back_ui_dc;
+
+    overlay_3d_dc = _CreateDrawCall(
+      shader_manager->all_shaders->overlay_3d,
+      GL_TRIANGLES,
+      command_buffer_arena->Allocate(1),
+      true
+    );
+    draw_call_by_id[overlay_3d_dc->id] = overlay_3d_dc;
 
     physics_debug_dc = _CreateDrawCall(
       shader_manager->all_shaders->bullet_debug,
       GL_LINES,
-      command_buffer_arena->Allocate(1)
+      command_buffer_arena->Allocate(1),
+      false
     );
     draw_call_by_id[physics_debug_dc->id] = physics_debug_dc;
 
-    // dynamic commands number for mesh draw call
-    // thus, set it to the end
     mesh_dc = _CreateDrawCall(
       shader_manager->all_shaders->blinn_phong,
       GL_TRIANGLES,
-      command_buffer_arena->Allocate(MAX_BASE_MESHES)
+      command_buffer_arena->Allocate(MAX_BASE_MESHES),
+      true
     );
     draw_call_by_id[mesh_dc->id] = mesh_dc;
+
+    renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
+    renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
+    renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
+    renderer->AddDraw(physics_debug_dc, DrawOrder::PHYS_DEBUG);
+    renderer->AddDraw(mesh_dc, DrawOrder::MESH);
   }
+
   void AddNewInstanceSetInstanceId(MeshDataBase* mesh) {
     auto command_iter = command_by_mesh_id.find(mesh->id);
-    if (command_iter == command_by_mesh_id.end()) {
-      LOG(format("Skip IncrementInstanceCount. not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
-      return;
-    }
+    DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
     auto& command = command_iter->second;
     // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
-    mesh->instance_id = command.instanceCount++;
-    BufferStorage::GetInstance()->BufferCommand(command, mesh->buffer_id);
+    mesh->instance_id = command.command.instanceCount++;
+    BufferStorage::GetInstance()->BufferCommand(command.command, command.command_buffer_offset);
   }
+
+  /**
+   * @brief sets instance count to base mesh draw command.
+   *        this command doesnt modify mesh.instance_id
+   *        (to set instance_id automatically use AddNewInstanceSetInstanceId)
+   *        note that mesh.instance_id (gl_InstanceID) is in range [0,instance_count-1]
+  */
+  void SetInstanceCountToCommand(MeshDataBase* mesh, GLuint instance_count) {
+    auto command_iter = command_by_mesh_id.find(mesh->id);
+    DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
+    auto& command = command_iter->second;
+    command.command.instanceCount = instance_count;
+    BufferStorage::GetInstance()->BufferCommand(command.command, command.command_buffer_offset);
+  }
+
+
+  /**
+   * @param out_mesh mesh with command/index/vertex slots and buffer_id
+   *        allocated via BufferStorage#RequestBuffersOffsets
+   * @param dc draw call to assign mesh to
+  */
+  void AddNewCommandToDrawCall(
+    MeshDataBase* out_mesh,
+    DrawCall* dc
+  ) {
+    // validation that command doesnt exist already
+    DEBUG_EXPR(
+      auto draw_call = dc_by_mesh_id.find(out_mesh->id);
+      DEBUG_ASSERT(draw_call == dc_by_mesh_id.end());
+      auto draw_command = command_by_mesh_id.find(out_mesh->id);
+      DEBUG_ASSERT(draw_command == command_by_mesh_id.end());
+    );
+    DrawCommandWithMeshMeta& command = command_by_mesh_id[out_mesh->id];
+    lock_guard(dc->mtx);
+
+    MemorySlot slot = dc->Allocate(1);
+    command.command_buffer_offset = slot.offset;
+
+    SetToCommandWithOffsets(command, out_mesh, 1);
+  }
+
+  void SetToCommandWithOffsets(
+    MeshDataBase* mesh,
+    GLuint instance_count
+  ) {
+    auto draw_command = command_by_mesh_id.find(mesh->id);
+    DEBUG_ASSERT(draw_command != command_by_mesh_id.end());
+    SetToCommandWithOffsets(draw_command->second, mesh, instance_count);
+  }
+
+  void SetToCommandWithOffsets(
+    DrawCommandWithMeshMeta& command_with_meta,
+    MeshDataBase* mesh,
+    GLuint instance_count
+  ) {
+    auto& command = command_with_meta.command;
+    command.instanceCount = instance_count;
+    command.count = mesh->index_slot.count;
+    command.firstIndex = mesh->index_slot.offset;
+    command.baseVertex = mesh->vertex_slot.offset;
+    command.baseInstance = mesh->buffer_id;
+
+    BufferStorage::GetInstance()->BufferCommand(command, command_with_meta.command_buffer_offset);
+  }
+
   void DisableCommand(MeshDataBase* mesh) {
     auto draw_call = dc_by_mesh_id.find(mesh->id);
     if (draw_call == dc_by_mesh_id.end()) {
-      LOG(format("Skip DisableCommand. not found DrawCall for mesh_id={}", mesh->id));
+      LOG(format("WARN: DisableCommand: Not found DrawCall for mesh_id={}", mesh->id));
       return;
+    } else {
+      dc_by_mesh_id.erase(draw_call);
     }
+    SetInstanceCountToCommand(mesh, 0);
     auto draw_command = command_by_mesh_id.find(mesh->id);
     if (draw_command == command_by_mesh_id.end()) {
-      LOG(format("Skip DisableCommand. not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
-      return;
+      LOG(format("WARN: DisableCommand: Not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
     }
-    draw_command->second.instanceCount = 0;
-    draw_call->second->BufferCommand(
-      draw_command->second,
-      mesh);
-    draw_call->second->Release({ (unsigned long)mesh->command_offset, 1 });
+    else {
+      command_by_mesh_id.erase(draw_command);
+    }
+    draw_call->second->Release({ draw_command->second.command_buffer_offset, 1 });
   }
 private:
   int total_draw_calls = 0;
-  DrawCall* _CreateDrawCall(Shader* shader, GLenum mode, MemorySlot command_buffer_slot)
+  DrawCall* _CreateDrawCall(Shader* shader, GLenum mode, MemorySlot command_buffer_slot, bool is_enabled)
   {
-    return new DrawCall(total_draw_calls++, shader, mode, command_buffer_slot);
+    return new DrawCall(total_draw_calls++, shader, mode, command_buffer_slot, is_enabled);
   }
 };
