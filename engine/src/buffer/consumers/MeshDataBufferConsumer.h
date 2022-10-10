@@ -20,7 +20,6 @@ public:
   ~MeshDataBufferConsumer() {
   };
   void BufferMeshData(
-    DrawElementsIndirectCommand& command,
     MeshDataBase* mesh,
     shared_ptr<MeshLoadData> load_data);
   void ReleaseStorage(MeshDataBase* mesh);
@@ -31,9 +30,4 @@ public:
   void BufferLights(vector<Light*>& lights);
   void BufferMeshTexture(MeshData* mesh);
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms);
-
-  void SetBaseMeshForInstancedCommand(
-      vector<MeshDataBase*>& load_data_meshes,
-      vector<shared_ptr<MeshLoadData>>& load_data,
-      vector<MaterialTexNames>& load_data_textures);
 };

@@ -6,11 +6,8 @@
 #include "UIBufferConsumer.h"
 #include "OverlayBufferConsumer3D.h"
 #include "Logging.h"
-#include "Renderer.h"
-#include "Shader.h"
 #include "sausage.h"
 #include "OpenGLHelpers.h"
-#include "ShaderStruct.h"
 #include "BufferSettings.h"
 #include "TextureManager.h"
 #include <limits>
@@ -67,12 +64,11 @@ class FontManager : public SausageSystem {
   // TODO: free after all buttons / texts initialized.
   FT_Face ft_face;
  public:
-  FontManager(Samplers* samplers,
-    MeshManager* mesh_manager,
-    Renderer* renderer,
-    Shaders* shaders,
+  FontManager(
+    Samplers* samplers,
     TextureManager* texture_manager)
-    : samplers{ samplers }, texture_manager{texture_manager} {
+    : samplers{ samplers },
+    texture_manager{texture_manager} {
   };
   ~FontManager(){};
   void Init() {

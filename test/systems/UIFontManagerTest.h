@@ -34,7 +34,7 @@
 //#ifdef SAUSAGE_PROFILE_ENABLE
 //			auto proft1 = chrono::steady_clock::now();
 //#endif
-//			//scene->PrepareDraws();
+//			//scene->PrepareFrameDraws();
 //#ifdef SAUSAGE_PROFILE_ENABLE
 //			ProfTime::prepare_draws_ns = chrono::steady_clock::now() - proft1;
 //#endif

@@ -36,7 +36,7 @@ public:
 	//	}
 	//}
 	//void BufferBoneTransformUpdate(unordered_map<unsigned int, mat4>& bones_transforms) {
-	//	mesh_data_buffer->BufferBoneTransform(bones_transforms);
+	//	buffer->BufferBoneTransform(bones_transforms);
 	//}
 	void UpdateDeltaTimeTimings() {
 		float this_ticks = SDL_GetTicks();
@@ -57,7 +57,7 @@ private:
 	//	for (auto& mesh_update : physics_update) {
 	//		auto mesh = mesh_update.second.first;
 	//		mesh->transform = mesh_update.second.second;
-	//		mesh_data_buffer->BufferTransform(mesh);
+	//		buffer->BufferTransform(mesh);
 	//	}
 	//	physics_update.clear();
 	//}

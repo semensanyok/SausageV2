@@ -123,7 +123,6 @@ private:
 public:
   ScreenOverlayManager(
     UIBufferConsumer* buffer,
-    Shaders* shaders,
     MeshManager* mesh_manager,
     FontManager* font_manager,
     DrawCallManager* draw_call_manager) :

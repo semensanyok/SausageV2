@@ -7,8 +7,7 @@ class TerrainTest {
   public:
     void Init() {
       auto tm = SystemsManager::GetInstance()->terrain_manager;
-      auto chunk = tm->CreateChunk({ 0,0,0 }, 0, 0, 10, 10);
-      tm->BufferTerrain(chunk);
+      tm->CreateTerrain();
     };
     void PrepareDraws() {
     };

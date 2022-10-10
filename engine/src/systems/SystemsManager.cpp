@@ -13,15 +13,15 @@ void SystemsManager::InitSystems() {
 	renderer = new Renderer(renderer_context_manager, buffer_manager->storage);
     shader_manager = new ShaderManager(file_watcher, renderer, camera);
     shader_manager->SetupShaders();
-    draw_call_manager = new DrawCallManager(shader_manager);
+    draw_call_manager = new DrawCallManager(shader_manager, renderer);
     terrain_manager = new TerrainManager(buffer_manager, mesh_manager, renderer, draw_call_manager);
 	state_manager = new StateManager(buffer_manager);
 	samplers = new Samplers();
 	samplers->Init();
 	texture_manager = new TextureManager(samplers, buffer_manager);
-	font_manager = new FontManager(samplers, mesh_manager, renderer, draw_call_manager, texture_manager);
+	font_manager = new FontManager(samplers, texture_manager);
 	font_manager->Init();
-	physics_manager = new PhysicsManager(state_manager);
+	physics_manager = new PhysicsManager(state_manager, buffer_manager->mesh_data_buffer);
   if (GameSettings::phys_debug_draw) {
     _CreateDebugDrawer();
     bullet_debug_drawer->Activate();
@@ -30,7 +30,11 @@ void SystemsManager::InitSystems() {
 	anim_manager = new AnimationManager(state_manager, mesh_manager, buffer_manager);
 
 	async_manager = new AsyncTaskManager();
-    screen_overlay_manager = new ScreenOverlayManager(buffer_manager->ui_buffer, draw_call_manager,mesh_manager,font_manager,renderer);
+    screen_overlay_manager = new ScreenOverlayManager(
+      buffer_manager->ui_buffer,
+      mesh_manager,
+      font_manager,
+      draw_call_manager);
     screen_overlay_manager->Init();
 	controller_event_processor = new ControllerEventProcessorEditor(camera, screen_overlay_manager, buffer_manager);
     controller = new Controller(camera, state_manager, physics_manager);
@@ -106,8 +110,7 @@ void SystemsManager::_SubmitAsyncTasks() {
 
 void SystemsManager::_CreateDebugDrawer() {
   if (bullet_debug_drawer == nullptr) {
-    bullet_debug_drawer = new BulletDebugDrawer(renderer, buffer_manager->bullet_debug_drawer_buffer,
-      shader_manager->all_shaders, state_manager);
+    bullet_debug_drawer = new BulletDebugDrawer(buffer_manager, draw_call_manager, state_manager);
     //int debug_mask = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints;
     int debug_mask = btIDebugDraw::DBG_DrawWireframe;
     bullet_debug_drawer->setDebugMode(debug_mask);

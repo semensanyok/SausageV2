@@ -5,6 +5,7 @@
 #include "BufferSettings.h"
 #include "OpenGLHelpers.h"
 #include "TerrainTile.h"
+#include "TerrainStruct.h"
 #include "DrawCallManager.h"
 #include "BufferManager.h"
 #include "MeshDataBufferConsumer.h"
@@ -122,7 +123,7 @@ TODO ???: dont store thousands of tiles with transform matrices in memory.
 */
 class TerrainManager
 {
-  MeshDataBufferConsumer* mesh_data_buffer;
+  MeshDataBufferConsumer* buffer;
   MeshManager* mesh_manager;
   // TEST VALUES
   FastNoise::SmartNode<FastNoise::FractalFBm> fnFractal;
@@ -132,9 +133,8 @@ class TerrainManager
 public:
   TerrainManager(BufferManager* buffer_manager,
     MeshManager* mesh_manager,
-    Renderer* renderer,
     DrawCallManager* draw_call_manager) :
-    mesh_data_buffer{ buffer_manager->mesh_data_buffer },
+    buffer{ buffer_manager->mesh_data_buffer },
     mesh_manager{ mesh_manager },
     draw_call_manager{ draw_call_manager } {
     //FastNoise::SmartNode<FastNoise::Simplex>
@@ -146,8 +146,11 @@ public:
     fnFractal->SetSource(fnSimplex);
     fnFractal->SetOctaveCount(5);
   };
+
   // testing purposes
   void CreateTerrain();
+
+private:
 
   TerrainChunk* CreateChunk(
     vec3 pos,
@@ -156,14 +159,12 @@ public:
     int size_x,
     int size_y
   );
-  void BufferTerrain(TerrainChunk* chunk);
+  void ReleaseBuffer(TerrainChunk* chunk);
+  void Deactivate(TerrainChunk* chunk);
+  void Buffer(TerrainChunk* chunk);
   // each tile is a single instanced draw command
   // buffered and disabled alltogether.
   // same size plane is reused between all commands
-  void DeactivateTerrain(TerrainChunk* chunk);
-
-private:
-  void BufferTerrain(TerrainChunk* chunk);
   MeshData* GetInstancedPlaneWithBaseMeshTransform(TerrainChunk* chunk, TerrainTile* tile);
   ~TerrainManager() {};
 };

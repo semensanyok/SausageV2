@@ -1,5 +1,11 @@
 #include "TerrainManager.h"
 
+void TerrainManager::CreateTerrain()
+{
+  auto chunk = CreateChunk(vec3(0, 0, 0), 0, 0, 100, 100);
+  Buffer(chunk);
+}
+
 TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y, int size_x, int size_y)
 {
   vector<vec3> vertices(size_x * size_y);
@@ -93,19 +99,23 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   return chunk;
 }
 
-void TerrainManager::DeactivateTerrain(TerrainChunk* chunk)
+void TerrainManager::ReleaseBuffer(TerrainChunk* chunk) {
+  buffer->ReleaseStorage(chunk->tiles[0]->mesh_data);
+}
+
+void TerrainManager::Deactivate(TerrainChunk* chunk)
 {
   draw_call_manager->DisableCommand(chunk->tiles[0]->mesh_data);
 }
 
-void TerrainManager::BufferTerrain(TerrainChunk* chunk) {
+void TerrainManager::Buffer(TerrainChunk* chunk) {
   // EACH VERTEX SHARED AMONG 1 - 4 TILES (CORNER 1 TILE, TOP/BOTTOM/LEFT/RIGHT BORDER - 2 TILES, OTHER - 4 TILES)
 
   for (int i = 0; i < chunk->tiles.size(); i++) {
     auto tile = chunk->tiles[i];
     auto mesh_data = GetInstancedPlaneWithBaseMeshTransform(chunk, tile);
     mesh_data->transform = translate(mesh_data->transform, tile->x0y0z);
-    mesh_data_buffer->BufferTransform(mesh_data);
+    buffer->BufferTransform(mesh_data);
     // TODO: assign blend textures
   }
 }
@@ -120,13 +130,13 @@ MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
     // TODO: for any number of vertices, not just hardcoded 2
     float half_size_x = (float)chunk->scale / 2;
     float half_size_y = (float)chunk->scale / 2;
-    std::vector<vec3> vertices2 = {
+    std::vector<vec3> vertices = {
         vec3(half_size_x,  half_size_y, 0.0f),  // top right
         vec3(half_size_x, -half_size_y, 0.0f),  // bottom right
         vec3(- half_size_x, -half_size_y, 0.0f),  // bottom left
         vec3(-half_size_x,  half_size_y, 0.0f)   // top left 
     };
-    std::vector<unsigned int> indices2 = {
+    std::vector<unsigned int> indices = {
       0, 1, 3,  // first Triangle
       1, 2, 3   // second Triangle
     };
@@ -137,8 +147,8 @@ MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
     // TODO: check that:
     //  expected to see seems between tiles and not smooth shading, each tile having constant light, no interpolation
     //  normal texture should make it a bit less visible though
-    //out_face_normal = cross(vertices2[0] - vertices2[1], vertices2[2] - vertices2[3]);
-    vec3 face_normal = cross(vertices2[0] - vertices2[1], vertices2[2] - vertices2[3]);
+    //out_face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
+    vec3 face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
     vector<vec3> normals = {
       face_normal,
       face_normal,
@@ -146,13 +156,14 @@ MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
       face_normal
     };
 
-    auto load_data = mesh_manager->CreateMesh(vertices2, indices2, normals);
+    auto load_data = mesh_manager->CreateMesh(vertices, indices, normals);
     auto base_mesh = mesh_manager->CreateMeshData();
 
     base_mesh->transform = translate(mat4(1), chunk->pos);
-    DrawElementsIndirectCommand command;
-    mesh_data_buffer->BufferMeshData(command, base_mesh, load_data);
-    draw_call_manager->mesh_dc->BufferCommand(command, base_mesh);
+
+    buffer->RequestBuffersOffsets(base_mesh, vertices.size(), indices.size());
+    buffer->BufferMeshData(base_mesh, load_data);
+    draw_call_manager->AddNewCommandToDrawCall(base_mesh, draw_call_manager->mesh_dc);
 
     tile->mesh_data = base_mesh;
 
@@ -171,13 +182,13 @@ MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
 }
 
 // Test create terrain, first prototype
-void TerrainManager::CreateTerrain() {
+//void TerrainManager::CreateTerrain() {
   //SystemsManager* systems_manager = SystemsManager::GetInstance();
   //MeshManager* mesh_manager = systems_manager->mesh_manager;
   //BufferManager* buffer_manager = systems_manager->buffer_manager;
   //TextureManager* texture_manager = systems_manager->texture_manager;
   //ShaderManager* shader_manager = systems_manager->shader_manager;
-  //MeshDataBufferConsumer* mesh_data_buffer = buffer_manager->mesh_data_buffer;
+  //MeshDataBufferConsumer* buffer = buffer_manager->buffer;
 
   //const int SCALE = 1;
   //const int sizeX = 100;
@@ -247,9 +258,9 @@ void TerrainManager::CreateTerrain() {
 
   // ----- 1. BUFFER MESH DATA AND PREPARE DRAW CALL COMMON MACHINERY   --------------------
   // add drawcall
-  //auto draw_call = mesh_data_buffer->CreateDrawCall(
+  //auto draw_call = buffer->CreateDrawCall(
   //  shader_manager->all_shaders->blinn_phong,
-  //  mesh_data_buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND),
+  //  buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND),
   //  GL_TRIANGLES);
   //draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
   //systems_manager->renderer->AddDraw(draw_call, DrawOrder::MESH);
@@ -261,18 +272,18 @@ void TerrainManager::CreateTerrain() {
   //auto mesh = (MeshData*)meshes[0];
 
   //// buffer data
-  //mesh_data_buffer->
+  //buffer->
   //  BufferMeshData(meshes, load_data);
-  //mesh_data_buffer->
+  //buffer->
   //  SetBaseMeshForInstancedCommand(meshes, load_data);
-  //mesh_data_buffer->BufferTransform(mesh);
+  //buffer->BufferTransform(mesh);
 
   //// load texture to buffer
   //Texture* texture = texture_manager->LoadTextureArray(load_data[0]->tex_names);
   //texture->MakeResident();
 
   //mesh->textures = { {1.0, texture->id}, 1 };
-  //mesh_data_buffer->BufferMeshTexture(mesh);
+  //buffer->BufferMeshTexture(mesh);
 
   //float light_power = 1.0;
   //// add light for blinn_phong to view texture
@@ -286,11 +297,11 @@ void TerrainManager::CreateTerrain() {
   //                     0.699999988,
   //                     10,
   //                     10 } };
-  //mesh_data_buffer->BufferLights(light1);
+  //buffer->BufferLights(light1);
   //// add command to drawcall
   //vector<DrawElementsIndirectCommand> commands = { mesh->command };
   //draw_call->command_count = commands.size();
   //draw_call->buffer->AddCommands(commands, draw_call->command_buffer);
   //CheckGLError();
   // -------- 1. END ---------------------------------------------------------------------
-}
+//}

@@ -2,6 +2,9 @@
 
 #include "sausage.h"
 #include "Settings.h"
+#include "MeshDataStruct.h"
+
+using namespace glm;
 
 class TerrainTile;
 /*
@@ -44,7 +47,10 @@ struct TileSizeParameters {
 struct TerrainTile {
 public:
   // local space offsets from origin of TerrainChunk to origin of this tile.
-  vec3 x0y0z, x1y0z, x0y1z, x1y1z;
+  vec3 x0y0z;
+  vec3 x1y0z;
+  vec3 x0y1z;
+  vec3 x1y1z;
   
   /*
   average values of all vertices, included in tile
