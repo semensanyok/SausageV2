@@ -1,10 +1,10 @@
 #pragma once
 
 #include "sausage.h"
-#include "ThreadSafeQueue.h"
 #include "Settings.h"
-#include "Structures.h"
 #include "Interfaces.h"
+#include "ThreadSafeQueue.h"
+#include "Logging.h"
 
 using namespace std;
 

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "sausage.h"
 
 using namespace std;
@@ -10,10 +11,42 @@ class ThreadSafeQueue {
 
 public:
   queue<T> container;
-  ThreadSafeQueue() : container{ queue<T>() } {}
-  ~ThreadSafeQueue() {}
-  queue<T> PopAll();
-  queue<T> WaitPopAll(bool& quit);
-  T WaitPop(bool& quit);
-  void Push(const T& element);
+  inline ThreadSafeQueue() : container{ queue<T>() } {}
+  inline ~ThreadSafeQueue() {}
+  inline queue<T> PopAll()
+  {
+    lock_guard<mutex> mlock(mtx);
+    auto res = queue<T>(container);
+    container = queue<T>();
+    return res;
+  }
+  inline queue<T> WaitPopAll(bool& quit)
+  {
+    unique_lock<mutex> mlock(mtx);
+    while (container.empty() && !quit)
+    {
+      push_event.wait(mlock);
+    }
+    auto res = queue<T>(container);
+    container = queue<T>();
+    return res;
+  }
+  inline T WaitPop(bool& quit)
+  {
+    unique_lock<mutex> mlock(mtx);
+    while (container.empty() && !quit)
+    {
+      push_event.wait(mlock);
+    }
+    auto element = container.front();
+    container.pop();
+    return element;
+  }
+  inline void Push(const T& element)
+  {
+    unique_lock<mutex> mlock(mtx);
+    container.push(element);
+    mlock.unlock();
+    push_event.notify_all();
+  }
 };

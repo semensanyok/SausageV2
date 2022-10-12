@@ -1,4 +1,5 @@
 #pragma once
+
 #include "sausage.h"
 
 using namespace std;

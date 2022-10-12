@@ -1,7 +1,7 @@
 #include "Arena.h"
 
 unsigned int Arena::GetFreeSpace() {
-  lock_guard(mtx);
+  lock_guard l(mtx);
   return _GetFreeSpace();
 }
 
@@ -10,7 +10,7 @@ unsigned int Arena::GetBaseOffset() {
 }
 
 MemorySlot Arena::Allocate(const unsigned int size) {
-  lock_guard(mtx);
+  lock_guard l(mtx);
   unsigned int free_space = _GetFreeSpace();
   auto size_encompassing_power_of_2 = _GetSmallestEncompassingPowerOf2(size);
   if (free_gaps_slots.empty()) {
@@ -41,7 +41,7 @@ MemorySlot Arena::Allocate(const unsigned int size) {
 }
 
 void Arena::Release(MemorySlot slot) {
-  lock_guard(mtx);
+  lock_guard l(mtx);
   DEBUG_ASSERT(slot.offset + slot.count <= allocated);
   if (slot.offset + slot.count == allocated) {
     allocated -= slot.count;
@@ -51,7 +51,7 @@ void Arena::Release(MemorySlot slot) {
 }
 
 void Arena::Reset() {
-  lock_guard(mtx);
+  lock_guard l(mtx);
   allocated = 0;
   free_gaps_slots = {};
 }

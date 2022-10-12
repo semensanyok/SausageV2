@@ -1,5 +1,4 @@
 #include "Renderer.h"
-#include "Macros.h"
 
 using namespace std;
 
@@ -48,7 +47,7 @@ void Renderer::Render(Camera* camera) {
 }
 
 void Renderer::AddGlCommand(function<void()> &f, bool is_persistent) {
-  gl_commands.Push(pair(f, is_persistent));
+  gl_commands.Push({ f, is_persistent });
 }
 
 bool Renderer::AddDraw(DrawCall *draw, DrawOrder draw_order) {

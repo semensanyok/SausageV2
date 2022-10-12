@@ -1,4 +1,5 @@
 #pragma once
+
 #include "sausage.h"
 #include "GPUStructs.h"
 #include "BufferStorage.h"

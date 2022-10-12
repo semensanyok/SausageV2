@@ -5,6 +5,7 @@
 #include "BufferSettings.h"
 #include "Texture.h"
 #include "LightStruct.h"
+#include "GPUStructs.h"
 #include "Vertex.h"
 
 using namespace glm;

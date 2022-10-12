@@ -1,25 +1,32 @@
 #include "ThreadSafeNumberPool.h"
-#include "ThreadSafeNumberPool.h"
-#include "ThreadSafeNumberPool.h"
 
 unsigned int ThreadSafeNumberPool::ObtainNumber()
 {
-  lock_guard(mtx);
+  lock_guard l(mtx);
   DEBUG_ASSERT(allocated < max_number);
   if (!released_slots.empty()) {
-    return released_slots.pop();
+    auto res = released_slots.top();
+    released_slots.pop();
+    return res;
   }
-  auto elem = numbers.top();
-  numbers.pop();
-  return elem;
+  return allocated++;
 }
 
 void ThreadSafeNumberPool::ReleaseNumber(unsigned int number)
 {
-  lock_guard(mtx);
+  lock_guard l(mtx);
   DEBUG_ASSERT(number > 0);
   DEBUG_ASSERT(number < max_number);
-  numbers.push(number);
+  if (number == allocated - 1) {
+    allocated--;
+  }
+  else {
+    released_slots.push(number);
+  }
 }
 
-void ThreadSafeNumberPool::Reset() { lock_guard(mtx); allocated = 0; released_slots = {}; }
+void ThreadSafeNumberPool::Reset() {
+  lock_guard l(mtx);
+  allocated = 0;
+  released_slots = {};
+}

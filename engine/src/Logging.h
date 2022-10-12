@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "sausage.h"
-#include "ThreadSafeQueue.h"
 #include "OpenGLHelpers.h"
+#include "ThreadSafeQueue.h"
 
 using namespace std;
 
@@ -11,8 +11,6 @@ void LOG(const string& s,
 
 void LOG(const ostringstream& s,
          const std::source_location& location = std::source_location::current());
-
-void LOG(const char* s, const std::source_location& location = std::source_location::current());
 
 namespace Sausage {
 	void LogIO();

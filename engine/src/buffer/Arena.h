@@ -10,21 +10,21 @@ struct MemorySlot {
   unsigned long count;
 };
 
-bool operator==(const MemorySlot& lhs, const MemorySlot& rhs) {
-  return lhs.count == rhs.count
-    && lhs.offset == rhs.offset;
-}
+// hash function for unordered map
+template<> struct std::hash<MemorySlot> {
+  size_t operator()(MemorySlot const& t) const {
+    return t.offset + t.count;
+  }
+};
 
-bool operator!=(const MemorySlot& lhs, const MemorySlot& rhs) {
-  return lhs.count != rhs.count
-    && lhs.offset != rhs.offset;
+// eq for hashmap/hashset
+inline bool operator==(const MemorySlot& lhs, const MemorySlot& rhs) {
+  return (lhs.offset == rhs.offset) && (lhs.count == rhs.count);
 }
-
-using memory_slot_count_first_comparator =
-decltype([](const MemorySlot& lhs, const MemorySlot& rhs) {
+inline bool operator<(const MemorySlot& lhs, const MemorySlot& rhs) {
   return lhs.count == rhs.count ?
     lhs.offset > rhs.offset : lhs.count > rhs.count;
-});
+}
 
 /**
  * @brief allocates slots of powers of 2,
@@ -38,10 +38,10 @@ class Arena {
 
   unsigned int allocated;
   mutex mtx;
-  set<MemorySlot, memory_slot_count_first_comparator> free_gaps_slots;
+  set<MemorySlot> free_gaps_slots;
   MemorySlot base_slot;
 public:
-  const static inline MemorySlot NULL_SLOT = { 0, 0 };
+  static inline MemorySlot NULL_SLOT = { 0, 0 };
 
   Arena(MemorySlot slot) : base_slot{ slot }, allocated{ 0 }  {
   }

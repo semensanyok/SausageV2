@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../sausage.h"
+#include "sausage.h"
 
 using namespace std;
 using namespace glm;

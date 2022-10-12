@@ -6,7 +6,7 @@ set<T>::iterator ThreadSafeSet<T, C>::PopInRange(
     const T& max_inclusive
 )
 {
-  std::unique_lock<std::mutex> mlock(mtx);
+  std::lock_guard<std::mutex> mlock(mtx);
   auto element = container.lower_bound(min_inclusive);
   if (element != container.end() && element <= max_inclusive) {
     container.erase(element);

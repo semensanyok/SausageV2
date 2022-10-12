@@ -234,8 +234,9 @@ MeshDataUI* MeshManager::CreateMeshDataFontUI(vec2 transform, Texture* texture) 
 shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<Vertex>& vertices,
                                                  vector<unsigned int>& indices,
                                                  Armature* armature) {
-  return make_shared<MeshLoadData>(vertices, indices, nullptr,
-                                   armature, nullptr, string(), mat4(1), 1);
+  auto mld_ptr =
+    new MeshLoadData{ vertices, indices, armature, (PhysicsData*)nullptr, string(), mat4(1) };
+  return shared_ptr<MeshLoadData>(mld_ptr);
 }
 
 shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<vec3>& vertices,

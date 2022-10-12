@@ -42,7 +42,7 @@ public:
     command_buffer_sub_arena{ new Arena(command_buffer_slot) },
     is_enabled{ is_enabled } {
   }
-  unsigned int id;
+  const unsigned int id;
   // caller must aquire it on write
   mutex mtx;
   GLenum mode;  // GL_TRIANGLES GL_LINES

@@ -6,7 +6,7 @@
 
 using namespace glm;
 
-class TerrainTile;
+struct TerrainTile;
 /*
 
 .....
@@ -43,9 +43,22 @@ struct TileSizeParameters {
   int size_x;
   int size_y;
 };
+// hash function for unordered map
+template<> struct std::hash<TileSizeParameters> {
+  size_t operator()(TileSizeParameters const& t) const {
+    return t.size_x + t.size_y;
+  }
+};
+// eq for hashmap/hashset
+inline bool operator==(const TileSizeParameters& lhs, const TileSizeParameters& rhs) {
+  return lhs.size_x == rhs.size_x && lhs.size_y == rhs.size_y;
+}
+// compare for map/set
+inline bool operator<(const TileSizeParameters& lhs, const TileSizeParameters& rhs) {
+  return (lhs.size_x + lhs.size_y) < (rhs.size_x + rhs.size_y);
+}
 
 struct TerrainTile {
-public:
   // local space offsets from origin of TerrainChunk to origin of this tile.
   vec3 x0y0z;
   vec3 x1y0z;

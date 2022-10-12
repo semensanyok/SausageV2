@@ -5,9 +5,6 @@
 #include "Interfaces.h"
 #include "Macros.h"
 
-class BufferConsumer;
-class Shader;
-
 using namespace std;
 using namespace glm;
 
@@ -108,7 +105,7 @@ public:
 };
 
 struct CommandBuffer {
-  GLuint id;
+  const GLuint id;
   DrawElementsIndirectCommand* ptr;
   // we have to use lock here
   // because command buffer must be "unmapped" before each drawcall
@@ -118,3 +115,19 @@ struct CommandBuffer {
     delete buffer_lock;
   }
 };
+
+//// hash function for unordered map
+//template<> struct std::hash<CommandBuffer> {
+//  size_t operator()(CommandBuffer const& t) const {
+//    return t.id;
+//  }
+//};
+//
+//// eq for hashmap/hashset
+//bool operator==(const Shader& lhs, const Shader& rhs) {
+//  return lhs.shader_id == rhs.shader_id;
+//}
+//// compare for map/set
+//bool operator<(const Shader& lhs, const Shader& rhs) {
+//  return lhs.shader_id < rhs.shader_id;
+//}

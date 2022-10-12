@@ -22,10 +22,6 @@ void LOG(const string& s, const std::source_location& location) {
   log_queue.Push({ s, location });
 }
 
-void LOG(const char* s, const std::source_location& location) {
-  log_queue.Push({ s, location });
-}
-
 static void _LogMessage(ostream& stream, std::source_location& location, string& message) {
   stream
     << "["

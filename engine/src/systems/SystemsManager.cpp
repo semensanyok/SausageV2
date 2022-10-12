@@ -14,7 +14,7 @@ void SystemsManager::InitSystems() {
     shader_manager = new ShaderManager(file_watcher, renderer, camera);
     shader_manager->SetupShaders();
     draw_call_manager = new DrawCallManager(shader_manager, renderer);
-    terrain_manager = new TerrainManager(buffer_manager, mesh_manager, renderer, draw_call_manager);
+    terrain_manager = new TerrainManager(buffer_manager, mesh_manager, draw_call_manager);
 	state_manager = new StateManager(buffer_manager);
 	samplers = new Samplers();
 	samplers->Init();
@@ -79,8 +79,8 @@ void SystemsManager::PreUpdate() {
 
 void SystemsManager::Update() {
 	controller->Update();
-	camera->Update();
 	controller_event_processor->Update();
+	camera->Update();
 }
 
 void SystemsManager::Clear() {

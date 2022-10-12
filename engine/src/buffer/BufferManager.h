@@ -2,8 +2,8 @@
 
 #include "sausage.h"
 #include "Structures.h"
-#include "MeshDataBufferConsumer.h"	
 #include "BufferStorage.h"
+#include "MeshDataBufferConsumer.h"	
 #include "BulletDebugDrawerBufferConsumer.h"
 #include "UIBufferConsumer.h"
 #include "OverlayBufferConsumer3D.h"
@@ -21,7 +21,7 @@ public:
   BufferManager(MeshManager* mesh_manager) :
     mesh_manager{ mesh_manager } {};
   void Init();
-  void Reset() { Init(); };
+  void Reset();
   BulletDebugDrawerBufferConsumer* GetPhysDebugDrawer();
   //void _DisposeBuffer() {
   //	renderer->RemoveBuffer(buffer);

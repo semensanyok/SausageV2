@@ -60,7 +60,6 @@ class FontManager : public SausageSystem {
   unordered_map<int, pair<Texture*, map<char, Character>>> size_chars;
   const unsigned int command_buffer_size = 1;
   TextureManager* texture_manager;
-  DrawCall* draw_call_3d;
   // TODO: free after all buttons / texts initialized.
   FT_Face ft_face;
  public:

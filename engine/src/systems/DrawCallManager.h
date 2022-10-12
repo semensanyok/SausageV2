@@ -127,7 +127,7 @@ public:
       DEBUG_ASSERT(draw_command == command_by_mesh_id.end());
     );
     DrawCommandWithMeshMeta& command = command_by_mesh_id[out_mesh->id];
-    lock_guard(dc->mtx);
+    lock_guard l(dc->mtx);
 
     MemorySlot slot = dc->Allocate(1);
     command.command_buffer_offset = slot.offset;

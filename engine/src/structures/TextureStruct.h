@@ -15,7 +15,6 @@ struct MaterialTexNames {
   const string ao;
   const string opacity;
 };
-
 /*
 * diffuse considered as index
 * other textures are auxiliary
@@ -28,14 +27,12 @@ template<> struct std::hash<MaterialTexNames> {
     return hash<string>{}(string(t.diffuse));
   }
 };
-
 // eq for hashmap/hashset
-bool operator==(MaterialTexNames& lhs, MaterialTexNames& rhs) {
-  std::hash<MaterialTexNames> hash_fn;
+inline bool operator==(const MaterialTexNames& lhs, const MaterialTexNames& rhs) {
   return lhs.diffuse == rhs.diffuse;
 }
 // compare for map/set
-bool operator<(MaterialTexNames& lhs, MaterialTexNames& rhs) {
+inline bool operator<(const MaterialTexNames& lhs, const MaterialTexNames& rhs) {
   return lhs.diffuse < rhs.diffuse;
 }
 

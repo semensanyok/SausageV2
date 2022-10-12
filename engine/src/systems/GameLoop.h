@@ -1,16 +1,16 @@
 #pragma once
 
+#include "sausage.h"
+#include "Structures.h"
+#include "ImguiGui.h"
 #include "FileWatcher.h"
 #include "Settings.h"
-#include "Structures.h"
-#include "sausage.h"
-#include "ImguiGui.h"
 #include "MeshManager.h"
 #include "Renderer.h"
-#include "SystemsManager.h"
 #include "TextureManager.h"
 #include "Scene.h"
 #include "Macros.h"
+#include "SystemsManager.h"
 
 using namespace std;
 using namespace glm;
@@ -42,7 +42,7 @@ namespace SausageGameLoop {
         ImGui_ImplSDL2_ProcessEvent(&e);
         systems_manager->controller->ProcessEvent(&e);
       }
-      systems_manager->renderer->Render();
+      systems_manager->renderer->Render(systems_manager->camera);
       systems_manager->Update();
       IF_PROFILE_ENABLED(ProfTime::total_frame_ns = chrono::steady_clock::now() - proft1;);
       CheckGLError();

@@ -45,16 +45,13 @@ void GLBuffers::_UnmapBuffer() {
 }
 
 CommandBuffer* GLBuffers::_CreateCommandBuffer() {
-  auto buf = new CommandBuffer();
-  buf->buffer_lock = new BufferLock();
-  buf->buffer_lock->is_mapped = false;
-
+  GLuint id;
   // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-  glGenBuffers(1, &buf->id);
-  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buf->id);
+  glGenBuffers(1, &id);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, id);
   glBufferStorage(GL_DRAW_INDIRECT_BUFFER, COMMAND_STORAGE_SIZE, NULL, flags);
   DEBUG_EXPR(CheckGLError());
-  return buf;
+  return new CommandBuffer{ id, nullptr, new BufferLock() };
 }
 
 void GLBuffers::_SyncGPUBufAndUnmap() {

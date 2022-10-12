@@ -57,8 +57,6 @@ public:
     fence_sync = 0;
     used_buffers = 0;
   };
-  void WaitGPU(GLsync fence_sync,
-    const source_location& location = source_location::current());
   void InitBuffers();
   void BindVAOandBuffers();
   void Dispose();

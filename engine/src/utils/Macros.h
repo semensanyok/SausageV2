@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef SAUSAGE_PROFILE_ENABLE
 #define IF_PROFILE_ENABLED(...) __VA_ARGS__
 #else

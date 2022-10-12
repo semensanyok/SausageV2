@@ -1,20 +1,19 @@
 #pragma once
 
 #include "sausage.h"
-#include "GLBuffers.h"
-#include "OpenGLHelpers.h"
-#include "Settings.h"
-#include "MeshDataStruct.h"
-#include "AnimationStruct.h"
-#include "GPUUniformsStruct.h"
-#include "TextureStruct.h"
-#include "LightStruct.h"
-#include "Texture.h"
 #include "Macros.h"
-#include "ThreadSafeSet.h"
-#include "ThreadSafeNumberPool.h"
+#include "Settings.h"
 #include "Arena.h"
+#include "ThreadSafeNumberPool.h"
+#include "OpenGLHelpers.h"
 #include "Logging.h"
+#include "GPUUniformsStruct.h"
+#include "AnimationStruct.h"
+#include "LightStruct.h"
+#include "GLBuffers.h"
+#include "TextureStruct.h"
+#include "Texture.h"
+#include "MeshDataStruct.h"
 
 /**
 Only command buffer must be contigious

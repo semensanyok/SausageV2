@@ -1,15 +1,15 @@
 #pragma once
 
+#include "sausage.h"
 #include "Structures.h"
+#include "ThreadSafeNumberPool.h"
 #include "MeshDataStruct.h"
 #include "AnimationStruct.h"
 #include "PhysicsStruct.h"
 #include "LightStruct.h"
 #include "Interfaces.h"
 #include "Texture.h"
-#include "sausage.h"
 #include "AssimpHelper.h"
-#include "ThreadSafeNumberPool.h"
 
 #define AI_MAX_BONE_WEIGHTS 4
 using namespace std;

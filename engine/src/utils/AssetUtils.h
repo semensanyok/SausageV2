@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sausage.h"
-#include "Texture.h"
 
 using namespace std;
 using namespace filesystem;

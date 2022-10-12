@@ -1,12 +1,12 @@
 #pragma once
 
 #include "sausage.h"
-#include "utils/AssetUtils.h"
+#include "AssetUtils.h"
 #include "SDL_image.h"
-#include "Logging.h"
 #include "OpenGLHelpers.h"
 #include "TextureStruct.h"
 #include "Macros.h"
+#include "Logging.h"
 
 using namespace std;
 
@@ -44,11 +44,10 @@ template<> struct std::hash<Texture> {
 };
 
 // eq for hashmap/hashset
-bool operator==(Texture& lhs, Texture& rhs) {
-  std::hash<Texture> hash_fn;
+inline bool operator==(const Texture& lhs, const Texture& rhs) {
   return lhs.id == rhs.id;
 }
 // compare for map/set
-bool operator<(Texture& lhs, Texture& rhs) {
+inline bool operator<(const Texture& lhs, const Texture& rhs) {
   return lhs.id < rhs.id;
 }
