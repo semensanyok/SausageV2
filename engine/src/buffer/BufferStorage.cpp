@@ -109,6 +109,7 @@ bool BufferStorage::RequestBuffersOffsets(
   bool is_new_mesh = out_mesh->buffer_id < 0;
   if (is_new_mesh) {
     out_mesh->buffer_id = command_slots->ObtainNumber();
+    out_mesh->transform_offset = transforms_slots->ObtainNumber();
   }
   return true;
 }

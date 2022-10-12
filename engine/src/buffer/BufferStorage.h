@@ -110,13 +110,12 @@ class BufferStorage {
   void PreDraw();
   void PostDraw();
  private:
-   BufferStorage() {
-     gl_buffers = new GLBuffers();
-     command_slots = new ThreadSafeNumberPool(MAX_BASE_MESHES);
-     transforms_slots = new ThreadSafeNumberPool(MAX_BASE_AND_INSTANCED_MESHES);
-     transforms_font_slots = new ThreadSafeNumberPool(MAX_3D_OVERLAY_TRANSFORM);
-     transforms_font_ui_slots = new ThreadSafeNumberPool(MAX_UI_UNIFORM_TRANSFORM);
-
+   BufferStorage() :
+     gl_buffers { new GLBuffers() },
+     command_slots { new ThreadSafeNumberPool(MAX_BASE_MESHES) },
+     transforms_slots { new ThreadSafeNumberPool(MAX_BASE_AND_INSTANCED_MESHES) },
+     transforms_font_slots { new ThreadSafeNumberPool(MAX_3D_OVERLAY_TRANSFORM) },
+     transforms_font_ui_slots { new ThreadSafeNumberPool(MAX_UI_UNIFORM_TRANSFORM) },
      // TODO:
      //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
      //    or place shader with dynamic number of meshes at the end
@@ -126,10 +125,9 @@ class BufferStorage {
      * to store large objects in one, smaller in other
      * now for simplicity - keep 1 Arena per buffer(with offset = 0)
      **/
-     unsigned int offset = 0;
-     Arena* index_arena = new Arena({ MAX_INDEX, offset });
-     Arena* vertex_arena = new Arena({ MAX_VERTEX, offset });
-   };
+     index_arena { new Arena({ 0, MAX_INDEX }) },
+     vertex_arena { new Arena({ 0, MAX_VERTEX }) }
+   {};
    ~BufferStorage() {
      delete transforms_slots;
      delete transforms_font_slots;

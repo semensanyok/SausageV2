@@ -38,7 +38,8 @@ public:
   DrawCallManager(
     ShaderManager* shader_manager,
     Renderer* renderer
-  ) : renderer{ renderer } {
+  ) : renderer{ renderer },
+    command_buffer_arena{ new Arena({0, MAX_COMMAND}) } {
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
