@@ -11,18 +11,7 @@ static struct LogEntry {
 
 static ThreadSafeQueue<LogEntry> log_queue;
 
-// make stderr/stdout switch, separate methods or flag
-// (stderr doesnt print immediately, bufferring output until OS decides to flush. good for perf, bad for emergency/crashes)
-void LOG(const ostringstream& s,
-         const std::source_location& location) {
-  LOG(s.str(), location);
-}
-
-void LOG(const string& s, const std::source_location& location) {
-  log_queue.Push({ s, location });
-}
-
-static void _LogMessage(ostream& stream, std::source_location& location, string& message) {
+static void _LogMessage(ostream& stream, const std::source_location& location, const string& message) {
   stream
     << "["
     << location.file_name() << "("
@@ -33,6 +22,20 @@ static void _LogMessage(ostream& stream, std::source_location& location, string&
     << message
     << endl;
 }
+
+// make stderr/stdout switch, separate methods or flag
+// (stderr doesnt print immediately, bufferring output until OS decides to flush. good for perf, bad for emergency/crashes)
+void LOG(const ostringstream& s,
+         const std::source_location& location) {
+  LOG(s.str(), location);
+}
+
+void LOG(const string& s, const std::source_location& location) {
+  //_LogMessage(cout, location, s);
+  _LogMessage(cerr, location, s);
+  log_queue.Push({ s, location });
+}
+
 namespace Sausage {
   void LogIO() {
     //this_thread::sleep_for(std::chrono::milliseconds(300));
@@ -42,7 +45,7 @@ namespace Sausage {
       auto& location = log.location;
       auto& message = log.message;
 
-      _LogMessage(cerr, location, message);
+      //_LogMessage(cerr, location, message);
       //_LogMessage(cout, location, message);
       _LogMessage(log_file_stream, location, message);
       logs.pop();

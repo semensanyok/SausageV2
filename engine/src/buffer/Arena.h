@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "Macros.h"
+#include "Logging.h"
 
 using namespace std;
 

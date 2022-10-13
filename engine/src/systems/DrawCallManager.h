@@ -88,7 +88,7 @@ public:
   }
 
   void AddNewInstanceSetInstanceId(MeshDataBase* mesh) {
-    auto command_iter = command_by_mesh_id.find(mesh->id);
+    auto command_iter = command_by_mesh_id.find(mesh->base_mesh->id);
     DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
     auto& command = command_iter->second;
     // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.

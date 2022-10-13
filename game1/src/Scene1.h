@@ -123,7 +123,7 @@ private:
         draw_call_manager->AddNewCommandToDrawCall(mesh, mesh_dc);
       }
       else {
-        mesh = mesh_manager->CreateMeshData();
+        mesh = mesh_manager->CreateInstancedMesh(base_mesh_ptr->second);
         mesh->base_mesh = base_mesh_ptr->second;
         draw_call_manager->AddNewInstanceSetInstanceId(mesh);
       }
@@ -132,11 +132,13 @@ private:
       // PHYSICS SETUP
       {
         if (mesh->name != "Terrain") {
+          mesh->physics_data = load_data_sptr->physics_data;
           mesh->physics_data->mass = 10.0;
         }
         mesh->physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
         mesh->physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
       }
+      mesh->armature = load_data_sptr->armature;
       all_meshes.push_back(mesh);
     }
   }

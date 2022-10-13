@@ -50,8 +50,15 @@ CommandBuffer* GLBuffers::_CreateCommandBuffer() {
   glGenBuffers(1, &id);
   glBindBuffer(GL_DRAW_INDIRECT_BUFFER, id);
   glBufferStorage(GL_DRAW_INDIRECT_BUFFER, COMMAND_STORAGE_SIZE, NULL, flags);
+
+  auto buffer_lock = new BufferLock();
+
+  DrawElementsIndirectCommand* ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(
+    id, 0, COMMAND_STORAGE_SIZE, flags);
+  buffer_lock->is_mapped = true;
+
   DEBUG_EXPR(CheckGLError());
-  return new CommandBuffer{ id, nullptr, new BufferLock() };
+  return new CommandBuffer{ id, ptr, buffer_lock };
 }
 
 void GLBuffers::_SyncGPUBufAndUnmap() {
@@ -163,7 +170,7 @@ void GLBuffers::InitBuffers() {
   uniforms_controller_ptr = (ControllerUniformData*)glMapBufferRange(
     GL_SHADER_STORAGE_BUFFER, 0, sizeof(ControllerUniformData), flags);
 
-  _CreateCommandBuffer();
+  command_buffer = _CreateCommandBuffer();
 }
 
 void GLBuffers::BindVAOandBuffers() {

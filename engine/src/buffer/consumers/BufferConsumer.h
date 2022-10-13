@@ -6,7 +6,7 @@
 
 class BufferConsumer {
 protected:
-  BufferStorage* buffer = nullptr;
+  BufferStorage* buffer;
   BufferType::BufferTypeFlag used_buffers;
 public:
   BufferConsumer(BufferStorage* buffer,

@@ -9,14 +9,14 @@
 #include "OverlayBufferConsumer3D.h"
 
 class BufferManager : public SausageSystem {
-  MeshManager* mesh_manager;
-  BulletDebugDrawerBufferConsumer* bullet_debug_drawer_buffer;
+  MeshManager* mesh_manager = nullptr;
+  BulletDebugDrawerBufferConsumer* bullet_debug_drawer_buffer = nullptr;
 public:
-  BufferStorage* storage;
+  BufferStorage* storage = nullptr;
 
-  MeshDataBufferConsumer* mesh_data_buffer;
-  UIBufferConsumer* ui_buffer;
-  OverlayBufferConsumer3D* overlay_3d_buffer;
+  MeshDataBufferConsumer* mesh_data_buffer = nullptr;
+  UIBufferConsumer* ui_buffer = nullptr;
+  OverlayBufferConsumer3D* overlay_3d_buffer = nullptr;
 
   BufferManager(MeshManager* mesh_manager) :
     mesh_manager{ mesh_manager } {};

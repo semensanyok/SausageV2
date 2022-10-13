@@ -69,7 +69,9 @@ MemorySlot Arena::_AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc)
 {
   // caller responsible for argument correctness
   // size_to_alloc = _GetSmallestEncompassingPowerOf2(size_to_alloc);
+  unsigned int free_space = _GetFreeSpace();
   if (size_to_alloc > _GetFreeSpace()) {
+    LOG(format("Exceeded free space, size_to_alloc={}, free_space={}", size_to_alloc, free_space));
     return NULL_SLOT;
   }
   unsigned int offset = allocated + base_slot.offset;

@@ -41,7 +41,7 @@ void BufferStorage::BufferTransform(vector<MeshData *> &mesh) {
 }
 void BufferStorage::BufferTransform(MeshData *mesh) {
   auto uniforms_ptr = gl_buffers->uniforms_ptr;
-  DEBUG_ASSERT(mesh->buffer_id > 0);
+  DEBUG_ASSERT(mesh->buffer_id >= 0);
   gl_buffers->uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
       mesh->transform;
   if (mesh->instance_id == 0) {
