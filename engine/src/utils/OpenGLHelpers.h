@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "Settings.h"
+#include "Logging.h"
 
 bool CheckGLError(const std::source_location& location = std::source_location::current());
 

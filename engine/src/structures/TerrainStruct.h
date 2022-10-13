@@ -89,11 +89,11 @@ public:
   TileSizeParameters tile_size = { 2, 2 };
   // distance between `tiles<TerrainTile>` vertices
   int scale = 1;
-  vector<TerrainTile*> tiles;
+  vector<TerrainTile> tiles;
 
   TerrainChunk(int sizeX, int sizeY, int scale, vec3 pos) :
     pos{ pos },
     sizeX{ sizeX }, sizeY{ sizeY },
     scale{ scale },
-    tiles{ vector<TerrainTile*>(sizeX * sizeY) } {}
+    tiles{ vector<TerrainTile>(sizeX * sizeY) } {}
 };

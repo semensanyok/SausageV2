@@ -2,8 +2,6 @@
 
 using namespace std;
 
-void LOG(const string& s);
-
 const char* GL_type_to_string(GLenum type) {
 	switch (type) {
 	case GL_BOOL: return "bool";
@@ -142,32 +140,27 @@ void LogShaderFull(GLuint programme) {
 // note: gl.... commands are valid only in render thread.
 // any calls from other threads results in error.
 bool CheckGLError(const std::source_location& location) {
-	if (std::this_thread::get_id() != main_thread_id) {
-		std::cout << "SKIP CheckGLError error called not inside main thread: '"
-			<< "' at: "
-			<< location.file_name() << "("
-			<< location.line() << ":"
-			<< location.column() << ")#"
-			<< location.function_name() << std::endl;
-		return false;
-	}
-	int err = glGetError();
-	if (err != GL_NO_ERROR) {
-		//LOG((ostringstream() << "GL error: '" << glGetErrorString(err)
-		//		<< "' at: "
-		//		<< location.file_name() << "("
-		//		<< location.line() << ":"
-		//		<< location.column() << ")#"
-		//		<< location.function_name()).str());
-		std::cout << "GL error: '" << glGetErrorString(err)
-			<< "' at: "
-			<< location.file_name() << "("
-			<< location.line() << ":"
-			<< location.column() << ")#"
-			<< location.function_name() << std::endl;
-		return true;
-	}
-	return false;
+  if (std::this_thread::get_id() != main_thread_id) {
+    LOG((ostringstream() << "SKIP CheckGLError error called not inside main thread: '"
+      << "' at: "
+      << location.file_name() << "("
+      << location.line() << ":"
+      << location.column() << ")#"
+      << location.function_name()));
+    return false;
+  }
+  int err = glGetError();
+  if (err != GL_NO_ERROR) {
+    //cout << "GL error: '" << glGetErrorString(err)
+    //		<< "' at: "
+    //		<< location.file_name() << "("
+    //		<< location.line() << ":"
+    //		<< location.column() << ")#"
+    //		<< location.function_name();
+    LOG((ostringstream() << "GL error: " << glGetErrorString(err)));
+    return true;
+  }
+  return false;
 };
 
 // cannot be constexpr because of `va_start`

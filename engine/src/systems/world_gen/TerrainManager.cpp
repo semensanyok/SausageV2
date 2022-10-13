@@ -43,7 +43,12 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
       int ind_ne = x1 + next_row_shift;
       int ind_n = x0 + next_row_shift;
 
-      TerrainTile* current_tile = chunk->tiles[ind];
+      bool is_last_row_vertices = (x == size_x - 1) || (y == size_y - 1);
+      if (is_last_row_vertices) {
+        continue;
+      }
+
+      TerrainTile* current_tile = &chunk->tiles[ind];
       current_tile->x0y0z = { x0, y0, height_values[ind] };
       current_tile->x0y1z = { x0, y1, height_values[ind_n] };
       current_tile->x1y0z = { x1, y0, height_values[ind_e] };
@@ -65,14 +70,14 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
         bool is_west_border = x0 == 0;
         bool is_north_border = y1 >= size_y;
 
-        adj.e = is_east_border ? nullptr : chunk->tiles[ind_e];
-        adj.se = is_east_border || is_south_border ? nullptr : chunk->tiles[ind_se];
-        adj.s = is_south_border ? nullptr : chunk->tiles[ind_s];
-        adj.w = is_west_border ? nullptr : chunk->tiles[ind_w];
-        adj.nw = is_west_border || is_north_border ? nullptr : chunk->tiles[ind_nw];
-        adj.n = is_north_border ? nullptr : chunk->tiles[ind_s];
-        adj.ne = is_north_border || is_east_border ? nullptr : chunk->tiles[ind_se];
-        adj.sw = is_south_border || is_west_border ? nullptr : chunk->tiles[ind_nw];
+        adj.e = is_east_border ? nullptr : &chunk->tiles[ind_e];
+        adj.se = is_east_border || is_south_border ? nullptr : &chunk->tiles[ind_se];
+        adj.s = is_south_border ? nullptr : &chunk->tiles[ind_s];
+        adj.w = is_west_border ? nullptr : &chunk->tiles[ind_w];
+        adj.nw = is_west_border || is_north_border ? nullptr : &chunk->tiles[ind_nw];
+        adj.n = is_north_border ? nullptr : &chunk->tiles[ind_n];
+        adj.ne = is_north_border || is_east_border ? nullptr : &chunk->tiles[ind_ne];
+        adj.sw = is_south_border || is_west_border ? nullptr : &chunk->tiles[ind_sw];
       }
 
       TerrainPixelValues& pixel_values = current_tile->pixel_values;
@@ -100,19 +105,19 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
 }
 
 void TerrainManager::ReleaseBuffer(TerrainChunk* chunk) {
-  buffer->ReleaseStorage(chunk->tiles[0]->mesh_data);
+  buffer->ReleaseStorage(chunk->tiles[0].mesh_data);
 }
 
 void TerrainManager::Deactivate(TerrainChunk* chunk)
 {
-  draw_call_manager->DisableCommand(chunk->tiles[0]->mesh_data);
+  draw_call_manager->DisableCommand(chunk->tiles[0].mesh_data);
 }
 
 void TerrainManager::Buffer(TerrainChunk* chunk) {
   // EACH VERTEX SHARED AMONG 1 - 4 TILES (CORNER 1 TILE, TOP/BOTTOM/LEFT/RIGHT BORDER - 2 TILES, OTHER - 4 TILES)
 
   for (int i = 0; i < chunk->tiles.size(); i++) {
-    auto tile = chunk->tiles[i];
+    auto tile = &chunk->tiles[i];
     auto mesh_data = GetInstancedPlaneWithBaseMeshTransform(chunk, tile);
     mesh_data->transform = translate(mesh_data->transform, tile->x0y0z);
     buffer->BufferTransform(mesh_data);
