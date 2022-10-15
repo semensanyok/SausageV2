@@ -9,6 +9,9 @@ using namespace std;
 struct MemorySlot {
   unsigned long offset;
   unsigned long count;
+  // to correctly setup DrawElementsIndirectCommand.count
+  // i.e. when allocated 64 slot but actual indices used == 36
+  unsigned long used;
 };
 
 // hash function for unordered map
@@ -42,7 +45,7 @@ class Arena {
   set<MemorySlot> free_gaps_slots;
   MemorySlot base_slot;
 public:
-  static inline MemorySlot NULL_SLOT = { 0, 0 };
+  static inline MemorySlot NULL_SLOT = { 0, 0, 0 };
 
   Arena(MemorySlot slot) : base_slot{ slot }, allocated{ 0 }  {
   }
@@ -58,6 +61,6 @@ private:
    * @param size_to_alloc power of 2 slot, encompassing size to allocate
    *        (to reduce amount of calculations)
   */
-  MemorySlot _AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc);
+  MemorySlot _AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc, const unsigned int used_size);
   unsigned int _GetSmallestEncompassingPowerOf2(const unsigned int size);
 };

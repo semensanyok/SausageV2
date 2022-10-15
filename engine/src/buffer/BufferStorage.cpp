@@ -39,6 +39,10 @@ void BufferStorage::BufferTransform(vector<MeshData *> &mesh) {
     BufferTransform(mesh[i]);
   }
 }
+!!! // TODO: for instanced meshes, transform matrices should come right after base one???
+    //         to reference from glBaseInstance + glInstanceId
+    //         so we cannot call AddNewInstanceSetInstanceId at any time??? only before buffering base mesh with instanced???
+    //         
 void BufferStorage::BufferTransform(MeshData *mesh) {
   auto uniforms_ptr = gl_buffers->uniforms_ptr;
   DEBUG_ASSERT(mesh->buffer_id >= 0);
@@ -65,10 +69,13 @@ void BufferStorage::BufferLights(vector<Light *> &lights) {
 }
 
 void BufferStorage::BufferMeshData(MeshDataBase* mesh,
-                                   shared_ptr<MeshLoadData> load_data) {
+                                   shared_ptr<MeshLoadData>& load_data) {
+  auto mesh_data = load_data.get();
   DEBUG_ASSERT(mesh->index_slot.count > 0);
   DEBUG_ASSERT(mesh->vertex_slot.count > 0);
-  auto mesh_data = load_data.get();
+  DEBUG_ASSERT(mesh->index_slot.count >= mesh_data->indices.size());
+  DEBUG_ASSERT(mesh->vertex_slot.count >= mesh_data->vertices.size());
+
   auto& vertices = mesh_data->vertices;
   auto& indices = mesh_data->indices;
   // copy to GPU

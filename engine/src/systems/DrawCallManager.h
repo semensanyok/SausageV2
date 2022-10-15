@@ -152,7 +152,7 @@ public:
   ) {
     auto& command = command_with_meta.command;
     command.instanceCount = instance_count;
-    command.count = mesh->index_slot.count;
+    command.count = mesh->index_slot.used;
     command.firstIndex = mesh->index_slot.offset;
     command.baseVertex = mesh->vertex_slot.offset;
     command.baseInstance = mesh->buffer_id;

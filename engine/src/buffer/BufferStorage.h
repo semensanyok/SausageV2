@@ -85,7 +85,7 @@ class BufferStorage {
 
   void BufferCommands(vector<DrawElementsIndirectCommand> &active_commands, int command_offset);
   void BufferCommand(DrawElementsIndirectCommand &command, int command_offset);
-  void BufferMeshData(MeshDataBase* mesh, shared_ptr<MeshLoadData> load_data);
+  void BufferMeshData(MeshDataBase* mesh, shared_ptr<MeshLoadData>& load_data);
   bool RequestBuffersOffsets(
     MeshDataBase* out_mesh,
     unsigned long vertices_size,

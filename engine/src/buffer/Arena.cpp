@@ -14,13 +14,13 @@ MemorySlot Arena::Allocate(const unsigned int size) {
   unsigned int free_space = _GetFreeSpace();
   auto size_encompassing_power_of_2 = _GetSmallestEncompassingPowerOf2(size);
   if (free_gaps_slots.empty()) {
-    MemorySlot res = _AllocateNewSlotIfHasSpace(size_encompassing_power_of_2);
+    MemorySlot res = _AllocateNewSlotIfHasSpace(size_encompassing_power_of_2, size);
     return res;
   }
   else {
     auto maybe_gap = free_gaps_slots.lower_bound({ 0, size_encompassing_power_of_2 });
     if (maybe_gap == free_gaps_slots.end()) {
-      MemorySlot res = _AllocateNewSlotIfHasSpace(size_encompassing_power_of_2);
+      MemorySlot res = _AllocateNewSlotIfHasSpace(size_encompassing_power_of_2, size);
       return res;
     }
     bool is_exact = maybe_gap->count == size_encompassing_power_of_2;
@@ -65,7 +65,7 @@ unsigned int Arena::_GetFreeSpace() {
 *        (to reduce amount of calculations)
 */
 
-MemorySlot Arena::_AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc)
+MemorySlot Arena::_AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc, const unsigned int used_size)
 {
   // caller responsible for argument correctness
   // size_to_alloc = _GetSmallestEncompassingPowerOf2(size_to_alloc);
@@ -76,7 +76,7 @@ MemorySlot Arena::_AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc)
   }
   unsigned int offset = allocated + base_slot.offset;
   allocated += size_to_alloc;
-  return { offset, size_to_alloc };
+  return { offset, size_to_alloc,  used_size };
 }
 
 unsigned int Arena::_GetSmallestEncompassingPowerOf2(const unsigned int size) {
