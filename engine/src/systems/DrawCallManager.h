@@ -103,6 +103,9 @@ public:
    *        note that mesh.instance_id (gl_InstanceID) is in range [0,instance_count-1]
   */
   void SetInstanceCountToCommand(MeshDataBase* mesh, GLuint instance_count) {
+    !!! // TODO: if new instance count doesnt fit in existing transforms slot
+    //       - reallocate transform offsets, release transform slot
+    //       early exit if current slot is enough
     auto command_iter = command_by_mesh_id.find(mesh->id);
     DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
     auto& command = command_iter->second;
@@ -112,13 +115,18 @@ public:
 
 
   /**
+   * make sure to pre allocate expected number of instances
+   * for instanced call,
+   * to avoid frequent command rebuffer and Arena#aquire/release with each AddNewInstanceSetInstanceId
+   * 
    * @param out_mesh mesh with command/index/vertex slots and buffer_id
    *        allocated via BufferStorage#RequestBuffersOffsets
    * @param dc draw call to assign mesh to
   */
   void AddNewCommandToDrawCall(
     MeshDataBase* out_mesh,
-    DrawCall* dc
+    DrawCall* dc,
+    GLuint instance_count
   ) {
     // validation that command doesnt exist already
     DEBUG_EXPR(
@@ -133,7 +141,7 @@ public:
     MemorySlot slot = dc->Allocate(1);
     command.command_buffer_offset = slot.offset;
 
-    SetToCommandWithOffsets(command, out_mesh, 1);
+    SetToCommandWithOffsets(command, out_mesh, instance_count);
   }
 
   void SetToCommandWithOffsets(

@@ -258,7 +258,7 @@ private:
     buffer->BufferTransform(mesh);
     buffer->BufferSize(mesh, batch->x_min, batch->x_max, batch->y_min, batch->y_max);
 
-    draw_call_manager->AddNewCommandToDrawCall(mesh, draw_call_manager->font_ui_dc);
+    draw_call_manager->AddNewCommandToDrawCall(mesh, draw_call_manager->font_ui_dc, 1);
     drawn_ui_elements.push_back(mesh);
   }
   void _SubmitDrawBack(
@@ -276,7 +276,7 @@ private:
     max.y += batch->y_max;
     buffer->BufferSize(mesh, min.x, max.x, min.y, max.y);
 
-    draw_call_manager->AddNewCommandToDrawCall(mesh, draw_call_manager->back_ui_dc);
+    draw_call_manager->AddNewCommandToDrawCall(mesh, draw_call_manager->back_ui_dc, 1);
     drawn_ui_elements.push_back(mesh);
   }
   pair<unique_ptr<BatchDataUI>, MeshDataUI*> _GetTextMesh(

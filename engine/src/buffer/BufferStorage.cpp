@@ -40,13 +40,20 @@ void BufferStorage::BufferTransform(vector<MeshData *> &mesh) {
   }
 }
 !!! // TODO: for instanced meshes, transform matrices should come right after base one???
-    //         to reference from glBaseInstance + glInstanceId
+    //         to fetch transform_offet from glBaseInstance + glInstanceId
     //         so we cannot call AddNewInstanceSetInstanceId at any time??? only before buffering base mesh with instanced???
     //         
 void BufferStorage::BufferTransform(MeshData *mesh) {
   auto uniforms_ptr = gl_buffers->uniforms_ptr;
   DEBUG_ASSERT(mesh->buffer_id >= 0);
-  gl_buffers->uniforms_ptr->transforms[mesh->transform_offset + mesh->instance_id] =
+  !!! // decided to not modify mesh->transform_offset for each instance
+  // keep it same for all instances and calculate instance offset here
+  // TODO: convert MemorySlot to pointer to not have 1000's of same structures
+  // TODO2: create MeshDataInstanced that doesnt hahve 10 redundant uninitialized pointers
+  //        that not only consumpt memory, but also very confusing
+  auto transform_index = mesh->transform_offset.offset + mesh->instance_id;
+  DEBUG_ASSERT(mesh->transform_offset.offset + mesh->instance_id < mesh->transform_offset.count);
+  gl_buffers->uniforms_ptr->transforms[transform_index] =
       mesh->transform;
   if (mesh->instance_id == 0) {
     gl_buffers->uniforms_ptr->transform_offset[mesh->buffer_id] = mesh->transform_offset;

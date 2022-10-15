@@ -126,7 +126,7 @@ void TerrainManager::Buffer(TerrainChunk* chunk) {
 }
 
 MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
-  TerrainChunk* chunk, TerrainTile* tile
+  TerrainChunk* chunk, TerrainTile* tile, unsigned int instance_count
   //, vec2& out_face_normal
 ) {
   auto existing = planes_for_instanced_meshes.find(chunk->tile_size);
@@ -168,7 +168,7 @@ MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
 
     buffer->RequestBuffersOffsets(base_mesh, vertices.size(), indices.size());
     buffer->BufferMeshData(base_mesh, load_data);
-    draw_call_manager->AddNewCommandToDrawCall(base_mesh, draw_call_manager->mesh_dc);
+    draw_call_manager->AddNewCommandToDrawCall(base_mesh, draw_call_manager->mesh_dc, instance_count);
 
     tile->mesh_data = base_mesh;
 
@@ -181,6 +181,7 @@ MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
     auto base_mesh = existing->second;
     auto instanced_mesh = mesh_manager->CreateInstancedMesh(base_mesh);
     instanced_mesh->transform = base_mesh->transform;
+    draw_call_manager->SetInstanceCountToCommand(base_mesh, instance_count);
     draw_call_manager->AddNewInstanceSetInstanceId(instanced_mesh);
     return instanced_mesh;
   }

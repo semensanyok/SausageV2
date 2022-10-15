@@ -36,7 +36,8 @@ public:
   // Buffer offsets /////////////////////
   MemorySlot vertex_slot;
   MemorySlot index_slot;
-  int transform_offset;
+  // count == 1 for single mesh. multiple for instanced meshes
+  MemorySlot transform_offset;
   //////////////////////////////////////
   //    commands are now managed via DrawCallManager
   //    instance_count set in DrawElementsIndirectCommand. dont duplicate counter here.
