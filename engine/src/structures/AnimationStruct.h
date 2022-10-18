@@ -60,18 +60,20 @@ namespace AnimBlendWeights {
   inline float Weight10 = 10;
 };  // namespace AnimBlendWeights
 
-struct ActiveAnimation {
+struct ActiveAnimationBlend {
   double start_time;
   float blend_weight;
   Animation* anim;
 };
 
-class AnimMesh {
+class ActiveAnimation {
 public:
-  MeshData* mesh;
-  map<AnimIndependentChannel, vector<ActiveAnimation>> active_animations;
-  AnimMesh(MeshData* mesh) : mesh{ mesh } {};
-  ~AnimMesh() {};
+  const unsigned int id;
+  const Armature* armature;
+  map<AnimIndependentChannel, vector<ActiveAnimationBlend>> active_animations;
+  ActiveAnimation(const Armature* armature, const unsigned int id)
+    : armature{ armature }, id{ id } {};
+  ~ActiveAnimation() {};
   inline void AddAnim(AnimIndependentChannel channel, Animation* anim,
                       float blend_weight = AnimBlendWeights::Weight1,
                       AnimBlendType blend_type = AnimBlendType::BLEND,

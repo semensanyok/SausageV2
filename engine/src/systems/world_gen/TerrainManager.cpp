@@ -166,7 +166,7 @@ MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
 
     base_mesh->transform = translate(mat4(1), chunk->pos);
 
-    buffer->RequestBuffersOffsets(base_mesh, vertices.size(), indices.size());
+    buffer->AllocateStorage(base_mesh, vertices.size(), indices.size());
     buffer->BufferMeshData(base_mesh, load_data);
     draw_call_manager->AddNewCommandToDrawCall(base_mesh, draw_call_manager->mesh_dc, instance_count);
 

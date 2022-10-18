@@ -6,6 +6,10 @@
 
 using namespace std;
 
+namespace MemorySlots {
+  inline MemorySlot NULL_SLOT = { 0, 0, 0 };
+}
+
 struct MemorySlot {
   unsigned long offset;
   unsigned long count;
@@ -45,7 +49,6 @@ class Arena {
   set<MemorySlot> free_gaps_slots;
   MemorySlot base_slot;
 public:
-  static inline MemorySlot NULL_SLOT = { 0, 0, 0 };
 
   Arena(MemorySlot slot) : base_slot{ slot }, allocated{ 0 }  {
   }

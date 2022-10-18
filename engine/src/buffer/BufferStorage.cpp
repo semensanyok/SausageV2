@@ -34,32 +34,7 @@ void BufferStorage::BufferBoneTransform(Bone *bone, mat4 &trans,
   }
   gl_buffers->SetSyncBarrier();
 }
-void BufferStorage::BufferTransform(vector<MeshData *> &mesh) {
-  for (int i = 0; i < mesh.size(); i++) {
-    BufferTransform(mesh[i]);
-  }
-}
-!!! // TODO: for instanced meshes, transform matrices should come right after base one???
-    //         to fetch transform_offet from glBaseInstance + glInstanceId
-    //         so we cannot call AddNewInstanceSetInstanceId at any time??? only before buffering base mesh with instanced???
-    //         
-void BufferStorage::BufferTransform(MeshData *mesh) {
-  auto uniforms_ptr = gl_buffers->uniforms_ptr;
-  DEBUG_ASSERT(mesh->buffer_id >= 0);
-  !!! // decided to not modify mesh->transform_offset for each instance
-  // keep it same for all instances and calculate instance offset here
-  // TODO: convert MemorySlot to pointer to not have 1000's of same structures
-  // TODO2: create MeshDataInstanced that doesnt hahve 10 redundant uninitialized pointers
-  //        that not only consumpt memory, but also very confusing
-  auto transform_index = mesh->transform_offset.offset + mesh->instance_id;
-  DEBUG_ASSERT(mesh->transform_offset.offset + mesh->instance_id < mesh->transform_offset.count);
-  gl_buffers->uniforms_ptr->transforms[transform_index] =
-      mesh->transform;
-  if (mesh->instance_id == 0) {
-    gl_buffers->uniforms_ptr->transform_offset[mesh->buffer_id] = mesh->transform_offset;
-  }
-  gl_buffers->SetSyncBarrier();
-}
+
 void BufferStorage::BufferLights(vector<Light *> &lights) {
   if (lights.size() > MAX_LIGHTS) {
     LOG((ostringstream() << "ERROR BufferLights. max lights buffer size="
@@ -78,61 +53,83 @@ void BufferStorage::BufferLights(vector<Light *> &lights) {
 void BufferStorage::BufferMeshData(MeshDataBase* mesh,
                                    shared_ptr<MeshLoadData>& load_data) {
   auto mesh_data = load_data.get();
-  DEBUG_ASSERT(mesh->index_slot.count > 0);
-  DEBUG_ASSERT(mesh->vertex_slot.count > 0);
-  DEBUG_ASSERT(mesh->index_slot.count >= mesh_data->indices.size());
-  DEBUG_ASSERT(mesh->vertex_slot.count >= mesh_data->vertices.size());
+  DEBUG_ASSERT(mesh->slots.index_slot.count > 0);
+  DEBUG_ASSERT(mesh->slots.vertex_slot.count > 0);
+  DEBUG_ASSERT(mesh->slots.index_slot.count >= mesh_data->indices.size());
+  DEBUG_ASSERT(mesh->slots.vertex_slot.count >= mesh_data->vertices.size());
 
   auto& vertices = mesh_data->vertices;
   auto& indices = mesh_data->indices;
   // copy to GPU
-  memcpy(&gl_buffers->vertex_ptr[mesh->vertex_slot.offset], vertices.data(),
+  memcpy(&gl_buffers->vertex_ptr[mesh->slots.vertex_slot.offset], vertices.data(),
          vertices.size() * sizeof(Vertex));
-  memcpy(&gl_buffers->index_ptr[mesh->index_slot.offset], indices.data(),
+  memcpy(&gl_buffers->index_ptr[mesh->slots.index_slot.offset], indices.data(),
          indices.size() * sizeof(unsigned int));
   gl_buffers->SetSyncBarrier();
 }
 
-bool BufferStorage::RequestBuffersOffsets(
-  MeshDataBase* out_mesh,
+bool BufferStorage::AllocateStorage(
+  MeshDataSlots& out_slots,
   unsigned long vertices_size,
-  unsigned long indices_size
+  unsigned long indices_size,
+  unsigned long num_instances
 ) {
-  // rellease if slot existed, to reallocate anew
-  if (out_mesh->vertex_slot != Arena::NULL_SLOT) {
-    vertex_arena->Release(out_mesh->vertex_slot);
-  }
-  if (out_mesh->index_slot != Arena::NULL_SLOT) {
-    index_arena->Release(out_mesh->index_slot);
-  }
-
   auto vertex_slot = vertex_arena->Allocate(vertices_size);
-  if (vertex_slot == Arena::NULL_SLOT) {
-    LOG("Error RequestStorageSetOffsets vertex allocation.");
+  out_slots.buffer_id = command_slots->ObtainNumber();
+  if (vertex_slot == MemorySlots::NULL_SLOT) {
+    LOG("Error RequestStorageSetOffsets vertices slot allocation.");
+    command_slots->ReleaseNumber(out_slots.buffer_id);
     return false;
   }
   auto index_slot = index_arena->Allocate(indices_size);
-  if (index_slot == Arena::NULL_SLOT) {
+  if (index_slot == MemorySlots::NULL_SLOT) {
     vertex_arena->Release(vertex_slot);
-    LOG("Error RequestStorageSetOffsets index allocation.");
+    LOG("Error RequestStorageSetOffsets indices slot allocation.");
+    command_slots->ReleaseNumber(out_slots.buffer_id);
     return false;
   }
-  out_mesh->vertex_slot = vertex_slot;
-  out_mesh->index_slot = index_slot;
-
-  bool is_new_mesh = out_mesh->buffer_id < 0;
-  if (is_new_mesh) {
-    out_mesh->buffer_id = command_slots->ObtainNumber();
-    out_mesh->transform_offset = transforms_slots->ObtainNumber();
+  if (!AllocateInstancesSlot(out_slots, num_instances)) {
+    vertex_arena->Release(vertex_slot);
+    index_arena->Release(index_slot);
+    command_slots->ReleaseNumber(out_slots.buffer_id);
+    LOG("Error RequestStorageSetOffsets instances slot allocation.");
+    return false;
   }
   return true;
 }
 
-void BufferStorage::ReleaseStorage(MeshDataBase* mesh) {
-  vertex_arena->Release(mesh->vertex_slot);
-  index_arena->Release(mesh->index_slot);
-  command_slots->ReleaseNumber(mesh->buffer_id);
+bool BufferStorage::AllocateInstancesSlot(
+    MeshDataSlots& out_slots,
+    unsigned long num_instances) {
+  auto instances_slot = instances_slots->Allocate(num_instances);
+  if (instances_slot == MemorySlots::NULL_SLOT) {
+    LOG("Error AllocateInstancesSlot.");
+    return false;
+  }
+  out_slots.instances_slot = instances_slot;
+
+  DEBUG_ASSERT(out_slots.buffer_id > 0);
+
+  gl_buffers->uniforms_ptr->base_instance_offset[out_slots.buffer_id] = out_slots.instances_slot.offset;
+  gl_buffers->SetSyncBarrier();
+
+  return true;
+};
+
+void BufferStorage::ReleaseStorage(MeshDataSlots& out_slots) {
+  vertex_arena->Release(out_slots.vertex_slot);
+  out_slots.vertex_slot = MemorySlots::NULL_SLOT;
+  index_arena->Release(out_slots.index_slot);
+  out_slots.index_slot = MemorySlots::NULL_SLOT;
+  command_slots->ReleaseNumber(out_slots.buffer_id);
+  out_slots.buffer_id = MemorySlots::NULL_SLOT;
+  ReleaseInstancesSlot(out_slots);
 }
+
+void BufferStorage::ReleaseInstancesSlot(MeshDataSlots& out_slots) {
+  instances_slots->Release(out_slots.instances_slot);
+  out_slots.instances_slot = MemorySlots::NULL_SLOT;
+};
 
 void BufferStorage::Init() {
   gl_buffers->InitBuffers();
@@ -146,39 +143,77 @@ void BufferStorage::BufferTextureHandle(Texture* texture)
   gl_buffers->SetSyncBarrier();
 }
 
+// TODO: BufferMeshTexture(MeshDataInstanced* mesh)
 void BufferStorage::BufferMeshTexture(MeshData* mesh) {
+  DEBUG_ASSERT(mesh->slots.buffer_id > 0);
+  DEBUG_ASSERT(mesh->slots.instances_slot != MemorySlots::NULL_SLOT);
   gl_buffers->
     blend_textures_by_mesh_id_ptr->
-      blend_textures[mesh->transform_offset + mesh->instance_id] =
+      blend_textures[mesh->slots.instances_slot.offset] =
         mesh->textures;
   //uniforms_ptr->blend_textures[0].textures[0].texture_id = 1;
   gl_buffers->SetSyncBarrier();
 }
 
+// TODO: BufferTransform(vector<MeshDataInstanced*> &mesh)
+void BufferStorage::BufferTransform(vector<MeshData*>& mesh) {
+  for (int i = 0; i < mesh.size(); i++) {
+    BufferTransform(mesh[i]);
+  }
+}
+// TODO: for instanced meshes, transform matrices should come right after base one???
+//         to fetch transform_offet from glBaseInstance + glInstanceId
+//         so we cannot call AddNewInstanceSetInstanceId at any time??? only before buffering base mesh with instanced???
+// TODO: BufferTransform(MeshDataInstanced* mesh)   
+void BufferStorage::BufferTransform(MeshData* mesh) {
+  DEBUG_ASSERT(mesh->slots.buffer_id > 0);
+  DEBUG_ASSERT(mesh->slots.instances_slot != MemorySlots::NULL_SLOT);
+  // decided to not modify mesh->instances_slot for each instance
+  // keep it same for all instances and calculate instance offset here
+  // ~~TODO: convert MemorySlot to pointer to not have 1000's of same structures
+  // TODO2: create MeshDataInstanced that doesnt hahve 10 redundant uninitialized pointers
+  //        that not only consumpt memory, but also very confusing
+  //       -- actually, create MeshDataInstance and inherit base mesh from it.
+  //                    Refer to MeshDataInstance to buffer offsets. (instance_id should be const)
+  gl_buffers->uniforms_ptr->transforms[mesh->slots.instances_slot.offset] =
+    mesh->transform;
+  // if base mesh
+  // TODO: move to initialize once, on buffer_id allocation
+  gl_buffers->SetSyncBarrier();
+}
+
 void BufferStorage::BufferFontTexture(MeshDataBase* mesh, Texture* texture) {
+  DEBUG_ASSERT(mesh->slots.buffer_id > 0);
+  DEBUG_ASSERT(mesh->slots.instances_slot != MemorySlots::NULL_SLOT);
   gl_buffers->
-    font_texture_ptr[mesh->buffer_id] = texture->texture_handle_ARB;
+    font_texture_ptr[mesh->slots.instances_slot.offset] = texture->texture_handle_ARB;
   gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::Buffer3DFontTransform(MeshDataOverlay3D* mesh) {
+  DEBUG_ASSERT(mesh->slots.buffer_id > 0);
+  DEBUG_ASSERT(mesh->slots.instances_slot != MemorySlots::NULL_SLOT);
   gl_buffers->
     uniforms_3d_overlay_ptr->
-      transforms[mesh->transform_offset + mesh->instance_id] = mesh->transform;
+      transforms[mesh->slots.instances_slot.offset] = mesh->transform;
   gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y) {
+  DEBUG_ASSERT(mesh->slots.buffer_id > 0);
+  DEBUG_ASSERT(mesh->slots.instances_slot != MemorySlots::NULL_SLOT);
   gl_buffers->
     uniforms_ui_ptr->
-      min_max_x_y[mesh->transform_offset + mesh->instance_id] = { min_x, max_x, min_y, max_y };
+      min_max_x_y[mesh->slots.instances_slot.offset] = { min_x, max_x, min_y, max_y };
   gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::BufferUniformDataUITransform(MeshDataUI* mesh) {
+  DEBUG_ASSERT(mesh->slots.buffer_id > 0);
+  DEBUG_ASSERT(mesh->slots.instances_slot != MemorySlots::NULL_SLOT);
   gl_buffers->
     uniforms_ui_ptr->
-      transforms[mesh->transform_offset + mesh->instance_id] = mesh->transform;
+      transforms[mesh->slots.instances_slot.offset] = mesh->transform;
   gl_buffers->SetSyncBarrier();
 }
 

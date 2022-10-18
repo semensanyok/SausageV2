@@ -11,7 +11,7 @@ void BulletDebugDrawerBufferConsumer::BufferMeshData(vector<vec3>& vertices,
 void BulletDebugDrawerBufferConsumer::Init() {
   BufferConsumer::Init();
   mesh = mesh_manager->CreateMeshData();
-  buffer->RequestBuffersOffsets(mesh, vertices_size, indices_size);
+  buffer->AllocateStorage(mesh, vertices_size, indices_size);
 }
 
 void BulletDebugDrawerBufferConsumer::Reset() { Init(); }

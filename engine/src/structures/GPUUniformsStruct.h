@@ -36,7 +36,7 @@ struct BlendTexturesByMeshIdUniform {
 struct MeshUniform {
   mat4 bones_transforms[MAX_BONES]; // aligned to vec4 == 16 bytes
   mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES]; // aligned to vec4 == 16 bytes
-  unsigned int transform_offset[MAX_BASE_MESHES]; // alignment 4 bytes
+  unsigned int base_instance_offset[MAX_BASE_MESHES]; // alignment 4 bytes
   // no padding needed, topmost structure
 };
 

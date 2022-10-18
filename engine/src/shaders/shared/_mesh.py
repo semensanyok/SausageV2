@@ -6,7 +6,7 @@ mesh = {
 void SetBlendColor() {
     // TODO: add light color for all blend textures, before blend
 
-    uint texture_id = blend_textures[transform_offset[In.base_instance] + In.instance_id].textures[0].texture_id;
+    uint texture_id = blend_textures[base_instance_offset[In.base_instance] + In.instance_id].textures[0].texture_id;
     vec4 mat_diffuse_with_opacity = texture(textures[texture_id], vec3(In.uv, DIFFUSE_TEX)).rgba;
     vec3 mat_diffuse = mat_diffuse_with_opacity.rgb;
     vec3 mat_specular = texture(textures[texture_id], vec3(In.uv, SPECULAR_TEX)).rgb;
@@ -28,7 +28,7 @@ layout (std430, binding = UNIFORMS_LOC) buffer MeshUniform
 {
     mat4 bones_transforms[MAX_BONES];
     mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES];
-    uint transform_offset[MAX_BASE_MESHES];
+    uint base_instance_offset[MAX_BASE_MESHES];
     // BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
 };
 """,
@@ -55,7 +55,7 @@ in vs_out {
 # MAIN FUNCIONS, mesh_set_VARIABLE_NAME
 "mesh_set_transform":
 """
-mat4 transform = transforms[transform_offset[gl_BaseInstanceARB] + gl_InstanceID];
+mat4 transform = transforms[base_instance_offset[gl_BaseInstanceARB] + gl_InstanceID];
 """,
 "mesh_set_res_position":
 """

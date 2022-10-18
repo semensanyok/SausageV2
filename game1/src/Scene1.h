@@ -107,7 +107,7 @@ private:
       if (base_mesh_ptr == base_meshes.end()) {
         mesh = mesh_manager->CreateMeshData(load_data);
         base_meshes[key] = mesh;
-        mesh_data_buffer->RequestBuffersOffsets(mesh,
+        mesh_data_buffer->AllocateStorage(mesh,
           load_data->vertices.size(), load_data->indices.size());
         mesh_data_buffer->BufferMeshData(mesh, load_data_sptr);
         // TEXTURE SETUP
@@ -156,16 +156,16 @@ private:
     for (auto mesh_base : all_meshes) {
       if (MeshData* mesh = dynamic_cast<MeshData*>(mesh_base)) {
         if (mesh->armature != nullptr) {
-          auto anim_mesh = systems_manager->anim_manager->CreateAnimMesh(mesh);
-          systems_manager->anim_manager->LoadAnimationForMesh(scene_path, mesh);
-          systems_manager->anim_manager->QueueMeshAnimUpdate(anim_mesh);
+          auto active_anim = systems_manager->anim_manager->CreateActiveAnimInstance(mesh->armature);
+          systems_manager->anim_manager->LoadAnimationForArmature(scene_path, mesh->armature);
+          systems_manager->anim_manager->QueueAnimUpdate(active_anim);
           if (!mesh->armature->name_to_anim.empty()) {
             auto anim1 = mesh->armature->name_to_anim["Stretch"];
             auto anim2 = mesh->armature->name_to_anim["ShakeHead"];
             auto anim3 = mesh->armature->name_to_anim["UpHead"];
-            anim_mesh->AddAnim(AnimIndependentChannel::CHANNEL1, anim1);
-            anim_mesh->AddAnim(AnimIndependentChannel::CHANNEL2, anim2);
-            anim_mesh->AddAnim(AnimIndependentChannel::CHANNEL2, anim3);
+            active_anim->AddAnim(AnimIndependentChannel::CHANNEL1, anim1);
+            active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim2);
+            active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim3);
           }
         }
       }

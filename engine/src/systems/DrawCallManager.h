@@ -29,6 +29,8 @@ public:
 
   Arena* command_buffer_arena;
 
+  BufferStorage* buffer;
+
   map<unsigned int, DrawCall*> draw_call_by_id;
   // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
   // for simlicity - keep 1 command for now
@@ -37,9 +39,11 @@ public:
 
   DrawCallManager(
     ShaderManager* shader_manager,
-    Renderer* renderer
+    Renderer* renderer,
+    BufferStorage* buffer
   ) : renderer{ renderer },
-    command_buffer_arena{ new Arena({0, MAX_COMMAND}) } {
+    command_buffer_arena{ new Arena({0, MAX_COMMAND}) },
+    buffer{ buffer } {
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
@@ -88,12 +92,15 @@ public:
   }
 
   void AddNewInstanceSetInstanceId(MeshDataBase* mesh) {
+    // TODO: if new instance count doesnt fit in existing transforms slot
+    //       - reallocate transform offsets, release transform slot
+    //       early exit if current slot is enough
     auto command_iter = command_by_mesh_id.find(mesh->base_mesh->id);
     DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
     auto& command = command_iter->second;
     // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
     mesh->instance_id = command.command.instanceCount++;
-    BufferStorage::GetInstance()->BufferCommand(command.command, command.command_buffer_offset);
+    buffer->BufferCommand(command.command, command.command_buffer_offset);
   }
 
   /**
@@ -103,14 +110,17 @@ public:
    *        note that mesh.instance_id (gl_InstanceID) is in range [0,instance_count-1]
   */
   void SetInstanceCountToCommand(MeshDataBase* mesh, GLuint instance_count) {
-    !!! // TODO: if new instance count doesnt fit in existing transforms slot
+    // TODO: if new instance count doesnt fit in existing transforms slot
     //       - reallocate transform offsets, release transform slot
     //       early exit if current slot is enough
     auto command_iter = command_by_mesh_id.find(mesh->id);
     DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
     auto& command = command_iter->second;
+    if (command.command.instanceCount <= instance_count) {
+      buffer->ReleaseStorage()
+    }
     command.command.instanceCount = instance_count;
-    BufferStorage::GetInstance()->BufferCommand(command.command, command.command_buffer_offset);
+    buffer->BufferCommand(command.command, command.command_buffer_offset);
   }
 
 
@@ -120,7 +130,7 @@ public:
    * to avoid frequent command rebuffer and Arena#aquire/release with each AddNewInstanceSetInstanceId
    * 
    * @param out_mesh mesh with command/index/vertex slots and buffer_id
-   *        allocated via BufferStorage#RequestBuffersOffsets
+   *        allocated via BufferStorage#AllocateStorage
    * @param dc draw call to assign mesh to
   */
   void AddNewCommandToDrawCall(
@@ -130,10 +140,8 @@ public:
   ) {
     // validation that command doesnt exist already
     DEBUG_EXPR(
-      auto draw_call = dc_by_mesh_id.find(out_mesh->id);
-      DEBUG_ASSERT(draw_call == dc_by_mesh_id.end());
-      auto draw_command = command_by_mesh_id.find(out_mesh->id);
-      DEBUG_ASSERT(draw_command == command_by_mesh_id.end());
+      DEBUG_ASSERT(dc_by_mesh_id.find(out_mesh->id) == dc_by_mesh_id.end());
+      DEBUG_ASSERT(command_by_mesh_id.find(out_mesh->id) == command_by_mesh_id.end());
     );
     DrawCommandWithMeshMeta& command = command_by_mesh_id[out_mesh->id];
     lock_guard l(dc->mtx);

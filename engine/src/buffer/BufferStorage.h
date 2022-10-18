@@ -32,29 +32,13 @@ using namespace BufferSettings;
 using namespace UniformsLocations;
 using namespace BufferSizes;
 
-// struct DataRangeLock {
-//    unsigned int vertex_begin;
-//    unsigned int vertex_end;
-//    unsigned int index_begin;
-//    unsigned int index_end;
-//    unsigned int transform_begin;
-//    unsigned int transform_end;
-//
-//    mutex data_mutex;
-//    condition_variable is_vertex_buffer_mapped;
-//    bool is_mapped;
-//};
-
 class BufferStorage {
-  //friend class MeshDataBufferConsumer;
-  //friend class FontBufferConsumerUI;
-  //friend class OverlayBufferConsumer3D;
-  //friend class Renderer;
 
  private:
 
   ThreadSafeNumberPool* command_slots;
-  ThreadSafeNumberPool* transforms_slots;
+  // instanced meshes must have contigious chunk of transform matrices to refer by base id + instance id
+  Arena* instances_slots;
   ThreadSafeNumberPool* transforms_font_slots;
   ThreadSafeNumberPool* transforms_font_ui_slots;
   //  TODO: each drawcall uses contigious range of commands. Need to allocate in advance for shader.
@@ -71,7 +55,7 @@ class BufferStorage {
    };
 
   void Reset() {
-    transforms_slots -> Reset();
+    instances_slots-> Reset();
     transforms_font_slots -> Reset();
     transforms_font_ui_slots -> Reset();
 
@@ -86,11 +70,16 @@ class BufferStorage {
   void BufferCommands(vector<DrawElementsIndirectCommand> &active_commands, int command_offset);
   void BufferCommand(DrawElementsIndirectCommand &command, int command_offset);
   void BufferMeshData(MeshDataBase* mesh, shared_ptr<MeshLoadData>& load_data);
-  bool RequestBuffersOffsets(
-    MeshDataBase* out_mesh,
+  bool AllocateStorage(
+    MeshDataSlots& out_slots,
     unsigned long vertices_size,
-    unsigned long indices_size);
-  void ReleaseStorage(MeshDataBase* mesh);
+    unsigned long indices_size,
+    unsigned long num_instances);
+  void ReleaseStorage(MeshDataSlots& out_slots);
+  bool AllocateInstancesSlot(
+    MeshDataSlots& out_slots,
+    unsigned long num_instances);
+  void ReleaseInstancesSlot(MeshDataSlots& out_slots);
   void BufferBoneTransform(unordered_map<unsigned int, mat4> &id_to_transform);
   void BufferBoneTransform(Bone *bone, mat4 &trans, unsigned int num_bones = 1);
   void BufferTransform(MeshData *mesh);
@@ -113,7 +102,7 @@ class BufferStorage {
    BufferStorage() :
      gl_buffers { new GLBuffers() },
      command_slots { new ThreadSafeNumberPool(MAX_BASE_MESHES) },
-     transforms_slots { new ThreadSafeNumberPool(MAX_BASE_AND_INSTANCED_MESHES) },
+     instances_slots{ new Arena({0,MAX_BASE_AND_INSTANCED_MESHES}) },
      transforms_font_slots { new ThreadSafeNumberPool(MAX_3D_OVERLAY_TRANSFORM) },
      transforms_font_ui_slots { new ThreadSafeNumberPool(MAX_UI_UNIFORM_TRANSFORM) },
      // TODO:
@@ -129,7 +118,7 @@ class BufferStorage {
      vertex_arena { new Arena({ 0, MAX_VERTEX }) }
    {};
    ~BufferStorage() {
-     delete transforms_slots;
+     delete instances_slots;
      delete transforms_font_slots;
      delete transforms_font_ui_slots;
      delete gl_buffers;

@@ -14,7 +14,7 @@ public:
       buffer{ buffer }
   {
   }
-  bool RequestBuffersOffsets(
+  bool AllocateStorage(
     MeshDataBase* out_mesh,
     unsigned long vertices_size,
     unsigned long indices_size
