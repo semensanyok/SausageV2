@@ -47,31 +47,24 @@ public:
 
 class MeshDataBase
 {
+  friend class MeshDataManager;
+  friend class MeshManager;
+  friend class MeshData;
+  friend class MeshDataInstance;
+  friend class MeshDataUI;
+  friend class MeshDataOverlay3D;
+
 public:
   MeshDataSlots slots;
   const unsigned long id;
-  MeshDataBase()
-    : vertex_slot{ Arena::NULL_SLOT },
-    index_slot{ Arena::NULL_SLOT },
-    // sign to have explicit initialization, to not accidentially write instance data to base mesh offset
-    instance_id{ -1 },
-    buffer_id{ -1 },
-    instances_slot{ -1 },
-    instance_offset{ 0 }
-    //,instance_count{ 1 }
+  inline unsigned long GetInstanceOffset() {
+    return slots.instances_slot.offset;
+  }
+private:
+  MeshDataBase(unsigned long id)
+    : slots{ MeshDataSlots() }, id{ id }
   {};
   virtual ~MeshDataBase() {};
-};
-
-struct MeshDataSlots {
-  // count == 1 for single mesh. multiple for instanced meshes
-  // used as offset to arrays: transform, texture, ...?
-  MemorySlot instances_slot;
-  // Buffer offsets /////////////////////
-  MemorySlot vertex_slot;
-  MemorySlot index_slot;
-  // in glsl == gl_BaseInstanceARB
-  long buffer_id;
 };
 
 /**
@@ -92,13 +85,14 @@ public:
   PhysicsData* physics_data;
 
 private:
-  MeshData()
-    : MeshDataBase(), textures{ {0, {}} },
+  MeshData(unsigned long id)
+    : MeshDataBase(id),
+    textures{ {0, {}} },
     physics_data{ nullptr },
     is_transparent{ false },
     transform{ mat4(1.0) } {};
-  MeshData(MeshLoadData* load_data)
-    : MeshDataBase(), textures{ {0, {}} },
+  MeshData(unsigned long id, MeshLoadData* load_data)
+    : MeshDataBase(id), textures{ {0, {}} },
     physics_data{ load_data->physics_data },
     armature{ load_data->armature },
     name{ load_data->name },
@@ -116,22 +110,23 @@ private:
  * (same vertices + textures)
 */
 class MeshDataInstance {
+  friend class MeshManager;
+public:
   mat4 transform;
   const long instance_id;
-  // base mesh can reallocate its command slot
-  // hence, updating all instances absolute offsets is cumbersome
-  // so we keep only relative instance_id, and dynamically get instance_offset
-  //const long instance_offset;
-  const MeshData* base_mesh;
-};
-
-class MeshDataClickable : public SausageUserPointer {
-public:
-  MeshData* mesh_data;
-  MeshDataClickable(MeshData* mesh_data) : mesh_data{ mesh_data } {};
-  void Call() {
-    cout << "RayHit from mesh " << mesh_data->name << endl;
+  // 1. base mesh can reallocate its command slot
+  //    hence, updating all instances absolute offsets is cumbersome
+  //    so we keep only relative instance_id, and dynamically get instance_offset
+  //
+  // 2. decided to have base pointer here. when need to reference to armature/physics/etc. - cast it to MeshData*
+  const MeshDataBase* base_mesh;
+  inline unsigned long GetInstanceOffset() {
+    return base_mesh->slots.instances_slot.offset + instance_id;
   }
+private:
+  MeshDataInstance(mat4 transform, long instance_id, MeshDataBase* base_mesh) :
+    transform{ transform }, instance_id{ instance_id }, base_mesh{ base_mesh } {}
+  ~MeshDataInstance() {};
 };
 
 class MeshDataUI : public MeshDataBase {
@@ -140,8 +135,11 @@ public:
   vec2 transform;
   Texture* texture;
 private:
-  MeshDataUI() : texture{ nullptr } {};
-  MeshDataUI(vec2 transform, Texture* texture) :
+  MeshDataUI(unsigned long id) :
+    MeshDataBase(id),
+    texture{ nullptr } {};
+  MeshDataUI(unsigned long id, vec2 transform, Texture* texture) :
+    MeshDataBase(id),
     transform{ transform },
     texture{ texture } {};
   ~MeshDataUI() {};
@@ -154,7 +152,22 @@ public:
   mat4 transform;
   Texture* texture;
 private:
-  MeshDataOverlay3D(string& text, mat4& transform) : text{ text }, transform{ transform }, texture{ nullptr } {};
-  MeshDataOverlay3D() : texture{ nullptr } {};
+  MeshDataOverlay3D(unsigned long id, string& text, mat4& transform) :
+    MeshDataBase(id),
+    text{ text },
+    transform{ transform },
+    texture{ nullptr } {};
+  MeshDataOverlay3D(unsigned long id) :
+    MeshDataBase(id),
+    texture{ nullptr } {};
   ~MeshDataOverlay3D() {};
+};
+
+class MeshDataClickable : public SausageUserPointer {
+public:
+  MeshData* mesh_data;
+  MeshDataClickable(MeshData* mesh_data) : mesh_data{ mesh_data } {};
+  void Call() {
+    cout << "RayHit from mesh " << mesh_data->name << endl;
+  }
 };

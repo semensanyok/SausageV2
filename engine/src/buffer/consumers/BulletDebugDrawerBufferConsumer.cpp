@@ -4,7 +4,7 @@ void BulletDebugDrawerBufferConsumer::BufferMeshData(vector<vec3>& vertices,
   vector<unsigned int>& indices,
   vector<vec3>& colors)
 {
-  shared_ptr<MeshLoadData> load_data = mesh_manager->CreateMesh(vertices, indices, colors);
+  shared_ptr<MeshLoadData> load_data = mesh_manager->CreateLoadData(vertices, indices, colors);
   buffer->BufferMeshData(mesh, load_data);
 }
 

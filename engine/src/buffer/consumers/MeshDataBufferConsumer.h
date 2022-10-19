@@ -25,9 +25,8 @@ public:
   void ReleaseStorage(MeshDataBase* mesh);
   void Init();
   void Reset();
-  void BufferTransform(vector<MeshData*>& meshes);
-  void BufferTransform(MeshData* mesh);
+  void BufferTransform(unsigned int instance_offset, mat4& transform);
   void BufferLights(vector<Light*>& lights);
-  void BufferMeshTexture(MeshData* mesh);
+  void BufferTexture(unsigned int instance_offset, Texture* texture);
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms);
 };

@@ -29,17 +29,21 @@ vec4 FromAi(aiColor3D& aivec);
 Light* FromAi(aiLight* light);
 
 class MeshManager : public SausageSystem {
+  ThreadSafeNumberPool* mesh_id_pool;
+  ThreadSafeNumberPool* bone_id_pool;
+  unordered_map<unsigned long, MeshDataBase*> all_meshes;
+  // base_mesh_id -> instance_id -> mesh
+  unordered_map<unsigned long,
+    unordered_map<unsigned long, MeshDataInstance*>> instances_by_base_mesh_id;
+  vector<Armature*> all_armatures;
+  vector<Light*> all_lights;
  public:
    MeshManager();
    ~MeshManager();
-  ThreadSafeNumberPool* mesh_id_pool;
-  ThreadSafeNumberPool* bone_id_pool;
 
-  vector<MeshDataBase*> all_meshes;
-  vector<Armature*> all_armatures;
-  vector<Light*> all_lights;
 
   void DeleteMeshData(MeshDataBase* mesh);
+  void DeleteMeshDataInstance(MeshDataInstance* mesh);
 
   void Reset();
   
@@ -53,25 +57,25 @@ class MeshManager : public SausageSystem {
 
   Bone CreateBone(string bone_name, mat4& offset, mat4& trans);
   MeshData* CreateMeshData();
-  MeshData* CreateInstancedMesh(MeshData* base_mesh);;
   MeshData* CreateMeshData(MeshLoadData* load_data);
+  MeshDataInstance* CreateInstancedMesh(MeshDataBase * base_mesh, const unsigned long instance_id);
   MeshDataOverlay3D* CreateMeshDataFont3D(string& text, mat4& transform);
   MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr);
-  shared_ptr<MeshLoadData> CreateMesh(vector<Vertex>& vertices,
+  shared_ptr<MeshLoadData> CreateLoadData(vector<Vertex>& vertices,
                                       vector<unsigned int>& indices,
                                       Armature* armature = nullptr);
-  shared_ptr<MeshLoadData> CreateMesh(vector<float>& vertices,
+  shared_ptr<MeshLoadData> CreateLoadData(vector<float>& vertices,
                                       vector<unsigned int>& indices);
-  shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices,
+  shared_ptr<MeshLoadData> CreateLoadData(vector<vec3>& vertices,
                                       vector<unsigned int>& indices);
-  shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices,
+  shared_ptr<MeshLoadData> CreateLoadData(vector<vec3>& vertices,
                                       vector<unsigned int>& indices,
                                       vector<vec3>& normals);
-  shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices,
+  shared_ptr<MeshLoadData> CreateLoadData(vector<vec3>& vertices,
                                       vector<unsigned int>& indices,
                                       vector<vec3>& normals,
                                       vector<vec2>& uvs);
-  shared_ptr<MeshLoadData> CreateMesh(vector<vec3>& vertices,
+  shared_ptr<MeshLoadData> CreateLoadData(vector<vec3>& vertices,
                                       vector<unsigned int>& indices,
                                       vector<vec3>& normals,
                                       vector<vec2>& uvs,
@@ -108,4 +112,5 @@ class MeshManager : public SausageSystem {
   MaterialTexNames _GetTexNames(const aiMesh* mesh, const aiScene* scene,
                                 bool is_obj = false);
   void _BlenderPostprocessLights(vector<Light*>& lights);
+  void _ClearInstances();
 };

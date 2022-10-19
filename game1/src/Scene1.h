@@ -125,7 +125,7 @@ private:
       else {
         mesh = mesh_manager->CreateInstancedMesh(base_mesh_ptr->second);
         mesh->base_mesh = base_mesh_ptr->second;
-        draw_call_manager->AddNewInstanceSetInstanceId(mesh);
+        draw_call_manager->AddNewInstance(mesh);
       }
       mesh_data_buffer->BufferTransform(mesh);
 

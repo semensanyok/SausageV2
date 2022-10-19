@@ -65,21 +65,9 @@ Light* FromAi(aiLight* light) {
 }
 
 void MeshManager::Reset() {
-  for (auto mesh : all_meshes) {
-    if (mesh != NULL && mesh != nullptr)
-      DeleteMeshData(mesh);
-  }
-  for (auto armature : all_armatures) {
-    if (armature != NULL && armature != nullptr)
-      delete armature;
-  }
-  for (auto light : all_lights) {
-    if (light != NULL && light != nullptr)
-      delete light;
-  }
-  all_meshes.clear();
-  all_armatures.clear();
-  all_lights.clear();
+  _ClearInstances();
+  mesh_id_pool->Reset();
+  bone_id_pool->Reset();
 }
 
 void MeshManager::LoadMeshes(
@@ -168,72 +156,97 @@ Bone MeshManager::CreateBone(string bone_name, mat4& offset, mat4& trans) {
 }
 
 MeshData* MeshManager::CreateMeshData() {
-  auto mesh = new MeshData();
-  mesh->id = mesh_id_pool->ObtainNumber();
-  mesh->buffer_id = -1;
-  // caller must set instance_id
-  // via DrawCallManager.AddNewInstanceSetInstanceId
-  //mesh->instance_id = 0;
-  all_meshes.push_back(mesh);
-  return mesh;
-}
-
-MeshData* MeshManager::CreateInstancedMesh(MeshData* base_mesh) {
-  auto* mesh = new MeshData();
-  mesh->id = mesh_id_pool->ObtainNumber();
-  mesh->buffer_id = base_mesh->buffer_id;
-  mesh->base_mesh = base_mesh;
-  // caller must set instance_id
-  // via DrawCallManager.AddInstanceGetInstanceId
-  //mesh->instance_id = 0;
-  all_meshes.push_back(mesh);
+  auto mesh = new MeshData(mesh_id_pool->ObtainNumber());
+  all_meshes[mesh->id] = mesh;
   return mesh;
 }
 
 MeshData* MeshManager::CreateMeshData(MeshLoadData* load_data) {
-  auto mesh = new MeshData(load_data);
-  mesh->id = mesh_id_pool->ObtainNumber();
-  mesh->buffer_id = -1;
-  mesh->instance_id = 0;
-  all_meshes.push_back(mesh);
+  auto mesh = new MeshData(mesh_id_pool->ObtainNumber(), load_data);
+  all_meshes[mesh->id] = mesh;
+  return mesh;
+}
+
+MeshDataInstance* MeshManager::CreateInstancedMesh(MeshDataBase* base_mesh, const unsigned long instance_id) {
+  auto* mesh = new MeshDataInstance(mat4(1), instance_id, base_mesh);
+  auto instances_by_id = instances_by_base_mesh_id[base_mesh->id];
+  instances_by_id[mesh->instance_id] = mesh;
   return mesh;
 }
 
 MeshManager::MeshManager() {
-  mesh_id_pool = new ThreadSafeNumberPool(MAX_BASE_AND_INSTANCED_MESHES);
+  mesh_id_pool = new ThreadSafeNumberPool(MAX_BASE_MESHES);
   bone_id_pool = new ThreadSafeNumberPool(MAX_BONES);
 }
 
 MeshManager::~MeshManager() {
+  _ClearInstances();
   delete mesh_id_pool;
   delete bone_id_pool;
 }
 
 void MeshManager::DeleteMeshData(MeshDataBase* mesh) {
   mesh_id_pool->ReleaseNumber(mesh->id);
+  // reused among meshes. TODO: manage somehow, currently memory leak
+  //for (auto armature : all_armatures) {
+  //  for (auto bone : armature->id_to_bone) {
+  //    delete bone.second;
+  //  }
+  //  delete armature;
+  //}
+  if (instances_by_base_mesh_id.contains(mesh->id)) {
+    for (auto instance_by_id : instances_by_base_mesh_id[mesh->id]) {
+      delete instance_by_id.second;
+    }
+    instances_by_base_mesh_id.erase(mesh->id);
+  }
+  all_meshes.erase(mesh->id);
+  delete mesh;
+}
+
+void MeshManager::_ClearInstances() {
+  for (auto mesh : all_meshes) {
+    auto instances = instances_by_base_mesh_id.find(mesh.second->id);
+    if (instances_by_base_mesh_id.contains(mesh.second->id)) {
+      for (auto instance : instances_by_base_mesh_id[mesh.second->id]) {
+        delete instance.second;
+      }
+    }
+    delete mesh.second;
+  }
+  for (auto armature : all_armatures) {
+    if (armature != NULL && armature != nullptr)
+      delete armature;
+  }
+  for (auto light : all_lights) {
+    if (light != NULL && light != nullptr)
+      delete light;
+  }
+  all_meshes.clear();
+  all_armatures.clear();
+  all_lights.clear();
+}
+
+void MeshManager::DeleteMeshDataInstance(MeshDataInstance* mesh) {
+  if (instances_by_base_mesh_id.contains(mesh->base_mesh->id)) {
+    instances_by_base_mesh_id[mesh->base_mesh->id].erase(mesh->instance_id);
+  }
   delete mesh;
 }
 
 MeshDataOverlay3D* MeshManager::CreateMeshDataFont3D(string& text, mat4& transform) {
-  auto mesh = new MeshDataOverlay3D(text, transform);
-  mesh->id = mesh_id_pool->ObtainNumber();
-  mesh->buffer_id = -1;
-  mesh->instance_id = 0;
-  all_meshes.push_back(mesh);
+  auto mesh = new MeshDataOverlay3D(mesh_id_pool->ObtainNumber(), text, transform);
+  all_meshes[mesh->id] = mesh;
   return mesh;
 }
 
 MeshDataUI* MeshManager::CreateMeshDataFontUI(vec2 transform, Texture* texture) {
-  auto mesh = new MeshDataUI(transform, texture);
-  mesh->id = mesh_id_pool->ObtainNumber();
-  mesh->buffer_id = -1;
-  mesh->instance_id = 0;
-  mesh->transform = transform;
-  all_meshes.push_back(mesh);
+  auto mesh = new MeshDataUI(mesh_id_pool->ObtainNumber(), transform, texture);
+  all_meshes[mesh->id] = mesh;
   return mesh;
 }
 
-shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<Vertex>& vertices,
+shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<Vertex>& vertices,
                                                  vector<unsigned int>& indices,
                                                  Armature* armature) {
   auto mld_ptr =
@@ -241,13 +254,13 @@ shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<Vertex>& vertices,
   return shared_ptr<MeshLoadData>(mld_ptr);
 }
 
-shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<vec3>& vertices,
+shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<vec3>& vertices,
                                                  vector<unsigned int>& indices) {
   vector<vec3> empty;
-  return CreateMesh(vertices, indices, empty);
+  return CreateLoadData(vertices, indices, empty);
 }
 
-shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<vec3>& vertices,
+shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<vec3>& vertices,
                                                  vector<unsigned int>& indices,
                                                  vector<vec3>& normals) {
   vector<Vertex> positions;
@@ -259,10 +272,10 @@ shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<vec3>& vertices,
     }
     positions.push_back(vert);
   }
-  return CreateMesh(positions, indices, nullptr);
+  return CreateLoadData(positions, indices, nullptr);
 }
 
-shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<vec3>& vertices,
+shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<vec3>& vertices,
                                                  vector<unsigned int>& indices,
                                                  vector<vec3>& normals,
                                                  vector<vec2>& uvs) {
@@ -278,10 +291,10 @@ shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<vec3>& vertices,
     }
     positions.push_back(vert);
   }
-  return CreateMesh(positions, indices, nullptr);
+  return CreateLoadData(positions, indices, nullptr);
 }
 
-shared_ptr<MeshLoadData> MeshManager::CreateMesh(
+shared_ptr<MeshLoadData> MeshManager::CreateLoadData(
     vector<vec3>& vertices, vector<unsigned int>& indices,
     vector<vec3>& normals, vector<vec2>& uvs, vector<vec3>& tangents) {
   vector<Vertex> positions;
@@ -299,7 +312,7 @@ shared_ptr<MeshLoadData> MeshManager::CreateMesh(
     }
     positions.push_back(vert);
   }
-  return CreateMesh(positions, indices, nullptr);
+  return CreateLoadData(positions, indices, nullptr);
 }
 
 string MeshManager::GetBoneName(const char* bone,
@@ -393,7 +406,7 @@ shared_ptr<MeshLoadData> MeshManager::ProcessMesh(aiMesh* mesh,
     for (unsigned int j = 0; j < face.mNumIndices; j++)
       indices.push_back(face.mIndices[j]);
   }
-  return CreateMesh(vertices, indices, armature);
+  return CreateLoadData(vertices, indices, armature);
 }
 
 aiNode* MeshManager::_GetBoneNode(Armature* armature, const char* bone_name,
@@ -550,7 +563,7 @@ void MeshManager::_BlenderPostprocessLights(vector<Light*>& lights) {
   }
 }
 
-shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<float>& vertices,
+shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<float>& vertices,
                                                  vector<unsigned int>& indices) {
   vector<Vertex> positions;
   for (int i = 0; i < vertices.size(); i += 3) {
@@ -558,5 +571,5 @@ shared_ptr<MeshLoadData> MeshManager::CreateMesh(vector<float>& vertices,
     vert.Position = vec3(vertices[i], vertices[i + 1], vertices[i + 2]);
     positions.push_back(vert);
   }
-  return CreateMesh(positions, indices, nullptr);
+  return CreateLoadData(positions, indices, nullptr);
 }

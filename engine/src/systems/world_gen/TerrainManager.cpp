@@ -116,75 +116,70 @@ void TerrainManager::Deactivate(TerrainChunk* chunk)
 void TerrainManager::Buffer(TerrainChunk* chunk) {
   // EACH VERTEX SHARED AMONG 1 - 4 TILES (CORNER 1 TILE, TOP/BOTTOM/LEFT/RIGHT BORDER - 2 TILES, OTHER - 4 TILES)
 
+  auto base = GetBasePlane(chunk, &chunk->tiles[0], chunk->tiles.size());
+  buffer->BufferTransform(base->GetInstanceOffset(), base->transform);
   for (int i = 0; i < chunk->tiles.size(); i++) {
     auto tile = &chunk->tiles[i];
-    auto mesh_data = GetInstancedPlaneWithBaseMeshTransform(chunk, tile);
-    mesh_data->transform = translate(mesh_data->transform, tile->x0y0z);
-    buffer->BufferTransform(mesh_data);
+    auto instance = CreatePlaneInstance(base);
+    instance->transform = translate(base->transform, tile->x0y0z);
+    buffer->BufferTransform(instance->GetInstanceOffset(), instance->transform);
     // TODO: assign blend textures
   }
 }
 
-MeshData* TerrainManager::GetInstancedPlaneWithBaseMeshTransform(
+MeshData* TerrainManager::GetBasePlane(
   TerrainChunk* chunk, TerrainTile* tile, unsigned int instance_count
   //, vec2& out_face_normal
 ) {
-  auto existing = planes_for_instanced_meshes.find(chunk->tile_size);
-  if (existing == planes_for_instanced_meshes.end()) {
-
-    // TODO: for any number of vertices, not just hardcoded 2
-    float half_size_x = (float)chunk->scale / 2;
-    float half_size_y = (float)chunk->scale / 2;
-    std::vector<vec3> vertices = {
-        vec3(half_size_x,  half_size_y, 0.0f),  // top right
-        vec3(half_size_x, -half_size_y, 0.0f),  // bottom right
-        vec3(- half_size_x, -half_size_y, 0.0f),  // bottom left
-        vec3(-half_size_x,  half_size_y, 0.0f)   // top left 
-    };
-    std::vector<unsigned int> indices = {
-      0, 1, 3,  // first Triangle
-      1, 2, 3   // second Triangle
-    };
-
-    // need to calculate vertex normal as mean of 4 faces normals
-    // but we have instanced draw call, same normal for all tiles...
-    // but transform mat4 should adjust each vertex normal to be equal to face normal
-    // TODO: check that:
-    //  expected to see seems between tiles and not smooth shading, each tile having constant light, no interpolation
-    //  normal texture should make it a bit less visible though
-    //out_face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
-    vec3 face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
-    vector<vec3> normals = {
-      face_normal,
-      face_normal,
-      face_normal,
-      face_normal
-    };
-
-    auto load_data = mesh_manager->CreateMesh(vertices, indices, normals);
-    auto base_mesh = mesh_manager->CreateMeshData();
-
-    base_mesh->transform = translate(mat4(1), chunk->pos);
-
-    buffer->AllocateStorage(base_mesh, vertices.size(), indices.size());
-    buffer->BufferMeshData(base_mesh, load_data);
-    draw_call_manager->AddNewCommandToDrawCall(base_mesh, draw_call_manager->mesh_dc, instance_count);
-
-    tile->mesh_data = base_mesh;
-
-    planes_for_instanced_meshes[chunk->tile_size] = base_mesh;
-    return planes_for_instanced_meshes[chunk->tile_size];
-
+  if (planes_base_meshes.contains(chunk->tile_size)) {
+    return planes_base_meshes[chunk->tile_size];
   }
-  else {
+  // TODO: for any number of vertices, not just hardcoded 2
+  float half_size_x = (float)chunk->scale / 2;
+  float half_size_y = (float)chunk->scale / 2;
+  std::vector<vec3> vertices = {
+      vec3(half_size_x,  half_size_y, 0.0f),  // top right
+      vec3(half_size_x, -half_size_y, 0.0f),  // bottom right
+      vec3(-half_size_x, -half_size_y, 0.0f),  // bottom left
+      vec3(-half_size_x,  half_size_y, 0.0f)   // top left 
+  };
+  std::vector<unsigned int> indices = {
+    0, 1, 3,  // first Triangle
+    1, 2, 3   // second Triangle
+  };
 
-    auto base_mesh = existing->second;
-    auto instanced_mesh = mesh_manager->CreateInstancedMesh(base_mesh);
-    instanced_mesh->transform = base_mesh->transform;
-    draw_call_manager->SetInstanceCountToCommand(base_mesh, instance_count);
-    draw_call_manager->AddNewInstanceSetInstanceId(instanced_mesh);
-    return instanced_mesh;
-  }
+  // need to calculate vertex normal as mean of 4 faces normals
+  // but we have instanced draw call, same normal for all tiles...
+  // but transform mat4 should adjust each vertex normal to be equal to face normal
+  // TODO: check that:
+  //  expected to see seems between tiles and not smooth shading, each tile having constant light, no interpolation
+  //  normal texture should make it a bit less visible though
+  //out_face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
+  vec3 face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
+  vector<vec3> normals = {
+    face_normal,
+    face_normal,
+    face_normal,
+    face_normal
+  };
+
+  auto load_data = mesh_manager->CreateLoadData(vertices, indices, normals);
+  auto base_mesh = mesh_manager->CreateMeshData();
+
+  base_mesh->transform = translate(mat4(1), chunk->pos);
+
+  buffer->AllocateStorage(base_mesh, vertices.size(), indices.size());
+  buffer->BufferMeshData(base_mesh, load_data);
+  draw_call_manager->AddNewCommandToDrawCall(base_mesh, draw_call_manager->mesh_dc, instance_count);
+
+  tile->mesh_data = base_mesh;
+
+  planes_base_meshes[chunk->tile_size] = base_mesh;
+  return planes_base_meshes[chunk->tile_size];
+}
+
+MeshDataInstance* TerrainManager::CreatePlaneInstance(MeshData* base) {
+  return draw_call_manager->AddNewInstance(base);
 }
 
 // Test create terrain, first prototype

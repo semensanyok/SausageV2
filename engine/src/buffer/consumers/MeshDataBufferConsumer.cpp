@@ -9,7 +9,7 @@ void MeshDataBufferConsumer::BufferMeshData(
 }
 
 void MeshDataBufferConsumer::ReleaseStorage(MeshDataBase* mesh) {
-  buffer->ReleaseStorage(mesh);
+  buffer->ReleaseStorage(mesh->slots);
 }
 
 void MeshDataBufferConsumer::Init() {
@@ -19,20 +19,16 @@ void MeshDataBufferConsumer::Init() {
 void MeshDataBufferConsumer::Reset() {
 }
 
-void MeshDataBufferConsumer::BufferTransform(vector<MeshData*>& meshes) {
-  buffer->BufferTransform(meshes);
-}
-
-void MeshDataBufferConsumer::BufferTransform(MeshData* mesh) {
-  buffer->BufferTransform(mesh);
+void MeshDataBufferConsumer::BufferTransform(unsigned int instance_offset, mat4& transform) {
+  buffer->BufferTransform(instance_offset, transform);
 }
 
 void MeshDataBufferConsumer::BufferLights(vector<Light*>& lights) {
   buffer->BufferLights(lights);
 }
 
-void MeshDataBufferConsumer::BufferMeshTexture(MeshData* mesh) {
-  buffer->BufferMeshTexture(mesh);
+void MeshDataBufferConsumer::BufferTexture(unsigned int instance_offset, Texture* texture) {
+  buffer->BufferTexture(instance_offset, texture);
 }
 
 void MeshDataBufferConsumer::BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms) {

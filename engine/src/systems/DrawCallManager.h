@@ -7,6 +7,8 @@
 #include "Logging.h"
 #include "DrawCallStruct.h"
 #include "Renderer.h"
+#include "MeshDataStruct.h"
+#include "MeshManager.h"
 
 using namespace std;
 
@@ -31,6 +33,8 @@ public:
 
   BufferStorage* buffer;
 
+  MeshManager* mesh_manager;
+
   map<unsigned int, DrawCall*> draw_call_by_id;
   // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
   // for simlicity - keep 1 command for now
@@ -40,10 +44,13 @@ public:
   DrawCallManager(
     ShaderManager* shader_manager,
     Renderer* renderer,
-    BufferStorage* buffer
+    BufferStorage* buffer,
+    MeshManager* mesh_manager
   ) : renderer{ renderer },
     command_buffer_arena{ new Arena({0, MAX_COMMAND}) },
-    buffer{ buffer } {
+    buffer{ buffer },
+    mesh_manager{ mesh_manager }
+  {
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
@@ -91,22 +98,26 @@ public:
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
   }
 
-  void AddNewInstanceSetInstanceId(MeshDataBase* mesh) {
+  MeshDataInstance* AddNewInstance(MeshDataBase* mesh) {
     // TODO: if new instance count doesnt fit in existing transforms slot
     //       - reallocate transform offsets, release transform slot
     //       early exit if current slot is enough
-    auto command_iter = command_by_mesh_id.find(mesh->base_mesh->id);
+    auto command_iter = command_by_mesh_id.find(mesh->id);
     DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
     auto& command = command_iter->second;
+    // TODO: ensure instances_slot reallocation in caller service
+    //       or better to do it here, where instance first initiated?
+    DEBUG_ASSERT(command.command.instanceCount + 1 <= mesh->slots.instances_slot.count);
     // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
-    mesh->instance_id = command.command.instanceCount++;
+    mesh_manager->CreateInstancedMesh(mesh, command.command.instanceCount++);
+    mesh->slots.instances_slot.used = command.command.instanceCount;
     buffer->BufferCommand(command.command, command.command_buffer_offset);
   }
 
   /**
    * @brief sets instance count to base mesh draw command.
    *        this command doesnt modify mesh.instance_id
-   *        (to set instance_id automatically use AddNewInstanceSetInstanceId)
+   *        (to set instance_id automatically use AddNewInstance)
    *        note that mesh.instance_id (gl_InstanceID) is in range [0,instance_count-1]
   */
   void SetInstanceCountToCommand(MeshDataBase* mesh, GLuint instance_count) {
@@ -116,18 +127,17 @@ public:
     auto command_iter = command_by_mesh_id.find(mesh->id);
     DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
     auto& command = command_iter->second;
-    if (command.command.instanceCount <= instance_count) {
-      buffer->ReleaseStorage()
-    }
+    // TODO: ensure instances_slot reallocation in caller service
+    DEBUG_ASSERT(instance_count <= mesh->slots.instances_slot.count);
     command.command.instanceCount = instance_count;
+    mesh->slots.instances_slot.used = instance_count;
     buffer->BufferCommand(command.command, command.command_buffer_offset);
   }
-
 
   /**
    * make sure to pre allocate expected number of instances
    * for instanced call,
-   * to avoid frequent command rebuffer and Arena#aquire/release with each AddNewInstanceSetInstanceId
+   * to avoid frequent command rebuffer and Arena#aquire/release with each AddNewInstance
    * 
    * @param out_mesh mesh with command/index/vertex slots and buffer_id
    *        allocated via BufferStorage#AllocateStorage
@@ -156,9 +166,8 @@ public:
     MeshDataBase* mesh,
     GLuint instance_count
   ) {
-    auto draw_command = command_by_mesh_id.find(mesh->id);
-    DEBUG_ASSERT(draw_command != command_by_mesh_id.end());
-    SetToCommandWithOffsets(draw_command->second, mesh, instance_count);
+    DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
+    SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh, instance_count);
   }
 
   void SetToCommandWithOffsets(
@@ -168,10 +177,10 @@ public:
   ) {
     auto& command = command_with_meta.command;
     command.instanceCount = instance_count;
-    command.count = mesh->index_slot.used;
-    command.firstIndex = mesh->index_slot.offset;
-    command.baseVertex = mesh->vertex_slot.offset;
-    command.baseInstance = mesh->buffer_id;
+    command.count = mesh->slots.index_slot.used;
+    command.firstIndex = mesh->slots.index_slot.offset;
+    command.baseVertex = mesh->slots.vertex_slot.offset;
+    command.baseInstance = mesh->slots.buffer_id;
 
     BufferStorage::GetInstance()->BufferCommand(command, command_with_meta.command_buffer_offset);
   }

@@ -128,7 +128,7 @@ class TerrainManager
   // TEST VALUES
   FastNoise::SmartNode<FastNoise::FractalFBm> fnFractal;
   FastNoise::SmartNode<FastNoise::Simplex> fnSimplex;
-  unordered_map<TileSizeParameters, MeshData*> planes_for_instanced_meshes;
+  unordered_map<TileSizeParameters, MeshData*> planes_base_meshes;
   DrawCallManager* draw_call_manager;
 public:
   TerrainManager(BufferManager* buffer_manager,
@@ -165,6 +165,9 @@ private:
   // each tile is a single instanced draw command
   // buffered and disabled alltogether.
   // same size plane is reused between all commands
-  MeshData* GetInstancedPlaneWithBaseMeshTransform(TerrainChunk* chunk, TerrainTile* tile);
+  MeshData* GetBasePlane(TerrainChunk* chunk,
+    TerrainTile* tile,
+    unsigned int instance_count);
+  MeshDataInstance* CreatePlaneInstance(MeshData* base);
   ~TerrainManager() {};
 };

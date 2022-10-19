@@ -34,7 +34,8 @@ struct Animation {
   unordered_map<string, BoneKeyFrames> bone_frames;
 };
 
-struct Armature {
+class Armature {
+public:
   string name;
   unsigned int num_bones;
   Bone* bones;
@@ -42,6 +43,12 @@ struct Armature {
   unordered_map<string, Bone*> name_to_bone;
   unordered_map<unsigned int, Bone*> id_to_bone;
   unordered_map<string, Animation*> name_to_anim;
+  ~Armature() {
+    for (auto bone : id_to_bone) {
+      delete bone.second;
+    }
+    delete bones;
+  }
 };
 
 // not blended channels

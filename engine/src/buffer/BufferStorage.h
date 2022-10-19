@@ -82,15 +82,16 @@ class BufferStorage {
   void ReleaseInstancesSlot(MeshDataSlots& out_slots);
   void BufferBoneTransform(unordered_map<unsigned int, mat4> &id_to_transform);
   void BufferBoneTransform(Bone *bone, mat4 &trans, unsigned int num_bones = 1);
-  void BufferTransform(MeshData *mesh);
-  void BufferTransform(vector<MeshData *> &mesh);
+  /**
+   * @brief instance_offset is base mesh offset (MeshDataSlots#instances_slot#offset)
+   *        plus instance id (glInstanceID), 0 for base mesh
+  */
+  void BufferTransform(unsigned int instance_offset, mat4& transform);
   void BufferLights(vector<Light *> &lights);
   void BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind);
 
   void BufferTextureHandle(Texture* texture);
-  void BufferMeshTexture(MeshData* mesh);
-  void BufferFontTexture(MeshDataBase* mesh, Texture* texture);
-  void Buffer3DFontTransform(MeshDataOverlay3D* mesh);;
+  void BufferTexture(unsigned int instance_offset, Texture* texture);
   void BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
   void BufferUniformDataUITransform(MeshDataUI* mesh);;
   void BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click);

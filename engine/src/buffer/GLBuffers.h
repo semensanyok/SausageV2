@@ -50,6 +50,7 @@ public:
   UniformDataUI* uniforms_ui_ptr;
   ControllerUniformData* uniforms_controller_ptr;
 
+  // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
   void SetSyncBarrier() {
     is_need_barrier = true;
   }
