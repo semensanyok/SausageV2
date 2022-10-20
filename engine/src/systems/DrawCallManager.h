@@ -54,6 +54,8 @@ public:
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
+      // TODO: set required command count as constexpr in ScreenOverlayManager.h
+      //       because it creates mesh for each button as separate command
       command_buffer_arena->Allocate(1),
       false
     );
@@ -99,9 +101,6 @@ public:
   }
 
   MeshDataInstance* AddNewInstance(MeshDataBase* mesh) {
-    // TODO: if new instance count doesnt fit in existing transforms slot
-    //       - reallocate transform offsets, release transform slot
-    //       early exit if current slot is enough
     auto command_iter = command_by_mesh_id.find(mesh->id);
     DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
     auto& command = command_iter->second;
@@ -182,7 +181,7 @@ public:
     command.baseVertex = mesh->slots.vertex_slot.offset;
     command.baseInstance = mesh->slots.buffer_id;
 
-    BufferStorage::GetInstance()->BufferCommand(command, command_with_meta.command_buffer_offset);
+    buffer->BufferCommand(command, command_with_meta.command_buffer_offset);
   }
 
   void DisableCommand(MeshDataBase* mesh) {

@@ -253,7 +253,7 @@ private:
     BatchDataUI* batch,
     MeshDataUI* mesh
   ) {
-    buffer->AllocateStorage(mesh, batch->vertices.size(), batch->indices.size());
+    buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size(), );
     buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
     buffer->BufferTransform(mesh);
     buffer->BufferSize(mesh, batch->x_min, batch->x_max, batch->y_min, batch->y_max);

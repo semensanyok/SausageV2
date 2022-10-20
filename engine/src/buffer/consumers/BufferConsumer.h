@@ -15,9 +15,10 @@ public:
   {
   }
   bool AllocateStorage(
-    MeshDataBase* out_mesh,
+    MeshDataSlots& out_slots,
     unsigned long vertices_size,
-    unsigned long indices_size
+    unsigned long indices_size,
+    unsigned long num_instances
   );
   void Init();
   void PreDraw();

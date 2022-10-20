@@ -86,12 +86,12 @@ class BufferStorage {
    * @brief instance_offset is base mesh offset (MeshDataSlots#instances_slot#offset)
    *        plus instance id (glInstanceID), 0 for base mesh
   */
-  void BufferTransform(unsigned int instance_offset, mat4& transform);
+  void BufferTransform(BufferInstanceOffset* offset, mat4& transform);
   void BufferLights(vector<Light *> &lights);
   void BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind);
 
   void BufferTextureHandle(Texture* texture);
-  void BufferTexture(unsigned int instance_offset, Texture* texture);
+  void BufferTexture(BufferInstanceOffset* offset, Texture* texture);
   void BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
   void BufferUniformDataUITransform(MeshDataUI* mesh);;
   void BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click);

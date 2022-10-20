@@ -1,7 +1,10 @@
 #include "BufferConsumer.h"
 
-bool BufferConsumer::AllocateStorage(MeshDataBase* out_mesh, unsigned long vertices_size, unsigned long indices_size) {
-    return buffer->AllocateStorage(out_mesh, vertices_size, indices_size);
+bool BufferConsumer::AllocateStorage(MeshDataSlots& out_slots,
+  unsigned long vertices_size,
+  unsigned long indices_size,
+  unsigned long num_instances) {
+  return buffer->AllocateStorage(out_slots, vertices_size, indices_size, num_instances);
 }
 
 void BufferConsumer::Init()

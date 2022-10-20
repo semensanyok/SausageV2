@@ -56,7 +56,7 @@ public:
 private:
   MemorySlot Allocate(unsigned int command_count) {
     MemorySlot slot = command_buffer_sub_arena->Allocate(command_count);
-    DEBUG_ASSERT(slot != Arena::NULL_SLOT);
+    DEBUG_ASSERT(slot != MemorySlots::NULL_SLOT);
     return slot;
   }
   void Release(MemorySlot slot) {

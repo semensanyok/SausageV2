@@ -114,21 +114,20 @@ void TerrainManager::Deactivate(TerrainChunk* chunk)
 }
 
 void TerrainManager::Buffer(TerrainChunk* chunk) {
-  // EACH VERTEX SHARED AMONG 1 - 4 TILES (CORNER 1 TILE, TOP/BOTTOM/LEFT/RIGHT BORDER - 2 TILES, OTHER - 4 TILES)
-
-  auto base = GetBasePlane(chunk, &chunk->tiles[0], chunk->tiles.size());
-  buffer->BufferTransform(base->GetInstanceOffset(), base->transform);
+  auto base = GetBasePlane(chunk, &chunk->tiles[0]);
+  buffer->BufferTransform(base, base->transform);
   for (int i = 0; i < chunk->tiles.size(); i++) {
     auto tile = &chunk->tiles[i];
     auto instance = CreatePlaneInstance(base);
     instance->transform = translate(base->transform, tile->x0y0z);
-    buffer->BufferTransform(instance->GetInstanceOffset(), instance->transform);
+    buffer->BufferTransform(instance, instance->transform);
     // TODO: assign blend textures
   }
 }
 
 MeshData* TerrainManager::GetBasePlane(
-  TerrainChunk* chunk, TerrainTile* tile, unsigned int instance_count
+  TerrainChunk* chunk,
+  TerrainTile* tile
   //, vec2& out_face_normal
 ) {
   if (planes_base_meshes.contains(chunk->tile_size)) {
@@ -168,9 +167,9 @@ MeshData* TerrainManager::GetBasePlane(
 
   base_mesh->transform = translate(mat4(1), chunk->pos);
 
-  buffer->AllocateStorage(base_mesh, vertices.size(), indices.size());
+  buffer->AllocateStorage(base_mesh->slots, vertices.size(), indices.size(), chunk->tiles.size());
   buffer->BufferMeshData(base_mesh, load_data);
-  draw_call_manager->AddNewCommandToDrawCall(base_mesh, draw_call_manager->mesh_dc, instance_count);
+  draw_call_manager->AddNewCommandToDrawCall(base_mesh, draw_call_manager->mesh_dc, chunk->tiles.size());
 
   tile->mesh_data = base_mesh;
 

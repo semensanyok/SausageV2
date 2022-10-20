@@ -45,7 +45,7 @@ public:
     buffer_id{ -1 } {}
 };
 
-class MeshDataBase
+class MeshDataBase : public BufferInstanceOffset
 {
   friend class MeshDataManager;
   friend class MeshManager;
@@ -57,7 +57,7 @@ class MeshDataBase
 public:
   MeshDataSlots slots;
   const unsigned long id;
-  inline unsigned long GetInstanceOffset() {
+  inline unsigned long GetInstanceOffset() override {
     return slots.instances_slot.offset;
   }
 private:
@@ -109,7 +109,7 @@ private:
  * instance of MeshData
  * (same vertices + textures)
 */
-class MeshDataInstance {
+class MeshDataInstance : public BufferInstanceOffset {
   friend class MeshManager;
 public:
   mat4 transform;
@@ -120,7 +120,7 @@ public:
   //
   // 2. decided to have base pointer here. when need to reference to armature/physics/etc. - cast it to MeshData*
   const MeshDataBase* base_mesh;
-  inline unsigned long GetInstanceOffset() {
+  inline unsigned long GetInstanceOffset() override {
     return base_mesh->slots.instances_slot.offset + instance_id;
   }
 private:

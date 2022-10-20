@@ -145,13 +145,13 @@ void BufferStorage::BufferTextureHandle(Texture* texture)
   gl_buffers->SetSyncBarrier();
 }
 
-void BufferStorage::BufferTexture(unsigned int instance_offset, Texture* texture) {
-  gl_buffers->font_texture_ptr[instance_offset] = texture->texture_handle_ARB;
+void BufferStorage::BufferTexture(BufferInstanceOffset* offset, Texture* texture) {
+  gl_buffers->font_texture_ptr[offset->GetInstanceOffset()] = texture->texture_handle_ARB;
   gl_buffers->SetSyncBarrier();
 }
 
-void BufferStorage::BufferTransform(unsigned int instance_offset, mat4& transform) {
-  gl_buffers->uniforms_ptr->transforms[instance_offset] = transform;
+void BufferStorage::BufferTransform(BufferInstanceOffset* offset, mat4& transform) {
+  gl_buffers->uniforms_ptr->transforms[offset->GetInstanceOffset()] = transform;
   gl_buffers->SetSyncBarrier();
 }
 

@@ -28,6 +28,12 @@ namespace UniformsLocations {
   const int BLEND_TEXTURES_BY_MESH_ID_LOC = 7;
 };
 
+class BufferInstanceOffset {
+public:
+  // - used as offset to buffer uniform arrays: transform, texture, ...?
+  virtual unsigned long GetInstanceOffset() = 0;
+};
+
 struct BlendTexturesByMeshIdUniform {
   BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES]; // alignment 4 bytes
 };

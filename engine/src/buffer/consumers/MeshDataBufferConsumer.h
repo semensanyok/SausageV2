@@ -9,6 +9,7 @@
 #include "BufferConsumer.h"
 #include "BufferSettings.h"
 #include "MeshDataStruct.h"
+#include "GPUUniformsStruct.h"
 
 using namespace std;
 
@@ -25,8 +26,8 @@ public:
   void ReleaseStorage(MeshDataBase* mesh);
   void Init();
   void Reset();
-  void BufferTransform(unsigned int instance_offset, mat4& transform);
+  void BufferTransform(BufferInstanceOffset* offset, mat4& transform);
   void BufferLights(vector<Light*>& lights);
-  void BufferTexture(unsigned int instance_offset, Texture* texture);
+  void BufferTexture(BufferInstanceOffset* offset, Texture* texture);
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms);
 };

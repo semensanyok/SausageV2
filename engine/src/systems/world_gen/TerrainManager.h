@@ -166,8 +166,7 @@ private:
   // buffered and disabled alltogether.
   // same size plane is reused between all commands
   MeshData* GetBasePlane(TerrainChunk* chunk,
-    TerrainTile* tile,
-    unsigned int instance_count);
+    TerrainTile* tile);
   MeshDataInstance* CreatePlaneInstance(MeshData* base);
   ~TerrainManager() {};
 };

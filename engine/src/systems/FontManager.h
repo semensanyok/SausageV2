@@ -17,6 +17,11 @@ using namespace std;
 
 class FontManager;
 
+/*
+TODO: refactor
+
+
+*/
 namespace FontSizes {
   enum FontSizes {
     //STANDART = 24,
@@ -129,6 +134,14 @@ class FontManager : public SausageSystem {
   //  current_3d_batch.push_back(batch);
   //  draw_call_3d->command_count = 1;
   //}
+
+  /*
+  * yields one plane mesh with vertices, whose data contain glyph id.
+  * spacing between letters (vertices) is not constant, depends advance/descent between neighbour chars
+  *
+  * Note: could do a single instanced plane for each letter and calculate transform dynamically,
+  *       but probably transparency issues (dont remember)
+  */
   unique_ptr<BatchDataUI> GetMeshTextUI(
     string& text,
     vec3 color,
