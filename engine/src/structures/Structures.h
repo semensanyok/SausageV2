@@ -5,9 +5,6 @@
 using namespace std;
 using namespace glm;
 
-class BufferStorage;
-class BufferConsumer;
-
 struct Point {
   int x;
   int y;
@@ -27,20 +24,3 @@ struct std::formatter<Point> : std::formatter<std::string> {
       std::format("(x={}, y={})", p.x, p.y), ctx);
   }
 };
-
-namespace AnchorRelativeToNodePosition {
-  enum AnchorRelativeToNodePosition {
-    LeftBottom,
-    LeftTop,
-    RightBottom,
-    RightTop,
-  };
-}
-
-struct UINodePosition {
-  Point anchor_position;
-  AnchorRelativeToNodePosition::AnchorRelativeToNodePosition anchor_relative_to_node_position;
-  int width;
-  int height;
-};
-

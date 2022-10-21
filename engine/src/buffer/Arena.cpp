@@ -12,18 +12,19 @@ unsigned int Arena::GetBaseOffset() {
 MemorySlot Arena::Allocate(const unsigned int size) {
   lock_guard l(mtx);
   unsigned int free_space = _GetFreeSpace();
-  auto size_encompassing_power_of_2 = _GetSmallestEncompassingPowerOf2(size);
+  auto size_to_alloc = is_allocate_powers_of_2 ?
+    _GetSmallestEncompassingPowerOf2(size) : size;
   if (free_gaps_slots.empty()) {
-    MemorySlot res = _AllocateNewSlotIfHasSpace(size_encompassing_power_of_2, size);
+    MemorySlot res = _AllocateNewSlotIfHasSpace(size_to_alloc, size);
     return res;
   }
   else {
-    auto maybe_gap = free_gaps_slots.lower_bound({ 0, size_encompassing_power_of_2 });
+    auto maybe_gap = free_gaps_slots.lower_bound({ 0, size_to_alloc });
     if (maybe_gap == free_gaps_slots.end()) {
-      MemorySlot res = _AllocateNewSlotIfHasSpace(size_encompassing_power_of_2, size);
+      MemorySlot res = _AllocateNewSlotIfHasSpace(size_to_alloc, size);
       return res;
     }
-    bool is_exact = maybe_gap->count == size_encompassing_power_of_2;
+    bool is_exact = maybe_gap->count == size_to_alloc;
     if (is_exact) {
       MemorySlot res = *maybe_gap;
       free_gaps_slots.erase(maybe_gap);
@@ -31,10 +32,14 @@ MemorySlot Arena::Allocate(const unsigned int size) {
     }
     else {
       MemorySlot gap = *free_gaps_slots.erase(maybe_gap);
-      MemorySlot res = { gap.offset, size_encompassing_power_of_2 };
-      gap.count -= size_encompassing_power_of_2;
-      gap.offset += size_encompassing_power_of_2;
+
+      MemorySlot res = { gap.offset, size_to_alloc };
+
+      gap.count -= size_to_alloc;
+      gap.offset += size_to_alloc;
+
       free_gaps_slots.insert(gap);
+
       return res;
     }
   }
@@ -72,7 +77,7 @@ MemorySlot Arena::_AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc, c
   unsigned int free_space = _GetFreeSpace();
   if (size_to_alloc > _GetFreeSpace()) {
     LOG(format("Exceeded free space, size_to_alloc={}, free_space={}", size_to_alloc, free_space));
-    return NULL_SLOT;
+    return MemorySlots::NULL_SLOT;
   }
   unsigned int offset = allocated + base_slot.offset;
   allocated += size_to_alloc;

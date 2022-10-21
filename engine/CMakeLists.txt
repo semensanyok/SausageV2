@@ -217,7 +217,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "${ENGINE_SRC_DIR}/systems/physics/BulletDebugDrawer.cpp" 
 "${ENGINE_SRC_DIR}/systems/gui/ScreenOverlayManager.cpp"
 "${ENGINE_SRC_DIR}/systems/world_gen/TerrainManager.cpp"
-${source})
+${source} "src/structures/OverlayStruct.h")
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 

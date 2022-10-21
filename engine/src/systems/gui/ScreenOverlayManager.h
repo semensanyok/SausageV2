@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sausage.h"
-#include "Structures.h"
+#include "OverlayStruct.h"
 #include "ShaderStruct.h"
 #include "ControllerUtils.h"
 #include "UIBufferConsumer.h"
@@ -21,32 +21,10 @@ UI node:
               open_order=parent ? parent.open_order + 1 : global_open_order + 1.
 */
 using namespace std;
+using namespace ScreenOverlayManagerInternals;
 
 class UINode;
 class ScreenCell;
-
-class PauseMenuSettings {
-public:
-  int button_font_size;
-  int back_indent;
-  int button_width;
-  int button_height;
-  vec3 text_color;
-  vec3 back_color;
-  PauseMenuSettings(
-    int button_font_size,
-    int back_indent,
-    vec3 text_color,
-    vec3 back_color) :
-    button_font_size{ button_font_size },
-    back_indent{ back_indent },
-    text_color{ text_color },
-    back_color{ back_color } {
-    button_width = button_font_size * 4 + 2 * back_indent;
-    button_height = button_font_size + 2 * back_indent;
-  }
-};
-
 
 class UINode
 {
@@ -120,6 +98,7 @@ private:
   int total_draw_commands_back = 0;
 
   bool is_pause_menu_active = false;
+
 public:
   ScreenOverlayManager(
     UIBufferConsumer* buffer,
@@ -206,13 +185,6 @@ public:
     const vec3 back_color = pause_menu_settings.back_color;
     int init_open_order = 0;
 
-    const vector<string> buttons = {
-      "quit",
-      "settings",
-      "load",
-      "save",
-      "resume",
-    };
     int menu_start_x = GameSettings::SCR_WIDTH / 2 - button_width / 2;
     int menu_start_y = GameSettings::SCR_HEIGHT / 2 - (button_height * buttons.size()) / 2;
     for (int i = 0; i < buttons.size(); i++) {
@@ -253,7 +225,8 @@ private:
     BatchDataUI* batch,
     MeshDataUI* mesh
   ) {
-    buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size(), );
+    buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size(), 1);
+    draw_call_manager->AddNewCommandToDrawCall(mesh, draw_call_manager->font_ui_dc, 1);
     buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
     buffer->BufferTransform(mesh);
     buffer->BufferSize(mesh, batch->x_min, batch->x_max, batch->y_min, batch->y_max);
@@ -265,7 +238,8 @@ private:
     BatchDataUI* batch,
     MeshDataUI* mesh
   ) {
-    buffer->AllocateStorage(mesh, batch->vertices.size(), batch->indices.size());
+    buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size(), 1);
+    draw_call_manager->AddNewCommandToDrawCall(mesh, draw_call_manager->back_ui_dc, 1);
     buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
     buffer->BufferTransform(mesh);
     auto min = mesh->transform;

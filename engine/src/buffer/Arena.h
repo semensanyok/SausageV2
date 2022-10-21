@@ -35,8 +35,20 @@ inline bool operator<(const MemorySlot& lhs, const MemorySlot& rhs) {
 }
 
 /**
- * @brief allocates slots of powers of 2,
- *  to always be divisible to split large slots for smaller meshes
+ * @brief allocates slots
+ *
+ * optionally of powers of 2:
+ * - to always be divisible, to split large slots for smaller meshes.
+ * - expected to be advantageous for vertex/index slots management,
+ *   which are frequently allocated/deallocated,
+ *   and mostly of different sizes
+ *   and single vertex/index buffer is used in all kinds of shaders/commands
+ * - should not be used for command slots (Arena* instances_slots; in BufferStorage.cpp),
+ *   as most of them have constant count
+ *   i.e. ui buffer - constant number of commands (draw elements) are compile time const
+ *   back/debug/overlay - 1 draw command
+ *   only dynamic command buffer is mesh draw call
+ * 
  * For simplier single number allocation look for ThreadSafeNumberPool.cpp
 */
 class Arena {
@@ -48,9 +60,11 @@ class Arena {
   mutex mtx;
   set<MemorySlot> free_gaps_slots;
   MemorySlot base_slot;
+  const bool is_allocate_powers_of_2;
 public:
 
-  Arena(MemorySlot slot) : base_slot{ slot }, allocated{ 0 }  {
+  Arena(MemorySlot slot, bool is_allocate_powers_of_2 = false) :
+    base_slot{ slot }, allocated{ 0 }, is_allocate_powers_of_2{ is_allocate_powers_of_2 }{
   }
   inline unsigned int GetUsed() { return allocated; };
   unsigned int GetFreeSpace();

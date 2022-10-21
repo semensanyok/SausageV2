@@ -7,6 +7,7 @@
 #include "LightStruct.h"
 #include "GPUStructs.h"
 #include "Vertex.h"
+#include "OverlayStruct.h"
 
 using namespace glm;
 using namespace std;
@@ -38,6 +39,9 @@ struct BlendTexturesByMeshIdUniform {
   BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES]; // alignment 4 bytes
 };
 
+// TODO: maybe??? extract transforms[MAX_BASE_AND_INSTANCED_MESHES] to separate SSBO
+//       because, for example, overlay elements are using mat4 transform
+//       so presumably they can use same instance_offset used for mesh draw calls
 // some GPU structs resides in other headers, i.e. Light.h
 struct MeshUniform {
   mat4 bones_transforms[MAX_BONES]; // aligned to vec4 == 16 bytes

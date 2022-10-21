@@ -9,6 +9,7 @@
 #include "Renderer.h"
 #include "MeshDataStruct.h"
 #include "MeshManager.h"
+#include "OverlayStruct.h"
 
 using namespace std;
 
@@ -51,12 +52,12 @@ public:
     buffer{ buffer },
     mesh_manager{ mesh_manager }
   {
+    //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
+    //    or place shader with dynamic number of meshes at the end
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
-      // TODO: set required command count as constexpr in ScreenOverlayManager.h
-      //       because it creates mesh for each button as separate command
-      command_buffer_arena->Allocate(1),
+      command_buffer_arena->Allocate(GetNumDrawCommandsForFontDrawCall()),
       false
     );
     draw_call_by_id[font_ui_dc->id] = font_ui_dc;
@@ -64,7 +65,7 @@ public:
     back_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->back_ui,
       GL_TRIANGLES,
-      command_buffer_arena->Allocate(1),
+      command_buffer_arena->Allocate(GetNumDrawCommandsForBackDrawCall()),
       false
     );
     draw_call_by_id[back_ui_dc->id] = back_ui_dc;
@@ -138,29 +139,36 @@ public:
    * for instanced call,
    * to avoid frequent command rebuffer and Arena#aquire/release with each AddNewInstance
    * 
-   * @param out_mesh mesh with command/index/vertex slots and buffer_id
+   * @param mesh mesh with command/index/vertex slots and buffer_id
    *        allocated via BufferStorage#AllocateStorage
    * @param dc draw call to assign mesh to
   */
   void AddNewCommandToDrawCall(
-    MeshDataBase* out_mesh,
+    MeshDataBase* mesh,
     DrawCall* dc,
     GLuint instance_count
   ) {
     // validation that command doesnt exist already
-    DEBUG_EXPR(
-      DEBUG_ASSERT(dc_by_mesh_id.find(out_mesh->id) == dc_by_mesh_id.end());
-      DEBUG_ASSERT(command_by_mesh_id.find(out_mesh->id) == command_by_mesh_id.end());
-    );
-    DrawCommandWithMeshMeta& command = command_by_mesh_id[out_mesh->id];
+    DEBUG_ASSERT(dc_by_mesh_id.find(mesh->id) == dc_by_mesh_id.end());
+    DEBUG_ASSERT(command_by_mesh_id.find(mesh->id) == command_by_mesh_id.end());
+    DrawCommandWithMeshMeta& command = command_by_mesh_id[mesh->id];
     lock_guard l(dc->mtx);
 
     MemorySlot slot = dc->Allocate(1);
     command.command_buffer_offset = slot.offset;
 
-    SetToCommandWithOffsets(command, out_mesh, instance_count);
+    SetToCommandWithOffsets(command, mesh, instance_count);
   }
 
+  /**
+   * @brief set/update mesh offsets to existing mesh draw command
+   *        use it:
+   *        - for vertex/index/offset/instance_coumt/.. data modification for the command
+   *        - if command was created via AddNewCommandToDrawCall
+   *          prior to mesh data allocation
+   *          and offset setup via BufferStorage#AllocateStorage
+   *          (command was created initially with 0 offsets and instance count)
+  */
   void SetToCommandWithOffsets(
     MeshDataBase* mesh,
     GLuint instance_count
@@ -169,21 +177,7 @@ public:
     SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh, instance_count);
   }
 
-  void SetToCommandWithOffsets(
-    DrawCommandWithMeshMeta& command_with_meta,
-    MeshDataBase* mesh,
-    GLuint instance_count
-  ) {
-    auto& command = command_with_meta.command;
-    command.instanceCount = instance_count;
-    command.count = mesh->slots.index_slot.used;
-    command.firstIndex = mesh->slots.index_slot.offset;
-    command.baseVertex = mesh->slots.vertex_slot.offset;
-    command.baseInstance = mesh->slots.buffer_id;
-
-    buffer->BufferCommand(command, command_with_meta.command_buffer_offset);
-  }
-
+  
   void DisableCommand(MeshDataBase* mesh) {
     auto draw_call = dc_by_mesh_id.find(mesh->id);
     if (draw_call == dc_by_mesh_id.end()) {
@@ -204,6 +198,22 @@ public:
   }
 private:
   int total_draw_calls = 0;
+
+  void SetToCommandWithOffsets(
+    DrawCommandWithMeshMeta& command_with_meta,
+    MeshDataBase* mesh,
+    GLuint instance_count
+  ) {
+    auto& command = command_with_meta.command;
+    command.instanceCount = instance_count;
+    command.count = mesh->slots.index_slot.used;
+    command.firstIndex = mesh->slots.index_slot.offset;
+    command.baseVertex = mesh->slots.vertex_slot.offset;
+    command.baseInstance = mesh->slots.buffer_id;
+
+    buffer->BufferCommand(command, command_with_meta.command_buffer_offset);
+  }
+
   DrawCall* _CreateDrawCall(Shader* shader, GLenum mode, MemorySlot command_buffer_slot, bool is_enabled)
   {
     return new DrawCall(total_draw_calls++, shader, mode, command_buffer_slot, is_enabled);

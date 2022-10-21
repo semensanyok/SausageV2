@@ -14,6 +14,7 @@
 #include "TextureStruct.h"
 #include "Texture.h"
 #include "MeshDataStruct.h"
+#include "OverlayStruct.h"
 
 /**
 Only command buffer must be contigious
@@ -92,8 +93,8 @@ class BufferStorage {
 
   void BufferTextureHandle(Texture* texture);
   void BufferTexture(BufferInstanceOffset* offset, Texture* texture);
+  void BufferUniformDataUITransform(MeshDataUI* mesh);
   void BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
-  void BufferUniformDataUITransform(MeshDataUI* mesh);;
   void BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click);
 
   void AddUsedBuffers(BufferType::BufferTypeFlag used_buffers);
@@ -101,22 +102,21 @@ class BufferStorage {
   void PostDraw();
  private:
    BufferStorage() :
-     gl_buffers { new GLBuffers() },
-     command_slots { new ThreadSafeNumberPool(MAX_BASE_MESHES) },
+     gl_buffers{ new GLBuffers() },
+     command_slots{ new ThreadSafeNumberPool(MAX_BASE_MESHES) },
      instances_slots{ new Arena({0,MAX_BASE_AND_INSTANCED_MESHES}) },
-     transforms_font_slots { new ThreadSafeNumberPool(MAX_3D_OVERLAY_TRANSFORM) },
-     transforms_font_ui_slots { new ThreadSafeNumberPool(MAX_UI_UNIFORM_TRANSFORM) },
-     // TODO:
-     //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
-     //    or place shader with dynamic number of meshes at the end
-
+     transforms_font_slots{ new ThreadSafeNumberPool(MAX_3D_OVERLAY_TRANSFORM) },
+     transforms_font_ui_slots{ new ThreadSafeNumberPool(MAX_UI_UNIFORM_TRANSFORM) },
      /**
      * had idea to have multiple arenas for each storage
      * to store large objects in one, smaller in other
      * now for simplicity - keep 1 Arena per buffer(with offset = 0)
+     *
+     * is_allocate_powers_of_2 = true
+     * because lots of alloc/dealloc of multipurposed slots of various sizes
      **/
-     index_arena { new Arena({ 0, MAX_INDEX }) },
-     vertex_arena { new Arena({ 0, MAX_VERTEX }) }
+     index_arena { new Arena({ 0, MAX_INDEX }, true) },
+     vertex_arena { new Arena({ 0, MAX_VERTEX }, true) }
    {};
    ~BufferStorage() {
      delete instances_slots;

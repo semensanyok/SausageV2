@@ -155,6 +155,12 @@ void BufferStorage::BufferTransform(BufferInstanceOffset* offset, mat4& transfor
   gl_buffers->SetSyncBarrier();
 }
 
+void BufferStorage::BufferUniformDataUITransform(MeshDataUI* mesh) {
+  gl_buffers->
+    uniforms_ui_ptr->
+    transforms[mesh->transform_offset + mesh->instance_id] = mesh->transform;
+  gl_buffers->SetSyncBarrier();
+}
 
 void BufferStorage::BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y) {
   DEBUG_ASSERT(mesh->slots.buffer_id > 0);

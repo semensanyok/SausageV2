@@ -11,11 +11,4 @@ namespace BufferSettings {
   const unsigned long MAX_TEXTURE = 1000;
   const unsigned long MAX_BLEND_TEXTURES = 16;
   const unsigned long MAX_LIGHTS = 1000;
-  //FONT
-  const unsigned long TEXTURES_SINGLE_FONT = 128;
-  const unsigned long MAX_3D_OVERLAY_TRANSFORM = 4000;
-  const unsigned long MAX_3D_OVERLAY_TRANSFORM_OFFSET = MAX_3D_OVERLAY_TRANSFORM * 10;
-  const unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;
-  const unsigned long MAX_UI_UNIFORM_TRANSFORM = 400;
-  const unsigned long MAX_UI_UNIFORM_OFFSET = MAX_UI_UNIFORM_TRANSFORM * 10;
 };
