@@ -9,6 +9,14 @@ using namespace std;
 using namespace UniformsLocations;
 using namespace BufferSizes;
 
+template<typename T>
+struct UniformOffsets {
+  // must be allocated with size = MAX_INSTANCES
+  // index to uniform data as offset + glInstanceId
+  Arena* instances_slots;
+  T* uniform_ptr;
+};
+
 class GLBuffers {
   ///////////
   /// Buffers
@@ -18,7 +26,7 @@ class GLBuffers {
   GLuint index_buffer;
   // UNIFORMS AND SSBO
   GLuint uniforms_buffer;
-  GLuint blend_textures_by_mesh_id_buffer;
+  //GLuint blend_textures_by_mesh_id_buffer;
   GLuint texture_handle_by_texture_id_buffer;
   GLuint light_buffer;
   GLuint font_texture_buffer;
@@ -41,14 +49,13 @@ public:
   unsigned int* index_ptr;
 
   CommandBuffer* command_buffer;
-  MeshUniform* uniforms_ptr;
-  BlendTexturesByMeshIdUniform* blend_textures_by_mesh_id_ptr;
+  UniformOffsets<MeshUniform> uniforms_ptr;
+  //BlendTexturesMeshUniform* blend_textures_mesh_ptr;
   LightsUniform* light_ptr;
   GLuint64* texture_handle_by_texture_id_ptr;
-  GLuint64* font_texture_ptr;
-  UniformData3DOverlay* uniforms_3d_overlay_ptr;
-  UniformDataUI* uniforms_ui_ptr;
-  ControllerUniformData* uniforms_controller_ptr;
+  UniformOffsets<UniformData3DOverlay> uniforms_3d_overlay_ptr;
+  UniformOffsets<UniformDataUI> uniforms_ui_ptr;
+  UniformOffsets<ControllerUniformData> uniforms_controller_ptr;
 
   // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
   void SetSyncBarrier() {

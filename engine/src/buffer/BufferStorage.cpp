@@ -78,23 +78,19 @@ bool BufferStorage::AllocateStorage(
   unsigned long num_instances
 ) {
   auto vertex_slot = vertex_arena->Allocate(vertices_size);
-  out_slots.buffer_id = command_slots->ObtainNumber();
   if (vertex_slot == MemorySlots::NULL_SLOT) {
     LOG("Error RequestStorageSetOffsets vertices slot allocation.");
-    command_slots->ReleaseNumber(out_slots.buffer_id);
     return false;
   }
   auto index_slot = index_arena->Allocate(indices_size);
   if (index_slot == MemorySlots::NULL_SLOT) {
     vertex_arena->Release(vertex_slot);
     LOG("Error RequestStorageSetOffsets indices slot allocation.");
-    command_slots->ReleaseNumber(out_slots.buffer_id);
     return false;
   }
   if (!AllocateInstancesSlot(out_slots, num_instances)) {
     vertex_arena->Release(vertex_slot);
     index_arena->Release(index_slot);
-    command_slots->ReleaseNumber(out_slots.buffer_id);
     LOG("Error RequestStorageSetOffsets instances slot allocation.");
     return false;
   }
@@ -124,7 +120,6 @@ void BufferStorage::ReleaseStorage(MeshDataSlots& out_slots) {
   out_slots.vertex_slot = MemorySlots::NULL_SLOT;
   index_arena->Release(out_slots.index_slot);
   out_slots.index_slot = MemorySlots::NULL_SLOT;
-  command_slots->ReleaseNumber(out_slots.buffer_id);
   out_slots.buffer_id = MemorySlots::NULL_SLOT;
   ReleaseInstancesSlot(out_slots);
 }
@@ -145,8 +140,9 @@ void BufferStorage::BufferTextureHandle(Texture* texture)
   gl_buffers->SetSyncBarrier();
 }
 
-void BufferStorage::BufferTexture(BufferInstanceOffset* offset, Texture* texture) {
-  gl_buffers->font_texture_ptr[offset->GetInstanceOffset()] = texture->texture_handle_ARB;
+void BufferStorage::BufferTextureMesh(BufferInstanceOffset* offset, BlendTextures& textures) {
+  gl_buffers->blend_textures_mesh_ptr->blend_textures[offset->GetInstanceOffset()]
+    = textures;
   gl_buffers->SetSyncBarrier();
 }
 
@@ -158,6 +154,9 @@ void BufferStorage::BufferTransform(BufferInstanceOffset* offset, mat4& transfor
 void BufferStorage::BufferUniformDataUITransform(MeshDataUI* mesh) {
   gl_buffers->
     uniforms_ui_ptr->
+    // transform offset - self transform pool for 2d transform
+    // Soooooo for each array in SSBO we have number pool
+    // probably should extract SSBO pointer with number pools into class
     transforms[mesh->transform_offset + mesh->instance_id] = mesh->transform;
   gl_buffers->SetSyncBarrier();
 }

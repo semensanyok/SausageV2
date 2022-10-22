@@ -154,7 +154,7 @@ public:
     DrawCommandWithMeshMeta& command = command_by_mesh_id[mesh->id];
     lock_guard l(dc->mtx);
 
-    MemorySlot slot = dc->Allocate(1);
+    MemorySlot slot = dc->Allocate(1, mesh->slots);
     command.command_buffer_offset = slot.offset;
 
     SetToCommandWithOffsets(command, mesh, instance_count);

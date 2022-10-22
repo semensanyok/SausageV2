@@ -35,28 +35,31 @@ public:
   virtual unsigned long GetInstanceOffset() = 0;
 };
 
-struct BlendTexturesByMeshIdUniform {
-  BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES]; // alignment 4 bytes
-};
+//struct BlendTexturesMeshUniform {
+//  BlendTextures blend_textures[MAX_MESHES_INSTANCES]; // alignment 4 bytes
+//};
 
-// TODO: maybe??? extract transforms[MAX_BASE_AND_INSTANCED_MESHES] to separate SSBO
+// TODO: maybe??? extract transforms[MAX_MESHES_INSTANCES] to separate SSBO
 //       because, for example, overlay elements are using mat4 transform
 //       so presumably they can use same instance_offset used for mesh draw calls
 // some GPU structs resides in other headers, i.e. Light.h
 struct MeshUniform {
   mat4 bones_transforms[MAX_BONES]; // aligned to vec4 == 16 bytes
-  mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES]; // aligned to vec4 == 16 bytes
+  mat4 transforms[MAX_MESHES_INSTANCES]; // aligned to vec4 == 16 bytes
+  BlendTextures blend_textures[MAX_MESHES_INSTANCES]; // alignment 4 bytes
+  float pad[3];
+
   unsigned int base_instance_offset[MAX_BASE_MESHES]; // alignment 4 bytes
   // no padding needed, topmost structure
 };
 
 struct UniformData3DOverlay {
-  mat4 transforms[MAX_3D_OVERLAY_TRANSFORM];
+  mat4 transforms[MAX_3D_OVERLAY_INSTANCES];
 };
 
 struct UniformDataUI {
-  ivec4 min_max_x_y[MAX_UI_UNIFORM_TRANSFORM];
-  vec2 transforms[MAX_UI_UNIFORM_TRANSFORM];
+  ivec4 min_max_x_y[MAX_UI_INSTANCES];
+  vec2 transforms[MAX_UI_INSTANCES];
   // no padding needed, topmost structure
 };
 
@@ -83,19 +86,16 @@ namespace BufferSizes {
   // UNIFORMS
   ///////////
   const unsigned long MESH_UNIFORMS_STORAGE_SIZE = sizeof(MeshUniform);
-  const unsigned long BLEND_TEXTURES_BY_MESH_ID_SIZE = sizeof(BlendTexturesByMeshIdUniform);
+  //const unsigned long BLEND_TEXTURES_BY_MESH_ID_SIZE = sizeof(BlendTexturesMeshUniform);
   const unsigned long TRANSFORM_OFFSET_STORAGE_SIZE =
-    MAX_BASE_AND_INSTANCED_MESHES * sizeof(unsigned int);
+    MAX_MESHES_INSTANCES * sizeof(unsigned int);
   const unsigned long TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE = MAX_TEXTURE * sizeof(GLuint64);
 
-  // FONT buffers
-  const unsigned long FONT_TEXTURE_STORAGE_SIZE =
-    MAX_FONT_TEXTURES * sizeof(GLuint64);
   const unsigned long UNIFORMS_3D_OVERLAY_STORAGE_SIZE = sizeof(UniformData3DOverlay);
   const unsigned long TRANSFORM_3D_OVERLAY_OFFSET_STORAGE_SIZE =
-    MAX_3D_OVERLAY_TRANSFORM_OFFSET * sizeof(unsigned int);
+    MAX_3D_OVERLAY_INSTANCES * sizeof(unsigned int);
   const unsigned long UNIFORMS_UI_STORAGE_SIZE = sizeof(UniformDataUI);
   const unsigned long TRANSFORM_OFFSET_UI_STORAGE_SIZE =
-    MAX_UI_UNIFORM_OFFSET * sizeof(unsigned int);
+    MAX_UI_INSTANCES * sizeof(unsigned int);
   // parts of buffer;
 };

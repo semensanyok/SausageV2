@@ -37,11 +37,10 @@ class BufferStorage {
 
  private:
 
-  ThreadSafeNumberPool* command_slots;
-  // instanced meshes must have contigious chunk of transform matrices to refer by base id + instance id
-  Arena* instances_slots;
-  ThreadSafeNumberPool* transforms_font_slots;
-  ThreadSafeNumberPool* transforms_font_ui_slots;
+  // no instanced draw for 2d ui elements yet
+  // thus, ThreadSafeNumberPool* and not Arena*
+  ThreadSafeNumberPool* instances_slots_ui;
+  ThreadSafeNumberPool* instances_slots_3d_overlay;
   //  TODO: each drawcall uses contigious range of commands. Need to allocate in advance for shader.
   //    or place shader with dynamic number of meshes at the end
   Arena* index_arena;
@@ -57,7 +56,7 @@ class BufferStorage {
 
   void Reset() {
     instances_slots-> Reset();
-    transforms_font_slots -> Reset();
+    transforms_2d_slots -> Reset();
     transforms_font_ui_slots -> Reset();
 
     index_arena->Reset();
@@ -92,7 +91,7 @@ class BufferStorage {
   void BindVAOandBuffers(BufferType::BufferTypeFlag buffers_to_bind);
 
   void BufferTextureHandle(Texture* texture);
-  void BufferTexture(BufferInstanceOffset* offset, Texture* texture);
+  void BufferTextureMesh(BufferInstanceOffset* offset, BlendTextures& textures);
   void BufferUniformDataUITransform(MeshDataUI* mesh);
   void BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
   void BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click);

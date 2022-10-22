@@ -124,11 +124,11 @@ void GLBuffers::InitBuffers() {
   uniforms_ptr = (MeshUniform*)glMapBufferRange(
     GL_SHADER_STORAGE_BUFFER, 0, MESH_UNIFORMS_STORAGE_SIZE, flags);
 
-  glGenBuffers(1, &blend_textures_by_mesh_id_buffer);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, blend_textures_by_mesh_id_buffer);
-  glBufferStorage(GL_SHADER_STORAGE_BUFFER, BLEND_TEXTURES_BY_MESH_ID_SIZE, NULL, flags);
-  blend_textures_by_mesh_id_ptr = (BlendTexturesByMeshIdUniform*)glMapBufferRange(
-    GL_SHADER_STORAGE_BUFFER, 0, BLEND_TEXTURES_BY_MESH_ID_SIZE, flags);
+  //glGenBuffers(1, &blend_textures_by_mesh_id_buffer);
+  //glBindBuffer(GL_SHADER_STORAGE_BUFFER, blend_textures_by_mesh_id_buffer);
+  //glBufferStorage(GL_SHADER_STORAGE_BUFFER, BLEND_TEXTURES_BY_MESH_ID_SIZE, NULL, flags);
+  //blend_textures_mesh_ptr = (BlendTexturesMeshUniform*)glMapBufferRange(
+  //  GL_SHADER_STORAGE_BUFFER, 0, BLEND_TEXTURES_BY_MESH_ID_SIZE, flags);
 
   glGenBuffers(1, &texture_handle_by_texture_id_buffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_buffer);

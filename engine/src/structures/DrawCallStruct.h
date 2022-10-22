@@ -4,6 +4,7 @@
 #include "ShaderStruct.h"
 #include "Arena.h"
 #include "GPUStructs.h"
+#include "MeshDataStruct.h"
 
 using namespace std;
 
@@ -19,6 +20,7 @@ class DrawCall {
   friend class DrawCallManager;
   MemorySlot command_buffer_slot;
   Arena* command_buffer_sub_arena;
+  ThreadSafeNumberPool* buffer_id_slots;
 public:
   bool is_enabled;
   /**
@@ -38,8 +40,12 @@ public:
     shader{ shader },
     mode{ mode },
     command_buffer_slot{ command_buffer_slot },
-    // offset is 0 because 
+    // here we have offsets to shared command array,
+    // used by glDrawElementsIndirect,
+    // with range (offset, offset + count)
+    // and its buffer_id array with range (0, count)
     command_buffer_sub_arena{ new Arena(command_buffer_slot) },
+    buffer_id_slots { new ThreadSafeNumberPool(command_buffer_slot.count) },
     is_enabled{ is_enabled } {
   }
   const unsigned int id;
@@ -54,9 +60,10 @@ public:
     return command_buffer_sub_arena->GetBaseOffset();
   }
 private:
-  MemorySlot Allocate(unsigned int command_count) {
-    MemorySlot slot = command_buffer_sub_arena->Allocate(command_count);
+  void Allocate(MeshDataSlots& out_slots, unsigned int instances_count) {
+    out_slots.buffer_id = buffer_id_slots->ObtainNumber();
     DEBUG_ASSERT(slot != MemorySlots::NULL_SLOT);
+    out_slots.buffer_id
     return slot;
   }
   void Release(MemorySlot slot) {

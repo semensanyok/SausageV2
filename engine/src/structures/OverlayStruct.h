@@ -45,7 +45,7 @@ public:
 
 
 namespace ScreenOverlayManagerInternals {
-  const vector<string> buttons = {
+  constexpr vector<string> buttons = {
     "quit",
     "settings",
     "load",
@@ -53,6 +53,8 @@ namespace ScreenOverlayManagerInternals {
     "resume",
   };
 }
+
+using namespace ScreenOverlayManagerInternals;
 
 // to allocate constant instance slot.
 // BufferStorage#AllocateInstancesSlot
@@ -77,11 +79,11 @@ constexpr unsigned int GetNumDrawCommandsForBackDrawCall() {
 * main part defined in BufferSettings.h
 */
 namespace BufferSettings {
-  const unsigned long TEXTURES_SINGLE_FONT = 128;
-  const unsigned long MAX_3D_OVERLAY_TRANSFORM = 4000;
-  const unsigned long MAX_3D_OVERLAY_TRANSFORM_OFFSET = MAX_3D_OVERLAY_TRANSFORM * 10;
-  const unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;
+  constexpr unsigned long TEXTURES_SINGLE_FONT = 128;
+  constexpr unsigned long MAX_3D_OVERLAY_COMMANDS = 4000;
+  constexpr unsigned long MAX_3D_OVERLAY_INSTANCES = MAX_3D_OVERLAY_COMMANDS * 10;
+  constexpr unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;
 
-  const unsigned long MAX_UI_UNIFORM_TRANSFORM = GetNumDrawCommandsForFontDrawCall();
-  const unsigned long MAX_UI_UNIFORM_OFFSET = GetNumDrawCommandsForFontDrawCall_InstancedMeshes();
+  constexpr unsigned long MAX_UI_COMMANDS = GetNumDrawCommandsForFontDrawCall();
+  constexpr unsigned long MAX_UI_INSTANCES = GetNumDrawCommandsForFontDrawCall_InstancedMeshes();
 };

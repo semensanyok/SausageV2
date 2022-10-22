@@ -23,6 +23,7 @@ bool IsMouseHover(int mouse_x, int mouse_y, int base_instance)
 layout (std430, binding = FONT_UNIFORMS_LOC) buffer FontUniformData
 {
     mat4 transforms[MAX_3D_OVERLAY_TRANSFORM];
+    uint base_instance_offset[MAX_BASE_MESHES];
 };
 """
 }
