@@ -23,7 +23,7 @@ public:
   void BufferMeshData(
     MeshDataBase* mesh,
     shared_ptr<MeshLoadData> load_data);
-  void ReleaseStorage(MeshDataBase* mesh);
+  void ReleaseInstanceSlot(MeshDataBase* mesh);
   void Init();
   void Reset();
   void BufferTransform(BufferInstanceOffset* offset, mat4& transform);

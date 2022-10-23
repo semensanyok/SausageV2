@@ -46,7 +46,7 @@ void BulletDebugDrawer::drawLinePersist(const btVector3& from, const btVector3& 
     memcpy(&from3[0], &from[0], 3 * sizeof(float));
     memcpy(&to3[0], &to[0], 3 * sizeof(float));
 
-    //lock_guard<mutex> data_lock(draw_call->command_buffer->buffer_lock->data_mutex);
+    //lock_guard<mutex> data_lock(draw_call->command_ptr->buffer_lock->data_mutex);
     persist_draws.push_back({ state_manager->milliseconds_since_start + GameSettings::ray_debug_draw_lifetime_milliseconds, {from3, to3}, color3 });
 }
 void   BulletDebugDrawer::drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) {

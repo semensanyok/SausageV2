@@ -18,10 +18,5 @@ struct BlendTextures {
   TextureBlend textures[MAX_BLEND_TEXTURES];
   uint num_textures;
 };
-
-layout (std430, binding = BLEND_TEXTURES_BY_MESH_ID_LOC) buffer BlendTexturesByMeshIdUniform
-{
-    BlendTextures blend_textures[MAX_BASE_AND_INSTANCED_MESHES];
-};
 """
 }

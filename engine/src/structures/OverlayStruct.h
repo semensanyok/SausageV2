@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "Structures.h"
+#include "Macros.h"
 
 using namespace glm;
 
@@ -45,7 +46,7 @@ public:
 
 
 namespace ScreenOverlayManagerInternals {
-  constexpr vector<string> buttons = {
+  const vector<string> buttons = {
     "quit",
     "settings",
     "load",
@@ -57,12 +58,15 @@ namespace ScreenOverlayManagerInternals {
 using namespace ScreenOverlayManagerInternals;
 
 // to allocate constant instance slot.
-// BufferStorage#AllocateInstancesSlot
+// BufferStorage#AllocateMeshUniformSlot
 //
 // add all ui elements in this header file,
 // add their count to this function
 constexpr unsigned int GetNumDrawCommandsForFontDrawCall() {
-  return buttons.size();
+  //return buttons.size();
+  //unsigned int res = 5;
+  //DEBUG_ASSERT(res == buttons.size());
+  return 5;
 }
 // if anywhere in future start using instanced draws for ui elements
 // - will be larger then GetNumDrawCommandsForFontDrawCall()
@@ -79,10 +83,12 @@ constexpr unsigned int GetNumDrawCommandsForBackDrawCall() {
 * main part defined in BufferSettings.h
 */
 namespace BufferSettings {
-  constexpr unsigned long TEXTURES_SINGLE_FONT = 128;
-  constexpr unsigned long MAX_3D_OVERLAY_COMMANDS = 4000;
-  constexpr unsigned long MAX_3D_OVERLAY_INSTANCES = MAX_3D_OVERLAY_COMMANDS * 10;
-  constexpr unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;
+  const unsigned long TEXTURES_SINGLE_FONT = 128;
+  const unsigned long MAX_3D_OVERLAY_COMMANDS = 1000; // TODO: figure out correct size
+  const unsigned long MAX_3D_OVERLAY_INSTANCES = MAX_3D_OVERLAY_COMMANDS
+    //* 10
+    ; // TODO: figure out correct size
+  const unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;
 
   constexpr unsigned long MAX_UI_COMMANDS = GetNumDrawCommandsForFontDrawCall();
   constexpr unsigned long MAX_UI_INSTANCES = GetNumDrawCommandsForFontDrawCall_InstancedMeshes();

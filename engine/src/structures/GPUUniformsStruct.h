@@ -43,7 +43,7 @@ public:
 //       because, for example, overlay elements are using mat4 transform
 //       so presumably they can use same instance_offset used for mesh draw calls
 // some GPU structs resides in other headers, i.e. Light.h
-struct MeshUniform {
+struct UniformDataMesh {
   mat4 bones_transforms[MAX_BONES]; // aligned to vec4 == 16 bytes
   mat4 transforms[MAX_MESHES_INSTANCES]; // aligned to vec4 == 16 bytes
   BlendTextures blend_textures[MAX_MESHES_INSTANCES]; // alignment 4 bytes
@@ -53,13 +53,15 @@ struct MeshUniform {
   // no padding needed, topmost structure
 };
 
-struct UniformData3DOverlay {
+struct UniformDataOverlay3D {
   mat4 transforms[MAX_3D_OVERLAY_INSTANCES];
+  unsigned int base_instance_offset[MAX_BASE_MESHES];
 };
 
 struct UniformDataUI {
   ivec4 min_max_x_y[MAX_UI_INSTANCES];
   vec2 transforms[MAX_UI_INSTANCES];
+  unsigned int base_instance_offset[MAX_BASE_MESHES];
   // no padding needed, topmost structure
 };
 
@@ -85,17 +87,13 @@ namespace BufferSizes {
   ///////////
   // UNIFORMS
   ///////////
-  const unsigned long MESH_UNIFORMS_STORAGE_SIZE = sizeof(MeshUniform);
+  const unsigned long MESH_UNIFORMS_STORAGE_SIZE = sizeof(UniformDataMesh);
   //const unsigned long BLEND_TEXTURES_BY_MESH_ID_SIZE = sizeof(BlendTexturesMeshUniform);
   const unsigned long TRANSFORM_OFFSET_STORAGE_SIZE =
     MAX_MESHES_INSTANCES * sizeof(unsigned int);
   const unsigned long TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE = MAX_TEXTURE * sizeof(GLuint64);
 
-  const unsigned long UNIFORMS_3D_OVERLAY_STORAGE_SIZE = sizeof(UniformData3DOverlay);
-  const unsigned long TRANSFORM_3D_OVERLAY_OFFSET_STORAGE_SIZE =
-    MAX_3D_OVERLAY_INSTANCES * sizeof(unsigned int);
-  const unsigned long UNIFORMS_UI_STORAGE_SIZE = sizeof(UniformDataUI);
-  const unsigned long TRANSFORM_OFFSET_UI_STORAGE_SIZE =
-    MAX_UI_INSTANCES * sizeof(unsigned int);
-  // parts of buffer;
+  const unsigned long UNIFORM_OVERLAY_3D_STORAGE_SIZE = sizeof(UniformDataOverlay3D);
+  const unsigned long UNIFORM_UI_STORAGE_SIZE = sizeof(UniformDataUI);
+  const unsigned long UNIFORM_CONTROLLER_SIZE = sizeof(ControllerUniformData);
 };

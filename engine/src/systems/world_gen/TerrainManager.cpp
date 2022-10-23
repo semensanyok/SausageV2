@@ -105,7 +105,7 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
 }
 
 void TerrainManager::ReleaseBuffer(TerrainChunk* chunk) {
-  buffer->ReleaseStorage(chunk->tiles[0].mesh_data);
+  buffer->ReleaseInstanceSlot(chunk->tiles[0].mesh_data);
 }
 
 void TerrainManager::Deactivate(TerrainChunk* chunk)
@@ -262,7 +262,7 @@ MeshDataInstance* TerrainManager::CreatePlaneInstance(MeshData* base) {
   //  shader_manager->all_shaders->blinn_phong,
   //  buffer->CreateCommandBuffer(BufferSettings::MAX_COMMAND),
   //  GL_TRIANGLES);
-  //draw_call->buffer->ActivateCommandBuffer(draw_call->command_buffer);
+  //draw_call->buffer->ActivateCommandBuffer(draw_call->command_ptr);
   //systems_manager->renderer->AddDraw(draw_call, DrawOrder::MESH);
 
   //// load data
@@ -301,7 +301,7 @@ MeshDataInstance* TerrainManager::CreatePlaneInstance(MeshData* base) {
   //// add command to drawcall
   //vector<DrawElementsIndirectCommand> commands = { mesh->command };
   //draw_call->command_count = commands.size();
-  //draw_call->buffer->AddCommands(commands, draw_call->command_buffer);
+  //draw_call->buffer->AddCommands(commands, draw_call->command_ptr);
   //CheckGLError();
   // -------- 1. END ---------------------------------------------------------------------
 //}

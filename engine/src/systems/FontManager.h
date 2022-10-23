@@ -226,7 +226,7 @@ class FontManager : public SausageSystem {
   //                             batch.colors, batch.uvs, batch.glyph_id, {0, 0, 0},
   //                             font_texture);
   //    buffer_3d->BufferTransform(batch.mesh_data);
-  //    buffer_3d->AddCommand(batch.mesh_data->command, draw_call_3d->command_buffer);
+  //    buffer_3d->AddCommand(batch.mesh_data->command, draw_call_3d->command_ptr);
   //    active_3d_texts.push_back(batch.mesh_data);
   //  }
   //  current_3d_batch.clear();

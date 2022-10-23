@@ -5,6 +5,7 @@ layout (std430, binding = UI_UNIFORM_LOC) buffer UniformDataUI
 {
     ivec4 min_max_x_y[MAX_UI_UNIFORM_TRANSFORM];
     vec2 transforms[MAX_UI_UNIFORM_TRANSFORM];
+    uint base_instance_offset[MAX_BASE_MESHES];
 };
 """,
     "ui_utils":

@@ -8,8 +8,8 @@ void MeshDataBufferConsumer::BufferMeshData(
   buffer->BufferMeshData(mesh, load_data);
 }
 
-void MeshDataBufferConsumer::ReleaseStorage(MeshDataBase* mesh) {
-  buffer->ReleaseStorage(mesh->slots);
+void MeshDataBufferConsumer::ReleaseInstanceSlot(MeshDataBase* mesh) {
+  buffer->ReleaseInstanceSlot(mesh->slots);
 }
 
 void MeshDataBufferConsumer::Init() {

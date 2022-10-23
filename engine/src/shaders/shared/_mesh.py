@@ -27,7 +27,8 @@ void SetBlendColor() {
 layout (std430, binding = UNIFORMS_LOC) buffer MeshUniform
 {
     mat4 bones_transforms[MAX_BONES];
-    mat4 transforms[MAX_BASE_AND_INSTANCED_MESHES];
+    mat4 transforms[MAX_MESHES_INSTANCES];
+    BlendTextures blend_textures[MAX_MESHES_INSTANCES];
     uint base_instance_offset[MAX_BASE_MESHES];
 };
 """,
