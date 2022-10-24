@@ -62,8 +62,8 @@ public:
 private:
   void Allocate(MeshDataSlots& out_slots, unsigned int instances_count) {
     out_slots.buffer_id = buffer_id_slots->ObtainNumber();
-    DEBUG_ASSERT(slot != MemorySlots::NULL_SLOT);
-    out_slots.buffer_id
+    DEBUG_ASSERT(out_slots.buffer_id >= 0);
+    out_slots.instances_slot = 
     return slot;
   }
   void Release(MemorySlot slot) {

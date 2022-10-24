@@ -12,10 +12,11 @@ in vs_out {
     vec2 uv;
 } In;
 
-layout (std430, binding = FONT_TEXTURE_UNIFORM_LOC) buffer FontTextureArray
-{
-    sampler2DArray glyphs[];
-};
+// TODO: replace with common mesh texture array
+// layout (std430, binding = FONT_TEXTURE_UNIFORM_LOC) buffer FontTextureArray
+// {
+//     sampler2DArray glyphs[];
+// };
 
 out vec4 color;
 

@@ -160,6 +160,15 @@ void BufferStorage::Init() {
   gl_buffers->InitBuffers();
 }
 
+Texture* BufferStorage::CreateTextureWithBufferSlot(GLuint gl_texture_id, GLuint64 gl_texture_handle_ARB) {
+  Texture* texture = new Texture(
+    gl_texture_id,
+    gl_texture_handle_ARB,
+    gl_buffers->texture_handle_by_texture_id_ptr.Allocate());
+  BufferTextureHandle(texture);
+  return texture;
+};
+
 void BufferStorage::BufferTextureHandle(Texture* texture)
 {
   gl_buffers->

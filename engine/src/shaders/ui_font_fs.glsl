@@ -4,7 +4,7 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 
 {{ uniforms_locations }}
-{{ ui_buffers_capacity }}
+{{ mesh_buffers_capacity }}
 {{ ui_uniforms_shared }}
 {{ ui_utils }}
 
@@ -15,10 +15,11 @@ in vs_out {
     vec2 uv;
 } In;
 
-layout (std430, binding = 4) buffer FontTextureArray
-{
-    sampler2DArray glyphs[];
-};
+// TODO: replace with common mesh texture array
+// layout (std430, binding = 4) buffer FontTextureArray
+// {
+//     sampler2DArray glyphs[];
+// };
 
 out vec4 color;
 

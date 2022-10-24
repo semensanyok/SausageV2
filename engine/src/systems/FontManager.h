@@ -301,7 +301,7 @@ class FontManager : public SausageSystem {
           (ft_face->glyph->metrics.height - ft_face->glyph->metrics.horiBearingY) >> 6};
       this->size_chars[font_size].second[c] = character;
     }
-    Texture* texture = texture_manager->AllocateTextureWithHandle(texture_id, samplers->font_sampler);
+    Texture* texture = texture_manager->CreateTexture(texture_id, samplers->font_sampler);
     this->size_chars[font_size].first = texture;
     DEBUG_EXPR(CheckGLError());
   }

@@ -3,9 +3,9 @@ ui = {
 """
 layout (std430, binding = UI_UNIFORM_LOC) buffer UniformDataUI
 {
-    ivec4 min_max_x_y[MAX_UI_UNIFORM_TRANSFORM];
-    vec2 transforms[MAX_UI_UNIFORM_TRANSFORM];
-    uint base_instance_offset[MAX_BASE_MESHES];
+    ivec4 min_max_x_y[MAX_UI_INSTANCES];
+    vec2 transforms[MAX_UI_INSTANCES];
+    uint base_instance_offset[MAX_UI_COMMANDS];
 };
 """,
     "ui_utils":
@@ -23,8 +23,8 @@ bool IsMouseHover(int mouse_x, int mouse_y, int base_instance)
 """
 layout (std430, binding = FONT_UNIFORMS_LOC) buffer FontUniformData
 {
-    mat4 transforms[MAX_3D_OVERLAY_TRANSFORM];
-    uint base_instance_offset[MAX_BASE_MESHES];
+    mat4 transforms[MAX_3D_OVERLAY_INSTANCES];
+    uint base_instance_offset[MAX_3D_OVERLAY_COMMANDS];
 };
 """
 }

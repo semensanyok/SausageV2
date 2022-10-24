@@ -9,7 +9,7 @@ layout (location = 1) in vec3 color;
 layout (location = 2) in vec2 uv;
 
 {{ uniforms_locations }}
-{{ ui_buffers_capacity }}
+{{ mesh_buffers_capacity }}
 {{ ui_uniforms_shared }}
 out vec2 TexCoords;
 

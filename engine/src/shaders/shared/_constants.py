@@ -18,22 +18,17 @@ const int SPECULAR_TEX = 2;
 """,
     "mesh_buffers_capacity": 
 """
-const uint MAX_COMMAND = 1000;
-const uint MAX_BASE_MESHES = 4000;
-const uint MAX_MESHES_INSTANCES = MAX_BASE_MESHES * 10;
-const uint MAX_BONES = 100000;
-const uint MAX_TRANSFORM_OFFSET = MAX_MESHES_INSTANCES * 10;
-const uint MAX_BLEND_TEXTURES = 16;
-const uint MAX_TEXTURE = 1000;
-""",
-"ui_buffers_capacity":
-"""
-const unsigned long TEXTURES_SINGLE_FONT = 128;
-const unsigned long MAX_3D_OVERLAY_TRANSFORM = 4000;
-const unsigned long MAX_3D_OVERLAY_TRANSFORM_OFFSET = MAX_3D_OVERLAY_TRANSFORM * 10;
-const unsigned long MAX_FONT_TEXTURES = 1 * TEXTURES_SINGLE_FONT;
-const unsigned long MAX_UI_UNIFORM_TRANSFORM = 400;
-const unsigned long MAX_UI_UNIFORM_OFFSET = MAX_UI_UNIFORM_TRANSFORM * 10;
+  const uint MAX_BASE_MESHES = 4000;
+  const uint MAX_3D_OVERLAY_COMMANDS = 1000;
+  const uint MAX_3D_OVERLAY_INSTANCES = MAX_3D_OVERLAY_COMMANDS
+  const uint MAX_UI_COMMANDS = 5;
+  const uint MAX_UI_INSTANCES = 5;
+  const uint MAX_COMMAND = MAX_BASE_MESHES + MAX_UI_COMMANDS + MAX_3D_OVERLAY_COMMANDS;
+  const uint MAX_BONES = 100000;
+  const uint MAX_MESHES_INSTANCES = MAX_BASE_MESHES * 10;
+  const uint MAX_TEXTURE = 1000;
+  const uint MAX_BLEND_TEXTURES = 16;
+  const uint MAX_LIGHTS = 1000;
 """,
     "uniforms_locations":
 """
@@ -41,9 +36,8 @@ const uint UNIFORMS_LOC = 0;
 const uint TEXTURE_HANDLE_BY_TEXTURE_ID_ARRAY_LOC = 1;
 const uint LIGHTS_UNIFORM_LOC = 2;
 const uint FONT_UNIFORMS_LOC = 3;
-const uint FONT_TEXTURE_UNIFORM_LOC = 4;
-const uint UI_UNIFORM_LOC = 5;
-const uint CONTROLLER_UNIFORM_LOC = 6;
-const uint BLEND_TEXTURES_BY_MESH_ID_LOC = 7;
+const uint UI_UNIFORM_LOC = 4;
+const uint CONTROLLER_UNIFORM_LOC = 5;
+const uint BLEND_TEXTURES_BY_MESH_ID_LOC = 6;
 """
 }

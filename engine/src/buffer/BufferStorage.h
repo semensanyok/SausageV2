@@ -81,7 +81,16 @@ public:
 
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
   void BufferTransform(MESH_TYPE& mesh, TRANSFORM_TYPE& transform);
-  void BufferTextureHandle(Texture* texture);
+
+  /**
+   * used by TextureManager, should not anywhere else
+  */
+  Texture* CreateTextureWithBufferSlot(GLuint gl_texture_id, GLuint64 gl_texture_handle_ARB);
+  bool ReleaseTexture(Texture* texture) {
+    gl_buffers->
+      texture_handle_by_texture_id_ptr.instances_slots->ReleaseNumber(texture->id);
+    texture->Dispose();
+  };
   void BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
   void BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click);
 
@@ -89,6 +98,7 @@ public:
   void PreDraw();
   void PostDraw();
 private:
+  void BufferTextureHandle(Texture* texture);
   bool _AllocateInstanceSlot(MeshDataBase& mesh,
     InstancesSlots& buffer_instances_slots,
     unsigned int* base_instance_offset_ptr,

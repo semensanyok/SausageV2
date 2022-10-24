@@ -11,7 +11,7 @@ in vs_out {
 
 {{ uniforms_locations }}
 {{ controller_uniforms_shared }}
-{{ ui_buffers_capacity }}
+{{ mesh_buffers_capacity }}
 {{ ui_uniforms_shared }}
 {{ ui_utils }}
 

@@ -30,8 +30,6 @@ public:
 
   DrawCall* physics_debug_dc;
 
-  Arena* command_buffer_arena;
-
   BufferStorage* buffer;
 
   MeshManager* mesh_manager;
@@ -48,7 +46,6 @@ public:
     BufferStorage* buffer,
     MeshManager* mesh_manager
   ) : renderer{ renderer },
-    command_buffer_arena{ new Arena({0, MAX_COMMAND}) },
     buffer{ buffer },
     mesh_manager{ mesh_manager }
   {
@@ -57,7 +54,7 @@ public:
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
-      command_buffer_arena->Allocate(GetNumDrawCommandsForFontDrawCall()),
+      buffer->AllocateInstanceSlot(GetNumDrawCommandsForFontDrawCall()),
       false
     );
     draw_call_by_id[font_ui_dc->id] = font_ui_dc;
@@ -154,7 +151,7 @@ public:
     DrawCommandWithMeshMeta& command = command_by_mesh_id[mesh->id];
     lock_guard l(dc->mtx);
 
-    MemorySlot slot = dc->Allocate(1, mesh->slots);
+    dc->Allocate(mesh->slots, 1);
     command.command_buffer_offset = slot.offset;
 
     SetToCommandWithOffsets(command, mesh, instance_count);

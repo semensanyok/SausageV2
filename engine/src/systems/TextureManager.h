@@ -81,19 +81,14 @@ TODO TEXTURES MANAGING, TERRAIN INSPIRED:
 UPDATE 1 END --------------------------------------------------------------------------------------
 */
 
-struct GLTextureHandles {
-
-};
-
 class TextureManager : public SausageSystem {
     unordered_map<unsigned int, unsigned int> texture_used_count_by_id;
     unordered_map<size_t, Texture*> texture_by_material_tex_names_hash;
     Samplers* samplers;
     BufferManager* buffer;
-    ThreadSafeNumberPool* id_pool;
 public:
   TextureManager(Samplers* samplers, BufferManager* buffer) :
-    samplers{ samplers }, buffer{ buffer }, id_pool{ new ThreadSafeNumberPool(BufferSettings::MAX_TEXTURE) } {
+    samplers{ samplers }, buffer{ buffer } {
   };
     /**
     * load texture array for mesh. diffuse + normal + height + specular.
@@ -104,12 +99,11 @@ public:
 
     GLuint AllocateGLTextureId();
 
+    void Dispose(Texture* texture);
     /**
      * allocates texture id and handle, without buffered data
     */
-    Texture* AllocateTextureWithHandle(GLuint texture_id, GLuint sampler);
-
-    void Dispose(Texture* texture);
+    Texture* CreateTexture(GLuint texture_id, GLuint sampler);
 private:
     GLenum GetTexFormat(int bytes_per_pixel, bool for_storage);
 

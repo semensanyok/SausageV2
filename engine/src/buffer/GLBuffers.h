@@ -36,9 +36,6 @@ struct InstancesSlots {
 
 template<typename T>
 struct BufferSlots {
-  // must be allocated with size = MAX_INSTANCES
-  // index to uniform data as offset + glInstanceId
-  // (or MAX_VERTEX, MAX_INDEX, ...)
   InstancesSlots instances_slots;
   GLuint buffer_id;
   T* buffer_ptr;
@@ -126,7 +123,7 @@ public:
     uniforms_controller_ptr.Reset();
   };
 
-  /////////////////////////////////////////////////
+  ///////////////GetBufferSlots template//////////////////////////////////
   /**
    * per shader list of buffer_id->transform/texture array offset
    * thus, have to get pointer to structure for each shader separately
@@ -149,6 +146,8 @@ public:
     return uniforms_3d_overlay_ptr;
   }
   /////////////////////////////////////////////////
+
+  //////////////GetTransformPtr template///////////
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
   TRANSFORM_TYPE* GetTransformPtr(MESH_TYPE& mesh);
   

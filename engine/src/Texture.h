@@ -14,7 +14,8 @@ using namespace std;
 * Stores id and handle for texture array.
 */
 class Texture {
-  friend class TextureManager;
+  //friend class TextureManager;
+  friend class BufferStorage;
     bool is_destoyed;
     bool is_resident;
 public:

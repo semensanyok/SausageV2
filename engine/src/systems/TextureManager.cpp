@@ -72,8 +72,7 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
     DEBUG_EXPR(CheckGLError());
 
-    Texture* texture = AllocateTextureWithHandle(texture_id, samplers->basic_repeat);
-    buffer->storage->BufferTextureHandle(texture);
+    Texture* texture = CreateTexture(texture_id, samplers->basic_repeat);
 
     texture->material_tex_names_hash = new size_t(mtn_hash(tex_names));
     texture_by_material_tex_names_hash[mtn_hash(tex_names)] = texture;
@@ -130,24 +129,21 @@ GLuint TextureManager::AllocateGLTextureId()
       AFTER buffering data.
       cannot call it beforehand
 */
-Texture* TextureManager::AllocateTextureWithHandle(GLuint texture_id, GLuint sampler)
+Texture* TextureManager::CreateTexture(GLuint texture_id, GLuint sampler)
 {
   GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, sampler);
-  CheckGLError();
-  Texture* texture = new Texture(texture_id, tex_handle, id_pool->ObtainNumber());
-  texture_used_count_by_id[texture->id] = 1;
-  return texture;
+  DEBUG_EXPR(CheckGLError());
+  return buffer->storage->CreateTextureWithBufferSlot(texture_id, tex_handle);
 }
 
 void TextureManager::Dispose(Texture* texture)
 {
   texture_used_count_by_id[texture->id] = texture_used_count_by_id[texture->id] - 1;
   if (texture_used_count_by_id[texture->id] < 1) {
-    texture->Dispose();
-    id_pool->ReleaseNumber(texture->id);
     if (texture->material_tex_names_hash != nullptr) {
       texture_by_material_tex_names_hash.erase(*(texture->material_tex_names_hash));
     }
+    buffer->storage->ReleaseTexture(texture);
   }
 }
 

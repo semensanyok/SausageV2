@@ -23,10 +23,9 @@ namespace UniformsLocations {
   const int TEXTURE_LOC = 1;
   const int LIGHTS_UNIFORM_LOC = 2;
   const int FONT_UNIFORMS_LOC = 3;
-  const int FONT_TEXTURE_UNIFORM_LOC = 4;
-  const int UI_UNIFORM_LOC = 5;
-  const int CONTROLLER_UNIFORM_LOC = 6;
-  const int BLEND_TEXTURES_BY_MESH_ID_LOC = 7;
+  const int UI_UNIFORM_LOC = 4;
+  const int CONTROLLER_UNIFORM_LOC = 5;
+  const int BLEND_TEXTURES_BY_MESH_ID_LOC = 6;
 };
 
 class BufferInstanceOffset {
@@ -55,13 +54,13 @@ struct UniformDataMesh {
 
 struct UniformDataOverlay3D {
   mat4 transforms[MAX_3D_OVERLAY_INSTANCES];
-  unsigned int base_instance_offset[MAX_BASE_MESHES];
+  unsigned int base_instance_offset[MAX_3D_OVERLAY_COMMANDS];
 };
 
 struct UniformDataUI {
   ivec4 min_max_x_y[MAX_UI_INSTANCES];
   vec2 transforms[MAX_UI_INSTANCES];
-  unsigned int base_instance_offset[MAX_BASE_MESHES];
+  unsigned int base_instance_offset[MAX_UI_COMMANDS];
   // no padding needed, topmost structure
 };
 
