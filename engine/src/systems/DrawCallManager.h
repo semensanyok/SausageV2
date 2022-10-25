@@ -15,30 +15,30 @@ using namespace std;
 
 struct DrawCommandWithMeshMeta {
   DrawElementsIndirectCommand command;
-  unsigned int command_buffer_offset;
+  //unsigned int command_buffer_offset;
 };
 
 class DrawCallManager {
   Renderer* renderer;
 public:
-  DrawCall* mesh_dc;
+  DrawCall<MeshData>* mesh_dc;
 
-  DrawCall* back_ui_dc;
-  DrawCall* font_ui_dc;
+  DrawCall<MeshDataUI>* back_ui_dc;
+  DrawCall<MeshDataUI>* font_ui_dc;
 
-  DrawCall* overlay_3d_dc;
+  DrawCall<MeshDataOverlay3D>* overlay_3d_dc;
 
-  DrawCall* physics_debug_dc;
+  DrawCall<>* physics_debug_dc;
 
   BufferStorage* buffer;
 
   MeshManager* mesh_manager;
 
-  map<unsigned int, DrawCall*> draw_call_by_id;
+  map<unsigned int, DrawCall<MeshDataBase>> draw_call_by_id;
   // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
   // for simlicity - keep 1 command for now
   unordered_map<unsigned int, DrawCommandWithMeshMeta> command_by_mesh_id;
-  unordered_map<unsigned int, DrawCall*> dc_by_mesh_id;
+  unordered_map<unsigned int, DrawCall<MeshDataBase>> dc_by_mesh_id;
 
   DrawCallManager(
     ShaderManager* shader_manager,
@@ -51,10 +51,9 @@ public:
   {
     //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
     //    or place shader with dynamic number of meshes at the end
-    font_ui_dc = _CreateDrawCall(
+    font_ui_dc = _CreateDrawCall<MeshDataUI>(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
-      buffer->AllocateInstanceSlot(GetNumDrawCommandsForFontDrawCall()),
       false
     );
     draw_call_by_id[font_ui_dc->id] = font_ui_dc;
@@ -142,7 +141,7 @@ public:
   */
   void AddNewCommandToDrawCall(
     MeshDataBase* mesh,
-    DrawCall* dc,
+    DrawCall<MeshDataBase>* dc,
     GLuint instance_count
   ) {
     // validation that command doesnt exist already
@@ -152,7 +151,7 @@ public:
     lock_guard l(dc->mtx);
 
     dc->Allocate(mesh->slots, 1);
-    command.command_buffer_offset = slot.offset;
+    command.command_buffer_offset = mesh->slots.offset;
 
     SetToCommandWithOffsets(command, mesh, instance_count);
   }
@@ -208,11 +207,12 @@ private:
     command.baseVertex = mesh->slots.vertex_slot.offset;
     command.baseInstance = mesh->slots.buffer_id;
 
-    buffer->BufferCommand(command, command_with_meta.command_buffer_offset);
+    buffer->BufferCommand(command, mesh->GetInstanceOffset());
   }
 
-  DrawCall* _CreateDrawCall(Shader* shader, GLenum mode, MemorySlot command_buffer_slot, bool is_enabled)
+  template<typename MeshDataClass>
+  DrawCall<MeshDataClass>* _CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled)
   {
-    return new DrawCall(total_draw_calls++, shader, mode, command_buffer_slot, is_enabled);
+    return new DrawCall<MeshDataClass>(total_draw_calls++, shader, mode, is_enabled);
   }
 };

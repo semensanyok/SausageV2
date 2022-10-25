@@ -60,36 +60,41 @@ public:
     MeshDataSlots& out_slots,
     unsigned long vertices_size,
     unsigned long indices_size);
+  template<typename MESH_TYPE>
   bool AllocateInstanceSlot(
-      MeshData& mesh,
-      unsigned long num_instances);
-  bool AllocateInstanceSlot(
-      MeshDataUI& mesh,
-      unsigned long num_instances);
-  bool AllocateInstanceSlot(
-      MeshDataOverlay3D& mesh,
-      unsigned long num_instances);
+      BufferInstanceOffset& mesh,
+      MeshDataSlots& out_slots,
+      unsigned long num_instances
+  );
 
   bool ReleaseStorage(MeshDataSlots& out_slots);
-  void ReleaseInstanceSlot(MeshData& out_slots);
-  void ReleaseInstanceSlot(MeshDataUI& out_slots);
-  void ReleaseInstanceSlot(MeshDataOverlay3D& out_slots);
+  template<typename MESH_TYPE>
+  inline void ReleaseInstanceSlot(MeshDataSlots& out_slots) {
+    auto& instances_slots = gl_buffers->GetInstancesSlot<MESH_TYPE>();
+    instances_slots.Release(out_slots.instances_slot);
+  };
 
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& id_to_transform);
   void BufferBoneTransform(Bone* bone, mat4& trans, unsigned int num_bones = 1);
   void BufferLights(vector<Light*>& lights);
 
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
-  void BufferTransform(MESH_TYPE& mesh, TRANSFORM_TYPE& transform);
-
+  inline void BufferTransform(BufferInstanceOffset& mesh, TRANSFORM_TYPE& transform) {
+    gl_buffers->GetTransformPtr<TRANSFORM_TYPE, MESH_TYPE>()[mesh.GetInstanceOffset()] = transform;
+    gl_buffers->SetSyncBarrier();
+  };
+  template<typename MESH_TYPE>
+  inline unsigned int GetNumCommands() {
+    return gl_buffers->GetNumCommands<MESH_TYPE>()
+  };
   /**
    * used by TextureManager, should not anywhere else
   */
   Texture* CreateTextureWithBufferSlot(GLuint gl_texture_id, GLuint64 gl_texture_handle_ARB);
-  bool ReleaseTexture(Texture* texture) {
-    gl_buffers->
-      texture_handle_by_texture_id_ptr.instances_slots->ReleaseNumber(texture->id);
-    texture->Dispose();
+  void ReleaseTexture(Texture* texture);
+  template<typename MESH_TYPE>
+  inline unsigned int GetNumCommands() {
+    return gl_buffers->GetNumCommands<MESH_TYPE>();
   };
   void BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
   void BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click);
@@ -99,31 +104,9 @@ public:
   void PostDraw();
 private:
   void BufferTextureHandle(Texture* texture);
-  bool _AllocateInstanceSlot(MeshDataBase& mesh,
-    InstancesSlots& buffer_instances_slots,
-    unsigned int* base_instance_offset_ptr,
-    unsigned long num_instances);
   BufferStorage() :
-    gl_buffers{ new GLBuffers() },
-    command_slots{ new ThreadSafeNumberPool(MAX_BASE_MESHES) },
-    buffer_instances_slots{ new Arena({0,MAX_BASE_AND_INSTANCED_MESHES}) },
-    transforms_font_slots{ new ThreadSafeNumberPool(MAX_3D_OVERLAY_TRANSFORM) },
-    transforms_font_ui_slots{ new ThreadSafeNumberPool(MAX_UI_UNIFORM_TRANSFORM) },
-    /**
-    * had idea to have multiple arenas for each storage
-    * to store large objects in one, smaller in other
-    * now for simplicity - keep 1 Arena per buffer(with offset = 0)
-    *
-    * is_allocate_powers_of_2 = true
-    * because lots of alloc/dealloc of multipurposed out_slots of various sizes
-    **/
-    index_arena{ new Arena({ 0, MAX_INDEX }, true) },
-    vertex_arena{ new Arena({ 0, MAX_VERTEX }, true) }
-  {};
+    gl_buffers{ new GLBuffers() }{};
   ~BufferStorage() {
-    delete buffer_instances_slots;
-    delete transforms_font_slots;
-    delete transforms_font_ui_slots;
     delete gl_buffers;
   };
 };

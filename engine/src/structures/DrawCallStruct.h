@@ -16,10 +16,15 @@ enum DrawOrder {
   UI_TEXT,
 };
 
+// MeshDataClass is used to determine which buffer to use to allocate instance_id for shader
+// (referenced from base_instance_offset[buffer_id] -> instance_id to fetch textures/transforms)
+template<typename MeshDataClass>
 class DrawCall {
   friend class DrawCallManager;
-  MemorySlot command_buffer_slot;
-  Arena* command_buffer_sub_arena;
+  // now each draw call has its own buffer offset array in its uniform
+  // see GlBuffers->
+  //MemorySlot command_buffer_slot;
+  //Arena* command_buffer_sub_arena;
   ThreadSafeNumberPool* buffer_id_slots;
 public:
   bool is_enabled;
@@ -34,17 +39,14 @@ public:
   DrawCall(unsigned int id,
     Shader* shader,
     GLenum mode,
-    MemorySlot command_buffer_slot,
     bool is_enabled) :
     id{ id },
     shader{ shader },
     mode{ mode },
-    command_buffer_slot{ command_buffer_slot },
     // here we have offsets to shared command array,
     // used by glDrawElementsIndirect,
     // with range (offset, offset + count)
     // and its buffer_id array with range (0, count)
-    command_buffer_sub_arena{ new Arena(command_buffer_slot) },
     buffer_id_slots { new ThreadSafeNumberPool(command_buffer_slot.count) },
     is_enabled{ is_enabled } {
   }

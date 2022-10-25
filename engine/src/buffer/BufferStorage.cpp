@@ -89,52 +89,22 @@ bool BufferStorage::AllocateStorage(
   }
   return true;
 }
+template<typename MESH_TYPE>
+bool BufferStorage::AllocateInstanceSlot(
+    BufferInstanceOffset& mesh,
+    MeshDataSlots& out_slots,
+    unsigned long num_instances
+) {
+  auto& buffer_slots = gl_buffers->GetBufferSlots<MESH_TYPE>();
 
-bool BufferStorage::AllocateInstanceSlot(
-    MeshData& mesh,
-    unsigned long num_instances
-) {
-  auto& buffer_slots = gl_buffers->GetBufferSlots(mesh);
-  return _AllocateInstanceSlot(mesh,
-    buffer_slots.instances_slots,
-    buffer_slots.buffer_ptr->base_instance_offset,
-    num_instances);
-}
-////////////// ......InstanceSlot START ///////////////////////////////////////////////////
-bool BufferStorage::AllocateInstanceSlot(
-    MeshDataUI& mesh,
-    unsigned long num_instances
-) {
-  auto& buffer_slots = gl_buffers->GetBufferSlots(mesh);
-  return _AllocateInstanceSlot(mesh,
-    buffer_slots.instances_slots,
-    buffer_slots.buffer_ptr->base_instance_offset,
-    num_instances);
-};
-bool BufferStorage::AllocateInstanceSlot(
-    MeshDataOverlay3D& mesh,
-    unsigned long num_instances
-) {
-  auto& buffer_slots = gl_buffers->GetBufferSlots(mesh);
-  return _AllocateInstanceSlot(mesh,
-    buffer_slots.instances_slots,
-    buffer_slots.buffer_ptr->base_instance_offset,
-    num_instances);
-};
-bool BufferStorage::_AllocateInstanceSlot(
-  MeshDataBase& mesh,
-  InstancesSlots& buffer_instances_slots,
-  unsigned int* base_instance_offset_ptr,
-  unsigned long num_instances
-) {
   // because buffer id must be initialized before this call. (currently in DrawCall)
-  DEBUG_ASSERT(mesh.slots.buffer_id > 0);
-  mesh.slots.instances_slot = buffer_instances_slots.Allocate(num_instances);
-  if (mesh.slots.instances_slot == MemorySlots::NULL_SLOT) {
-    LOG("Error AllocateInstanceSlot.");
+  DEBUG_ASSERT(out_slots.buffer_id > 0);
+  out_slots.instances_slot = buffer_instances_slots.Allocate(num_instances);
+  if (out_slots.instances_slot == MemorySlots::NULL_SLOT) {
+    LOG("Error _AllocateInstanceSlot.");
     return false;
   }
-  base_instance_offset_ptr[mesh.slots.buffer_id] = mesh.GetInstanceOffset();
+  base_instance_offset_ptr[out_slots.buffer_id] = mesh.GetInstanceOffset();
   gl_buffers->SetSyncBarrier();
   return true;
 }
@@ -142,18 +112,6 @@ bool BufferStorage::ReleaseStorage(MeshDataSlots& out_slots) {
   gl_buffers->vertex_ptr.instances_slots.Release(out_slots.vertex_slot);
   gl_buffers->index_ptr.instances_slots.Release(out_slots.index_slot);
 }
-void BufferStorage::ReleaseInstanceSlot(MeshData& mesh) {
-  auto& buffer_slots = gl_buffers->GetBufferSlots(mesh);
-  buffer_slots.instances_slots.Release(mesh.slots.instances_slot);
-};
-void BufferStorage::ReleaseInstanceSlot(MeshDataUI& mesh) {
-  auto& buffer_slots = gl_buffers->GetBufferSlots(mesh);
-  buffer_slots.instances_slots.Release(mesh.slots.instances_slot);
-};
-void BufferStorage::ReleaseInstanceSlot(MeshDataOverlay3D& mesh) {
-  auto& buffer_slots = gl_buffers->GetBufferSlots(mesh);
-  buffer_slots.instances_slots.Release(mesh.slots.instances_slot);
-};
 ////////////// ......InstanceSlot END ///////////////////////////////////////////////////
 
 void BufferStorage::Init() {
@@ -169,17 +127,16 @@ Texture* BufferStorage::CreateTextureWithBufferSlot(GLuint gl_texture_id, GLuint
   return texture;
 };
 
+void BufferStorage::ReleaseTexture(Texture* texture) {
+  gl_buffers->
+    texture_handle_by_texture_id_ptr.instances_slots->ReleaseNumber(texture->id);
+  texture->Dispose();
+};
+
 void BufferStorage::BufferTextureHandle(Texture* texture)
 {
   gl_buffers->
     texture_handle_by_texture_id_ptr.buffer_ptr[texture->id] = texture->texture_handle_ARB;
-  gl_buffers->SetSyncBarrier();
-}
-
-template<typename TRANSFORM_TYPE, typename MESH_TYPE>
-void BufferTransform(MESH_TYPE& mesh, TRANSFORM_TYPE& transform)
-{
-  gl_buffers->GetTransformPtr(mesh) = transform;
   gl_buffers->SetSyncBarrier();
 }
 

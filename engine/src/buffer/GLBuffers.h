@@ -131,39 +131,83 @@ public:
    *                                      (buffer_id is not shared intentionally)
    *
   */
-  template<typename UNIFORM_TYPE, typename MESH_DATA_TYPE>
-  BufferSlots<UNIFORM_TYPE>& GetBufferSlots(MESH_DATA_TYPE& mesh);
-  inline BufferSlots<UniformDataMesh>& GetBufferSlots(MeshData& mesh)
+  template<typename UNIFORM_DATA_TYPE, typename MESH_TYPE>
+  BufferSlots<UNIFORM_DATA_TYPE>& GetBufferSlots();
+  template<>
+  inline BufferSlots<UniformDataMesh>& GetBufferSlots<UniformDataMesh, MeshData>()
   {
     return mesh_uniform_ptr;
   }
-  inline BufferSlots<UniformDataUI>& GetBufferSlots(MeshDataUI& mesh)
+  template<>
+  inline BufferSlots<UniformDataUI>& GetBufferSlots<UniformDataUI, MeshDataUI>()
   {
     return uniforms_ui_ptr;
   }
-  inline BufferSlots<UniformDataOverlay3D>& GetBufferSlots(MeshDataOverlay3D& mesh)
+  template<>
+  inline BufferSlots<UniformDataOverlay3D>& GetBufferSlots<UniformDataOverlay3D, MeshDataOverlay3D>()
   {
     return uniforms_3d_overlay_ptr;
   }
   /////////////////////////////////////////////////
 
+  /////////////////////////////////////////////////
+  template<typename typename MESH_TYPE>
+  InstancesSlots& GetInstancesSlot();
+  template<>
+  inline InstancesSlots& GetInstancesSlot<MeshData>()
+  {
+    return mesh_uniform_ptr.instances_slots;
+  }
+  template<>
+  inline InstancesSlots& GetInstancesSlot<MeshDataUI>()
+  {
+    return uniforms_ui_ptr.instances_slots;
+  }
+  template<>
+  inline InstancesSlots& GetInstancesSlot<MeshDataOverlay3D>()
+  {
+    return uniforms_3d_overlay_ptr.instances_slots;
+  }
+  /////////////////////////////////////////////////
+
   //////////////GetTransformPtr template///////////
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
-  TRANSFORM_TYPE* GetTransformPtr(MESH_TYPE& mesh);
-  
-  inline mat4* GetTransformPtr(MeshData& mesh)
+  TRANSFORM_TYPE* GetTransformPtr();
+  template<>
+  inline mat4* GetTransformPtr<mat4, MeshData>()
   {
     return mesh_uniform_ptr.buffer_ptr->transforms;
   }
-  inline vec2* GetTransformPtr(MeshDataUI& mesh)
+  template<>
+  inline vec2* GetTransformPtr<vec2, MeshDataUI>()
   {
     return uniforms_ui_ptr.buffer_ptr->transforms;
   }
-  inline mat4* GetTransformPtr(MeshDataOverlay3D& mesh)
+  template<>
+  inline mat4* GetTransformPtr<mat4, MeshDataOverlay3D>()
   {
     return uniforms_3d_overlay_ptr.buffer_ptr->transforms;
   }
   /////////////////////////////////////////////////
+
+  template<typename MESH_TYPE>
+  inline unsigned int GetNumCommands();
+
+  template<>
+  inline unsigned int GetNumCommands<MeshData>()
+  {
+    return mesh_uniform_ptr.instances_slots.instances_slots->GetUsed();
+  }
+  template<>
+  inline unsigned int GetNumCommands<MeshDataOverlay3D>()
+  {
+    return uniforms_3d_overlay_ptr.instances_slots.instances_slots->GetUsed();
+  }
+  template<>
+  inline unsigned int GetNumCommands<MeshDataUI>()
+  {
+    return uniforms_ui_ptr.instances_slots.instances_slots->GetUsed();
+  }
 
 private:
   void _SyncGPUBufAndUnmap();
