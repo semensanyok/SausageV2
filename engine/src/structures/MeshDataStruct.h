@@ -171,3 +171,11 @@ public:
     cout << "RayHit from mesh " << mesh_data->name << endl;
   }
 };
+
+/*
+this shader doesnt need instance slot
+and only uses vertex/index arrays (doesnt use uniforms)
+*/
+class MeshDataPhysicsDebug {
+
+};

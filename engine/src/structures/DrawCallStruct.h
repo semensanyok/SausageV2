@@ -5,6 +5,7 @@
 #include "Arena.h"
 #include "GPUStructs.h"
 #include "MeshDataStruct.h"
+#include "ThreadSafeNumberPool.h"
 
 using namespace std;
 
@@ -23,9 +24,9 @@ class DrawCall {
   friend class DrawCallManager;
   // now each draw call has its own buffer offset array in its uniform
   // see GlBuffers->
-  //MemorySlot command_buffer_slot;
-  //Arena* command_buffer_sub_arena;
-  ThreadSafeNumberPool* buffer_id_slots;
+  MemorySlot command_buffer_slot;
+  Arena command_buffer_sub_arena;
+  ThreadSafeNumberPool buffer_id_slots;
 public:
   bool is_enabled;
   /**
@@ -39,15 +40,18 @@ public:
   DrawCall(unsigned int id,
     Shader* shader,
     GLenum mode,
+    MemorySlot command_buffer_slot,
     bool is_enabled) :
     id{ id },
     shader{ shader },
     mode{ mode },
+    command_buffer_slot{ command_buffer_slot },
     // here we have offsets to shared command array,
     // used by glDrawElementsIndirect,
     // with range (offset, offset + count)
     // and its buffer_id array with range (0, count)
-    buffer_id_slots { new ThreadSafeNumberPool(command_buffer_slot.count) },
+    command_buffer_sub_arena{ Arena(command_buffer_slot) },
+    buffer_id_slots { ThreadSafeNumberPool(command_buffer_slot.count) },
     is_enabled{ is_enabled } {
   }
   const unsigned int id;
@@ -61,11 +65,18 @@ public:
   unsigned int GetBaseOffset() {
     return command_buffer_sub_arena->GetBaseOffset();
   }
+
+  unsigned int GetAbsoluteCommandOffset(MeshDataSlots& slots) {
+    return slots.buffer_id + command_buffer_slot.offset;
+  }
 private:
+  unsigned int GetRelativeBufferId(MemorySlot& sub_command_buffer_slot) {
+    return sub_command_buffer_slot.offset - command_buffer_slot.offset;
+  }
   void Allocate(MeshDataSlots& out_slots, unsigned int instances_count) {
-    out_slots.buffer_id = buffer_id_slots->ObtainNumber();
+    MemorySlot& sub_command_buffer_slot = command_buffer_sub_arena.Allocate(instances_count);
+    out_slots.buffer_id = GetRelativeBufferId(sub_command_buffer_slot);
     DEBUG_ASSERT(out_slots.buffer_id >= 0);
-    out_slots.instances_slot = 
     return slot;
   }
   void Release(MemorySlot slot) {

@@ -28,13 +28,12 @@ public:
 
   DrawCall<MeshDataOverlay3D>* overlay_3d_dc;
 
-  DrawCall<>* physics_debug_dc;
+  DrawCall<MeshDataPhysicsDebug>* physics_debug_dc;
 
   BufferStorage* buffer;
 
   MeshManager* mesh_manager;
 
-  map<unsigned int, DrawCall<MeshDataBase>> draw_call_by_id;
   // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
   // for simlicity - keep 1 command for now
   unordered_map<unsigned int, DrawCommandWithMeshMeta> command_by_mesh_id;
@@ -54,41 +53,37 @@ public:
     font_ui_dc = _CreateDrawCall<MeshDataUI>(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
+      buffer->gl_buffers->AllocateCommandBufferSlot(GetNumDrawCommandsForFontDrawCall()),
       false
     );
-    draw_call_by_id[font_ui_dc->id] = font_ui_dc;
 
-    back_ui_dc = _CreateDrawCall(
+    back_ui_dc = _CreateDrawCall<MeshDataUI>(
       shader_manager->all_shaders->back_ui,
       GL_TRIANGLES,
-      command_buffer_arena->Allocate(GetNumDrawCommandsForBackDrawCall()),
+      buffer->gl_buffers->AllocateCommandBufferSlot(GetNumDrawCommandsForBackDrawCall()),
       false
     );
-    draw_call_by_id[back_ui_dc->id] = back_ui_dc;
 
-    overlay_3d_dc = _CreateDrawCall(
+    overlay_3d_dc = _CreateDrawCall<MeshDataOverlay3D>(
       shader_manager->all_shaders->overlay_3d,
       GL_TRIANGLES,
-      command_buffer_arena->Allocate(1),
+      buffer->gl_buffers->AllocateCommandBufferSlot(1),
       true
     );
-    draw_call_by_id[overlay_3d_dc->id] = overlay_3d_dc;
 
-    physics_debug_dc = _CreateDrawCall(
+    physics_debug_dc = _CreateDrawCall<MeshDataPhysicsDebug>(
       shader_manager->all_shaders->bullet_debug,
       GL_LINES,
-      command_buffer_arena->Allocate(1),
+      buffer->gl_buffers->AllocateCommandBufferSlot(1),
       false
     );
-    draw_call_by_id[physics_debug_dc->id] = physics_debug_dc;
 
-    mesh_dc = _CreateDrawCall(
+    mesh_dc = _CreateDrawCall<MeshData>(
       shader_manager->all_shaders->blinn_phong,
       GL_TRIANGLES,
-      command_buffer_arena->Allocate(MAX_BASE_MESHES),
+      buffer->gl_buffers->AllocateCommandBufferSlot(MAX_BASE_MESHES),
       true
     );
-    draw_call_by_id[mesh_dc->id] = mesh_dc;
 
     renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
     renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
@@ -139,9 +134,10 @@ public:
    *        allocated via BufferStorage#AllocateStorage
    * @param dc draw call to assign mesh to
   */
+  template<typename MESH_TYPE>
   void AddNewCommandToDrawCall(
-    MeshDataBase* mesh,
-    DrawCall<MeshDataBase>* dc,
+    MeshDataSlots& mesh_slots,
+    DrawCall<MESH_TYPE>* dc,
     GLuint instance_count
   ) {
     // validation that command doesnt exist already
@@ -150,10 +146,10 @@ public:
     DrawCommandWithMeshMeta& command = command_by_mesh_id[mesh->id];
     lock_guard l(dc->mtx);
 
-    dc->Allocate(mesh->slots, 1);
-    command.command_buffer_offset = mesh->slots.offset;
-
-    SetToCommandWithOffsets(command, mesh, instance_count);
+    dc->Allocate(mesh_slots, 1);
+    if (buffer->AllocateInstanceSlot<MESH_TYPE>(*mesh, mesh_slots, instance_count)) {
+      SetToCommandWithOffsets(command, mesh, dc->GetAbsoluteCommandOffset(mesh_slots));
+    }
   }
 
   /**
@@ -197,22 +193,23 @@ private:
 
   void SetToCommandWithOffsets(
     DrawCommandWithMeshMeta& command_with_meta,
-    MeshDataBase* mesh,
-    GLuint instance_count
+    MeshDataSlots& mesh_slots,
+    unsigned int command_offset
   ) {
     auto& command = command_with_meta.command;
-    command.instanceCount = instance_count;
-    command.count = mesh->slots.index_slot.used;
-    command.firstIndex = mesh->slots.index_slot.offset;
-    command.baseVertex = mesh->slots.vertex_slot.offset;
-    command.baseInstance = mesh->slots.buffer_id;
+    command.instanceCount = mesh_slots.instances_slot.count;
+    command.count = mesh_slots.index_slot.used;
+    command.firstIndex = mesh_slots.index_slot.offset;
+    command.baseVertex = mesh_slots.vertex_slot.offset;
+    command.baseInstance = mesh_slots.buffer_id;
 
-    buffer->BufferCommand(command, mesh->GetInstanceOffset());
+    buffer->BufferCommand(command, command_offset);
   }
 
   template<typename MeshDataClass>
-  DrawCall<MeshDataClass>* _CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled)
+  DrawCall<MeshDataClass>* _CreateDrawCall(Shader* shader, GLenum mode,
+    MemorySlot command_buffer_slot, bool is_enabled)
   {
-    return new DrawCall<MeshDataClass>(total_draw_calls++, shader, mode, is_enabled);
+    return new DrawCall<MeshDataClass>(total_draw_calls++, shader, mode, command_buffer_slot, is_enabled);
   }
 };

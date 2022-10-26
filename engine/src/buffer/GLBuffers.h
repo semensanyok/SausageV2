@@ -37,6 +37,8 @@ struct InstancesSlots {
 template<typename T>
 struct BufferSlots {
   InstancesSlots instances_slots;
+  // opengl generated buffer_id
+  // dont confuse with DrawElementsIndirectCommand buffer_id (user provided)
   GLuint buffer_id;
   T* buffer_ptr;
   inline void Reset() {
@@ -150,6 +152,23 @@ public:
   }
   /////////////////////////////////////////////////
 
+  template<typename MESH_TYPE>
+  unsigned int* GetBufferSlotsBaseInstanceOffset();
+  template<>
+  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshData>()
+  {
+    return mesh_uniform_ptr.buffer_ptr->base_instance_offset;
+  };
+  template<>
+  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataUI>()
+  {
+    return uniforms_ui_ptr.buffer_ptr->base_instance_offset;
+  };
+  template<>
+  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataOverlay3D>()
+  {
+    return uniforms_3d_overlay_ptr.buffer_ptr->base_instance_offset;
+  };
   /////////////////////////////////////////////////
   template<typename typename MESH_TYPE>
   InstancesSlots& GetInstancesSlot();
@@ -209,6 +228,12 @@ public:
     return uniforms_ui_ptr.instances_slots.instances_slots->GetUsed();
   }
 
+  inline MemorySlot AllocateCommandBufferSlot(unsigned int size) {
+    return command_ptr.instances_slots.Allocate(size);
+  }
+  inline void ReleaseCommandBufferSlot(MemorySlot& out_slot) {
+    command_ptr.instances_slots.Release(out_slot);
+  }
 private:
   void _SyncGPUBufAndUnmap();
   void _BindCommandBuffer();

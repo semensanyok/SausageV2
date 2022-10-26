@@ -91,20 +91,19 @@ bool BufferStorage::AllocateStorage(
 }
 template<typename MESH_TYPE>
 bool BufferStorage::AllocateInstanceSlot(
-    BufferInstanceOffset& mesh,
     MeshDataSlots& out_slots,
     unsigned long num_instances
 ) {
-  auto& buffer_slots = gl_buffers->GetBufferSlots<MESH_TYPE>();
-
+  unsigned int* base_instance_offset_ptr = gl_buffers->GetBufferSlotsBaseInstanceOffset<MESH_TYPE>();
+  InstancesSlots& instances_slot = gl_buffers->GetInstancesSlot<MESH_TYPE>();
   // because buffer id must be initialized before this call. (currently in DrawCall)
   DEBUG_ASSERT(out_slots.buffer_id > 0);
-  out_slots.instances_slot = buffer_instances_slots.Allocate(num_instances);
+  out_slots.instances_slot = instances_slot.Allocate(num_instances);
   if (out_slots.instances_slot == MemorySlots::NULL_SLOT) {
     LOG("Error _AllocateInstanceSlot.");
     return false;
   }
-  base_instance_offset_ptr[out_slots.buffer_id] = mesh.GetInstanceOffset();
+  base_instance_offset_ptr[out_slots.buffer_id] = out_slots.instances_slot.offset;
   gl_buffers->SetSyncBarrier();
   return true;
 }
@@ -123,9 +122,15 @@ Texture* BufferStorage::CreateTextureWithBufferSlot(GLuint gl_texture_id, GLuint
     gl_texture_id,
     gl_texture_handle_ARB,
     gl_buffers->texture_handle_by_texture_id_ptr.Allocate());
-  BufferTextureHandle(texture);
+  _BufferTextureHandle(texture);
   return texture;
 };
+void BufferStorage::_BufferTextureHandle(Texture* texture)
+{
+  gl_buffers->
+    texture_handle_by_texture_id_ptr.buffer_ptr[texture->id] = texture->texture_handle_ARB;
+  gl_buffers->SetSyncBarrier();
+}
 
 void BufferStorage::ReleaseTexture(Texture* texture) {
   gl_buffers->
@@ -133,12 +138,10 @@ void BufferStorage::ReleaseTexture(Texture* texture) {
   texture->Dispose();
 };
 
-void BufferStorage::BufferTextureHandle(Texture* texture)
-{
-  gl_buffers->
-    texture_handle_by_texture_id_ptr.buffer_ptr[texture->id] = texture->texture_handle_ARB;
-  gl_buffers->SetSyncBarrier();
-}
+void BufferStorage::BufferBlendTextures(BlendTextures& textures, BufferInstanceOffset& mesh) {
+  auto& buffer_slots = gl_buffers->GetBufferSlots<UniformDataMesh, MeshData>();
+  buffer_slots.buffer_ptr->blend_textures[mesh.GetInstanceOffset()] = textures;
+};
 
 void BufferStorage::BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y) {
   DEBUG_ASSERT(mesh->slots.buffer_id > 0);

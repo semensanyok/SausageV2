@@ -38,9 +38,9 @@ class BufferStorage {
 private:
   //  TODO: each drawcall uses contigious range of commands. Need to allocate in advance for shader.
   //    or place shader with dynamic number of meshes at the end
-  GLBuffers* gl_buffers;
 
 public:
+  GLBuffers* gl_buffers;
 
   static BufferStorage* GetInstance() {
     static BufferStorage* instance = new BufferStorage();
@@ -62,17 +62,16 @@ public:
     unsigned long indices_size);
   template<typename MESH_TYPE>
   bool AllocateInstanceSlot(
-      BufferInstanceOffset& mesh,
       MeshDataSlots& out_slots,
       unsigned long num_instances
   );
-
   bool ReleaseStorage(MeshDataSlots& out_slots);
   template<typename MESH_TYPE>
   inline void ReleaseInstanceSlot(MeshDataSlots& out_slots) {
     auto& instances_slots = gl_buffers->GetInstancesSlot<MESH_TYPE>();
     instances_slots.Release(out_slots.instances_slot);
   };
+  void BufferBlendTextures(BlendTextures& textures, BufferInstanceOffset& mesh);
 
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& id_to_transform);
   void BufferBoneTransform(Bone* bone, mat4& trans, unsigned int num_bones = 1);
@@ -92,18 +91,15 @@ public:
   */
   Texture* CreateTextureWithBufferSlot(GLuint gl_texture_id, GLuint64 gl_texture_handle_ARB);
   void ReleaseTexture(Texture* texture);
-  template<typename MESH_TYPE>
-  inline unsigned int GetNumCommands() {
-    return gl_buffers->GetNumCommands<MESH_TYPE>();
-  };
   void BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
   void BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click);
 
   void AddUsedBuffers(BufferType::BufferTypeFlag used_buffers);
+
   void PreDraw();
   void PostDraw();
 private:
-  void BufferTextureHandle(Texture* texture);
+  void _BufferTextureHandle(Texture* texture);
   BufferStorage() :
     gl_buffers{ new GLBuffers() }{};
   ~BufferStorage() {

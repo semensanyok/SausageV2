@@ -8,7 +8,7 @@ using namespace std;
 */
 void Texture::MakeResident() {
 	if (is_destoyed) {
-		LOG("ERROR making texutre resident. texture is destroyed");
+		LOG("ERROR cant make destroyed texutre resident.");
 		return;
 	}
 	if (!is_resident) {
