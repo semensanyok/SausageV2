@@ -71,6 +71,9 @@ public:
     auto& instances_slots = gl_buffers->GetInstancesSlot<MESH_TYPE>();
     instances_slots.Release(out_slots.instances_slot);
   };
+  inline MemorySlot AllocateCommandBufferSlot(unsigned int size) {
+    return gl_buffers->AllocateCommandBufferSlot(size);
+  }
   void BufferBlendTextures(BlendTextures& textures, BufferInstanceOffset& mesh);
 
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& id_to_transform);

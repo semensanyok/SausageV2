@@ -13,11 +13,6 @@
 
 using namespace std;
 
-struct DrawCommandWithMeshMeta {
-  DrawElementsIndirectCommand command;
-  //unsigned int command_buffer_offset;
-};
-
 class DrawCallManager {
   Renderer* renderer;
 public:
@@ -36,8 +31,8 @@ public:
 
   // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
   // for simlicity - keep 1 command for now
-  unordered_map<unsigned int, DrawCommandWithMeshMeta> command_by_mesh_id;
-  unordered_map<unsigned int, DrawCall<MeshDataBase>> dc_by_mesh_id;
+  unordered_map<unsigned int, DrawElementsIndirectCommand> command_by_mesh_id;
+  unordered_map<unsigned int, DrawCall<MeshDataBase>*> dc_by_mesh_id;
 
   DrawCallManager(
     ShaderManager* shader_manager,
@@ -53,35 +48,35 @@ public:
     font_ui_dc = _CreateDrawCall<MeshDataUI>(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
-      buffer->gl_buffers->AllocateCommandBufferSlot(GetNumDrawCommandsForFontDrawCall()),
+      buffer->AllocateCommandBufferSlot(GetNumDrawCommandsForFontDrawCall()),
       false
     );
 
     back_ui_dc = _CreateDrawCall<MeshDataUI>(
       shader_manager->all_shaders->back_ui,
       GL_TRIANGLES,
-      buffer->gl_buffers->AllocateCommandBufferSlot(GetNumDrawCommandsForBackDrawCall()),
+      buffer->AllocateCommandBufferSlot(GetNumDrawCommandsForBackDrawCall()),
       false
     );
 
     overlay_3d_dc = _CreateDrawCall<MeshDataOverlay3D>(
       shader_manager->all_shaders->overlay_3d,
       GL_TRIANGLES,
-      buffer->gl_buffers->AllocateCommandBufferSlot(1),
+      buffer->AllocateCommandBufferSlot(1),
       true
     );
 
     physics_debug_dc = _CreateDrawCall<MeshDataPhysicsDebug>(
       shader_manager->all_shaders->bullet_debug,
       GL_LINES,
-      buffer->gl_buffers->AllocateCommandBufferSlot(1),
+      buffer->AllocateCommandBufferSlot(1),
       false
     );
 
     mesh_dc = _CreateDrawCall<MeshData>(
       shader_manager->all_shaders->blinn_phong,
       GL_TRIANGLES,
-      buffer->gl_buffers->AllocateCommandBufferSlot(MAX_BASE_MESHES),
+      buffer->AllocateCommandBufferSlot(MAX_BASE_MESHES),
       true
     );
 
@@ -92,37 +87,55 @@ public:
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
   }
 
+  template<typename MESH_TYPE>
   MeshDataInstance* AddNewInstance(MeshDataBase* mesh) {
-    auto command_iter = command_by_mesh_id.find(mesh->id);
-    DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
-    auto& command = command_iter->second;
-    // TODO: ensure instances_slot reallocation in caller service
-    //       or better to do it here, where instance first initiated?
-    DEBUG_ASSERT(command.command.instanceCount + 1 <= mesh->slots.instances_slot.count);
-    // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
-    mesh_manager->CreateInstancedMesh(mesh, command.command.instanceCount++);
-    mesh->slots.instances_slot.used = command.command.instanceCount;
-    buffer->BufferCommand(command.command, command.command_buffer_offset);
+    DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
+    DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
+    auto& command = command_by_mesh_id[mesh->id];
+    auto dc = dc_by_mesh_id[mesh->id];
+    // reallocate if
+    bool is_success_slot_alloc = true;
+    auto instance_count = command.instanceCount + 1;
+    if (instance_count > mesh->slots.instances_slot.count) {
+      is_success_slot_alloc = ReallocateInstanceSlot<MESH_TYPE>(mesh->slots,
+        instance_count, command, dc);
+    }
+    if (is_success_slot_alloc) {
+      // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
+      mesh_manager->CreateInstancedMesh(mesh, command.instanceCount++);
+      mesh->slots.instances_slot.used = command.instanceCount;
+      buffer->BufferCommand(command, command.command_buffer_offset);
+    }
   }
 
   /**
    * @brief sets instance count to base mesh draw command.
    *        this command doesnt modify mesh.instance_id
    *        (to set instance_id automatically use AddNewInstance)
-   *        note that mesh.instance_id (gl_InstanceID) is in range [0,instance_count-1]
+   *        note that mesh.instance_id (gl_InstanceID) is in range [0,new_instance_count-1]
   */
+  template<typename MESH_TYPE>
   void SetInstanceCountToCommand(MeshDataBase* mesh, GLuint instance_count) {
     // TODO: if new instance count doesnt fit in existing transforms slot
     //       - reallocate transform offsets, release transform slot
     //       early exit if current slot is enough
-    auto command_iter = command_by_mesh_id.find(mesh->id);
-    DEBUG_ASSERT(command_iter != command_by_mesh_id.end());
-    auto& command = command_iter->second;
-    // TODO: ensure instances_slot reallocation in caller service
-    DEBUG_ASSERT(instance_count <= mesh->slots.instances_slot.count);
-    command.command.instanceCount = instance_count;
-    mesh->slots.instances_slot.used = instance_count;
-    buffer->BufferCommand(command.command, command.command_buffer_offset);
+    DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
+    DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
+    auto& command = command_by_mesh_id[mesh->id];
+    auto dc = dc_by_mesh_id[mesh->id];
+    bool is_success_slot_alloc = true;
+    if (instance_count > mesh->slots.instances_slot.count) {
+      is_success_slot_alloc = ReallocateInstanceSlot<MESH_TYPE>(mesh->slots,
+        instance_count, command, dc);
+    }
+    if (instance_count == 0) {
+      buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh->slots);
+    }
+    if (is_success_slot_alloc) {
+      command.instanceCount = instance_count;
+      mesh->slots.instances_slot.used = instance_count;
+      buffer->BufferCommand(command, command.command_buffer_offset);
+    }
   }
 
   /**
@@ -136,6 +149,7 @@ public:
   */
   template<typename MESH_TYPE>
   void AddNewCommandToDrawCall(
+    MeshDataBase* mesh,
     MeshDataSlots& mesh_slots,
     DrawCall<MESH_TYPE>* dc,
     GLuint instance_count
@@ -143,60 +157,88 @@ public:
     // validation that command doesnt exist already
     DEBUG_ASSERT(dc_by_mesh_id.find(mesh->id) == dc_by_mesh_id.end());
     DEBUG_ASSERT(command_by_mesh_id.find(mesh->id) == command_by_mesh_id.end());
-    DrawCommandWithMeshMeta& command = command_by_mesh_id[mesh->id];
+    DrawElementsIndirectCommand& command = command_by_mesh_id[mesh->id];
     lock_guard l(dc->mtx);
 
     dc->Allocate(mesh_slots, 1);
-    if (buffer->AllocateInstanceSlot<MESH_TYPE>(*mesh, mesh_slots, instance_count)) {
-      SetToCommandWithOffsets(command, mesh, dc->GetAbsoluteCommandOffset(mesh_slots));
+    if (buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, instance_count)) {
+      SetToCommandWithOffsets(command, mesh_slots, dc->GetAbsoluteCommandOffset(mesh_slots));
     }
   }
 
   /**
    * @brief set/update mesh offsets to existing mesh draw command
    *        use it:
-   *        - for vertex/index/offset/instance_coumt/.. data modification for the command
+   *        - for update command vertex/index/offset/new_instance_count/..
    *        - if command was created via AddNewCommandToDrawCall
    *          prior to mesh data allocation
    *          and offset setup via BufferStorage#AllocateStorage
    *          (command was created initially with 0 offsets and instance count)
   */
+  template<typename MESH_TYPE>
   void SetToCommandWithOffsets(
     MeshDataBase* mesh,
     GLuint instance_count
   ) {
+    DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
     DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
-    SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh, instance_count);
+    auto dc = dc_by_mesh_id[mesh->id];
+    auto command = command_by_mesh_id[mesh->id];
+    // if asked more then current slots have - reallocate
+    bool is_success_slot_alloc = false;
+    if (instance_count > mesh->slots.instances_slot.count) {
+      is_success_slot_alloc = ReallocateInstanceSlot(mesh->slots, instance_count, command, dc);
+    }
+    else {
+      mesh->slots.instances_slot.used = instance_count;
+      is_success_slot_alloc = true;
+    }
+    if (is_success_slot_alloc) {
+      SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh->slots, dc->GetAbsoluteCommandOffset(mesh_slots));
+    }
   }
 
-  
+  template<typename MESH_TYPE>
+  bool ReallocateInstanceSlot(MeshDataSlots& mesh_slots,
+    GLuint& new_instance_count,
+    DrawElementsIndirectCommand& command,
+    const DrawCall<MeshDataBase>* dc)
+  {
+    buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
+    if (buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count)) {
+      SetToCommandWithOffsets(command, mesh_slots, dc->GetAbsoluteCommandOffset(mesh_slots));
+      return true;
+    }
+    return false;
+  }
+
+  template<typename MESH_TYPE>
   void DisableCommand(MeshDataBase* mesh) {
-    auto draw_call = dc_by_mesh_id.find(mesh->id);
+    DrawCall* draw_call = dc_by_mesh_id.find(mesh->id);
     if (draw_call == dc_by_mesh_id.end()) {
       LOG(format("WARN: DisableCommand: Not found DrawCall for mesh_id={}", mesh->id));
       return;
     } else {
       dc_by_mesh_id.erase(draw_call);
     }
-    SetInstanceCountToCommand(mesh, 0);
     auto draw_command = command_by_mesh_id.find(mesh->id);
     if (draw_command == command_by_mesh_id.end()) {
       LOG(format("WARN: DisableCommand: Not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
     }
     else {
+      SetInstanceCountToCommand<MESH_TYPE>(mesh, 0)
       command_by_mesh_id.erase(draw_command);
-    }
+    };
     draw_call->second->Release({ draw_command->second.command_buffer_offset, 1 });
   }
 private:
   int total_draw_calls = 0;
 
   void SetToCommandWithOffsets(
-    DrawCommandWithMeshMeta& command_with_meta,
+    DrawElementsIndirectCommand& command,
     MeshDataSlots& mesh_slots,
     unsigned int command_offset
   ) {
-    auto& command = command_with_meta.command;
     command.instanceCount = mesh_slots.instances_slot.count;
     command.count = mesh_slots.index_slot.used;
     command.firstIndex = mesh_slots.index_slot.offset;

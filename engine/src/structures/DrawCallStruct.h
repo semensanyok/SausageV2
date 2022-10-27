@@ -74,7 +74,7 @@ private:
     return sub_command_buffer_slot.offset - command_buffer_slot.offset;
   }
   void Allocate(MeshDataSlots& out_slots, unsigned int instances_count) {
-    MemorySlot& sub_command_buffer_slot = command_buffer_sub_arena.Allocate(instances_count);
+    MemorySlot& sub_command_buffer_slot = command_buffer_sub_arena.Allocate(1);
     out_slots.buffer_id = GetRelativeBufferId(sub_command_buffer_slot);
     DEBUG_ASSERT(out_slots.buffer_id >= 0);
     return slot;
