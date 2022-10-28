@@ -19,7 +19,8 @@ enum DrawOrder {
 
 // MeshDataClass is used to determine which buffer to use to allocate instance_id for shader
 // (referenced from base_instance_offset[buffer_id] -> instance_id to fetch textures/transforms)
-template<typename MeshDataClass>
+// commented out because now it is used only in template function
+//template<typename MeshDataClass>
 class DrawCall {
   friend class DrawCallManager;
   // now each draw call has its own buffer offset array in its uniform
@@ -60,10 +61,10 @@ public:
   GLenum mode;  // GL_TRIANGLES GL_LINES
   Shader* shader;
   unsigned int GetCommandCount() {
-    return command_buffer_sub_arena->GetUsed();
+    return command_buffer_sub_arena.GetUsed();
   }
   unsigned int GetBaseOffset() {
-    return command_buffer_sub_arena->GetBaseOffset();
+    return command_buffer_sub_arena.GetBaseOffset();
   }
 
   unsigned int GetAbsoluteCommandOffset(MeshDataSlots& slots) {
@@ -74,12 +75,11 @@ private:
     return sub_command_buffer_slot.offset - command_buffer_slot.offset;
   }
   void Allocate(MeshDataSlots& out_slots, unsigned int instances_count) {
-    MemorySlot& sub_command_buffer_slot = command_buffer_sub_arena.Allocate(1);
+    MemorySlot sub_command_buffer_slot = command_buffer_sub_arena.Allocate(1);
     out_slots.buffer_id = GetRelativeBufferId(sub_command_buffer_slot);
     DEBUG_ASSERT(out_slots.buffer_id >= 0);
-    return slot;
   }
-  void Release(MemorySlot slot) {
-    command_buffer_sub_arena->Release(slot);
+  void Release(MeshDataSlots& out_slots) {
+    command_buffer_sub_arena.Release({ GetAbsoluteCommandOffset(out_slots), 1 });
   }
 };

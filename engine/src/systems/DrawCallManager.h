@@ -16,14 +16,14 @@ using namespace std;
 class DrawCallManager {
   Renderer* renderer;
 public:
-  DrawCall<MeshData>* mesh_dc;
+  DrawCall* mesh_dc;
 
-  DrawCall<MeshDataUI>* back_ui_dc;
-  DrawCall<MeshDataUI>* font_ui_dc;
+  DrawCall* back_ui_dc;
+  DrawCall* font_ui_dc;
 
-  DrawCall<MeshDataOverlay3D>* overlay_3d_dc;
+  DrawCall* overlay_3d_dc;
 
-  DrawCall<MeshDataPhysicsDebug>* physics_debug_dc;
+  DrawCall* physics_debug_dc;
 
   BufferStorage* buffer;
 
@@ -32,7 +32,7 @@ public:
   // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
   // for simlicity - keep 1 command for now
   unordered_map<unsigned int, DrawElementsIndirectCommand> command_by_mesh_id;
-  unordered_map<unsigned int, DrawCall<MeshDataBase>*> dc_by_mesh_id;
+  unordered_map<unsigned int, DrawCall*> dc_by_mesh_id;
 
   DrawCallManager(
     ShaderManager* shader_manager,
@@ -104,7 +104,7 @@ public:
       // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
       mesh_manager->CreateInstancedMesh(mesh, command.instanceCount++);
       mesh->slots.instances_slot.used = command.instanceCount;
-      buffer->BufferCommand(command, command.command_buffer_offset);
+      buffer->BufferCommand(command, dc->GetAbsoluteCommandOffset(mesh->slots));
     }
   }
 
@@ -134,7 +134,7 @@ public:
     if (is_success_slot_alloc) {
       command.instanceCount = instance_count;
       mesh->slots.instances_slot.used = instance_count;
-      buffer->BufferCommand(command, command.command_buffer_offset);
+      buffer->BufferCommand(command, dc->GetAbsoluteCommandOffset(mesh->slots));
     }
   }
 
@@ -151,7 +151,7 @@ public:
   void AddNewCommandToDrawCall(
     MeshDataBase* mesh,
     MeshDataSlots& mesh_slots,
-    DrawCall<MESH_TYPE>* dc,
+    DrawCall* dc,
     GLuint instance_count
   ) {
     // validation that command doesnt exist already
@@ -187,14 +187,15 @@ public:
     // if asked more then current slots have - reallocate
     bool is_success_slot_alloc = false;
     if (instance_count > mesh->slots.instances_slot.count) {
-      is_success_slot_alloc = ReallocateInstanceSlot(mesh->slots, instance_count, command, dc);
+      is_success_slot_alloc = ReallocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count, command, dc);
     }
     else {
       mesh->slots.instances_slot.used = instance_count;
       is_success_slot_alloc = true;
     }
     if (is_success_slot_alloc) {
-      SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh->slots, dc->GetAbsoluteCommandOffset(mesh_slots));
+      SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh->slots,
+        dc->GetAbsoluteCommandOffset(mesh->slots));
     }
   }
 
@@ -202,7 +203,7 @@ public:
   bool ReallocateInstanceSlot(MeshDataSlots& mesh_slots,
     GLuint& new_instance_count,
     DrawElementsIndirectCommand& command,
-    const DrawCall<MeshDataBase>* dc)
+    DrawCall* dc)
   {
     buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
     if (buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count)) {
@@ -214,7 +215,7 @@ public:
 
   template<typename MESH_TYPE>
   void DisableCommand(MeshDataBase* mesh) {
-    DrawCall* draw_call = dc_by_mesh_id.find(mesh->id);
+    auto draw_call = dc_by_mesh_id.find(mesh->id);
     if (draw_call == dc_by_mesh_id.end()) {
       LOG(format("WARN: DisableCommand: Not found DrawCall for mesh_id={}", mesh->id));
       return;
@@ -226,10 +227,10 @@ public:
       LOG(format("WARN: DisableCommand: Not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
     }
     else {
-      SetInstanceCountToCommand<MESH_TYPE>(mesh, 0)
+      SetInstanceCountToCommand<MESH_TYPE>(mesh, 0);
       command_by_mesh_id.erase(draw_command);
     };
-    draw_call->second->Release({ draw_command->second.command_buffer_offset, 1 });
+    draw_call->second->Release(mesh->slots);
   }
 private:
   int total_draw_calls = 0;
@@ -249,7 +250,7 @@ private:
   }
 
   template<typename MeshDataClass>
-  DrawCall<MeshDataClass>* _CreateDrawCall(Shader* shader, GLenum mode,
+  DrawCall* _CreateDrawCall(Shader* shader, GLenum mode,
     MemorySlot command_buffer_slot, bool is_enabled)
   {
     return new DrawCall<MeshDataClass>(total_draw_calls++, shader, mode, command_buffer_slot, is_enabled);
