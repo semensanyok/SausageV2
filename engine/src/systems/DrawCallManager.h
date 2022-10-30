@@ -34,6 +34,8 @@ public:
   unordered_map<unsigned int, DrawElementsIndirectCommand> command_by_mesh_id;
   unordered_map<unsigned int, DrawCall*> dc_by_mesh_id;
 
+  int total_draw_calls = 0;
+
   DrawCallManager(
     ShaderManager* shader_manager,
     Renderer* renderer,
@@ -45,35 +47,35 @@ public:
   {
     //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
     //    or place shader with dynamic number of meshes at the end
-    font_ui_dc = _CreateDrawCall<MeshDataUI>(
+    font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
       buffer->AllocateCommandBufferSlot(GetNumDrawCommandsForFontDrawCall()),
       false
     );
 
-    back_ui_dc = _CreateDrawCall<MeshDataUI>(
+    back_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->back_ui,
       GL_TRIANGLES,
       buffer->AllocateCommandBufferSlot(GetNumDrawCommandsForBackDrawCall()),
       false
     );
 
-    overlay_3d_dc = _CreateDrawCall<MeshDataOverlay3D>(
+    overlay_3d_dc = _CreateDrawCall(
       shader_manager->all_shaders->overlay_3d,
       GL_TRIANGLES,
       buffer->AllocateCommandBufferSlot(1),
       true
     );
 
-    physics_debug_dc = _CreateDrawCall<MeshDataPhysicsDebug>(
+    physics_debug_dc = _CreateDrawCall(
       shader_manager->all_shaders->bullet_debug,
       GL_LINES,
       buffer->AllocateCommandBufferSlot(1),
       false
     );
 
-    mesh_dc = _CreateDrawCall<MeshData>(
+    mesh_dc = _CreateDrawCall(
       shader_manager->all_shaders->blinn_phong,
       GL_TRIANGLES,
       buffer->AllocateCommandBufferSlot(MAX_BASE_MESHES),
@@ -97,7 +99,7 @@ public:
     bool is_success_slot_alloc = true;
     auto instance_count = command.instanceCount + 1;
     if (instance_count > mesh->slots.instances_slot.count) {
-      is_success_slot_alloc = ReallocateInstanceSlot<MESH_TYPE>(mesh->slots,
+      is_success_slot_alloc = AllocateInstanceSlot<MESH_TYPE>(mesh->slots,
         instance_count, command, dc);
     }
     if (is_success_slot_alloc) {
@@ -116,16 +118,13 @@ public:
   */
   template<typename MESH_TYPE>
   void SetInstanceCountToCommand(MeshDataBase* mesh, GLuint instance_count) {
-    // TODO: if new instance count doesnt fit in existing transforms slot
-    //       - reallocate transform offsets, release transform slot
-    //       early exit if current slot is enough
     DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
     DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
     auto& command = command_by_mesh_id[mesh->id];
     auto dc = dc_by_mesh_id[mesh->id];
     bool is_success_slot_alloc = true;
     if (instance_count > mesh->slots.instances_slot.count) {
-      is_success_slot_alloc = ReallocateInstanceSlot<MESH_TYPE>(mesh->slots,
+      is_success_slot_alloc = AllocateInstanceSlot<MESH_TYPE>(mesh->slots,
         instance_count, command, dc);
     }
     if (instance_count == 0) {
@@ -152,17 +151,19 @@ public:
     MeshDataBase* mesh,
     MeshDataSlots& mesh_slots,
     DrawCall* dc,
-    GLuint instance_count
+    GLuint instance_count,
+    // bullet debug drawer doesnt use instance slot in any ssbo, only vertex-index
+    bool is_alloc_instance_slot = true
   ) {
-    // validation that command doesnt exist already
-    DEBUG_ASSERT(dc_by_mesh_id.find(mesh->id) == dc_by_mesh_id.end());
-    DEBUG_ASSERT(command_by_mesh_id.find(mesh->id) == command_by_mesh_id.end());
+    DEBUG_ASSERT(!dc_by_mesh_id.contains(mesh->id));
+    DEBUG_ASSERT(!command_by_mesh_id.contains(mesh->id));
     DrawElementsIndirectCommand& command = command_by_mesh_id[mesh->id];
     lock_guard l(dc->mtx);
 
     dc->Allocate(mesh_slots, 1);
     if (buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, instance_count)) {
-      SetToCommandWithOffsets(command, mesh_slots, dc->GetAbsoluteCommandOffset(mesh_slots));
+      SetToCommandWithOffsets(command, mesh_slots, dc->GetAbsoluteCommandOffset(mesh_slots),
+        is_alloc_instance_slot);
     }
   }
 
@@ -178,7 +179,9 @@ public:
   template<typename MESH_TYPE>
   void SetToCommandWithOffsets(
     MeshDataBase* mesh,
-    GLuint instance_count
+    GLuint instance_count,
+    // bullet debug drawer doesnt use instance slot in any ssbo, only vertex-index
+    bool is_alloc_instance_slot = true
   ) {
     DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
     DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
@@ -186,8 +189,8 @@ public:
     auto command = command_by_mesh_id[mesh->id];
     // if asked more then current slots have - reallocate
     bool is_success_slot_alloc = false;
-    if (instance_count > mesh->slots.instances_slot.count) {
-      is_success_slot_alloc = ReallocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count, command, dc);
+    if (is_alloc_instance_slot && instance_count > mesh->slots.instances_slot.count) {
+      is_success_slot_alloc = AllocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count, command, dc);
     }
     else {
       mesh->slots.instances_slot.used = instance_count;
@@ -197,20 +200,6 @@ public:
       SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh->slots,
         dc->GetAbsoluteCommandOffset(mesh->slots));
     }
-  }
-
-  template<typename MESH_TYPE>
-  bool ReallocateInstanceSlot(MeshDataSlots& mesh_slots,
-    GLuint& new_instance_count,
-    DrawElementsIndirectCommand& command,
-    DrawCall* dc)
-  {
-    buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
-    if (buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count)) {
-      SetToCommandWithOffsets(command, mesh_slots, dc->GetAbsoluteCommandOffset(mesh_slots));
-      return true;
-    }
-    return false;
   }
 
   template<typename MESH_TYPE>
@@ -233,7 +222,21 @@ public:
     draw_call->second->Release(mesh->slots);
   }
 private:
-  int total_draw_calls = 0;
+
+  template<typename MESH_TYPE>
+  bool AllocateInstanceSlot(MeshDataSlots& mesh_slots,
+    GLuint& new_instance_count,
+    DrawElementsIndirectCommand& command,
+    DrawCall* dc)
+  {
+    if (new_instance_count <= mesh_slots.instances_slot.count) {
+      return false;
+    }
+    if (mesh_slots.instances_slot != MemorySlots::NULL_SLOT) {
+      buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
+    }
+    return buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count);
+  }
 
   void SetToCommandWithOffsets(
     DrawElementsIndirectCommand& command,
@@ -249,10 +252,9 @@ private:
     buffer->BufferCommand(command, command_offset);
   }
 
-  template<typename MeshDataClass>
   DrawCall* _CreateDrawCall(Shader* shader, GLenum mode,
     MemorySlot command_buffer_slot, bool is_enabled)
   {
-    return new DrawCall<MeshDataClass>(total_draw_calls++, shader, mode, command_buffer_slot, is_enabled);
+    return new DrawCall(total_draw_calls++, shader, mode, command_buffer_slot, is_enabled);
   }
 };

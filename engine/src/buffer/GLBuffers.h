@@ -90,7 +90,6 @@ public:
   BufferSlots<unsigned int> index_ptr;
 
   BufferSlots<CommandBuffer> command_ptr;
-  //BlendTexturesMeshUniform* blend_textures_mesh_ptr;
   BufferSlots<LightsUniform> light_ptr;
   BufferNumberPool<GLuint64> texture_handle_by_texture_id_ptr;
   BufferSlots<UniformDataMesh> mesh_uniform_ptr;
@@ -134,7 +133,9 @@ public:
    *
   */
   template<typename UNIFORM_DATA_TYPE, typename MESH_TYPE>
-  BufferSlots<UNIFORM_DATA_TYPE>& GetBufferSlots();
+  BufferSlots<UNIFORM_DATA_TYPE>& GetBufferSlots() {
+    throw runtime_error("Not implemented");
+  };
   template<>
   inline BufferSlots<UniformDataMesh>& GetBufferSlots<UniformDataMesh, MeshData>()
   {
@@ -153,7 +154,9 @@ public:
   /////////////////////////////////////////////////
 
   template<typename MESH_TYPE>
-  unsigned int* GetBufferSlotsBaseInstanceOffset();
+  unsigned int* GetBufferSlotsBaseInstanceOffset() {
+    throw runtime_error("Not implemented");
+  };
   template<>
   inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshData>()
   {
@@ -171,7 +174,9 @@ public:
   };
   /////////////////////////////////////////////////
   template<typename typename MESH_TYPE>
-  InstancesSlots& GetInstancesSlot();
+  InstancesSlots& GetInstancesSlot() {
+    throw runtime_error("Not implemented");
+  };
   template<>
   inline InstancesSlots& GetInstancesSlot<MeshData>()
   {
@@ -191,7 +196,9 @@ public:
 
   //////////////GetTransformPtr template///////////
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
-  TRANSFORM_TYPE* GetTransformPtr();
+  TRANSFORM_TYPE* GetTransformPtr() {
+    throw runtime_error("Not implemented");
+  };
   template<>
   inline mat4* GetTransformPtr<mat4, MeshData>()
   {
@@ -209,6 +216,7 @@ public:
   }
   /////////////////////////////////////////////////
 
+  //////////////GetNumCommands template///////////
   template<typename MESH_TYPE>
   inline unsigned int GetNumCommands();
 
@@ -227,6 +235,29 @@ public:
   {
     return uniforms_ui_ptr.instances_slots.instances_slots->GetUsed();
   }
+  /////////////////////////////////////////////////
+
+  //////////////BufferBlendTextures template///////////
+  template<typename MESH_TYPE, typename TEXTURE_ARRAY_TYPE>
+  void BufferTexture(BufferInstanceOffset& mesh, TEXTURE_ARRAY_TYPE& texture) {
+    throw runtime_error("Not implemented");
+  }
+  template<>
+  inline void BufferTexture<MeshData, BlendTextures>(BufferInstanceOffset& mesh, BlendTextures& textures) {
+    mesh_uniform_ptr.buffer_ptr->blend_textures[mesh.GetInstanceOffset()]
+      = textures;
+  };
+  template<>
+  inline void BufferTexture<MeshDataUI, unsigned int>(BufferInstanceOffset& mesh, unsigned int& texture_id) {
+    uniforms_ui_ptr.buffer_ptr->texture_id_by_instance_id[mesh.GetInstanceOffset()]
+      = texture_id;
+  };
+  // TODO: 
+  template<>
+  inline void BufferTexture<MeshDataOverlay3D, unsigned int>(BufferInstanceOffset& mesh, unsigned int& texture_id) {
+    throw runtime_error("Not implemented");
+  };
+  /////////////////////////////////////////////////
 
   inline MemorySlot AllocateCommandBufferSlot(unsigned int size) {
     return command_ptr.instances_slots.Allocate(size);

@@ -41,7 +41,9 @@ public:
     state_manager{ state_manager },
     draw_call_manager{ draw_call_manager }{
     buffer->Init();
-    draw_call_manager->AddNewCommandToDrawCall(buffer->mesh, draw_call_manager->physics_debug_dc, 1);
+    draw_call_manager->AddNewCommandToDrawCall<MeshDataPhysDebugDrawer>(buffer->mesh,
+      buffer->mesh->slots,
+      draw_call_manager->physics_debug_dc, 1, false);
   };
 
   ~BulletDebugDrawer() {

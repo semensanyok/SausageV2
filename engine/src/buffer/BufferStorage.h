@@ -74,7 +74,6 @@ public:
   inline MemorySlot AllocateCommandBufferSlot(unsigned int size) {
     return gl_buffers->AllocateCommandBufferSlot(size);
   }
-  void BufferBlendTextures(BlendTextures& textures, BufferInstanceOffset& mesh);
 
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& id_to_transform);
   void BufferBoneTransform(Bone* bone, mat4& trans, unsigned int num_bones = 1);
@@ -89,6 +88,12 @@ public:
   inline unsigned int GetNumCommands() {
     return gl_buffers->GetNumCommands<MESH_TYPE>()
   };
+
+  template<typename MESH_TYPE, typename TEXTURE_ARRAY_TYPE>
+  inline void BufferTexture(BufferInstanceOffset& mesh, TEXTURE_ARRAY_TYPE& texture) {
+    gl_buffers->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(mesh, texture);
+  }
+
   /**
    * used by TextureManager, should not anywhere else
   */

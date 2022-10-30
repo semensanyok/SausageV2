@@ -57,9 +57,12 @@ struct UniformDataOverlay3D {
   unsigned int base_instance_offset[MAX_3D_OVERLAY_COMMANDS];
 };
 
+// TODO: figure eout correct offsets
 struct UniformDataUI {
-  ivec4 min_max_x_y[MAX_UI_INSTANCES];
-  vec2 transforms[MAX_UI_INSTANCES];
+  ivec4 min_max_x_y[MAX_UI_INSTANCES]; // aligned to vec4 == 16 bytes
+  // TODO: calc offset somehow??? can help - OpenGLHelpers.h -> size_t GetPadCharsNumToLargestElement(int num, ...);
+  vec2 transforms[MAX_UI_INSTANCES]; // aligned to vec2 == 8 bytes
+  unsigned int texture_id_by_instance_id[MAX_UI_INSTANCES]; // alignment 4 bytes
   unsigned int base_instance_offset[MAX_UI_COMMANDS];
   // no padding needed, topmost structure
 };

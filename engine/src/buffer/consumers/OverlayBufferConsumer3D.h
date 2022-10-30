@@ -13,7 +13,7 @@
 using namespace std;
 using namespace glm;
 
-class OverlayBufferConsumer3D : public BufferConsumer {
+class OverlayBufferConsumer3D : public BufferConsumer<unsigned int, MeshDataOverlay3D, mat4> {
   MeshManager* mesh_manager;
 
  public:
@@ -32,7 +32,8 @@ class OverlayBufferConsumer3D : public BufferConsumer {
                         vector<vec3>& glyph_id,
                         vec3 relative_position,
                         Texture* font_data);
-  void BufferTransform(MeshDataOverlay3D* mesh);
+  // implemented in template
+  //void BufferTransform(MeshDataOverlay3D* mesh);
   void Init();
   void Reset() { Init(); }
 

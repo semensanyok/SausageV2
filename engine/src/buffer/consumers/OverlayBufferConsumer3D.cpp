@@ -17,17 +17,9 @@ void OverlayBufferConsumer3D::BufferMeshData(
   mesh->texture = font_data;
   mesh->texture->MakeResident();
   BufferFontTexture(mesh, mesh->texture);
-  buffer->Buffer3DFontTransform(mesh);
-}
-
-void OverlayBufferConsumer3D::BufferTransform(MeshDataOverlay3D* mesh) {
-  buffer->Buffer3DFontTransform(mesh);
+  BufferTransform(mesh, mesh->transform);
 }
 
 void OverlayBufferConsumer3D::Init() {
   BufferConsumer::Init();
-}
-
-void OverlayBufferConsumer3D::BufferFontTexture(MeshDataBase* mesh_data, Texture* texture) {
-  buffer->BufferFontTexture(mesh_data, texture);
 }

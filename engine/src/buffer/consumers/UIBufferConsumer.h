@@ -14,7 +14,7 @@
 using namespace std;
 using namespace glm;
 
-class UIBufferConsumer : public BufferConsumer {
+class UIBufferConsumer : public BufferConsumer<unsigned int, MeshDataUI, vec2> {
   MeshManager* mesh_manager;
 
  public:
@@ -27,7 +27,8 @@ class UIBufferConsumer : public BufferConsumer {
                       vector<vec3>& vertices,
                       vector<unsigned int>& indices,
                       vector<vec3>& colors, vector<vec2>& uvs);
-  void BufferTransform(MeshDataUI* mesh);
+  // implemented in template
+  //void BufferTransform(MeshDataUI* mesh);
   void BufferSize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
   void Init();
   void Reset();

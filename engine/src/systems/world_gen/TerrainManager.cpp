@@ -110,7 +110,7 @@ void TerrainManager::ReleaseBuffer(TerrainChunk* chunk) {
 
 void TerrainManager::Deactivate(TerrainChunk* chunk)
 {
-  draw_call_manager->DisableCommand(chunk->tiles[0].mesh_data);
+  draw_call_manager->DisableCommand<MeshData>(chunk->tiles[0].mesh_data);
 }
 
 void TerrainManager::Buffer(TerrainChunk* chunk) {
@@ -169,7 +169,8 @@ MeshData* TerrainManager::GetBasePlane(
 
   buffer->AllocateStorage(base_mesh->slots, vertices.size(), indices.size(), chunk->tiles.size());
   buffer->BufferMeshData(base_mesh, load_data);
-  draw_call_manager->AddNewCommandToDrawCall(base_mesh, draw_call_manager->mesh_dc, chunk->tiles.size());
+  draw_call_manager->AddNewCommandToDrawCall<MeshData>(base_mesh,
+    base_mesh->slots, draw_call_manager->mesh_dc, chunk->tiles.size());
 
   tile->mesh_data = base_mesh;
 
@@ -178,7 +179,7 @@ MeshData* TerrainManager::GetBasePlane(
 }
 
 MeshDataInstance* TerrainManager::CreatePlaneInstance(MeshData* base) {
-  return draw_call_manager->AddNewInstance(base);
+  return draw_call_manager->AddNewInstance<MeshData>(base);
 }
 
 // Test create terrain, first prototype

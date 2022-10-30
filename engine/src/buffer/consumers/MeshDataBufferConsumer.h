@@ -13,7 +13,7 @@
 
 using namespace std;
 
-class MeshDataBufferConsumer : public BufferConsumer {
+class MeshDataBufferConsumer : public BufferConsumer<BlendTextures, MeshData, mat4> {
 public:
   MeshDataBufferConsumer(BufferStorage* buffer) :
     BufferConsumer(buffer, BufferType::MESH_BUFFERS) {
@@ -26,8 +26,10 @@ public:
   void ReleaseInstanceSlot(MeshDataBase* mesh);
   void Init();
   void Reset();
-  void BufferTransform(BufferInstanceOffset* offset, mat4& transform);
+  // implemented in base template
+  //void BufferTransform(BufferInstanceOffset* offset, mat4& transform);
   void BufferLights(vector<Light*>& lights);
-  void BufferTexture(BufferInstanceOffset* offset, Texture* texture);
+  // implemented in base template
+  //void BufferTexture(BlendTextures& textures, BufferInstanceOffset& mesh);
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms);
 };
