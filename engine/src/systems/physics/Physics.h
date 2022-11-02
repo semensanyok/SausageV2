@@ -116,7 +116,7 @@ public:
       //btTrans.getOpenGLMatrix(&mesh_data->transform[0][0]);
 
       btTrans.getOpenGLMatrix(&mesh_data->transform[0][0]);
-      mesh_buffer->BufferTransform(mesh_data);
+      mesh_buffer->BufferTransform(mesh_data, mesh_data->transform);
     }
     IF_PROFILE_ENABLED(ProfTime::physics_buf_trans_ns = chrono::steady_clock::now() - proft4);
   }

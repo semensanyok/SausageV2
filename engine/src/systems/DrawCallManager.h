@@ -104,10 +104,12 @@ public:
     }
     if (is_success_slot_alloc) {
       // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
-      mesh_manager->CreateInstancedMesh(mesh, command.instanceCount++);
+      auto instance = mesh_manager->CreateInstancedMesh(mesh, command.instanceCount++);
       mesh->slots.instances_slot.used = command.instanceCount;
       buffer->BufferCommand(command, dc->GetAbsoluteCommandOffset(mesh->slots));
+      return instance;
     }
+    return nullptr;
   }
 
   /**
@@ -149,7 +151,6 @@ public:
   template<typename MESH_TYPE>
   void AddNewCommandToDrawCall(
     MeshDataBase* mesh,
-    MeshDataSlots& mesh_slots,
     DrawCall* dc,
     GLuint instance_count,
     // bullet debug drawer doesnt use instance slot in any ssbo, only vertex-index
@@ -160,10 +161,9 @@ public:
     DrawElementsIndirectCommand& command = command_by_mesh_id[mesh->id];
     lock_guard l(dc->mtx);
 
-    dc->Allocate(mesh_slots, 1);
-    if (buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, instance_count)) {
-      SetToCommandWithOffsets(command, mesh_slots, dc->GetAbsoluteCommandOffset(mesh_slots),
-        is_alloc_instance_slot);
+    dc->Allocate(mesh->slots, 1);
+    if (buffer->AllocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count)) {
+      _SetToCommandWithOffsets(command, mesh->slots, dc->GetAbsoluteCommandOffset(mesh->slots));
     }
   }
 
@@ -177,7 +177,7 @@ public:
    *          (command was created initially with 0 offsets and instance count)
   */
   template<typename MESH_TYPE>
-  void SetToCommandWithOffsets(
+  void _SetToCommandWithOffsets(
     MeshDataBase* mesh,
     GLuint instance_count,
     // bullet debug drawer doesnt use instance slot in any ssbo, only vertex-index
@@ -197,7 +197,7 @@ public:
       is_success_slot_alloc = true;
     }
     if (is_success_slot_alloc) {
-      SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh->slots,
+      _SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh->slots,
         dc->GetAbsoluteCommandOffset(mesh->slots));
     }
   }
@@ -238,7 +238,7 @@ private:
     return buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count);
   }
 
-  void SetToCommandWithOffsets(
+  void _SetToCommandWithOffsets(
     DrawElementsIndirectCommand& command,
     MeshDataSlots& mesh_slots,
     unsigned int command_offset

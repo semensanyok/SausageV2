@@ -12,7 +12,7 @@ void OverlayBufferConsumer3D::BufferMeshData(
   shared_ptr<MeshLoadData> load_data =
     mesh_manager->CreateLoadData(vertices, indices, colors, uvs, glyph_id);
 
-  buffer->BufferMeshData(mesh, load_data);
+  buffer->BufferMeshData(mesh->slots, load_data);
 
   mesh->texture = font_data;
   mesh->texture->MakeResident();

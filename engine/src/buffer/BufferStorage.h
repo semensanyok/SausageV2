@@ -55,7 +55,7 @@ public:
 
   void BufferCommands(vector<DrawElementsIndirectCommand>& active_commands, int command_offset);
   void BufferCommand(DrawElementsIndirectCommand& command, int command_offset);
-  void BufferMeshData(MeshDataBase* mesh, shared_ptr<MeshLoadData>& load_data);
+  void BufferMeshData(MeshDataSlots& slots, shared_ptr<MeshLoadData>& load_data);
   bool AllocateStorage(
     MeshDataSlots& out_slots,
     unsigned long vertices_size,

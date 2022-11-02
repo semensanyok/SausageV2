@@ -167,10 +167,10 @@ MeshData* TerrainManager::GetBasePlane(
 
   base_mesh->transform = translate(mat4(1), chunk->pos);
 
-  buffer->AllocateStorage(base_mesh->slots, vertices.size(), indices.size(), chunk->tiles.size());
-  buffer->BufferMeshData(base_mesh, load_data);
+  buffer->AllocateStorage(base_mesh->slots, vertices.size(), indices.size());
+  buffer->BufferMeshData(base_mesh->slots, load_data);
   draw_call_manager->AddNewCommandToDrawCall<MeshData>(base_mesh,
-    base_mesh->slots, draw_call_manager->mesh_dc, chunk->tiles.size());
+    draw_call_manager->mesh_dc, chunk->tiles.size());
 
   tile->mesh_data = base_mesh;
 

@@ -52,21 +52,21 @@ void BufferStorage::BufferLights(vector<Light *> &lights) {
   gl_buffers->SetSyncBarrier();
 }
 
-void BufferStorage::BufferMeshData(MeshDataBase* mesh,
+void BufferStorage::BufferMeshData(MeshDataSlots& slots,
                                    shared_ptr<MeshLoadData>& load_data) {
   auto mesh_data = load_data.get();
   // storage must be allocated at this point (via AllocateStorage)
-  DEBUG_ASSERT(mesh->slots.index_slot.count > 0);
-  DEBUG_ASSERT(mesh->slots.vertex_slot.count > 0);
-  DEBUG_ASSERT(mesh->slots.index_slot.count >= mesh_data->indices.size());
-  DEBUG_ASSERT(mesh->slots.vertex_slot.count >= mesh_data->vertices.size());
+  DEBUG_ASSERT(slots.index_slot.count > 0);
+  DEBUG_ASSERT(slots.vertex_slot.count > 0);
+  DEBUG_ASSERT(slots.index_slot.count >= mesh_data->indices.size());
+  DEBUG_ASSERT(slots.vertex_slot.count >= mesh_data->vertices.size());
 
   auto& vertices = mesh_data->vertices;
   auto& indices = mesh_data->indices;
   // copy to GPU
-  memcpy(&gl_buffers->vertex_ptr->buffer_ptr[mesh->slots.vertex_slot.offset], vertices.data(),
+  memcpy(&gl_buffers->vertex_ptr->buffer_ptr[slots.vertex_slot.offset], vertices.data(),
          vertices.size() * sizeof(Vertex));
-  memcpy(&gl_buffers->index_ptr->buffer_ptr[mesh->slots.index_slot.offset], indices.data(),
+  memcpy(&gl_buffers->index_ptr->buffer_ptr[slots.index_slot.offset], indices.data(),
          indices.size() * sizeof(unsigned int));
   gl_buffers->SetSyncBarrier();
 }

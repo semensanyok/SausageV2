@@ -3,9 +3,9 @@
 using namespace std;
 
 void MeshDataBufferConsumer::BufferMeshData(
-    MeshDataBase* mesh,
+    MeshDataSlots& slots,
     shared_ptr<MeshLoadData> load_data) {
-  buffer->BufferMeshData(mesh, load_data);
+  buffer->BufferMeshData(slots, load_data);
 }
 
 void MeshDataBufferConsumer::ReleaseInstanceSlot(MeshDataBase* mesh) {

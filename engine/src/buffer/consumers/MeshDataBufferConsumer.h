@@ -21,7 +21,7 @@ public:
   ~MeshDataBufferConsumer() {
   };
   void BufferMeshData(
-    MeshDataBase* mesh,
+    MeshDataSlots& slots,
     shared_ptr<MeshLoadData> load_data);
   void ReleaseInstanceSlot(MeshDataBase* mesh);
   void Init();

@@ -21,7 +21,7 @@ class Texture {
 public:
     size_t* material_tex_names_hash;
     // monotonically increasing, Sausage managed
-    const unsigned int id;
+    unsigned int id;
     // GL managed
     const GLuint texture_id;
     // GL managed

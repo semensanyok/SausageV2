@@ -149,7 +149,7 @@ void AnimationManager::LoadAnimationForArmature(
     for (size_t j = 0; j < aianim->mNumChannels; j++)
     {
       auto channel = aianim->mChannels[j];
-      auto bone_name = mesh_manager->GetBoneName(channel->mNodeName.C_Str(), mesh->armature, is_dae);
+      auto bone_name = mesh_manager->GetBoneName(channel->mNodeName.C_Str(), armature, is_dae);
       // bone at 0 index is armature name. P.S. Outdated
       //if (j == 0) {
       // continue;

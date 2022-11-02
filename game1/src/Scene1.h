@@ -102,36 +102,34 @@ private:
         + load_data->vertices.size()
         + load_data->indices.size();
 
-      auto base_mesh_ptr = base_meshes.find(key);
-      MeshData* mesh;
-      if (base_mesh_ptr == base_meshes.end()) {
+      MeshData* mesh = nullptr;
+      if (!base_meshes.contains(key)) {
         mesh = mesh_manager->CreateMeshData(load_data);
         base_meshes[key] = mesh;
-        mesh_data_buffer->AllocateStorage(mesh,
-          load_data->vertices.size(), load_data->indices.size());
-        mesh_data_buffer->BufferMeshData(mesh, load_data_sptr);
+        mesh_data_buffer->AllocateStorage(mesh->slots, load_data->vertices.size(), load_data->indices.size());
+        mesh_data_buffer->BufferMeshData(mesh->slots, load_data_sptr);
+        draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, 1);
         // TEXTURE SETUP
         {
           Texture* texture = systems_manager->texture_manager->LoadTextureArray(tex_names);
           if (texture != nullptr) {
             mesh->textures = { {1.0, texture->id }, 1 };
-            systems_manager->buffer_manager->mesh_data_buffer->BufferMeshTexture(
-                mesh);
+            systems_manager->buffer_manager->mesh_data_buffer->BufferTexture(
+                *mesh, mesh->textures);
             texture->MakeResident();
           }
         }
-        draw_call_manager->AddNewCommandToDrawCall(mesh, mesh_dc);
+        mesh_data_buffer->BufferTransform(mesh, mesh->transform);
       }
       else {
-        mesh = mesh_manager->CreateInstancedMesh(base_mesh_ptr->second);
-        mesh->base_mesh = base_mesh_ptr->second;
-        draw_call_manager->AddNewInstance(mesh);
+        mesh = base_meshes[key];
+        MeshDataInstance* instance = draw_call_manager->AddNewInstance<MeshData>(mesh);
+        mesh_data_buffer->BufferTransform(instance, instance->transform);
       }
-      mesh_data_buffer->BufferTransform(mesh);
 
       // PHYSICS SETUP
       {
-        if (mesh->name != "Terrain") {
+        if (load_data->name != "Terrain") {
           mesh->physics_data = load_data_sptr->physics_data;
           mesh->physics_data->mass = 10.0;
         }

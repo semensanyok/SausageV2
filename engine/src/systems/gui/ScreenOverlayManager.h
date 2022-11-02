@@ -225,21 +225,21 @@ private:
     BatchDataUI* batch,
     MeshDataUI* mesh
   ) {
-    buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size(), 1);
-    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, mesh->slots, draw_call_manager->font_ui_dc, 1);
+    buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size());
+    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, draw_call_manager->font_ui_dc, 1);
     buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
     buffer->BufferTransform(mesh, mesh->transform);
     buffer->BufferSize(mesh, batch->x_min, batch->x_max, batch->y_min, batch->y_max);
 
-    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, mesh->slots, draw_call_manager->font_ui_dc, 1);
+    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, draw_call_manager->font_ui_dc, 1);
     drawn_ui_elements.push_back(mesh);
   }
   void _SubmitDrawBack(
     BatchDataUI* batch,
     MeshDataUI* mesh
   ) {
-    buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size(), 1);
-    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, mesh->slots, draw_call_manager->back_ui_dc, 1);
+    buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size());
+    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, draw_call_manager->back_ui_dc, 1);
     buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
     buffer->BufferTransform(mesh, mesh->transform);
     auto min = mesh->transform;
@@ -250,7 +250,7 @@ private:
     max.y += batch->y_max;
     buffer->BufferSize(mesh, min.x, max.x, min.y, max.y);
 
-    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, mesh->slots, draw_call_manager->back_ui_dc, 1);
+    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, draw_call_manager->back_ui_dc, 1);
     drawn_ui_elements.push_back(mesh);
   }
   pair<unique_ptr<BatchDataUI>, MeshDataUI*> _GetTextMesh(
