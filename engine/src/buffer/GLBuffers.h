@@ -16,21 +16,21 @@ struct InstancesSlots {
   // must be allocated with size = MAX_INSTANCES
   // index to uniform data as offset + glInstanceId
   // (or MAX_VERTEX, MAX_INDEX, ...)
-  Arena* instances_slots;
+  Arena instances_slots;
 
   inline MemorySlot Allocate(const unsigned int size) {
-    auto slot = instances_slots->Allocate(size);
+    return instances_slots.Allocate(size);
   };
   inline void Release(MemorySlot& slot) {
-    instances_slots->Release(slot);
+    instances_slots.Release(slot);
     slot = MemorySlots::NULL_SLOT;
   };
   inline void Release(MeshDataSlots& slot) {
-    instances_slots->Release(slot.instances_slot);
+    instances_slots.Release(slot.instances_slot);
     slot.instances_slot = MemorySlots::NULL_SLOT;
   };
   inline void Reset() {
-    instances_slots->Reset();
+    instances_slots.Reset();
   };
 };
 
@@ -51,18 +51,18 @@ struct BufferNumberPool {
   // must be allocated with size = MAX_INSTANCES
   // index to uniform data as offset + glInstanceId
   // (or MAX_VERTEX, MAX_INDEX, ...)
-  ThreadSafeNumberPool* instances_slots;
+  ThreadSafeNumberPool instances_slots;
   GLuint buffer_id;
   T* buffer_ptr;
 
   inline unsigned int Allocate() {
-    auto slot = instances_slots->ObtainNumber();
+    return instances_slots.ObtainNumber();
   };
-  inline unsigned int Release(unsigned int number) {
-    instances_slots->ReleaseNumber(number);
+  inline void Release(unsigned int number) {
+    instances_slots.ReleaseNumber(number);
   };
   inline void Reset() {
-    instances_slots->Reset();
+    instances_slots.Reset();
   };
 };
 
@@ -86,25 +86,21 @@ public:
   //////////////////////////
   // Mapped buffers pointers
   //////////////////////////
-  BufferSlots<Vertex> vertex_ptr;
-  BufferSlots<unsigned int> index_ptr;
+  BufferSlots<Vertex>* vertex_ptr;
+  BufferSlots<unsigned int>* index_ptr;
 
-  BufferSlots<CommandBuffer> command_ptr;
-  BufferSlots<LightsUniform> light_ptr;
-  BufferNumberPool<GLuint64> texture_handle_by_texture_id_ptr;
-  BufferSlots<UniformDataMesh> mesh_uniform_ptr;
-  BufferSlots<UniformDataOverlay3D> uniforms_3d_overlay_ptr;
-  BufferSlots<UniformDataUI> uniforms_ui_ptr;
-  BufferSlots<ControllerUniformData> uniforms_controller_ptr;
+  BufferSlots<CommandBuffer>* command_ptr;
+  BufferSlots<LightsUniform>* light_ptr;
+  BufferNumberPool<GLuint64>* texture_handle_by_texture_id_ptr;
+  BufferSlots<UniformDataMesh>* mesh_uniform_ptr;
+  BufferSlots<UniformDataOverlay3D>* uniforms_3d_overlay_ptr;
+  BufferSlots<UniformDataUI>* uniforms_ui_ptr;
+  BufferSlots<ControllerUniformData>* uniforms_controller_ptr;
 
   // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
   void SetSyncBarrier() {
     is_need_barrier = true;
   }
-  void Reset() {
-    fence_sync = 0;
-    used_buffers = 0;
-  };
   void InitBuffers();
   void BindVAOandBuffers();
   void Dispose();
@@ -113,15 +109,18 @@ public:
   void PreDraw();
   void PostDraw();
   void Reset() {
-    vertex_ptr.Reset();
-    index_ptr.Reset();
-    command_ptr.Reset();
-    light_ptr.Reset();
-    texture_handle_by_texture_id_ptr.Reset();
-    mesh_uniform_ptr.Reset();
-    uniforms_3d_overlay_ptr.Reset();
-    uniforms_ui_ptr.Reset();
-    uniforms_controller_ptr.Reset();
+    fence_sync = 0;
+    used_buffers = 0;
+
+    vertex_ptr->Reset();
+    index_ptr->Reset();
+    command_ptr->Reset();
+    light_ptr->Reset();
+    texture_handle_by_texture_id_ptr->Reset();
+    mesh_uniform_ptr->Reset();
+    uniforms_3d_overlay_ptr->Reset();
+    uniforms_ui_ptr->Reset();
+    uniforms_controller_ptr->Reset();
   };
 
   ///////////////GetBufferSlots template//////////////////////////////////
@@ -133,21 +132,21 @@ public:
    *
   */
   template<typename UNIFORM_DATA_TYPE, typename MESH_TYPE>
-  BufferSlots<UNIFORM_DATA_TYPE>& GetBufferSlots() {
+  BufferSlots<UNIFORM_DATA_TYPE>* GetBufferSlots() {
     throw runtime_error("Not implemented");
   };
   template<>
-  inline BufferSlots<UniformDataMesh>& GetBufferSlots<UniformDataMesh, MeshData>()
+  inline BufferSlots<UniformDataMesh>* GetBufferSlots<UniformDataMesh, MeshData>()
   {
     return mesh_uniform_ptr;
   }
   template<>
-  inline BufferSlots<UniformDataUI>& GetBufferSlots<UniformDataUI, MeshDataUI>()
+  inline BufferSlots<UniformDataUI>* GetBufferSlots<UniformDataUI, MeshDataUI>()
   {
     return uniforms_ui_ptr;
   }
   template<>
-  inline BufferSlots<UniformDataOverlay3D>& GetBufferSlots<UniformDataOverlay3D, MeshDataOverlay3D>()
+  inline BufferSlots<UniformDataOverlay3D>* GetBufferSlots<UniformDataOverlay3D, MeshDataOverlay3D>()
   {
     return uniforms_3d_overlay_ptr;
   }
@@ -160,37 +159,37 @@ public:
   template<>
   inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshData>()
   {
-    return mesh_uniform_ptr.buffer_ptr->base_instance_offset;
+    return mesh_uniform_ptr->buffer_ptr->base_instance_offset;
   };
   template<>
   inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataUI>()
   {
-    return uniforms_ui_ptr.buffer_ptr->base_instance_offset;
+    return uniforms_ui_ptr->buffer_ptr->base_instance_offset;
   };
   template<>
   inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataOverlay3D>()
   {
-    return uniforms_3d_overlay_ptr.buffer_ptr->base_instance_offset;
+    return uniforms_3d_overlay_ptr->buffer_ptr->base_instance_offset;
   };
   /////////////////////////////////////////////////
-  template<typename typename MESH_TYPE>
+  template<typename MESH_TYPE>
   InstancesSlots& GetInstancesSlot() {
     throw runtime_error("Not implemented");
   };
   template<>
   inline InstancesSlots& GetInstancesSlot<MeshData>()
   {
-    return mesh_uniform_ptr.instances_slots;
+    return mesh_uniform_ptr->instances_slots;
   }
   template<>
   inline InstancesSlots& GetInstancesSlot<MeshDataUI>()
   {
-    return uniforms_ui_ptr.instances_slots;
+    return uniforms_ui_ptr->instances_slots;
   }
   template<>
   inline InstancesSlots& GetInstancesSlot<MeshDataOverlay3D>()
   {
-    return uniforms_3d_overlay_ptr.instances_slots;
+    return uniforms_3d_overlay_ptr->instances_slots;
   }
   /////////////////////////////////////////////////
 
@@ -202,17 +201,17 @@ public:
   template<>
   inline mat4* GetTransformPtr<mat4, MeshData>()
   {
-    return mesh_uniform_ptr.buffer_ptr->transforms;
+    return mesh_uniform_ptr->buffer_ptr->transforms;
   }
   template<>
   inline vec2* GetTransformPtr<vec2, MeshDataUI>()
   {
-    return uniforms_ui_ptr.buffer_ptr->transforms;
+    return uniforms_ui_ptr->buffer_ptr->transforms;
   }
   template<>
   inline mat4* GetTransformPtr<mat4, MeshDataOverlay3D>()
   {
-    return uniforms_3d_overlay_ptr.buffer_ptr->transforms;
+    return uniforms_3d_overlay_ptr->buffer_ptr->transforms;
   }
   /////////////////////////////////////////////////
 
@@ -223,17 +222,17 @@ public:
   template<>
   inline unsigned int GetNumCommands<MeshData>()
   {
-    return mesh_uniform_ptr.instances_slots.instances_slots->GetUsed();
+    return mesh_uniform_ptr->instances_slots.instances_slots.GetUsed();
   }
   template<>
   inline unsigned int GetNumCommands<MeshDataOverlay3D>()
   {
-    return uniforms_3d_overlay_ptr.instances_slots.instances_slots->GetUsed();
+    return uniforms_3d_overlay_ptr->instances_slots.instances_slots.GetUsed();
   }
   template<>
   inline unsigned int GetNumCommands<MeshDataUI>()
   {
-    return uniforms_ui_ptr.instances_slots.instances_slots->GetUsed();
+    return uniforms_ui_ptr->instances_slots.instances_slots.GetUsed();
   }
   /////////////////////////////////////////////////
 
@@ -244,12 +243,12 @@ public:
   }
   template<>
   inline void BufferTexture<MeshData, BlendTextures>(BufferInstanceOffset& mesh, BlendTextures& textures) {
-    mesh_uniform_ptr.buffer_ptr->blend_textures[mesh.GetInstanceOffset()]
+    mesh_uniform_ptr->buffer_ptr->blend_textures[mesh.GetInstanceOffset()]
       = textures;
   };
   template<>
   inline void BufferTexture<MeshDataUI, unsigned int>(BufferInstanceOffset& mesh, unsigned int& texture_id) {
-    uniforms_ui_ptr.buffer_ptr->texture_id_by_instance_id[mesh.GetInstanceOffset()]
+    uniforms_ui_ptr->buffer_ptr->texture_id_by_instance_id[mesh.GetInstanceOffset()]
       = texture_id;
   };
   // TODO: 
@@ -260,16 +259,15 @@ public:
   /////////////////////////////////////////////////
 
   inline MemorySlot AllocateCommandBufferSlot(unsigned int size) {
-    return command_ptr.instances_slots.Allocate(size);
+    return command_ptr->instances_slots.Allocate(size);
   }
   inline void ReleaseCommandBufferSlot(MemorySlot& out_slot) {
-    command_ptr.instances_slots.Release(out_slot);
+    command_ptr->instances_slots.Release(out_slot);
   }
 private:
   void _SyncGPUBufAndUnmap();
   void _BindCommandBuffer();
   void _UnmapBuffer();
-  BufferSlots<CommandBuffer> _CreateCommandBuffer();
   void _DeleteCommandBuffer(CommandBuffer* command_ptr) {
     lock_guard<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr->id);
@@ -280,7 +278,8 @@ private:
   void WaitGPU(GLsync fence_sync,
                const source_location& location = source_location::current());
   template<typename T>
-  BufferSlots<T> _CreateBufferStorageSlots(unsigned long num_elements);
+  BufferSlots<T>* _CreateBufferStorageSlots(unsigned long num_elements);
   template<typename T>
-  BufferNumberPool<T> _CreateBufferStorageNumberPool(unsigned long storage_size);
+  BufferNumberPool<T>* _CreateBufferStorageNumberPool(unsigned long storage_size);
+  BufferSlots<CommandBuffer>* _CreateCommandBuffer();
 };

@@ -10,9 +10,9 @@ void UIBufferConsumer::BufferMeshData(MeshDataUI* mesh,
 
   if (mesh->texture) {
     mesh->texture->MakeResident();
-    BufferFontTexture(mesh, mesh->texture);
+    BufferTexture(*mesh, mesh->texture->id);
   }
-  buffer->BufferTransform(mesh, mesh->transform);
+  buffer->BufferTransform<vec2, MeshDataUI>(*mesh, mesh->transform);
 }
 
 void UIBufferConsumer::BufferSize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y) {
@@ -24,7 +24,3 @@ void UIBufferConsumer::Init() {
 }
 
 void UIBufferConsumer::Reset() { Init(); }
-
-void UIBufferConsumer::BufferFontTexture(MeshDataBase* mesh_data, Texture* texture) {
-  buffer->BufferFontTexture(mesh_data, texture);
-}

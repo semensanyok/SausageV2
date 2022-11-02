@@ -8,7 +8,7 @@
 #include "BufferConsumer.h"
 #include "BufferSettings.h"
 
-class BulletDebugDrawerBufferConsumer : public BufferConsumer {
+class BulletDebugDrawerBufferConsumer : public BufferConsumer<unsigned int, MeshData, mat4> {
   unsigned long vertices_size = 1000;
   unsigned long indices_size = 1000;
   bool is_data_inited = false;

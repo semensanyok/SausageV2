@@ -65,7 +65,7 @@ public:
       MeshDataSlots& out_slots,
       unsigned long num_instances
   );
-  bool ReleaseStorage(MeshDataSlots& out_slots);
+  void ReleaseStorage(MeshDataSlots& out_slots);
   template<typename MESH_TYPE>
   inline void ReleaseInstanceSlot(MeshDataSlots& out_slots) {
     auto& instances_slots = gl_buffers->GetInstancesSlot<MESH_TYPE>();
@@ -86,7 +86,7 @@ public:
   };
   template<typename MESH_TYPE>
   inline unsigned int GetNumCommands() {
-    return gl_buffers->GetNumCommands<MESH_TYPE>()
+    return gl_buffers->GetNumCommands<MESH_TYPE>();
   };
 
   template<typename MESH_TYPE, typename TEXTURE_ARRAY_TYPE>

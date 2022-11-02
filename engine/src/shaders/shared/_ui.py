@@ -5,6 +5,7 @@ layout (std430, binding = UI_UNIFORM_LOC) buffer UniformDataUI
 {
     ivec4 min_max_x_y[MAX_UI_INSTANCES];
     vec2 transforms[MAX_UI_INSTANCES];
+    uint texture_id_by_instance_id[MAX_UI_INSTANCES];
     uint base_instance_offset[MAX_UI_COMMANDS];
 };
 """,

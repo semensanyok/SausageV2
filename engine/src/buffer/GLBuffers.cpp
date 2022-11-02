@@ -6,15 +6,15 @@ void GLBuffers::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {
 }
 
 void GLBuffers::MapBuffer() {
-  lock_guard<mutex> data_lock(command_ptr.buffer_ptr->buffer_lock->data_mutex);
-  if (command_ptr.buffer_ptr->buffer_lock->is_mapped == true) {
+  lock_guard<mutex> data_lock(command_ptr->buffer_ptr->buffer_lock->data_mutex);
+  if (command_ptr->buffer_ptr->buffer_lock->is_mapped == true) {
     return;
   }
   // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-  command_ptr.buffer_ptr->ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(
-    command_ptr.buffer_id, 0, COMMAND_STORAGE_SIZE, flags);
-  command_ptr.buffer_ptr->buffer_lock->is_mapped = true;
-  command_ptr.buffer_ptr->buffer_lock->is_mapped_cv.notify_all();
+  command_ptr->buffer_ptr->ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(
+    command_ptr->buffer_id, 0, COMMAND_STORAGE_SIZE, flags);
+  command_ptr->buffer_ptr->buffer_lock->is_mapped = true;
+  command_ptr->buffer_ptr->buffer_lock->is_mapped_cv.notify_all();
 }
 
 void GLBuffers::PreDraw() {
@@ -28,18 +28,18 @@ void GLBuffers::PostDraw() {
 }
 
 void GLBuffers::_BindCommandBuffer() {
-  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr.buffer_id);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr->buffer_id);
 }
 
 void GLBuffers::_UnmapBuffer() {
-  lock_guard<mutex> data_lock(command_ptr.buffer_ptr->buffer_lock->data_mutex);
-  if (command_ptr.buffer_ptr->buffer_lock->is_mapped == false) {
+  lock_guard<mutex> data_lock(command_ptr->buffer_ptr->buffer_lock->data_mutex);
+  if (command_ptr->buffer_ptr->buffer_lock->is_mapped == false) {
     return;
   }
-  command_ptr.buffer_ptr->buffer_lock->is_mapped = false;
-  command_ptr.buffer_ptr->buffer_lock->is_mapped_cv.notify_all();
+  command_ptr->buffer_ptr->buffer_lock->is_mapped = false;
+  command_ptr->buffer_ptr->buffer_lock->is_mapped_cv.notify_all();
   // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
-  if (!glUnmapNamedBuffer(command_ptr.buffer_id)) {
+  if (!glUnmapNamedBuffer(command_ptr->buffer_id)) {
     DEBUG_EXPR(CheckGLError());
   }
 }
@@ -100,7 +100,7 @@ void GLBuffers::InitBuffers() {
   command_ptr = _CreateCommandBuffer();
 }
 
-BufferSlots<CommandBuffer> GLBuffers::_CreateCommandBuffer() {
+BufferSlots<CommandBuffer>* GLBuffers::_CreateCommandBuffer() {
   command_ptr = _CreateBufferStorageSlots<CommandBuffer>(COMMAND_STORAGE_SIZE);
   auto buffer_lock = new BufferLock();
   buffer_lock->is_mapped = true;
@@ -109,25 +109,25 @@ BufferSlots<CommandBuffer> GLBuffers::_CreateCommandBuffer() {
 }
 
 template<typename T>
-BufferSlots<T> GLBuffers::_CreateBufferStorageSlots(unsigned long storage_size) {
+BufferSlots<T>* GLBuffers::_CreateBufferStorageSlots(unsigned long storage_size) {
   GLuint buffer_id;
   glGenBuffers(1, &buffer_id);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
   glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, storage_size, NULL, flags);
   T* buffer_ptr = (T*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0,
     storage_size, flags);
-  return { buffer_id , buffer_ptr, {new Arena({ 0, storage_size }, true)} }
+  return new BufferSlots{ {Arena({ 0, storage_size }, true)}, buffer_id , buffer_ptr };
 }
 
 template<typename T>
-BufferNumberPool<T> GLBuffers::_CreateBufferStorageNumberPool(unsigned long storage_size) {
+BufferNumberPool<T>* GLBuffers::_CreateBufferStorageNumberPool(unsigned long storage_size) {
   GLuint buffer_id;
   glGenBuffers(1, &buffer_id);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
   glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, storage_size, NULL, flags);
   T* buffer_ptr = (T*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0,
     storage_size, flags);
-  return { buffer_id , buffer_ptr, new ThreadSafeNumberPool(storage_size) }
+  return new BufferNumberPool{ ThreadSafeNumberPool(storage_size), buffer_id , buffer_ptr };
 }
 
 void GLBuffers::BindVAOandBuffers() {
@@ -159,43 +159,43 @@ void GLBuffers::BindVAOandBuffers() {
   }
   if ((used_buffers & BufferType::VERTEX) &&
     !(bound_buffers & BufferType::VERTEX)) {
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_ptr.buffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_ptr->buffer_id);
   }
   if ((used_buffers & BufferType::UNIFORMS) &&
     !(bound_buffers & BufferType::UNIFORMS)) {
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, mesh_uniform_ptr.buffer_id);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, mesh_uniform_ptr.buffer_id);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, mesh_uniform_ptr->buffer_id);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, mesh_uniform_ptr->buffer_id);
   }
 
   if ((used_buffers & BufferType::TEXTURE) &&
     !(bound_buffers & BufferType::TEXTURE)) {
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_ptr.buffer_id);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_LOC,
-      texture_handle_by_texture_id_ptr.buffer_id);
+      texture_handle_by_texture_id_ptr->buffer_id);
   }
   if ((used_buffers & BufferType::LIGHT) &&
     !(bound_buffers & BufferType::LIGHT)) {
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ptr.buffer_id);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC,
-      light_ptr.buffer_id);
+      light_ptr->buffer_id);
   }
   if ((used_buffers & BufferType::INDEX) &&
     !(bound_buffers & BufferType::INDEX)) {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ptr.buffer_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ptr->buffer_id);
   }
   if ((used_buffers & BufferType::UI_UNIFORMS) &&
     !(bound_buffers & BufferType::UI_UNIFORMS)) {
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_3d_overlay_ptr.buffer_id);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_3d_overlay_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, FONT_UNIFORMS_LOC,
-      uniforms_3d_overlay_ptr.buffer_id);
+      uniforms_3d_overlay_ptr->buffer_id);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_ptr.buffer_id);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UI_UNIFORM_LOC,
-      uniforms_ui_ptr.buffer_id);
+      uniforms_ui_ptr->buffer_id);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_controller_ptr.buffer_id);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_controller_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CONTROLLER_UNIFORM_LOC,
-      uniforms_controller_ptr.buffer_id);
+      uniforms_controller_ptr->buffer_id);
   }
 }
 
@@ -206,45 +206,45 @@ void GLBuffers::Dispose() {
   glDeleteVertexArrays(1, &mesh_VAO);
   DEBUG_EXPR(CheckGLError());
 
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_ptr.buffer_id);
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_ptr->buffer_id);
   glUnmapBuffer(GL_ARRAY_BUFFER);
-  glDeleteBuffers(1, &vertex_ptr.buffer_id);
+  glDeleteBuffers(1, &vertex_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ptr.buffer_id);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ptr->buffer_id);
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-  glDeleteBuffers(1, &index_ptr.buffer_id);
+  glDeleteBuffers(1, &index_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, mesh_uniform_ptr.buffer_id);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, mesh_uniform_ptr->buffer_id);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  glDeleteBuffers(1, &mesh_uniform_ptr.buffer_id);
+  glDeleteBuffers(1, &mesh_uniform_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_ptr.buffer_id);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_ptr->buffer_id);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  glDeleteBuffers(1, &texture_handle_by_texture_id_ptr.buffer_id);
+  glDeleteBuffers(1, &texture_handle_by_texture_id_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ptr.buffer_id);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ptr->buffer_id);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  glDeleteBuffers(1, &light_ptr.buffer_id);
+  glDeleteBuffers(1, &light_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 
-  _DeleteCommandBuffer(command_ptr.buffer_ptr);
+  _DeleteCommandBuffer(command_ptr->buffer_ptr);
 
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_ptr.buffer_id);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_ptr->buffer_id);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  glDeleteBuffers(1, &uniforms_ui_ptr.buffer_id);
+  glDeleteBuffers(1, &uniforms_ui_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_3d_overlay_ptr.buffer_id);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_3d_overlay_ptr->buffer_id);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  glDeleteBuffers(1, &uniforms_3d_overlay_ptr.buffer_id);
+  glDeleteBuffers(1, &uniforms_3d_overlay_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_controller_ptr.buffer_id);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_controller_ptr->buffer_id);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  glDeleteBuffers(1, &uniforms_controller_ptr.buffer_id);
+  glDeleteBuffers(1, &uniforms_controller_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 }

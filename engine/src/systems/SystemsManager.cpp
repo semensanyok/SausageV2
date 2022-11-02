@@ -13,7 +13,7 @@ void SystemsManager::InitSystems() {
 	renderer = new Renderer(renderer_context_manager, buffer_manager->storage);
     shader_manager = new ShaderManager(file_watcher, renderer, camera);
     shader_manager->SetupShaders();
-    draw_call_manager = new DrawCallManager(shader_manager, renderer, mesh_manager);
+    draw_call_manager = new DrawCallManager(shader_manager, renderer, buffer_manager->storage, mesh_manager);
     terrain_manager = new TerrainManager(buffer_manager, mesh_manager, draw_call_manager);
 	state_manager = new StateManager(buffer_manager);
 	samplers = new Samplers();

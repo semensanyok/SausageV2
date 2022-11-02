@@ -6,10 +6,6 @@
 
 using namespace std;
 
-namespace MemorySlots {
-  inline MemorySlot NULL_SLOT = { 0, 0, 0 };
-}
-
 struct MemorySlot {
   unsigned long offset;
   unsigned long count;
@@ -17,6 +13,10 @@ struct MemorySlot {
   // i.e. when allocated 64 slot but actual indices used == 36
   unsigned long used;
 };
+
+namespace MemorySlots {
+  inline MemorySlot NULL_SLOT = { 0, 0, 0 };
+}
 
 // hash function for unordered map
 template<> struct std::hash<MemorySlot> {

@@ -36,7 +36,4 @@ class OverlayBufferConsumer3D : public BufferConsumer<unsigned int, MeshDataOver
   //void BufferTransform(MeshDataOverlay3D* mesh);
   void Init();
   void Reset() { Init(); }
-
- private:
-   void BufferFontTexture(MeshDataBase* mesh_data, Texture* texture);
 };

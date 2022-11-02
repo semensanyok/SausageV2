@@ -10,6 +10,7 @@
 #include "Settings.h"
 #include "Structures.h"
 #include "GPUStructs.h"
+#include "MeshDataStruct.h"
 
 using namespace std;
 using namespace glm;
@@ -32,7 +33,4 @@ class UIBufferConsumer : public BufferConsumer<unsigned int, MeshDataUI, vec2> {
   void BufferSize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
   void Init();
   void Reset();
-
- private:
-   void BufferFontTexture(MeshDataBase* mesh_data, Texture* texture);
 };

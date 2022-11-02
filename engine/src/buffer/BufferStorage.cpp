@@ -2,7 +2,7 @@
 
 void BufferStorage::BufferCommands(
     vector<DrawElementsIndirectCommand>& active_commands, int command_offset) {
-  auto command_ptr = gl_buffers->command_ptr.buffer_ptr;
+  auto command_ptr = gl_buffers->command_ptr->buffer_ptr;
   unique_lock<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
   if (!command_ptr->buffer_lock->is_mapped) {
     command_ptr->buffer_lock->Wait(data_lock);
@@ -12,7 +12,7 @@ void BufferStorage::BufferCommands(
          active_commands.size() * sizeof(DrawElementsIndirectCommand));
 }
 void BufferStorage::BufferCommand(DrawElementsIndirectCommand& command, int command_offset) {
-  auto command_ptr = gl_buffers->command_ptr.buffer_ptr;
+  auto command_ptr = gl_buffers->command_ptr->buffer_ptr;
   unique_lock<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
   while (!command_ptr->buffer_lock->is_mapped) {
     command_ptr->buffer_lock->Wait(data_lock);
@@ -23,14 +23,14 @@ void BufferStorage::BufferCommand(DrawElementsIndirectCommand& command, int comm
 void BufferStorage::BufferBoneTransform(
     unordered_map<unsigned int, mat4> &id_to_transform) {
   for (auto &id_trans : id_to_transform) {
-    gl_buffers->mesh_uniform_ptr.buffer_ptr->bones_transforms[id_trans.first] = id_trans.second;
+    gl_buffers->mesh_uniform_ptr->buffer_ptr->bones_transforms[id_trans.first] = id_trans.second;
   }
   gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::BufferBoneTransform(Bone *bone, mat4 &trans,
                                         unsigned int num_bones) {
-  auto mesh_uniform_ptr = gl_buffers->mesh_uniform_ptr.buffer_ptr;
+  auto mesh_uniform_ptr = gl_buffers->mesh_uniform_ptr->buffer_ptr;
   for (size_t i = 0; i < num_bones; i++) {
     mesh_uniform_ptr->bones_transforms[bone[i].id] = trans;
   }
@@ -44,9 +44,9 @@ void BufferStorage::BufferLights(vector<Light *> &lights) {
             .str());
     return;
   }
-  gl_buffers->light_ptr.buffer_ptr->num_lights = lights.size();
+  gl_buffers->light_ptr->buffer_ptr->num_lights = lights.size();
   for (int i = 0; i < lights.size(); i++) {
-    gl_buffers->light_ptr.buffer_ptr->lights[i] = *lights[i];
+    gl_buffers->light_ptr->buffer_ptr->lights[i] = *lights[i];
     // memcpy(light_ptr->lights, lights.data(), lights.size() * sizeof(Light));
   }
   gl_buffers->SetSyncBarrier();
@@ -64,9 +64,9 @@ void BufferStorage::BufferMeshData(MeshDataBase* mesh,
   auto& vertices = mesh_data->vertices;
   auto& indices = mesh_data->indices;
   // copy to GPU
-  memcpy(&gl_buffers->vertex_ptr.buffer_ptr[mesh->slots.vertex_slot.offset], vertices.data(),
+  memcpy(&gl_buffers->vertex_ptr->buffer_ptr[mesh->slots.vertex_slot.offset], vertices.data(),
          vertices.size() * sizeof(Vertex));
-  memcpy(&gl_buffers->index_ptr.buffer_ptr[mesh->slots.index_slot.offset], indices.data(),
+  memcpy(&gl_buffers->index_ptr->buffer_ptr[mesh->slots.index_slot.offset], indices.data(),
          indices.size() * sizeof(unsigned int));
   gl_buffers->SetSyncBarrier();
 }
@@ -76,14 +76,14 @@ bool BufferStorage::AllocateStorage(
   unsigned long vertices_size,
   unsigned long indices_size
 ) {
-  auto vertex_slot = gl_buffers->vertex_ptr.instances_slots.Allocate(vertices_size);
+  auto vertex_slot = gl_buffers->vertex_ptr->instances_slots.Allocate(vertices_size);
   if (vertex_slot == MemorySlots::NULL_SLOT) {
     LOG("Error RequestStorageSetOffsets vertices slot allocation.");
     return false;
   }
-  auto index_slot = gl_buffers->index_ptr.instances_slots.Allocate(indices_size);
+  auto index_slot = gl_buffers->index_ptr->instances_slots.Allocate(indices_size);
   if (index_slot == MemorySlots::NULL_SLOT) {
-    gl_buffers->vertex_ptr.instances_slots.Release(vertex_slot);
+    gl_buffers->vertex_ptr->instances_slots.Release(vertex_slot);
     LOG("Error RequestStorageSetOffsets indices slot allocation.");
     return false;
   }
@@ -107,9 +107,9 @@ bool BufferStorage::AllocateInstanceSlot(
   gl_buffers->SetSyncBarrier();
   return true;
 }
-bool BufferStorage::ReleaseStorage(MeshDataSlots& out_slots) {
-  gl_buffers->vertex_ptr.instances_slots.Release(out_slots.vertex_slot);
-  gl_buffers->index_ptr.instances_slots.Release(out_slots.index_slot);
+void BufferStorage::ReleaseStorage(MeshDataSlots& out_slots) {
+  gl_buffers->vertex_ptr->instances_slots.Release(out_slots.vertex_slot);
+  gl_buffers->index_ptr->instances_slots.Release(out_slots.index_slot);
 }
 ////////////// ......InstanceSlot END ///////////////////////////////////////////////////
 
@@ -121,42 +121,37 @@ Texture* BufferStorage::CreateTextureWithBufferSlot(GLuint gl_texture_id, GLuint
   Texture* texture = new Texture(
     gl_texture_id,
     gl_texture_handle_ARB,
-    gl_buffers->texture_handle_by_texture_id_ptr.Allocate());
+    gl_buffers->texture_handle_by_texture_id_ptr->Allocate());
   _BufferTextureHandle(texture);
   return texture;
 };
 void BufferStorage::_BufferTextureHandle(Texture* texture)
 {
   gl_buffers->
-    texture_handle_by_texture_id_ptr.buffer_ptr[texture->id] = texture->texture_handle_ARB;
+    texture_handle_by_texture_id_ptr->buffer_ptr[texture->id] = texture->texture_handle_ARB;
   gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::ReleaseTexture(Texture* texture) {
   gl_buffers->
-    texture_handle_by_texture_id_ptr.instances_slots->ReleaseNumber(texture->id);
+    texture_handle_by_texture_id_ptr->instances_slots.ReleaseNumber(texture->id);
   texture->Dispose();
-};
-
-void BufferStorage::BufferBlendTextures(BlendTextures& textures, BufferInstanceOffset& mesh) {
-  auto& buffer_slots = gl_buffers->GetBufferSlots<UniformDataMesh, MeshData>();
-  buffer_slots.buffer_ptr->blend_textures[mesh.GetInstanceOffset()] = textures;
 };
 
 void BufferStorage::BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y) {
   DEBUG_ASSERT(mesh->slots.buffer_id > 0);
   DEBUG_ASSERT(mesh->slots.instances_slot != MemorySlots::NULL_SLOT);
   gl_buffers->
-    uniforms_ui_ptr.buffer_ptr->
+    uniforms_ui_ptr->buffer_ptr->
       min_max_x_y[mesh->slots.instances_slot.offset] = { min_x, max_x, min_y, max_y };
   gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click) {
-  gl_buffers->uniforms_controller_ptr.buffer_ptr->mouse_x = mouse_x;
-  gl_buffers->uniforms_controller_ptr.buffer_ptr->mouse_y = mouse_y;
-  gl_buffers->uniforms_controller_ptr.buffer_ptr->is_pressed = is_pressed;
-  gl_buffers->uniforms_controller_ptr.buffer_ptr->is_click = is_click;
+  gl_buffers->uniforms_controller_ptr->buffer_ptr->mouse_x = mouse_x;
+  gl_buffers->uniforms_controller_ptr->buffer_ptr->mouse_y = mouse_y;
+  gl_buffers->uniforms_controller_ptr->buffer_ptr->is_pressed = is_pressed;
+  gl_buffers->uniforms_controller_ptr->buffer_ptr->is_click = is_click;
   gl_buffers->SetSyncBarrier();
 }
 
