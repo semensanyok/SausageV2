@@ -28,9 +28,9 @@ MemorySlot Arena::Allocate(const unsigned int size) {
       MemorySlot res = *maybe_gap;
       free_gaps_slots.erase(maybe_gap);
       return res;
-    }
-    else {
-      MemorySlot gap = *free_gaps_slots.erase(maybe_gap);
+    } else {
+      auto gap = *maybe_gap;
+      free_gaps_slots.erase(maybe_gap);
 
       MemorySlot res = { gap.offset, size_to_alloc };
 

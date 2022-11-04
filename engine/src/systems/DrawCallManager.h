@@ -162,6 +162,7 @@ public:
     lock_guard l(dc->mtx);
 
     dc->Allocate(mesh->slots, 1);
+    dc_by_mesh_id[mesh->id] = dc;
     if (buffer->AllocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count)) {
       _SetToCommandWithOffsets(command, mesh->slots, dc->GetAbsoluteCommandOffset(mesh->slots));
     }
