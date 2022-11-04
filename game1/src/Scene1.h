@@ -106,9 +106,13 @@ private:
       if (!base_meshes.contains(key)) {
         mesh = mesh_manager->CreateMeshData(load_data);
         base_meshes[key] = mesh;
-        mesh_data_buffer->AllocateStorage(mesh->slots, load_data->vertices.size(), load_data->indices.size());
-        mesh_data_buffer->BufferMeshData(mesh->slots, load_data_sptr);
-        draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, 1);
+        if (mesh_data_buffer->AllocateStorage(mesh->slots, load_data->vertices.size(), load_data->indices.size())) {
+          mesh_data_buffer->BufferMeshData(mesh->slots, load_data_sptr);
+          draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, 1);
+        }
+        else {
+          throw runtime_error("Scene1: failed to Allocate");
+        };
         // TEXTURE SETUP
         {
           Texture* texture = systems_manager->texture_manager->LoadTextureArray(tex_names);

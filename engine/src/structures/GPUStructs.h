@@ -100,18 +100,6 @@ public:
   }
 };
 
-struct CommandBuffer {
-  const GLuint id;
-  DrawElementsIndirectCommand* ptr;
-  // we have to use lock here
-  // because command buffer must be "unmapped" before each drawcall
-  BufferLock* buffer_lock;
-  inline bool operator==(const CommandBuffer& other) { return id == other.id; }
-  ~CommandBuffer() {
-    delete buffer_lock;
-  }
-};
-
 //// hash function for unordered map
 //template<> struct std::hash<CommandBuffer> {
 //  size_t operator()(CommandBuffer const& t) const {

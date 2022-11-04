@@ -11,7 +11,6 @@ unsigned int Arena::GetBaseOffset() {
 
 MemorySlot Arena::Allocate(const unsigned int size) {
   lock_guard l(mtx);
-  unsigned int free_space = _GetFreeSpace();
   auto size_to_alloc = is_allocate_powers_of_2 ?
     _GetSmallestEncompassingPowerOf2(size) : size;
   if (free_gaps_slots.empty()) {

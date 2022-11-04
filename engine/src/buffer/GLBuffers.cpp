@@ -6,15 +6,15 @@ void GLBuffers::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {
 }
 
 void GLBuffers::MapBuffer() {
-  lock_guard<mutex> data_lock(command_ptr->buffer_ptr->buffer_lock->data_mutex);
-  if (command_ptr->buffer_ptr->buffer_lock->is_mapped == true) {
+  lock_guard<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
+  if (command_ptr->buffer_lock->is_mapped == true) {
     return;
   }
   // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-  command_ptr->buffer_ptr->ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(
-    command_ptr->buffer_id, 0, COMMAND_STORAGE_SIZE, flags);
-  command_ptr->buffer_ptr->buffer_lock->is_mapped = true;
-  command_ptr->buffer_ptr->buffer_lock->is_mapped_cv.notify_all();
+  command_ptr->ptr->buffer_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(
+    command_ptr->ptr->buffer_id, 0, COMMAND_STORAGE_SIZE, flags);
+  command_ptr->buffer_lock->is_mapped = true;
+  command_ptr->buffer_lock->is_mapped_cv.notify_all();
 }
 
 void GLBuffers::PreDraw() {
@@ -28,18 +28,18 @@ void GLBuffers::PostDraw() {
 }
 
 void GLBuffers::_BindCommandBuffer() {
-  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr->buffer_id);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr->ptr->buffer_id);
 }
 
 void GLBuffers::_UnmapBuffer() {
-  lock_guard<mutex> data_lock(command_ptr->buffer_ptr->buffer_lock->data_mutex);
-  if (command_ptr->buffer_ptr->buffer_lock->is_mapped == false) {
+  lock_guard<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
+  if (command_ptr->buffer_lock->is_mapped == false) {
     return;
   }
-  command_ptr->buffer_ptr->buffer_lock->is_mapped = false;
-  command_ptr->buffer_ptr->buffer_lock->is_mapped_cv.notify_all();
+  command_ptr->buffer_lock->is_mapped = false;
+  command_ptr->buffer_lock->is_mapped_cv.notify_all();
   // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
-  if (!glUnmapNamedBuffer(command_ptr->buffer_id)) {
+  if (!glUnmapNamedBuffer(command_ptr->ptr->buffer_id)) {
     DEBUG_EXPR(CheckGLError());
   }
 }
@@ -89,8 +89,8 @@ void GLBuffers::InitBuffers() {
     mesh_VAO);  // MUST be bound before glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
                 // command_ptr).
 
-  vertex_ptr = _CreateBufferStorageSlots<Vertex>(VERTEX_STORAGE_SIZE);
-  index_ptr = _CreateBufferStorageSlots<unsigned int>(INDEX_STORAGE_SIZE);
+  vertex_ptr = _CreateBufferStorageSlots<Vertex>(VERTEX_STORAGE_SIZE, true);
+  index_ptr = _CreateBufferStorageSlots<unsigned int>(INDEX_STORAGE_SIZE, true);
   mesh_uniform_ptr = _CreateBufferStorageSlots<UniformDataMesh>(MESH_UNIFORMS_STORAGE_SIZE);
   texture_handle_by_texture_id_ptr = _CreateBufferStorageNumberPool<GLuint64>(TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE);
   light_ptr = _CreateBufferStorageSlots<LightsUniform>(LIGHT_STORAGE_SIZE);
@@ -100,23 +100,24 @@ void GLBuffers::InitBuffers() {
   command_ptr = _CreateCommandBuffer();
 }
 
-BufferSlots<CommandBuffer>* GLBuffers::_CreateCommandBuffer() {
-  command_ptr = _CreateBufferStorageSlots<CommandBuffer>(COMMAND_STORAGE_SIZE);
-  auto buffer_lock = new BufferLock();
-  buffer_lock->is_mapped = true;
+CommandBuffer* GLBuffers::_CreateCommandBuffer() {
+  command_ptr = new CommandBuffer{};
+  command_ptr->ptr = _CreateBufferStorageSlots<DrawElementsIndirectCommand>(COMMAND_STORAGE_SIZE);
+  command_ptr->buffer_lock = new BufferLock();
+  command_ptr->buffer_lock->is_mapped = true;
   DEBUG_EXPR(CheckGLError());
   return command_ptr;
 }
 
 template<typename T>
-BufferSlots<T>* GLBuffers::_CreateBufferStorageSlots(unsigned long storage_size) {
+BufferSlots<T>* GLBuffers::_CreateBufferStorageSlots(unsigned long storage_size, bool is_allocate_powers_of_2) {
   GLuint buffer_id;
   glGenBuffers(1, &buffer_id);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
   glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, storage_size, NULL, flags);
   T* buffer_ptr = (T*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0,
     storage_size, flags);
-  return new BufferSlots{ {Arena({ 0, storage_size }, true)}, buffer_id , buffer_ptr };
+  return new BufferSlots{ {Arena({ 0, storage_size }, is_allocate_powers_of_2)}, buffer_id , buffer_ptr };
 }
 
 template<typename T>
@@ -231,7 +232,7 @@ void GLBuffers::Dispose() {
   glDeleteBuffers(1, &light_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 
-  _DeleteCommandBuffer(command_ptr->buffer_ptr);
+  _DeleteCommandBuffer(command_ptr);
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_ptr->buffer_id);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);

@@ -46,6 +46,17 @@ struct BufferSlots {
   };
 };
 
+struct CommandBuffer {
+  BufferSlots<DrawElementsIndirectCommand>* ptr;
+  // we have to use lock here
+  // because command buffer must be "unmapped" before each drawcall
+  BufferLock* buffer_lock;
+  inline bool operator==(const CommandBuffer& other) { return ptr->buffer_id == other.ptr->buffer_id; }
+  ~CommandBuffer() {
+    delete buffer_lock;
+  }
+};
+
 template<typename T>
 struct BufferNumberPool {
   // must be allocated with size = MAX_INSTANCES
@@ -89,7 +100,7 @@ public:
   BufferSlots<Vertex>* vertex_ptr;
   BufferSlots<unsigned int>* index_ptr;
 
-  BufferSlots<CommandBuffer>* command_ptr;
+  CommandBuffer* command_ptr;
   BufferSlots<LightsUniform>* light_ptr;
   BufferNumberPool<GLuint64>* texture_handle_by_texture_id_ptr;
   BufferSlots<UniformDataMesh>* mesh_uniform_ptr;
@@ -114,7 +125,7 @@ public:
 
     vertex_ptr->Reset();
     index_ptr->Reset();
-    command_ptr->Reset();
+    command_ptr->ptr->Reset();
     light_ptr->Reset();
     texture_handle_by_texture_id_ptr->Reset();
     mesh_uniform_ptr->Reset();
@@ -259,10 +270,10 @@ public:
   /////////////////////////////////////////////////
 
   inline MemorySlot AllocateCommandBufferSlot(unsigned int size) {
-    return command_ptr->instances_slots.Allocate(size);
+    return command_ptr->ptr->instances_slots.Allocate(size);
   }
   inline void ReleaseCommandBufferSlot(MemorySlot& out_slot) {
-    command_ptr->instances_slots.Release(out_slot);
+    command_ptr->ptr->instances_slots.Release(out_slot);
   }
 private:
   void _SyncGPUBufAndUnmap();
@@ -270,7 +281,7 @@ private:
   void _UnmapBuffer();
   void _DeleteCommandBuffer(CommandBuffer* command_ptr) {
     lock_guard<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr->id);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr->ptr->buffer_id);
     glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
     DEBUG_EXPR(CheckGLError());
     delete command_ptr;
@@ -278,8 +289,9 @@ private:
   void WaitGPU(GLsync fence_sync,
                const source_location& location = source_location::current());
   template<typename T>
-  BufferSlots<T>* _CreateBufferStorageSlots(unsigned long num_elements);
+  BufferSlots<T>* _CreateBufferStorageSlots(unsigned long num_elements,
+    bool is_allocate_powers_of_2 = false);
   template<typename T>
   BufferNumberPool<T>* _CreateBufferStorageNumberPool(unsigned long storage_size);
-  BufferSlots<CommandBuffer>* _CreateCommandBuffer();
+  CommandBuffer* _CreateCommandBuffer();
 };
