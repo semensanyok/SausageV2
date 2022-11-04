@@ -35,7 +35,10 @@ public:
     BufferManager* buffer_manager) :
     state_manager{ state_manager },
     mesh_manager{ mesh_manager },
-    mesh_data_buffer{ buffer_manager->mesh_data_buffer } {};
+    mesh_data_buffer{ buffer_manager->mesh_data_buffer },
+    anim_id_pool{ new ThreadSafeNumberPool(MAX_MESHES_INSTANCES) },
+    active_anim_id_pool{ new ThreadSafeNumberPool(MAX_MESHES_INSTANCES) }
+  {};
   ~AnimationManager() {};
   void Reset();
   void QueueAnimUpdate(ActiveAnimation* active_anim);

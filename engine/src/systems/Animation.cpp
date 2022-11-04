@@ -13,7 +13,8 @@ void AnimationManager::Reset() {
   anims.clear();
   all_anim_meshes.clear();
   active_anims.clear();
-  anim_id_pool = 0;
+  anim_id_pool->Reset();
+  active_anim_id_pool->Reset();
 }
 void AnimationManager::QueueAnimUpdate(ActiveAnimation* anim) {
   active_anims[anim->id] = anim;
