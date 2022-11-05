@@ -17,6 +17,7 @@ uniform mat4 projection_ortho;
 
 out vs_out {
     flat int base_instance;
+    flat int instance_id;
     flat int glyph_id;
     vec3 color;
     vec2 uv;
@@ -30,4 +31,5 @@ void main()
     Out.glyph_id = int(position_glyph_id.z);
     Out.uv = uv.xy;
     Out.base_instance = gl_BaseInstanceARB;
+    Out.instance_id = gl_InstanceID;
 }

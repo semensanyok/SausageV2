@@ -86,7 +86,7 @@ private:
   string _LoadCode(string& path);
   // utility function for checking shader compilation/linking errors.
   // ------------------------------------------------------------------------
-  bool CheckCompileErrors(GLuint shader, string type);
+  bool CheckCompileErrors(GLuint shader, string type, string info);
 };
 
 // hash function for unordered map

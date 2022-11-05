@@ -10,13 +10,10 @@ out vec4 color;
 {{ texture_layers_offsets }}
 {{ uniforms_locations }}
 {{ mesh_buffers_capacity }}
-
 {{ mesh_uniforms }}
-{{ blend_textures_by_mesh_id }}
 
 {{ mesh_fs_in }}
 
-{{ light_structs }}
 {{ light_uniforms }}
 {{ light_functions }}
 

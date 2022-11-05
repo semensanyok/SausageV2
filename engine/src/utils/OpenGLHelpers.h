@@ -16,8 +16,6 @@ void LogShaderMessage(unsigned int id);
 
 void LogShaderFull(GLuint programme);
 
-bool CheckGLError(const std::source_location& location);
-
 // cannot be constexpr because of `va_start`
 //size_t GetPadCharsNumToLargestElement(int num, ...);
 

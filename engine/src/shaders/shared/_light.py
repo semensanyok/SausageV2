@@ -1,6 +1,6 @@
 # depends on: _constants.py
 light = {
-    "light_structs":
+    "light_uniforms":
 """
 struct Light {
     vec4 direction;
@@ -17,11 +17,8 @@ struct Light {
     float quadratic_attenuation;
     float pad[2];
 };
-"""
-    ,
-    "light_uniforms":
-"""
-layout (std430, binding = LIGHTS_UNIFORM_LOC) buffer Lights
+
+layout (std430, binding = LIGHTS_UNIFORM_LOC) buffer LightsUniform
 {
 	int num_lights;
     float pad[3];

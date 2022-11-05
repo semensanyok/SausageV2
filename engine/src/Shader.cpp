@@ -41,7 +41,7 @@ void Shader::CreateProgram() {
   CheckGLError();
   glLinkProgram(id);
   CheckGLError();
-  CheckCompileErrors(id, "PROGRAM");
+  CheckCompileErrors(id, "PROGRAM", "");
   // delete the shaders as they're linked into our program now and no longer
   // necessary
   glDeleteShader(vs_in_use);
@@ -52,36 +52,32 @@ void Shader::CompileFS() {
   if (id != 0 && fs_in_use != 0) {
     glDetachShader(id, fs_in_use);
   }
-  auto code = _LoadCode(fragment_path);
-  if (!code.empty()) {
-    CompileShader(code, GL_FRAGMENT_SHADER, is_fs_updated, fs);
-  }
+  CompileShader(fragment_path, GL_FRAGMENT_SHADER, is_fs_updated, fs);
 }
 void Shader::CompileVS() {
   if (id != 0 && vs_in_use != 0) {
     glDetachShader(id, vs_in_use);
   }
-  auto code = _LoadCode(vertex_path);
-  if (!code.empty()) {
-    CompileShader(code, GL_VERTEX_SHADER, is_vs_updated, vs);
-  }
+  CompileShader(vertex_path, GL_VERTEX_SHADER, is_vs_updated, vs);
 }
 void Shader::CompileShader(
-  std::string& code,
+  std::string& shader_path,
   GLuint shader_type,
   bool& out_is_shader_updated,
   GLuint& out_shader_id
 )
 {
+  string shader_type_str = shader_type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT";
+  auto code = _LoadCode(shader_path);
+  if (code.empty()) {
+    LOG(format("ERROR::SHADER_COMPILATION_ERROR of type: {}. \
+                Code for path {} EMPTY", shader_type_str, shader_path));
+  }
   auto code_c = code.c_str();
   GLuint shader_id = glCreateShader(shader_type);
   glShaderSource(shader_id, 1, &code_c, NULL);
   glCompileShader(shader_id);
-  auto is_success = CheckCompileErrors(shader_id,
-    format("{} {}",
-      shader_type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT",
-      this->vertex_path
-    ));
+  auto is_success = CheckCompileErrors(shader_id, shader_type_str, shader_path);
   if (is_success && CheckGLError() == false) {
     out_is_shader_updated = true;
     out_shader_id = shader_id;
@@ -167,7 +163,7 @@ string Shader::_LoadCode(string &path) {
 }
 // utility function for checking shader compilation/linking errors.
 // ------------------------------------------------------------------------
-bool Shader::CheckCompileErrors(GLuint shader, string type) {
+bool Shader::CheckCompileErrors(GLuint shader, string type, string info) {
   GLint success;
   GLchar infoLog[1024];
   if (type != "PROGRAM") {
@@ -176,6 +172,7 @@ bool Shader::CheckCompileErrors(GLuint shader, string type) {
       glGetShaderInfoLog(shader, 1024, NULL, infoLog);
       LOG((stringstream()
            << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n"
+           << format("additional info: {} \n", info)
            << infoLog
            << "\n -- --------------------------------------------------- -- ")
               .str());

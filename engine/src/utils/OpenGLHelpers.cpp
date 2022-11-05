@@ -151,13 +151,13 @@ bool CheckGLError(const std::source_location& location) {
   }
   int err = glGetError();
   if (err != GL_NO_ERROR) {
-    //cout << "GL error: '" << glGetErrorString(err)
-    //		<< "' at: "
-    //		<< location.file_name() << "("
-    //		<< location.line() << ":"
-    //		<< location.column() << ")#"
-    //		<< location.function_name();
-    LOG((ostringstream() << "GL error: " << glGetErrorString(err)));
+    LOG((ostringstream() << "GL error: '" << glGetErrorString(err)
+      << "' at: "
+      << location.file_name() << "("
+      << location.line() << ":"
+      << location.column() << ")#"
+      << location.function_name()));
+    //LOG((ostringstream() << "GL error: " << glGetErrorString(err)));
     return true;
   }
   return false;
