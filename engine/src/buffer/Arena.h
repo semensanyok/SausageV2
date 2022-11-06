@@ -6,6 +6,16 @@
 
 using namespace std;
 
+enum ArenaSlotSize {
+  // vertex/index buffers
+  POWER_OF_TWO = 0,
+  // uniforms offsets
+  ONE = 1,
+  // command buffer, because must be a multiple of four, or get GL_INVALID_VALUE.
+  // @ref void glMultiDrawElementsIndirect(GLenum mode, GLenum type, const void* indirect, GLsizei drawcount, GLsizei stride);
+  FOUR = 4
+};
+
 struct MemorySlot {
   unsigned long offset;
   unsigned long count;
@@ -60,11 +70,11 @@ class Arena {
   mutex mtx;
   set<MemorySlot> free_gaps_slots;
   MemorySlot base_slot;
-  const bool is_allocate_powers_of_2;
+  ArenaSlotSize slot_size;
 public:
 
-  Arena(MemorySlot slot, bool is_allocate_powers_of_2 = false) :
-    base_slot{ slot }, allocated{ 0 }, is_allocate_powers_of_2{ is_allocate_powers_of_2 }{
+  Arena(MemorySlot slot, ArenaSlotSize slot_size = ArenaSlotSize::ONE) :
+    base_slot{ slot }, allocated{ 0 }, slot_size{ slot_size }{
   }
   inline unsigned int GetUsed() { return allocated; };
   unsigned int GetFreeSpace();
@@ -79,5 +89,5 @@ private:
    *        (to reduce amount of calculations)
   */
   MemorySlot _AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc, const unsigned int used_size);
-  unsigned int _GetSmallestEncompassingPowerOf2(const unsigned int size);
+  unsigned int _GetSmallestEncompassing(const unsigned int size);
 };

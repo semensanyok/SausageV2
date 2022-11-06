@@ -89,56 +89,6 @@ public:
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
   }
 
-  template<typename MESH_TYPE>
-  MeshDataInstance* AddNewInstance(MeshDataBase* mesh) {
-    DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
-    DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
-    auto& command = command_by_mesh_id[mesh->id];
-    auto dc = dc_by_mesh_id[mesh->id];
-    // reallocate if
-    bool is_success_slot_alloc = true;
-    auto instance_count = command.instanceCount + 1;
-    if (instance_count > mesh->slots.instances_slot.count) {
-      is_success_slot_alloc = AllocateInstanceSlot<MESH_TYPE>(mesh->slots,
-        instance_count, command, dc);
-    }
-    if (is_success_slot_alloc) {
-      // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
-      auto instance = mesh_manager->CreateInstancedMesh(mesh, command.instanceCount++);
-      mesh->slots.instances_slot.used = command.instanceCount;
-      buffer->BufferCommand(command, dc->GetAbsoluteCommandOffset(mesh->slots));
-      return instance;
-    }
-    return nullptr;
-  }
-
-  /**
-   * @brief sets instance count to base mesh draw command.
-   *        this command doesnt modify mesh.instance_id
-   *        (to set instance_id automatically use AddNewInstance)
-   *        note that mesh.instance_id (gl_InstanceID) is in range [0,new_instance_count-1]
-  */
-  template<typename MESH_TYPE>
-  void SetInstanceCountToCommand(MeshDataBase* mesh, GLuint instance_count) {
-    DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
-    DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
-    auto& command = command_by_mesh_id[mesh->id];
-    auto dc = dc_by_mesh_id[mesh->id];
-    bool is_success_slot_alloc = true;
-    if (instance_count > mesh->slots.instances_slot.count) {
-      is_success_slot_alloc = AllocateInstanceSlot<MESH_TYPE>(mesh->slots,
-        instance_count, command, dc);
-    }
-    if (instance_count == 0) {
-      buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh->slots);
-    }
-    if (is_success_slot_alloc) {
-      command.instanceCount = instance_count;
-      mesh->slots.instances_slot.used = instance_count;
-      buffer->BufferCommand(command, dc->GetAbsoluteCommandOffset(mesh->slots));
-    }
-  }
-
   /**
    * make sure to pre allocate expected number of instances
    * for instanced call,
@@ -156,16 +106,47 @@ public:
     // bullet debug drawer doesnt use instance slot in any ssbo, only vertex-index
     bool is_alloc_instance_slot = true
   ) {
+    lock_guard l(dc->mtx);
     DEBUG_ASSERT(!dc_by_mesh_id.contains(mesh->id));
     DEBUG_ASSERT(!command_by_mesh_id.contains(mesh->id));
     DrawElementsIndirectCommand& command = command_by_mesh_id[mesh->id];
-    lock_guard l(dc->mtx);
-
     dc->Allocate(mesh->slots, 1);
     dc_by_mesh_id[mesh->id] = dc;
-    if (buffer->AllocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count)) {
-      _SetToCommandWithOffsets(command, mesh->slots, dc->GetAbsoluteCommandOffset(mesh->slots));
+    SetToCommandWithOffsets<MESH_TYPE>(mesh, 1, is_alloc_instance_slot);
+  }
+
+  template<typename MESH_TYPE>
+  MeshDataInstance* AddNewInstance(MeshDataBase* mesh,
+    bool is_alloc_instance_slot = true) {
+    DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
+    auto& command = command_by_mesh_id[mesh->id];
+    auto instance_id = command.instanceCount;
+    auto instance_count = command.instanceCount + 1;
+
+    if (SetToCommandWithOffsets<MESH_TYPE>(mesh, instance_count, is_alloc_instance_slot)) {
+      // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
+      auto instance = mesh_manager->CreateInstancedMesh(mesh, instance_id);
+      return instance;
     }
+    return nullptr;
+  }
+
+  template<typename MESH_TYPE>
+  void DisableCommand(MeshDataBase* mesh) {
+    auto draw_call = dc_by_mesh_id.find(mesh->id);
+    if (draw_call == dc_by_mesh_id.end()) {
+      LOG(format("WARN: DisableCommand: Not found DrawCall for mesh_id={}", mesh->id));
+    } else {
+      dc_by_mesh_id.erase(draw_call);
+    }
+    auto command = command_by_mesh_id.find(mesh->id);
+    if (command == command_by_mesh_id.end()) {
+      LOG(format("WARN: DisableCommand: Not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
+    }
+    else {
+      SetToCommandWithOffsets<MESH_TYPE>(mesh, 0);
+      command_by_mesh_id.erase(command);
+    };
   }
 
   /**
@@ -176,74 +157,55 @@ public:
    *          prior to mesh data allocation
    *          and offset setup via BufferStorage#AllocateStorage
    *          (command was created initially with 0 offsets and instance count)
+   * @brief sets instance count to base mesh draw command.
+   *        this command doesnt modify mesh.instance_id
+   *        (to set instance_id automatically use AddNewInstance)
+   *        note that mesh.instance_id (gl_InstanceID) is in range [0,new_instance_count-1]
   */
   template<typename MESH_TYPE>
-  void _SetToCommandWithOffsets(
-    MeshDataBase* mesh,
+  bool SetToCommandWithOffsets(MeshDataBase* mesh,
     GLuint instance_count,
-    // bullet debug drawer doesnt use instance slot in any ssbo, only vertex-index
-    bool is_alloc_instance_slot = true
-  ) {
-    DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
+    bool is_alloc_instance_slot = true) {
     DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
+    DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
+    auto& command = command_by_mesh_id[mesh->id];
     auto dc = dc_by_mesh_id[mesh->id];
-    auto command = command_by_mesh_id[mesh->id];
-    // if asked more then current slots have - reallocate
-    bool is_success_slot_alloc = false;
-    if (is_alloc_instance_slot && instance_count > mesh->slots.instances_slot.count) {
-      is_success_slot_alloc = AllocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count, command, dc);
-    }
-    else {
-      mesh->slots.instances_slot.used = instance_count;
-      is_success_slot_alloc = true;
-    }
+    bool is_success_slot_alloc = is_alloc_instance_slot ?
+      AllocateOrReleaseInstanceSlot<MESH_TYPE>(mesh->slots, instance_count, command, dc) : true;
     if (is_success_slot_alloc) {
-      _SetToCommandWithOffsets(command_by_mesh_id[mesh->id], mesh->slots,
-        dc->GetAbsoluteCommandOffset(mesh->slots));
+      command.instanceCount = instance_count;
+      mesh->slots.instances_slot.used = instance_count;
+      _SetToCommandWithOffsets(command, mesh->slots, dc);
+      return true;
     }
-  }
-
-  template<typename MESH_TYPE>
-  void DisableCommand(MeshDataBase* mesh) {
-    auto draw_call = dc_by_mesh_id.find(mesh->id);
-    if (draw_call == dc_by_mesh_id.end()) {
-      LOG(format("WARN: DisableCommand: Not found DrawCall for mesh_id={}", mesh->id));
-      return;
-    } else {
-      dc_by_mesh_id.erase(draw_call);
-    }
-    auto draw_command = command_by_mesh_id.find(mesh->id);
-    if (draw_command == command_by_mesh_id.end()) {
-      LOG(format("WARN: DisableCommand: Not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
-    }
-    else {
-      SetInstanceCountToCommand<MESH_TYPE>(mesh, 0);
-      command_by_mesh_id.erase(draw_command);
-    };
-    draw_call->second->Release(mesh->slots);
+    return false;
   }
 private:
 
   template<typename MESH_TYPE>
-  bool AllocateInstanceSlot(MeshDataSlots& mesh_slots,
+  bool AllocateOrReleaseInstanceSlot(MeshDataSlots& mesh_slots,
     GLuint& new_instance_count,
     DrawElementsIndirectCommand& command,
     DrawCall* dc)
   {
-    if (new_instance_count <= mesh_slots.instances_slot.count) {
-      return false;
-    }
-    if (mesh_slots.instances_slot != MemorySlots::NULL_SLOT) {
+    if (new_instance_count == 0) {
+      buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
+      return true;
+    } else if (new_instance_count <= mesh_slots.instances_slot.count) {
+    // existing slot already fits requested amount
+      return true;
+    } else if (mesh_slots.instances_slot != MemorySlots::NULL_SLOT) {
       buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
     }
-    return buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count);
+    return buffer->AllocateOrReleaseInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count);
   }
 
   void _SetToCommandWithOffsets(
     DrawElementsIndirectCommand& command,
     MeshDataSlots& mesh_slots,
-    unsigned int command_offset
+    DrawCall* dc
   ) {
+    unsigned int command_offset = dc->GetAbsoluteCommandOffset(mesh_slots);
     command.instanceCount = mesh_slots.instances_slot.count;
     command.count = mesh_slots.index_slot.used;
     command.firstIndex = mesh_slots.index_slot.offset;

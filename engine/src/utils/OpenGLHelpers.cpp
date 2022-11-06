@@ -151,7 +151,8 @@ bool CheckGLError(const std::source_location& location) {
   }
   int err = glGetError();
   if (err != GL_NO_ERROR) {
-    LOG((ostringstream() << "GL error: '" << glGetErrorString(err)
+    LOG((ostringstream() << (unsigned long)time(NULL) << " "
+      << "GL error: '" << glGetErrorString(err)
       << "' at: "
       << location.file_name() << "("
       << location.line() << ":"

@@ -6,6 +6,7 @@
 #include "GPUStructs.h"
 #include "MeshDataStruct.h"
 #include "ThreadSafeNumberPool.h"
+#include "Macros.h"
 
 using namespace std;
 
@@ -68,6 +69,7 @@ public:
   }
 
   unsigned int GetAbsoluteCommandOffset(MeshDataSlots& slots) {
+    DEBUG_ASSERT(slots.IsBufferIdAllocated());
     return slots.buffer_id + command_buffer_slot.offset;
   }
 private:
@@ -77,7 +79,7 @@ private:
   void Allocate(MeshDataSlots& out_slots, unsigned int instances_count) {
     MemorySlot sub_command_buffer_slot = command_buffer_sub_arena.Allocate(1);
     out_slots.buffer_id = GetRelativeBufferId(sub_command_buffer_slot);
-    DEBUG_ASSERT(out_slots.buffer_id >= 0);
+    DEBUG_ASSERT(out_slots.IsBufferIdAllocated());
   }
   void Release(MeshDataSlots& out_slots) {
     command_buffer_sub_arena.Release({ GetAbsoluteCommandOffset(out_slots), 1 });

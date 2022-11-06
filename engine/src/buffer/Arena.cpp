@@ -11,8 +11,7 @@ unsigned int Arena::GetBaseOffset() {
 
 MemorySlot Arena::Allocate(const unsigned int size) {
   lock_guard l(mtx);
-  auto size_to_alloc = is_allocate_powers_of_2 ?
-    _GetSmallestEncompassingPowerOf2(size) : size;
+  auto size_to_alloc = _GetSmallestEncompassing(size);
   if (free_gaps_slots.empty()) {
     MemorySlot res = _AllocateNewSlotIfHasSpace(size_to_alloc, size);
     return res;
@@ -72,7 +71,7 @@ unsigned int Arena::_GetFreeSpace() {
 MemorySlot Arena::_AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc, const unsigned int used_size)
 {
   // caller responsible for argument correctness
-  // size_to_alloc = _GetSmallestEncompassingPowerOf2(size_to_alloc);
+  // size_to_alloc = _GetSmallestEncompassing(size_to_alloc);
   unsigned int free_space = _GetFreeSpace();
   if (size_to_alloc > _GetFreeSpace()) {
     LOG(format("Exceeded free space, size_to_alloc={}, free_space={}", size_to_alloc, free_space));
@@ -83,10 +82,26 @@ MemorySlot Arena::_AllocateNewSlotIfHasSpace(const unsigned int size_to_alloc, c
   return { offset, size_to_alloc,  used_size };
 }
 
-unsigned int Arena::_GetSmallestEncompassingPowerOf2(const unsigned int size) {
-  unsigned int res = 1;
+unsigned int Arena::_GetSmallestEncompassing(const unsigned int size) {
+  unsigned int res = 0;
+  if (slot_size == POWER_OF_TWO)
+  {
+    res = 1;
+  }
   while (res < size) {
-    res <<= 1;
+    switch (slot_size)
+    {
+    case ONE:
+      return size;
+    case POWER_OF_TWO:
+      res <<= 1;
+      break;
+    case FOUR:
+      res += 4;
+      break;
+    default:
+      break;
+    }
   }
   return res;
 }

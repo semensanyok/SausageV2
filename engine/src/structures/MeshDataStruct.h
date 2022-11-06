@@ -43,6 +43,9 @@ public:
     vertex_slot { MemorySlots::NULL_SLOT },
     index_slot{ MemorySlots::NULL_SLOT },
     buffer_id{ -1 } {}
+  inline bool IsBufferIdAllocated() {
+    return buffer_id >= 0;
+  }
 };
 
 class MeshDataBase : public BufferInstanceOffset

@@ -12,24 +12,28 @@ void Renderer::Render(Camera* camera) {
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   {
+    buffer->PreDraw();
     for (auto order_shader : draw_calls) {
       if (order_shader.second.empty()) {
         continue;
       }
       {
-        buffer->PreDraw();
         for (auto draw : order_shader.second) {
           if (draw->is_enabled && draw->GetCommandCount() > 0) {
             glUseProgram(draw->shader->id);
+            CheckGLError();
             draw->shader->SetUniforms();
+            unsigned int command_count = draw->GetCommandCount();
+            unsigned int offset = draw->GetBaseOffset();
             glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
-                                        draw->GetCommandCount(), draw->GetBaseOffset());
+                                        command_count, offset);
+            CheckGLError();
           }
         }
-        buffer->PostDraw();
       }
       CheckGLError();
     }
+    buffer->PostDraw();
   }
   IF_PROFILE_ENABLED(auto proft3 = chrono::steady_clock::now(););
   Gui::RenderGui(context_manager->window, camera);

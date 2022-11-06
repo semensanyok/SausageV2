@@ -291,7 +291,7 @@ private:
   template<typename T>
   BufferSlots<T>* _CreateBufferStorageSlots(unsigned long num_elements,
     GLuint array_type,
-    bool is_allocate_powers_of_2 = false);
+    ArenaSlotSize slot_size = ArenaSlotSize::ONE);
   template<typename T>
   BufferNumberPool<T>* _CreateBufferStorageNumberPool(unsigned long storage_size,
     GLuint array_type);

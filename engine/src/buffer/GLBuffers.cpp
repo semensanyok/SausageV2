@@ -1,6 +1,5 @@
 #include "GLBuffers.h"
 
-
 void GLBuffers::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {
   this->used_buffers |= used_buffers;
 }
@@ -89,8 +88,8 @@ void GLBuffers::InitBuffers() {
     mesh_VAO);  // MUST be bound before glBindBuffer(GL_DRAW_INDIRECT_BUFFER,
                 // command_ptr).
 
-  vertex_ptr = _CreateBufferStorageSlots<Vertex>(VERTEX_STORAGE_SIZE, GL_ARRAY_BUFFER, true);
-  index_ptr = _CreateBufferStorageSlots<unsigned int>(INDEX_STORAGE_SIZE, GL_ELEMENT_ARRAY_BUFFER, true);
+  vertex_ptr = _CreateBufferStorageSlots<Vertex>(VERTEX_STORAGE_SIZE, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+  index_ptr = _CreateBufferStorageSlots<unsigned int>(INDEX_STORAGE_SIZE, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
   mesh_uniform_ptr = _CreateBufferStorageSlots<UniformDataMesh>(MESH_UNIFORMS_STORAGE_SIZE, GL_SHADER_STORAGE_BUFFER);
   texture_handle_by_texture_id_ptr = _CreateBufferStorageNumberPool<GLuint64>(TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE, GL_SHADER_STORAGE_BUFFER);
   light_ptr = _CreateBufferStorageSlots<LightsUniform>(LIGHT_STORAGE_SIZE, GL_SHADER_STORAGE_BUFFER);
@@ -102,7 +101,8 @@ void GLBuffers::InitBuffers() {
 
 CommandBuffer* GLBuffers::_CreateCommandBuffer() {
   command_ptr = new CommandBuffer{};
-  command_ptr->ptr = _CreateBufferStorageSlots<DrawElementsIndirectCommand>(COMMAND_STORAGE_SIZE, GL_SHADER_STORAGE_BUFFER);
+  command_ptr->ptr = _CreateBufferStorageSlots<DrawElementsIndirectCommand>(COMMAND_STORAGE_SIZE,
+ GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::FOUR);
   command_ptr->buffer_lock = new BufferLock();
   command_ptr->buffer_lock->is_mapped = true;
   DEBUG_EXPR(CheckGLError());
@@ -112,14 +112,14 @@ CommandBuffer* GLBuffers::_CreateCommandBuffer() {
 template<typename T>
 BufferSlots<T>* GLBuffers::_CreateBufferStorageSlots(unsigned long storage_size,
   GLuint array_type,
-  bool is_allocate_powers_of_2) {
+  ArenaSlotSize slot_size) {
   GLuint buffer_id;
   glGenBuffers(1, &buffer_id);
   glBindBuffer(array_type, buffer_id);
   glBufferStorage(array_type, storage_size, NULL, flags);
   T* buffer_ptr = (T*)glMapBufferRange(array_type, 0,
     storage_size, flags);
-  return new BufferSlots{ {Arena({ 0, storage_size }, is_allocate_powers_of_2)}, buffer_id , buffer_ptr };
+  return new BufferSlots{ {Arena({ 0, storage_size }, slot_size)}, buffer_id , buffer_ptr };
 }
 
 template<typename T>

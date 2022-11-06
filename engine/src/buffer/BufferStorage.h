@@ -61,14 +61,14 @@ public:
     unsigned long vertices_size,
     unsigned long indices_size);
   template<typename MESH_TYPE>
-  bool AllocateInstanceSlot(
+  bool AllocateOrReleaseInstanceSlot(
       MeshDataSlots& out_slots,
       unsigned long num_instances
   ) {
     unsigned int* base_instance_offset_ptr = gl_buffers->GetBufferSlotsBaseInstanceOffset<MESH_TYPE>();
     InstancesSlots& instances_slot = gl_buffers->GetInstancesSlot<MESH_TYPE>();
     // because buffer id must be initialized before this call. (currently in DrawCall)
-    DEBUG_ASSERT(out_slots.buffer_id >= 0);
+    DEBUG_ASSERT(out_slots.IsBufferIdAllocated());
     out_slots.instances_slot = instances_slot.Allocate(num_instances);
     if (out_slots.instances_slot == MemorySlots::NULL_SLOT) {
       LOG("Error _AllocateInstanceSlot.");
