@@ -8,7 +8,7 @@ void ShaderManager::SetupShaders() {
     _RegisterShader("stencil_vs.glsl", "stencil_fs.glsl"),
     _RegisterShader("ui_font_vs.glsl", "ui_font_fs.glsl"),
     _RegisterShader("ui_back_vs.glsl", "ui_back_fs.glsl"),
-    _RegisterShader("3d_font_vs.glsl", "3d_font_fs.glsl"),
+    //_RegisterShader("3d_overlay_vs.glsl", "3d_overlay_fs.glsl"),
   };
   all_shaders->blinn_phong->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
   all_shaders->blinn_phong->SetVec3Uniform(string("view_pos"), &(camera->pos));
@@ -19,7 +19,7 @@ void ShaderManager::SetupShaders() {
 
   all_shaders->back_ui->SetMat4Uniform(string("projection_ortho"), &(camera->projection_matrix_ortho));
 
-  all_shaders->overlay_3d->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
+  //all_shaders->overlay_3d->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
 }
 
 Shader* ShaderManager::_RegisterShader(const char* vs_name, const char* fs_name) {

@@ -5,22 +5,16 @@ using namespace glm;
 void Shader::InitOrReload() {
   CompileVS();
   CompileFS();
-  CheckGLError();
   CreateProgram();
-  CheckGLError();
 }
 
 void Shader::ReloadVS() {
   CompileVS();
-  CheckGLError();
   CreateProgram();
-  CheckGLError();
 }
 void Shader::ReloadFS() {
   CompileFS();
-  CheckGLError();
   CreateProgram();
-  CheckGLError();
 }
 void Shader::CreateProgram() {
   // shader Program
@@ -32,21 +26,16 @@ void Shader::CreateProgram() {
     vs_in_use = vs;
     is_vs_updated = false;
   }
-  CheckGLError();
   if (is_fs_updated) {
     glAttachShader(id, fs);
     fs_in_use = fs;
     is_fs_updated = false;
   }
-  CheckGLError();
   glLinkProgram(id);
-  CheckGLError();
-  CheckCompileErrors(id, "PROGRAM", "");
   // delete the shaders as they're linked into our program now and no longer
   // necessary
   glDeleteShader(vs_in_use);
   glDeleteShader(fs_in_use);
-  CheckGLError();
 }
 void Shader::CompileFS() {
   if (id != 0 && fs_in_use != 0) {

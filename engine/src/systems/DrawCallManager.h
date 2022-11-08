@@ -61,12 +61,12 @@ public:
       false
     );
 
-    overlay_3d_dc = _CreateDrawCall(
-      shader_manager->all_shaders->overlay_3d,
-      GL_TRIANGLES,
-      buffer->AllocateCommandBufferSlot(1),
-      true
-    );
+    //overlay_3d_dc = _CreateDrawCall(
+      //shader_manager->all_shaders->overlay_3d,
+      //GL_TRIANGLES,
+      //buffer->AllocateCommandBufferSlot(1),
+      //true
+    //);
 
     physics_debug_dc = _CreateDrawCall(
       shader_manager->all_shaders->bullet_debug,

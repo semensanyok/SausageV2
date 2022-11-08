@@ -10,5 +10,5 @@ struct Shaders {
   Shader* stencil;
   Shader* font_ui;
   Shader* back_ui;
-  Shader* overlay_3d;
+  //Shader* overlay_3d;
 };

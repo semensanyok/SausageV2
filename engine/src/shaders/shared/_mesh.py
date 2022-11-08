@@ -17,8 +17,11 @@ void SetBlendColor() {
   
     vec3 res = mat_diffuse * AMBIENT_CONST;
     AddLightColor(In.frag_pos, mat_normal, res, view_dir, mat_diffuse, mat_specular);
-    color = vec4(res, mat_diffuse_with_opacity.a);
     
+    // TODO...............
+    // NOT LAG, NO VISIBLE TEXTURE
+    color = vec4(res, mat_diffuse_with_opacity.a);
+    // LAG, WHITE SCREEN, SCENE NOT DRAWN (??????!!!!!!!)
     // color = vec4(255.0,0.0,0.0,0.3);
 };
 """,
@@ -39,6 +42,7 @@ layout (std430, binding = UNIFORMS_LOC) buffer UniformDataMesh
     mat4 bones_transforms[MAX_BONES];
     mat4 transforms[MAX_MESHES_INSTANCES];
     BlendTextures blend_textures[MAX_MESHES_INSTANCES];
+    float pad[3];
     uint base_instance_offset[MAX_BASE_MESHES];
 };
 """,

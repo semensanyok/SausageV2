@@ -28,6 +28,7 @@ MemorySlot Arena::Allocate(const unsigned int size) {
       free_gaps_slots.erase(maybe_gap);
       return res;
     } else {
+      // copy -> erase -> modify -> insert
       auto gap = *maybe_gap;
       free_gaps_slots.erase(maybe_gap);
 
@@ -35,7 +36,6 @@ MemorySlot Arena::Allocate(const unsigned int size) {
 
       gap.count -= size_to_alloc;
       gap.offset += size_to_alloc;
-
       free_gaps_slots.insert(gap);
 
       return res;
