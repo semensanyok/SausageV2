@@ -21,7 +21,7 @@ public:
   DrawCall* back_ui_dc;
   DrawCall* font_ui_dc;
 
-  DrawCall* overlay_3d_dc;
+  //DrawCall* overlay_3d_dc;
 
   DrawCall* physics_debug_dc;
 
@@ -83,7 +83,7 @@ public:
     );
 
     renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
-    renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
+    //renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
     renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
     renderer->AddDraw(physics_debug_dc, DrawOrder::PHYS_DEBUG);
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
