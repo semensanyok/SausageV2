@@ -10,6 +10,7 @@ void BufferStorage::BufferCommands(
   memcpy(&(command_ptr->ptr[command_offset]),
          active_commands.data(),
          active_commands.size() * sizeof(DrawElementsIndirectCommand));
+  gl_buffers->SetSyncBarrier();
 }
 void BufferStorage::BufferCommand(DrawElementsIndirectCommand& command, int command_offset) {
   auto command_ptr = gl_buffers->command_ptr;
@@ -18,6 +19,7 @@ void BufferStorage::BufferCommand(DrawElementsIndirectCommand& command, int comm
     command_ptr->buffer_lock->Wait(data_lock);
   }
   command_ptr->ptr->buffer_ptr[command_offset] = command;
+  gl_buffers->SetSyncBarrier();
 }
 
 void BufferStorage::BufferBoneTransform(

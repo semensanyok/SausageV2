@@ -21,7 +21,7 @@ struct Light {
 layout (std430, binding = LIGHTS_UNIFORM_LOC) buffer LightsUniform
 {
 	int num_lights;
-    float pad[3];
+    float LightsUniform_pad[3];
     Light lights[];
 };
 """,

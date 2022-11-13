@@ -31,8 +31,8 @@ public:
   inline void BufferTransform(BufferInstanceOffset* offset, TRANSFORM_TYPE& transform) {
     buffer->BufferTransform<TRANSFORM_TYPE, MESH_TYPE>(*offset, transform);
   }
-  inline void BufferTexture(BufferInstanceOffset& mesh, TEXTURE_ARRAY_TYPE& texture) {
-    return buffer->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(mesh, texture);
+  inline void BufferTexture(BufferInstanceOffset* mesh, TEXTURE_ARRAY_TYPE& texture) {
+    return buffer->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(*mesh, texture);
   }
   void Init()
   {

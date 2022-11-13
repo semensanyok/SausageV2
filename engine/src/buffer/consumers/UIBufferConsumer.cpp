@@ -10,7 +10,7 @@ void UIBufferConsumer::BufferMeshData(MeshDataUI* mesh,
 
   if (mesh->texture) {
     mesh->texture->MakeResident();
-    BufferTexture(*mesh, mesh->texture->id);
+    BufferTexture(mesh, mesh->texture->id);
   }
   buffer->BufferTransform<vec2, MeshDataUI>(*mesh, mesh->transform);
 }

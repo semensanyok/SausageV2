@@ -106,29 +106,32 @@ private:
       if (!base_meshes.contains(key)) {
         mesh = mesh_manager->CreateMeshData(load_data);
         base_meshes[key] = mesh;
-        if (mesh_data_buffer->AllocateStorage(mesh->slots, load_data->vertices.size(), load_data->indices.size())) {
-          mesh_data_buffer->BufferMeshData(mesh->slots, load_data_sptr);
-          draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, 1);
-        }
-        else {
+        if (!mesh_data_buffer->AllocateStorage(mesh->slots, load_data->vertices.size(), load_data->indices.size())) {
           throw runtime_error("Scene1: failed to Allocate");
-        };
+        }
+        mesh_data_buffer->BufferMeshData(mesh->slots, load_data_sptr);
+        // TODO: buffer not 1 but instance count slots. currently keep just to test Release (which was not working properly)
+        draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, 1);
+        // TRANSFORM SETUP
+        mesh_data_buffer->BufferTransform(mesh, mesh->transform);
         // TEXTURE SETUP
         {
           Texture* texture = systems_manager->texture_manager->LoadTextureArray(tex_names);
           if (texture != nullptr) {
             mesh->textures = { {1.0, texture->id }, 1 };
             systems_manager->buffer_manager->mesh_data_buffer->BufferTexture(
-                *mesh, mesh->textures);
+                mesh, mesh->textures);
             texture->MakeResident();
           }
         }
-        mesh_data_buffer->BufferTransform(mesh, mesh->transform);
       }
       else {
         mesh = base_meshes[key];
         MeshDataInstance* instance = draw_call_manager->AddNewInstance<MeshData>(mesh);
+        // TRANSFORM SETUP
         mesh_data_buffer->BufferTransform(instance, instance->transform);
+        // TEXTURE SETUP
+        mesh_data_buffer->BufferTexture(instance, mesh->textures);
       }
 
       // PHYSICS SETUP

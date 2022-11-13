@@ -61,7 +61,7 @@ public:
     unsigned long vertices_size,
     unsigned long indices_size);
   template<typename MESH_TYPE>
-  bool AllocateOrReleaseInstanceSlot(
+  bool AllocateInstanceSlot(
       MeshDataSlots& out_slots,
       unsigned long num_instances
   ) {

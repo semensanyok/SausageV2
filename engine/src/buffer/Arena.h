@@ -41,7 +41,7 @@ inline bool operator==(const MemorySlot& lhs, const MemorySlot& rhs) {
 }
 inline bool operator<(const MemorySlot& lhs, const MemorySlot& rhs) {
   return lhs.count == rhs.count ?
-    lhs.offset > rhs.offset : lhs.count > rhs.count;
+    lhs.offset < rhs.offset : lhs.count < rhs.count;
 }
 
 /**

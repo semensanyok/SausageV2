@@ -17,7 +17,7 @@ MemorySlot Arena::Allocate(const unsigned int size) {
     return res;
   }
   else {
-    auto maybe_gap = free_gaps_slots.lower_bound({ 0, size_to_alloc });
+    auto maybe_gap = free_gaps_slots.lower_bound({ 0, size_to_alloc, size });
     if (maybe_gap == free_gaps_slots.end()) {
       MemorySlot res = _AllocateNewSlotIfHasSpace(size_to_alloc, size);
       return res;
@@ -32,7 +32,7 @@ MemorySlot Arena::Allocate(const unsigned int size) {
       auto gap = *maybe_gap;
       free_gaps_slots.erase(maybe_gap);
 
-      MemorySlot res = { gap.offset, size_to_alloc };
+      MemorySlot res = { gap.offset, size_to_alloc, size };
 
       gap.count -= size_to_alloc;
       gap.offset += size_to_alloc;
@@ -50,7 +50,7 @@ void Arena::Release(MemorySlot slot) {
     allocated -= slot.count;
     return;
   }
-  free_gaps_slots.insert({ slot.offset, slot.count });
+  free_gaps_slots.insert({ slot.offset, slot.count, 0 });
 }
 
 void Arena::Reset() {

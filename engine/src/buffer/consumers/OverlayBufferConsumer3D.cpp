@@ -16,7 +16,7 @@ void OverlayBufferConsumer3D::BufferMeshData(
 
   mesh->texture = font_data;
   mesh->texture->MakeResident();
-  BufferTexture(*mesh, mesh->texture->id);
+  BufferTexture(mesh, mesh->texture->id);
   BufferTransform(mesh, mesh->transform);
 }
 

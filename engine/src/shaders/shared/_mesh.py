@@ -42,7 +42,7 @@ layout (std430, binding = UNIFORMS_LOC) buffer UniformDataMesh
     mat4 bones_transforms[MAX_BONES];
     mat4 transforms[MAX_MESHES_INSTANCES];
     BlendTextures blend_textures[MAX_MESHES_INSTANCES];
-    float pad[3];
+    float UniformDataMesh_pad[3];
     uint base_instance_offset[MAX_BASE_MESHES];
 };
 """,
@@ -69,7 +69,8 @@ in vs_out {
 # MAIN FUNCIONS, mesh_set_VARIABLE_NAME
 "mesh_set_transform":
 """
-mat4 transform = transforms[base_instance_offset[gl_BaseInstanceARB] + gl_InstanceID];
+// mat4 transform = transforms[base_instance_offset[gl_BaseInstanceARB] + gl_InstanceID];
+mat4 transform = mat4(1.0);
 """,
 "mesh_set_res_position":
 """

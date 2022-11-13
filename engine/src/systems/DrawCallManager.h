@@ -171,7 +171,7 @@ public:
     auto& command = command_by_mesh_id[mesh->id];
     auto dc = dc_by_mesh_id[mesh->id];
     bool is_success_slot_alloc = is_alloc_instance_slot ?
-      AllocateOrReleaseInstanceSlot<MESH_TYPE>(mesh->slots, instance_count, command, dc) : true;
+      AllocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count, dc) : true;
     if (is_success_slot_alloc) {
       command.instanceCount = instance_count;
       mesh->slots.instances_slot.used = instance_count;
@@ -183,9 +183,8 @@ public:
 private:
 
   template<typename MESH_TYPE>
-  bool AllocateOrReleaseInstanceSlot(MeshDataSlots& mesh_slots,
+  bool AllocateInstanceSlot(MeshDataSlots& mesh_slots,
     GLuint& new_instance_count,
-    DrawElementsIndirectCommand& command,
     DrawCall* dc)
   {
     if (new_instance_count == 0) {
@@ -197,7 +196,7 @@ private:
     } else if (mesh_slots.instances_slot != MemorySlots::NULL_SLOT) {
       buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
     }
-    return buffer->AllocateOrReleaseInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count);
+    return buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count);
   }
 
   void _SetToCommandWithOffsets(
