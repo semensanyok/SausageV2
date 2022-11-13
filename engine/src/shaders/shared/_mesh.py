@@ -18,10 +18,7 @@ void SetBlendColor() {
     vec3 res = mat_diffuse * AMBIENT_CONST;
     AddLightColor(In.frag_pos, mat_normal, res, view_dir, mat_diffuse, mat_specular);
     
-    // TODO...............
-    // NOT LAG, NO VISIBLE TEXTURE
     color = vec4(res, mat_diffuse_with_opacity.a);
-    // LAG, WHITE SCREEN, SCENE NOT DRAWN (??????!!!!!!!)
     // color = vec4(255.0,0.0,0.0,0.3);
 };
 """,

@@ -42,7 +42,7 @@ void main(void) {
   {{ mesh_set_transform }}
   {{ mesh_set_res_position }}
   {{ mesh_set_res_normal }}
-  AnimTransform(res_position, res_normal);
+  // AnimTransform(res_position, res_normal);
   {{ mesh_set_vs_out }}
   {{ mesh_set_gl_Position }}
 }
