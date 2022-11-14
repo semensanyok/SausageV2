@@ -45,6 +45,14 @@ public:
     buffer{ buffer },
     mesh_manager{ mesh_manager }
   {
+    // TODO: access violation reding location if place mesh_dc first
+    //mesh_dc = _CreateDrawCall(
+    //  shader_manager->all_shaders->blinn_phong,
+    //  GL_TRIANGLES,
+    //  buffer->AllocateCommandBufferSlot(MAX_BASE_MESHES),
+    //  true
+    //);
+
     //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
     //    or place shader with dynamic number of meshes at the end
     font_ui_dc = _CreateDrawCall(

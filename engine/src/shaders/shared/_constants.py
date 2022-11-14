@@ -18,16 +18,16 @@ const int SPECULAR_TEX = 2;
 """,
     "mesh_buffers_capacity": 
 """
-  const uint MAX_BASE_MESHES = 4000;
+  const uint MAX_BASE_MESHES = 400;
+  const uint MAX_MESHES_INSTANCES = MAX_BASE_MESHES * 10;
   const uint MAX_3D_OVERLAY_COMMANDS = 1000;
   const uint MAX_3D_OVERLAY_INSTANCES = MAX_3D_OVERLAY_COMMANDS;
   const uint MAX_UI_COMMANDS = 5;
   const uint MAX_UI_INSTANCES = 5;
   const uint MAX_COMMAND = MAX_BASE_MESHES + MAX_UI_COMMANDS + MAX_3D_OVERLAY_COMMANDS;
-  const uint MAX_BONES = 100000;
-  const uint MAX_MESHES_INSTANCES = MAX_BASE_MESHES * 10;
+  const uint MAX_BONES = 1000;
   const uint MAX_TEXTURE = 1000;
-  const uint MAX_BLEND_TEXTURES = 16;
+  const uint MAX_BLEND_TEXTURES = 4;
   const uint MAX_LIGHTS = 1000;
 """,
     "uniforms_locations":
