@@ -9,7 +9,7 @@ using namespace std;
 using namespace glm;
 
 namespace BufferType {
-  typedef int BufferTypeFlag;
+  typedef unsigned int BufferTypeFlag;
   const BufferTypeFlag MESH_VAO = 1;
   const BufferTypeFlag VERTEX = 1 << 1;
   const BufferTypeFlag INDEX = 1 << 2;

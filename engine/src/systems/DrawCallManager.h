@@ -90,10 +90,10 @@ public:
       true
     );
 
-    renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
+    //renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
     //renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
-    renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
-    renderer->AddDraw(physics_debug_dc, DrawOrder::PHYS_DEBUG);
+    //renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
+    //renderer->AddDraw(physics_debug_dc, DrawOrder::PHYS_DEBUG);
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
   }
 

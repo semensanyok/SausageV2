@@ -86,8 +86,8 @@ class GLBuffers {
   // associated with this VAO
   GLuint mesh_VAO;
 
-  BufferType::BufferTypeFlag used_buffers;
-  BufferType::BufferTypeFlag bound_buffers;
+  BufferType::BufferTypeFlag used_buffers = 0;
+  BufferType::BufferTypeFlag bound_buffers = 0;
 
   const GLbitfield flags =
     GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;

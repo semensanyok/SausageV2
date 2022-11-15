@@ -13,7 +13,8 @@ protected:
 public:
   BufferConsumer(BufferStorage* buffer,
     BufferType::BufferTypeFlag used_buffers) :
-      buffer{ buffer }
+      buffer{ buffer },
+      used_buffers{ used_buffers }
   {
   }
   bool AllocateStorage(

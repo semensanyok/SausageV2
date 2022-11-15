@@ -17,7 +17,7 @@ struct ButtonGui {
 class Gui {
 	static inline vector<ButtonGui> buttons_callbacks;
 public:
-	static inline bool enable = true;
+	static inline bool enable = false;
 
 	static void InitGuiContext(SDL_Window* window, SDL_GLContext& context) {
 		if (!enable) {

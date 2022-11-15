@@ -39,7 +39,9 @@ namespace SausageGameLoop {
       IF_PROFILE_ENABLED(ProfTime::prepare_draws_ns = chrono::steady_clock::now() - proft1;);
       SDL_Event e;
       while (SDL_PollEvent(&e)) {
-        ImGui_ImplSDL2_ProcessEvent(&e);
+        if (Gui::enable) {
+          ImGui_ImplSDL2_ProcessEvent(&e);
+        }
         systems_manager->controller->ProcessEvent(&e);
       }
       systems_manager->renderer->Render(systems_manager->camera);
