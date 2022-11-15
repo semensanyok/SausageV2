@@ -135,16 +135,11 @@ BufferNumberPool<T>* GLBuffers::_CreateBufferStorageNumberPool(unsigned long sto
 }
 
 void GLBuffers::BindVAOandBuffers() {
-  _BindCommandBuffer();
   // TODO: separate Font VAO. it needs less data.
   if ((used_buffers & BufferType::MESH_VAO) &&
     !(bound_buffers & BufferType::MESH_VAO)) {
     glBindVertexArray(mesh_VAO);
     glEnableVertexAttribArray(0);
-  }
-  if ((used_buffers & BufferType::VERTEX) &&
-    !(bound_buffers & BufferType::VERTEX)) {
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_ptr->buffer_id);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
@@ -164,6 +159,10 @@ void GLBuffers::BindVAOandBuffers() {
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
       (void*)offsetof(Vertex, BoneWeights));
+  }
+  if ((used_buffers & BufferType::VERTEX) &&
+    !(bound_buffers & BufferType::VERTEX)) {
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_ptr->buffer_id);
   }
   if ((used_buffers & BufferType::INDEX) &&
     !(bound_buffers & BufferType::INDEX)) {
@@ -201,6 +200,7 @@ void GLBuffers::BindVAOandBuffers() {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CONTROLLER_UNIFORM_LOC,
       uniforms_controller_ptr->buffer_id);
   }
+  _BindCommandBuffer();
 }
 
 void GLBuffers::Dispose() {
