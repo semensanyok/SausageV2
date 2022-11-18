@@ -49,7 +49,7 @@ public:
     //mesh_dc = _CreateDrawCall(
     //  shader_manager->all_shaders->blinn_phong,
     //  GL_TRIANGLES,
-    //  buffer->AllocateCommandBufferSlot(MAX_BASE_MESHES),
+    //  buffer->CreateCommandBuffer(MAX_BASE_MESHES),
     //  true
     //);
 
@@ -58,35 +58,35 @@ public:
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
-      buffer->AllocateCommandBufferSlot(GetNumDrawCommandsForFontDrawCall()),
+      buffer->CreateCommandBuffer(GetNumDrawCommandsForFontDrawCall(), ),
       false
     );
 
     back_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->back_ui,
       GL_TRIANGLES,
-      buffer->AllocateCommandBufferSlot(GetNumDrawCommandsForBackDrawCall()),
+      buffer->CreateCommandBuffer(GetNumDrawCommandsForBackDrawCall()),
       false
     );
 
     //overlay_3d_dc = _CreateDrawCall(
       //shader_manager->all_shaders->overlay_3d,
       //GL_TRIANGLES,
-      //buffer->AllocateCommandBufferSlot(1),
+      //buffer->CreateCommandBuffer(1),
       //true
     //);
 
     physics_debug_dc = _CreateDrawCall(
       shader_manager->all_shaders->bullet_debug,
       GL_LINES,
-      buffer->AllocateCommandBufferSlot(1),
+      buffer->CreateCommandBuffer(1),
       false
     );
 
     mesh_dc = _CreateDrawCall(
       shader_manager->all_shaders->blinn_phong,
       GL_TRIANGLES,
-      buffer->AllocateCommandBufferSlot(MAX_BASE_MESHES),
+      buffer->CreateCommandBuffer(MAX_BASE_MESHES),
       true
     );
 

@@ -96,17 +96,12 @@ void GLBuffers::InitBuffers() {
   uniforms_3d_overlay_ptr = _CreateBufferStorageSlots<UniformDataOverlay3D>(UNIFORM_OVERLAY_3D_STORAGE_SIZE, GL_SHADER_STORAGE_BUFFER);
   uniforms_ui_ptr = _CreateBufferStorageSlots<UniformDataUI>(UNIFORM_UI_STORAGE_SIZE, GL_SHADER_STORAGE_BUFFER);
   uniforms_controller_ptr = _CreateBufferStorageSlots<ControllerUniformData>(UNIFORM_CONTROLLER_SIZE, GL_SHADER_STORAGE_BUFFER);
-  command_ptr = _CreateCommandBuffer();
-}
 
-CommandBuffer* GLBuffers::_CreateCommandBuffer() {
-  command_ptr = new CommandBuffer{};
-  command_ptr->ptr = _CreateBufferStorageSlots<DrawElementsIndirectCommand>(COMMAND_STORAGE_SIZE,
- GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::FOUR);
-  command_ptr->buffer_lock = new BufferLock();
-  command_ptr->buffer_lock->is_mapped = true;
-  DEBUG_EXPR(CheckGLError());
-  return command_ptr;
+  command_buffers = CommandBuffers();
+  command_buffers.font_ui = CreateCommandBuffer(GetNumDrawCommandsForFontDrawCall());
+  command_buffers.back_ui = CreateCommandBuffer(GetNumDrawCommandsForBackDrawCall());
+  command_buffers.bullet_debug = CreateCommandBuffer(1);
+  command_buffers.blinn_phong = CreateCommandBuffer(MAX_BASE_MESHES);
 }
 
 template<typename T>
@@ -235,7 +230,11 @@ void GLBuffers::Dispose() {
   glDeleteBuffers(1, &light_ptr->buffer_id);
   DEBUG_EXPR(CheckGLError());
 
-  _DeleteCommandBuffer(command_ptr);
+  _DeleteCommandBuffer(command_buffers.font_ui);
+  _DeleteCommandBuffer(command_buffers.back_ui);
+  _DeleteCommandBuffer(command_buffers.blinn_phong);
+  _DeleteCommandBuffer(command_buffers.bullet_debug);
+  _DeleteCommandBuffer(command_buffers.stencil);
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_ptr->buffer_id);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);

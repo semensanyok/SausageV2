@@ -27,7 +27,6 @@ class DrawCall {
   // now each draw call has its own buffer offset array in its uniform
   // see GlBuffers->
   MemorySlot command_buffer_slot;
-  Arena command_buffer_sub_arena;
   ThreadSafeNumberPool buffer_id_slots;
 public:
   bool is_enabled;

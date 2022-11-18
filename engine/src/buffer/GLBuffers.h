@@ -77,6 +77,15 @@ struct BufferNumberPool {
   };
 };
 
+struct CommandBuffers {
+  CommandBuffer* blinn_phong;
+  //CommandBuffer* stencil;
+  CommandBuffer* font_ui;
+  CommandBuffer* back_ui;
+  //CommandBuffer* overlay_3d;
+  CommandBuffer* bullet_debug;
+};
+
 class GLBuffers {
   ///////////
   /// Buffers
@@ -100,7 +109,9 @@ public:
   BufferSlots<Vertex>* vertex_ptr;
   BufferSlots<unsigned int>* index_ptr;
 
-  CommandBuffer* command_ptr;
+  vector<CommandBuffer*> mapped_command_buffers;
+
+  CommandBuffers command_buffers;
   BufferSlots<LightsUniform>* light_ptr;
   BufferNumberPool<GLuint64>* texture_handle_by_texture_id_ptr;
   BufferSlots<UniformDataMesh>* mesh_uniform_ptr;
@@ -125,7 +136,7 @@ public:
 
     vertex_ptr->Reset();
     index_ptr->Reset();
-    command_ptr->ptr->Reset();
+    command_buffers->ptr->Reset();
     light_ptr->Reset();
     texture_handle_by_texture_id_ptr->Reset();
     mesh_uniform_ptr->Reset();
@@ -269,11 +280,18 @@ public:
   };
   /////////////////////////////////////////////////
 
-  inline MemorySlot AllocateCommandBufferSlot(unsigned int size) {
-    return command_ptr->ptr->instances_slots.Allocate(size);
-  }
-  inline void ReleaseCommandBufferSlot(MemorySlot& out_slot) {
-    command_ptr->ptr->instances_slots.Release(out_slot);
+  inline CommandBuffer* CreateCommandBuffer(unsigned int size) {
+    CommandBuffer* command_ptr = new CommandBuffer{};
+    command_ptr->ptr = _CreateBufferStorageSlots<DrawElementsIndirectCommand>(size,
+      GL_SHADER_STORAGE_BUFFER,
+      //ArenaSlotSize::FOUR
+      ArenaSlotSize::ONE
+      );
+    command_ptr->buffer_lock = new BufferLock();
+    command_ptr->buffer_lock->is_mapped = true;
+    DEBUG_EXPR(CheckGLError());
+
+    return command_ptr;
   }
 private:
   void _SyncGPUBufAndUnmap();
@@ -295,5 +313,5 @@ private:
   template<typename T>
   BufferNumberPool<T>* _CreateBufferStorageNumberPool(unsigned long storage_size,
     GLuint array_type);
-  CommandBuffer* _CreateCommandBuffer();
+  CommandBuffer* _CreateCommandBuffer(unsigned int draw_call_id);
 };
