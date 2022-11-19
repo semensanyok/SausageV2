@@ -7,6 +7,7 @@
 #include "MeshDataStruct.h"
 #include "ThreadSafeNumberPool.h"
 #include "Macros.h"
+#include "GLBuffers.h"
 
 using namespace std;
 
@@ -24,10 +25,7 @@ enum DrawOrder {
 //template<typename MeshDataClass>
 class DrawCall {
   friend class DrawCallManager;
-  // now each draw call has its own buffer offset array in its uniform
-  // see GlBuffers->
-  MemorySlot command_buffer_slot;
-  ThreadSafeNumberPool buffer_id_slots;
+  CommandBuffer* command_buffer;
 public:
   bool is_enabled;
   /**
@@ -41,18 +39,12 @@ public:
   DrawCall(unsigned int id,
     Shader* shader,
     GLenum mode,
-    MemorySlot command_buffer_slot,
+    CommandBuffer* command_buffer,
     bool is_enabled) :
     id{ id },
     shader{ shader },
     mode{ mode },
-    command_buffer_slot{ command_buffer_slot },
-    // here we have offsets to shared command array,
-    // used by glDrawElementsIndirect,
-    // with range (offset, offset + count)
-    // and its buffer_id array with range (0, count)
-    command_buffer_sub_arena{ Arena(command_buffer_slot) },
-    buffer_id_slots { ThreadSafeNumberPool(command_buffer_slot.count) },
+    command_buffer{ command_buffer },
     is_enabled{ is_enabled } {
   }
   const unsigned int id;
@@ -60,27 +52,22 @@ public:
   mutex mtx;
   GLenum mode;  // GL_TRIANGLES GL_LINES
   Shader* shader;
+
   unsigned int GetCommandCount() {
-    return command_buffer_sub_arena.GetUsed();
+    return command_buffer->ptr->instances_slots.instances_slots.GetUsed();
   }
   unsigned int GetBaseOffset() {
-    return command_buffer_sub_arena.GetBaseOffset();
+    return command_buffer->ptr->instances_slots.instances_slots.GetBaseOffset();
   }
 
-  unsigned int GetAbsoluteCommandOffset(MeshDataSlots& slots) {
-    DEBUG_ASSERT(slots.IsBufferIdAllocated());
-    return slots.buffer_id + command_buffer_slot.offset;
-  }
 private:
-  unsigned int GetRelativeBufferId(MemorySlot& sub_command_buffer_slot) {
-    return sub_command_buffer_slot.offset - command_buffer_slot.offset;
-  }
   void Allocate(MeshDataSlots& out_slots, unsigned int instances_count) {
-    MemorySlot sub_command_buffer_slot = command_buffer_sub_arena.Allocate(1);
-    out_slots.buffer_id = GetRelativeBufferId(sub_command_buffer_slot);
+    MemorySlot command_buffer_slot = command_buffer->ptr->instances_slots.Allocate(1);
+    out_slots.buffer_id = command_buffer_slot.offset;
     DEBUG_ASSERT(out_slots.IsBufferIdAllocated());
   }
   void Release(MeshDataSlots& out_slots) {
-    command_buffer_sub_arena.Release({ GetAbsoluteCommandOffset(out_slots), 1 });
+    MemorySlot to_release = { out_slots.buffer_id, 1 };
+    command_buffer->ptr->instances_slots.Release(to_release);
   }
 };

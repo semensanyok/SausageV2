@@ -127,7 +127,7 @@ public:
   void BindVAOandBuffers();
   void Dispose();
   void AddUsedBuffers(BufferType::BufferTypeFlag used_buffers);
-  void MapBuffer();
+  void MapBuffers();
   void PreDraw();
   void PostDraw();
   void Reset() {
@@ -136,7 +136,12 @@ public:
 
     vertex_ptr->Reset();
     index_ptr->Reset();
-    command_buffers->ptr->Reset();
+
+    command_buffers.blinn_phong->ptr->Reset();
+    command_buffers.font_ui->ptr->Reset();
+    command_buffers.back_ui->ptr->Reset();
+    command_buffers.bullet_debug->ptr->Reset();
+
     light_ptr->Reset();
     texture_handle_by_texture_id_ptr->Reset();
     mesh_uniform_ptr->Reset();
@@ -294,9 +299,11 @@ public:
     return command_ptr;
   }
 private:
+  void MapBuffer(CommandBuffer* buf);
   void _SyncGPUBufAndUnmap();
-  void _BindCommandBuffer();
-  void _UnmapBuffer();
+  void BindCommandBuffers();
+  void UnmapBuffers();
+  void UnmapBuffer(CommandBuffer* buf);
   void _DeleteCommandBuffer(CommandBuffer* command_ptr) {
     lock_guard<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr->ptr->buffer_id);

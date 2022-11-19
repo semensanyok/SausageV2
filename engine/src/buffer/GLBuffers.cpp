@@ -1,19 +1,25 @@
 #include "GLBuffers.h"
+#include "BufferStorage.h"
 
 void GLBuffers::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {
   this->used_buffers |= used_buffers;
 }
-
-void GLBuffers::MapBuffer() {
-  lock_guard<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
-  if (command_ptr->buffer_lock->is_mapped == true) {
+void GLBuffers::MapBuffers() {
+  MapBuffer(command_buffers.blinn_phong);
+  MapBuffer(command_buffers.back_ui);
+  MapBuffer(command_buffers.font_ui);
+  MapBuffer(command_buffers.bullet_debug);
+}
+void GLBuffers::MapBuffer(CommandBuffer* buf) {
+  lock_guard<mutex> data_lock(buf->buffer_lock->data_mutex);
+  if (buf->buffer_lock->is_mapped == true) {
     return;
   }
   // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
-  command_ptr->ptr->buffer_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(
-    command_ptr->ptr->buffer_id, 0, COMMAND_STORAGE_SIZE, flags);
-  command_ptr->buffer_lock->is_mapped = true;
-  command_ptr->buffer_lock->is_mapped_cv.notify_all();
+  buf->ptr->buffer_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(
+    buf->ptr->buffer_id, 0, buf->ptr->instances_slots.instances_slots.GetUsed(), flags);
+  buf->buffer_lock->is_mapped = true;
+  buf->buffer_lock->is_mapped_cv.notify_all();
 }
 
 void GLBuffers::PreDraw() {
@@ -23,22 +29,32 @@ void GLBuffers::PreDraw() {
 
 void GLBuffers::PostDraw() {
   fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-  MapBuffer();
+  MapBuffers();
 }
 
-void GLBuffers::_BindCommandBuffer() {
-  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr->ptr->buffer_id);
+void GLBuffers::BindCommandBuffers() {
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.blinn_phong->ptr->buffer_id);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.back_ui->ptr->buffer_id);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.font_ui->ptr->buffer_id);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.bullet_debug->ptr->buffer_id);
 }
 
-void GLBuffers::_UnmapBuffer() {
-  lock_guard<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
-  if (command_ptr->buffer_lock->is_mapped == false) {
+void GLBuffers::UnmapBuffers() {
+  UnmapBuffer(command_buffers.blinn_phong);
+  UnmapBuffer(command_buffers.back_ui);
+  UnmapBuffer(command_buffers.font_ui);
+  UnmapBuffer(command_buffers.bullet_debug);
+}
+
+void GLBuffers::UnmapBuffer(CommandBuffer* buf) {
+  lock_guard<mutex> data_lock(buf->buffer_lock->data_mutex);
+  if (buf->buffer_lock->is_mapped == false) {
     return;
   }
-  command_ptr->buffer_lock->is_mapped = false;
-  command_ptr->buffer_lock->is_mapped_cv.notify_all();
+  buf->buffer_lock->is_mapped = false;
+  buf->buffer_lock->is_mapped_cv.notify_all();
   // MUST unmap GL_DRAW_INDIRECT_BUFFER. GL_INVALID_OPERATION otherwise.
-  if (!glUnmapNamedBuffer(command_ptr->ptr->buffer_id)) {
+  if (!glUnmapNamedBuffer(buf->ptr->buffer_id)) {
     DEBUG_EXPR(CheckGLError());
   }
 }
@@ -49,7 +65,7 @@ void GLBuffers::_SyncGPUBufAndUnmap() {
     glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
     is_need_barrier = false;
   }
-  _UnmapBuffer();
+  UnmapBuffers();
 }
 
 void GLBuffers::WaitGPU(GLsync fence_sync, const source_location& location) {
@@ -195,7 +211,7 @@ void GLBuffers::BindVAOandBuffers() {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CONTROLLER_UNIFORM_LOC,
       uniforms_controller_ptr->buffer_id);
   }
-  _BindCommandBuffer();
+  BindCommandBuffers();
 }
 
 void GLBuffers::Dispose() {
@@ -234,7 +250,6 @@ void GLBuffers::Dispose() {
   _DeleteCommandBuffer(command_buffers.back_ui);
   _DeleteCommandBuffer(command_buffers.blinn_phong);
   _DeleteCommandBuffer(command_buffers.bullet_debug);
-  _DeleteCommandBuffer(command_buffers.stencil);
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_ui_ptr->buffer_id);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);

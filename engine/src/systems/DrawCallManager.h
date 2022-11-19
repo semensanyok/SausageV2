@@ -45,27 +45,19 @@ public:
     buffer{ buffer },
     mesh_manager{ mesh_manager }
   {
-    // TODO: access violation reding location if place mesh_dc first
-    //mesh_dc = _CreateDrawCall(
-    //  shader_manager->all_shaders->blinn_phong,
-    //  GL_TRIANGLES,
-    //  buffer->CreateCommandBuffer(MAX_BASE_MESHES),
-    //  true
-    //);
-
     //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
     //    or place shader with dynamic number of meshes at the end
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
-      buffer->CreateCommandBuffer(GetNumDrawCommandsForFontDrawCall(), ),
+      buffer->gl_buffers->command_buffers.font_ui,
       false
     );
 
     back_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->back_ui,
       GL_TRIANGLES,
-      buffer->CreateCommandBuffer(GetNumDrawCommandsForBackDrawCall()),
+      buffer->gl_buffers->command_buffers.back_ui,
       false
     );
 
@@ -79,14 +71,14 @@ public:
     physics_debug_dc = _CreateDrawCall(
       shader_manager->all_shaders->bullet_debug,
       GL_LINES,
-      buffer->CreateCommandBuffer(1),
+      buffer->gl_buffers->command_buffers.bullet_debug,
       false
     );
 
     mesh_dc = _CreateDrawCall(
       shader_manager->all_shaders->blinn_phong,
       GL_TRIANGLES,
-      buffer->CreateCommandBuffer(MAX_BASE_MESHES),
+      buffer->gl_buffers->command_buffers.blinn_phong,
       true
     );
 
@@ -212,19 +204,18 @@ private:
     MeshDataSlots& mesh_slots,
     DrawCall* dc
   ) {
-    unsigned int command_offset = dc->GetAbsoluteCommandOffset(mesh_slots);
+    unsigned int command_offset = mesh_slots.buffer_id;
     command.instanceCount = mesh_slots.instances_slot.count;
     command.count = mesh_slots.index_slot.used;
     command.firstIndex = mesh_slots.index_slot.offset;
     command.baseVertex = mesh_slots.vertex_slot.offset;
     command.baseInstance = mesh_slots.buffer_id;
 
-    buffer->BufferCommand(command, command_offset);
+    buffer->BufferCommand(dc->command_buffer, command, command_offset);
   }
 
-  DrawCall* _CreateDrawCall(Shader* shader, GLenum mode,
-    MemorySlot command_buffer_slot, bool is_enabled)
+  DrawCall* _CreateDrawCall(Shader* shader, GLenum mode, CommandBuffer* command_buffer, bool is_enabled)
   {
-    return new DrawCall(total_draw_calls++, shader, mode, command_buffer_slot, is_enabled);
+    return new DrawCall(total_draw_calls++, shader, mode, command_buffer, is_enabled);
   }
 };

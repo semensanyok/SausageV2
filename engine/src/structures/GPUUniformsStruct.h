@@ -84,8 +84,6 @@ struct LightsUniform {
 namespace BufferSizes {
   const unsigned long VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
   const unsigned long INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
-  const unsigned long COMMAND_STORAGE_SIZE =
-    MAX_COMMAND * sizeof(DrawElementsIndirectCommand);
   const unsigned long LIGHT_STORAGE_SIZE = MAX_LIGHTS * sizeof(Light);
   ///////////
   // UNIFORMS

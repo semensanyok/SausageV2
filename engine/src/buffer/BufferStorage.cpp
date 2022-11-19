@@ -1,8 +1,8 @@
 #include "BufferStorage.h"
 
 void BufferStorage::BufferCommands(
+    CommandBuffer* command_ptr,
     vector<DrawElementsIndirectCommand>& active_commands, int command_offset) {
-  auto command_ptr = gl_buffers->command_ptr;
   unique_lock<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
   if (!command_ptr->buffer_lock->is_mapped) {
     command_ptr->buffer_lock->Wait(data_lock);
@@ -12,8 +12,8 @@ void BufferStorage::BufferCommands(
          active_commands.size() * sizeof(DrawElementsIndirectCommand));
   gl_buffers->SetSyncBarrier();
 }
-void BufferStorage::BufferCommand(DrawElementsIndirectCommand& command, int command_offset) {
-  auto command_ptr = gl_buffers->command_ptr;
+void BufferStorage::BufferCommand(CommandBuffer* command_ptr,
+  DrawElementsIndirectCommand& command, int command_offset) {
   unique_lock<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
   while (!command_ptr->buffer_lock->is_mapped) {
     command_ptr->buffer_lock->Wait(data_lock);

@@ -53,8 +53,8 @@ public:
 
   void Init();
 
-  void BufferCommands(vector<DrawElementsIndirectCommand>& active_commands, int command_offset);
-  void BufferCommand(DrawElementsIndirectCommand& command, int command_offset);
+  void BufferCommands(CommandBuffer* buffer, vector<DrawElementsIndirectCommand>& active_commands, int command_offset);
+  void BufferCommand(CommandBuffer* buffer, DrawElementsIndirectCommand& command, int command_offset);
   void BufferMeshData(MeshDataSlots& slots, shared_ptr<MeshLoadData>& load_data);
   bool AllocateStorage(
     MeshDataSlots& out_slots,
@@ -84,10 +84,6 @@ public:
     auto& instances_slots = gl_buffers->GetInstancesSlot<MESH_TYPE>();
     instances_slots.Release(out_slots.instances_slot);
   };
-  inline MemorySlot CreateCommandBuffer(unsigned int size, unsigned int draw_call_id) {
-    return gl_buffers->CreateCommandBuffer(size, draw_call_id);
-  }
-
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& id_to_transform);
   void BufferBoneTransform(Bone* bone, mat4& trans, unsigned int num_bones = 1);
   void BufferLights(vector<Light*>& lights);
