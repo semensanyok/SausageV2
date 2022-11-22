@@ -5,7 +5,7 @@ void ShaderManager::SetupShaders() {
   all_shaders = new Shaders{
     _RegisterShader("blinn_phong_vs.glsl", "blinn_phong_fs.glsl"),
     _RegisterShader("debug_vs.glsl", "debug_fs.glsl"),
-    _RegisterShader("stencil_vs.glsl", "stencil_fs.glsl"),
+    //_RegisterShader("stencil_vs.glsl", "stencil_fs.glsl"),
     _RegisterShader("ui_font_vs.glsl", "ui_font_fs.glsl"),
     _RegisterShader("ui_back_vs.glsl", "ui_back_fs.glsl"),
     //_RegisterShader("3d_overlay_vs.glsl", "3d_overlay_fs.glsl"),

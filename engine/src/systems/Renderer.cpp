@@ -18,25 +18,25 @@ void Renderer::Render(Camera* camera) {
         continue;
       }
       {
+        DEBUG_EXPR(CheckGLError());
         for (auto draw : order_shader.second) {
           if (draw->is_enabled && draw->GetCommandCount() > 0) {
+            DEBUG_EXPR(CheckGLError());
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer->ptr->buffer_id);
             glUseProgram(draw->shader->id);
-            CheckGLError();
             draw->shader->SetUniforms();
             unsigned int command_count = draw->GetCommandCount();
-            unsigned int offset = draw->GetBaseOffset();
             // TODO: stride is not offset to command array.... I interpreted it wrongly...
             //       have to create command array per shader!
-            /*glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
-                                        command_count, offset);
-            */
             glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
-                            command_count + 20, 0);
-            CheckGLError();
+                                        command_count, 0);
+            DEBUG_EXPR(CheckGLError());
+            //glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
+            //                command_count + 20, 0);
           }
         }
       }
-      CheckGLError();
+      DEBUG_EXPR(CheckGLError());
     }
     buffer->PostDraw();
   }

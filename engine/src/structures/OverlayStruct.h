@@ -84,7 +84,7 @@ constexpr unsigned int GetNumDrawCommandsForBackDrawCall() {
 */
 namespace BufferSettings {
   const unsigned long TEXTURES_SINGLE_FONT = 128;
-  const unsigned long MAX_3D_OVERLAY_COMMANDS = 1000; // TODO: figure out correct size
+  const unsigned long MAX_3D_OVERLAY_COMMANDS = 100; // TODO: figure out correct size
   const unsigned long MAX_3D_OVERLAY_INSTANCES = MAX_3D_OVERLAY_COMMANDS
     //* 10
     ; // TODO: figure out correct size

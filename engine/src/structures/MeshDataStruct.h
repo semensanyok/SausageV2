@@ -33,8 +33,8 @@ public:
   // - count == 1 for single mesh. multiple for instanced meshes
   // - used as offset to arrays: transform, texture, ...?
   // - can be reallocated when num of instanced meshes exceeds
-  MemorySlot instances_slot;
   // Buffer offsets /////////////////////
+  MemorySlot instances_slot;
   MemorySlot vertex_slot;
   MemorySlot index_slot;
   // in glsl == gl_BaseInstanceARB

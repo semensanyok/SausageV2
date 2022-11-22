@@ -82,10 +82,10 @@ public:
       true
     );
 
-    //renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
+    renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
     //renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
-    //renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
-    //renderer->AddDraw(physics_debug_dc, DrawOrder::PHYS_DEBUG);
+    renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
+    renderer->AddDraw(physics_debug_dc, DrawOrder::PHYS_DEBUG);
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
   }
 
@@ -120,7 +120,7 @@ public:
     bool is_alloc_instance_slot = true) {
     DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
     auto& command = command_by_mesh_id[mesh->id];
-    auto instance_id = command.instanceCount;
+    auto instance_id = command.instanceCount - 1;
     auto instance_count = command.instanceCount + 1;
 
     if (SetToCommandWithOffsets<MESH_TYPE>(mesh, instance_count, is_alloc_instance_slot)) {

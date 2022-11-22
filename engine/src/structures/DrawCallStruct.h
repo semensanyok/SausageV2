@@ -25,8 +25,8 @@ enum DrawOrder {
 //template<typename MeshDataClass>
 class DrawCall {
   friend class DrawCallManager;
-  CommandBuffer* command_buffer;
 public:
+  CommandBuffer* command_buffer;
   bool is_enabled;
   /**
    * @param is_reserve_command_count_in_buffer

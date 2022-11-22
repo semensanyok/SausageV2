@@ -127,7 +127,6 @@ public:
   void BindVAOandBuffers();
   void Dispose();
   void AddUsedBuffers(BufferType::BufferTypeFlag used_buffers);
-  void MapBuffers();
   void PreDraw();
   void PostDraw();
   void Reset() {
@@ -285,23 +284,11 @@ public:
   };
   /////////////////////////////////////////////////
 
-  inline CommandBuffer* CreateCommandBuffer(unsigned int size) {
-    CommandBuffer* command_ptr = new CommandBuffer{};
-    command_ptr->ptr = _CreateBufferStorageSlots<DrawElementsIndirectCommand>(size,
-      GL_SHADER_STORAGE_BUFFER,
-      //ArenaSlotSize::FOUR
-      ArenaSlotSize::ONE
-      );
-    command_ptr->buffer_lock = new BufferLock();
-    command_ptr->buffer_lock->is_mapped = true;
-    DEBUG_EXPR(CheckGLError());
-
-    return command_ptr;
-  }
+  CommandBuffer* CreateCommandBuffer(unsigned int size);
 private:
-  void MapBuffer(CommandBuffer* buf);
   void _SyncGPUBufAndUnmap();
-  void BindCommandBuffers();
+  void MapBuffer(CommandBuffer* buf);
+  void MapBuffers();
   void UnmapBuffers();
   void UnmapBuffer(CommandBuffer* buf);
   void _DeleteCommandBuffer(CommandBuffer* command_ptr) {
@@ -320,5 +307,4 @@ private:
   template<typename T>
   BufferNumberPool<T>* _CreateBufferStorageNumberPool(unsigned long storage_size,
     GLuint array_type);
-  CommandBuffer* _CreateCommandBuffer(unsigned int draw_call_id);
 };

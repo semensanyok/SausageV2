@@ -17,26 +17,21 @@ void GLBuffers::MapBuffer(CommandBuffer* buf) {
   }
   // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
   buf->ptr->buffer_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(
-    buf->ptr->buffer_id, 0, buf->ptr->instances_slots.instances_slots.GetUsed(), flags);
+    buf->ptr->buffer_id, 0, buf->ptr->instances_slots.instances_slots.GetSize(), flags);
   buf->buffer_lock->is_mapped = true;
   buf->buffer_lock->is_mapped_cv.notify_all();
 }
 
 void GLBuffers::PreDraw() {
   _SyncGPUBufAndUnmap();
-  BindVAOandBuffers(); // TODO: one buffer, no rebind
+  BindVAOandBuffers();
+  DEBUG_EXPR(CheckGLError());
 }
 
 void GLBuffers::PostDraw() {
   fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
   MapBuffers();
-}
-
-void GLBuffers::BindCommandBuffers() {
-  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.blinn_phong->ptr->buffer_id);
-  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.back_ui->ptr->buffer_id);
-  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.font_ui->ptr->buffer_id);
-  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.bullet_debug->ptr->buffer_id);
+  DEBUG_EXPR(CheckGLError());
 }
 
 void GLBuffers::UnmapBuffers() {
@@ -120,6 +115,21 @@ void GLBuffers::InitBuffers() {
   command_buffers.blinn_phong = CreateCommandBuffer(MAX_BASE_MESHES);
 }
 
+CommandBuffer* GLBuffers::CreateCommandBuffer(unsigned int num_commands) {
+  auto size = num_commands;
+  CommandBuffer* command_ptr = new CommandBuffer{};
+  command_ptr->ptr = _CreateBufferStorageSlots<DrawElementsIndirectCommand>(size,
+    GL_SHADER_STORAGE_BUFFER,
+    //ArenaSlotSize::FOUR
+    ArenaSlotSize::ONE
+    );
+  command_ptr->buffer_lock = new BufferLock();
+  command_ptr->buffer_lock->is_mapped = true;
+  DEBUG_EXPR(CheckGLError());
+
+  return command_ptr;
+}
+
 template<typename T>
 BufferSlots<T>* GLBuffers::_CreateBufferStorageSlots(unsigned long storage_size,
   GLuint array_type,
@@ -170,19 +180,23 @@ void GLBuffers::BindVAOandBuffers() {
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
       (void*)offsetof(Vertex, BoneWeights));
+    bound_buffers |= BufferType::MESH_VAO;
   }
   if ((used_buffers & BufferType::VERTEX) &&
     !(bound_buffers & BufferType::VERTEX)) {
     glBindBuffer(GL_ARRAY_BUFFER, vertex_ptr->buffer_id);
+    bound_buffers |= BufferType::VERTEX;
   }
   if ((used_buffers & BufferType::INDEX) &&
     !(bound_buffers & BufferType::INDEX)) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ptr->buffer_id);
+    bound_buffers |= BufferType::INDEX;
   }
   if ((used_buffers & BufferType::UNIFORMS) &&
     !(bound_buffers & BufferType::UNIFORMS)) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, mesh_uniform_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UNIFORMS_LOC, mesh_uniform_ptr->buffer_id);
+    bound_buffers |= BufferType::UNIFORMS;
   }
 
   if ((used_buffers & BufferType::TEXTURE) &&
@@ -190,12 +204,14 @@ void GLBuffers::BindVAOandBuffers() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, texture_handle_by_texture_id_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TEXTURE_LOC,
       texture_handle_by_texture_id_ptr->buffer_id);
+    bound_buffers |= BufferType::TEXTURE;
   }
   if ((used_buffers & BufferType::LIGHT) &&
     !(bound_buffers & BufferType::LIGHT)) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHTS_UNIFORM_LOC,
       light_ptr->buffer_id);
+    bound_buffers |= BufferType::LIGHT;
   }
   if ((used_buffers & BufferType::UI_UNIFORMS) &&
     !(bound_buffers & BufferType::UI_UNIFORMS)) {
@@ -210,8 +226,8 @@ void GLBuffers::BindVAOandBuffers() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, uniforms_controller_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CONTROLLER_UNIFORM_LOC,
       uniforms_controller_ptr->buffer_id);
+    bound_buffers |= BufferType::UI_UNIFORMS;
   }
-  BindCommandBuffers();
 }
 
 void GLBuffers::Dispose() {
