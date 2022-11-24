@@ -59,6 +59,7 @@ class MeshManager : public SausageSystem {
   MeshData* CreateMeshData();
   MeshData* CreateMeshData(MeshLoadData* load_data);
   MeshDataInstance* CreateInstancedMesh(MeshDataBase * base_mesh, const unsigned long instance_id);
+  MeshDataInstance* CreateInstancedMesh(MeshDataBase* base_mesh, const unsigned long instance_id, mat4& transform);
   MeshDataOverlay3D* CreateMeshDataFont3D(string& text, mat4& transform);
   MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr);
   shared_ptr<MeshLoadData> CreateLoadData(vector<Vertex>& vertices,

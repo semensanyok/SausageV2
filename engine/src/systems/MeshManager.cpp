@@ -168,7 +168,14 @@ MeshData* MeshManager::CreateMeshData(MeshLoadData* load_data) {
 }
 
 MeshDataInstance* MeshManager::CreateInstancedMesh(MeshDataBase* base_mesh, const unsigned long instance_id) {
-  auto* mesh = new MeshDataInstance(mat4(1), instance_id, base_mesh);
+  auto transform = mat4(1);
+  return CreateInstancedMesh(base_mesh, instance_id, transform);
+}
+
+MeshDataInstance* MeshManager::CreateInstancedMesh(MeshDataBase* base_mesh,
+  const unsigned long instance_id,
+  mat4& transform) {
+  auto* mesh = new MeshDataInstance(transform, instance_id, base_mesh);
   auto instances_by_id = instances_by_base_mesh_id[base_mesh->id];
   instances_by_id[mesh->instance_id] = mesh;
   return mesh;

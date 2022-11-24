@@ -83,6 +83,10 @@ private:
     _LoadAnimations();
   }
 
+  struct DataWithTex {
+    MaterialTexNames tex_names;
+    shared_ptr<MeshLoadData> data;
+  };
   void _LoadMeshes(string& path) {
     vector<shared_ptr<MeshLoadData>> load_data_list;
     vector<MaterialTexNames> tex_names_list;
@@ -91,60 +95,66 @@ private:
       load_data_list, tex_names_list, true, true, true);
 
     // SetBaseMeshForInstancedCommand
-    unordered_map<size_t, MeshData*> base_meshes;
+    unordered_map<size_t, pair<DataWithTex, vector<DataWithTex>>> base_meshes;
     hash<MaterialTexNames> tex_hash;
     for (int i = 0; i < load_data_list.size(); i++) {
       auto load_data_sptr = load_data_list[i];
       auto load_data = load_data_sptr.get();
-      auto& tex_names = tex_names_list[i];
+      auto tex_names = tex_names_list[i];
       auto key =
         tex_hash(tex_names)
         + load_data->vertices.size()
         + load_data->indices.size();
 
-      MeshData* mesh = nullptr;
       if (!base_meshes.contains(key)) {
-        mesh = mesh_manager->CreateMeshData(load_data);
-        base_meshes[key] = mesh;
-        if (!mesh_data_buffer->AllocateStorage(mesh->slots, load_data->vertices.size(), load_data->indices.size())) {
-          throw runtime_error("Scene1: failed to Allocate");
-        }
-        mesh_data_buffer->BufferMeshData(mesh->slots, load_data_sptr);
-        // TODO: buffer not 1 but instance count slots. currently keep just to test Release (which was not working properly)
-        draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, 1);
-        // TRANSFORM SETUP
-        mesh_data_buffer->BufferTransform(mesh, mesh->transform);
-        // TEXTURE SETUP
-        {
-          Texture* texture = systems_manager->texture_manager->LoadTextureArray(tex_names);
-          if (texture != nullptr) {
-            mesh->textures = { {1.0, texture->id }, 1 };
-            systems_manager->buffer_manager->mesh_data_buffer->BufferTexture(
-                mesh, mesh->textures);
-            texture->MakeResident();
-          }
-        }
+        base_meshes[key] = { { tex_names, load_data_sptr }, {} };
       }
       else {
-        mesh = base_meshes[key];
-        MeshDataInstance* instance = draw_call_manager->AddNewInstance<MeshData>(mesh);
-        // TRANSFORM SETUP
-        mesh_data_buffer->BufferTransform(instance, instance->transform);
-        // TEXTURE SETUP
-        mesh_data_buffer->BufferTexture(instance, mesh->textures);
+        base_meshes[key].second.push_back({ tex_names, load_data_sptr });
       }
+    }
+    for (auto& mesh_instances : base_meshes) {
+      auto& base_data = mesh_instances.second.first;
+      auto& instances = mesh_instances.second.second;
 
+      // BASE MESH SETUP
+      auto mesh = mesh_manager->CreateMeshData(base_data.data.get());
+      if (!mesh_data_buffer->AllocateStorage(mesh->slots,
+        base_data.data->vertices.size(), base_data.data->indices.size())) {
+        throw runtime_error("Scene1: failed to Allocate");
+      }
+      mesh_data_buffer->BufferMeshData(mesh->slots, base_data.data);
+      draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, instances.size());
+      mesh_data_buffer->BufferTransform(mesh, mesh->transform);
+      // TEXTURE SETUP
+      {
+        Texture* texture = systems_manager->texture_manager->LoadTextureArray(base_data.tex_names);
+        if (texture != nullptr) {
+          mesh->textures = { {1.0, texture->id }, 1 };
+          systems_manager->buffer_manager->mesh_data_buffer->BufferTexture(
+              mesh, mesh->textures);
+          texture->MakeResident();
+        }
+      }
       // PHYSICS SETUP
       {
-        if (load_data->name != "Terrain") {
-          mesh->physics_data = load_data_sptr->physics_data;
+        if (base_data.data->name != "Terrain") {
+          mesh->physics_data = base_data.data->physics_data;
           mesh->physics_data->mass = 10.0;
         }
         mesh->physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
         mesh->physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
       }
-      mesh->armature = load_data_sptr->armature;
+      mesh->armature = base_data.data->armature;
       all_meshes.push_back(mesh);
+
+      // INSTANCES SETUP
+      for (auto& idata : instances) {
+        MeshDataInstance* instance = draw_call_manager->AddNewInstance<MeshData>(mesh, idata.data->transform);
+        mesh_data_buffer->BufferTransform(instance, instance->transform);
+        // TEXTURE SETUP
+        mesh_data_buffer->BufferTexture(instance, mesh->textures);
+      }
     }
   }
 

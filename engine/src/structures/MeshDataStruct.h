@@ -127,7 +127,7 @@ public:
     return base_mesh->slots.instances_slot.offset + instance_id;
   }
 private:
-  MeshDataInstance(mat4 transform, long instance_id, MeshDataBase* base_mesh) :
+  MeshDataInstance(mat4& transform, long instance_id, MeshDataBase* base_mesh) :
     transform{ transform }, instance_id{ instance_id }, base_mesh{ base_mesh } {}
   ~MeshDataInstance() {};
 };

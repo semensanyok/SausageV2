@@ -117,6 +117,7 @@ public:
 
   template<typename MESH_TYPE>
   MeshDataInstance* AddNewInstance(MeshDataBase* mesh,
+    mat4& transform,
     bool is_alloc_instance_slot = true) {
     DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
     auto& command = command_by_mesh_id[mesh->id];
@@ -125,10 +126,17 @@ public:
 
     if (SetToCommandWithOffsets<MESH_TYPE>(mesh, instance_count, is_alloc_instance_slot)) {
       // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
-      auto instance = mesh_manager->CreateInstancedMesh(mesh, instance_id);
+      auto instance = mesh_manager->CreateInstancedMesh(mesh, instance_id, transform);
       return instance;
     }
     return nullptr;
+  }
+
+  template<typename MESH_TYPE>
+  MeshDataInstance* AddNewInstance(MeshDataBase* mesh,
+    bool is_alloc_instance_slot = true) {
+    auto transform = mat4(1);
+    return AddNewInstance<MESH_TYPE>(mesh, transform, is_alloc_instance_slot);
   }
 
   template<typename MESH_TYPE>

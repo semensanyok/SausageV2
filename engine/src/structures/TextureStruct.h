@@ -7,13 +7,13 @@
 using namespace std;
 
 struct MaterialTexNames {
-  const string diffuse;
-  const string normal;
-  const string specular;
-  const string height;
-  const string metal;
-  const string ao;
-  const string opacity;
+  string diffuse;
+  string normal;
+  string specular;
+  string height;
+  string metal;
+  string ao;
+  string opacity;
 };
 /*
 * diffuse considered as index
