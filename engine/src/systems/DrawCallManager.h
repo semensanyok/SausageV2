@@ -121,7 +121,9 @@ public:
     bool is_alloc_instance_slot = true) {
     DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
     auto& command = command_by_mesh_id[mesh->id];
-    auto instance_id = command.instanceCount - 1;
+    //auto instance_id = command.instanceCount - 1;
+    // start with 1 because 0 is reserved for base mesh
+    auto instance_id = command.instanceCount;
     auto instance_count = command.instanceCount + 1;
 
     if (SetToCommandWithOffsets<MESH_TYPE>(mesh, instance_count, is_alloc_instance_slot)) {

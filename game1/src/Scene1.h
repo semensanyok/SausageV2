@@ -148,7 +148,7 @@ private:
       mesh->armature = base_data.data->armature;
       all_meshes.push_back(mesh);
 
-      // INSTANCES SETUP
+      // INSTANCES SETUP  
       for (auto& idata : instances) {
         MeshDataInstance* instance = draw_call_manager->AddNewInstance<MeshData>(mesh, idata.data->transform);
         mesh_data_buffer->BufferTransform(instance, instance->transform);
