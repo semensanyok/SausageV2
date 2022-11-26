@@ -32,7 +32,6 @@ struct TextureBlend {
 struct BlendTextures {
   TextureBlend textures[MAX_BLEND_TEXTURES];
   uint num_textures;
-  float pad;
 };
 
 layout (std430, binding = UNIFORMS_LOC) buffer UniformDataMesh
