@@ -156,6 +156,8 @@ private:
         mesh_data_buffer->BufferTexture(instance, mesh->textures);
       }
     }
+    // LIGHTS SETUP
+    draw_lights.insert(draw_lights.end(), all_lights.begin(), all_lights.end());
   }
 
   void _LoadGui() {

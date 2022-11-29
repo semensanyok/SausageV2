@@ -101,7 +101,7 @@ void BufferStorage::ReleaseStorage(MeshDataSlots& out_slots) {
 void BufferStorage::Init() {
   gl_buffers->InitBuffers();
 }
-
+  
 Texture* BufferStorage::CreateTextureWithBufferSlot(GLuint gl_texture_id, GLuint64 gl_texture_handle_ARB) {
   Texture* texture = new Texture(
     gl_texture_id,

@@ -22,8 +22,8 @@ out vec4 color;
 {{ mesh_fs_functions }}
 
 void main(void) {
-  // SetBlendColor();
+  SetBlendColor();
   //color = vec4(res, 0.04 + clamp(In.base_instance - 4, 0, 1)*0.5); //test transparency back to front sorting
 
-  color = vec4(255.0,0.0,0.0,0.3);
+  // color = vec4(255.0,0.0,0.0,0.3);
 }

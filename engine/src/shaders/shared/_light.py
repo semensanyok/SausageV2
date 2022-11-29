@@ -22,7 +22,7 @@ layout (std430, binding = LIGHTS_UNIFORM_LOC) buffer LightsUniform
 {
 	int num_lights;
     float LightsUniform_pad[3];
-    Light lights[];
+    Light lights[MAX_LIGHTS];
 };
 """,
 	"light_functions": 

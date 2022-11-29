@@ -34,10 +34,6 @@ public:
   virtual unsigned long GetInstanceOffset() = 0;
 };
 
-//struct BlendTexturesMeshUniform {
-//  BlendTextures blend_textures[MAX_MESHES_INSTANCES]; // alignment 4 bytes
-//};
-
 // TODO: maybe??? extract transforms[MAX_MESHES_INSTANCES] to separate SSBO
 //       because, for example, overlay elements are using mat4 transform
 //       so presumably they can use same instance_offset used for mesh draw calls
