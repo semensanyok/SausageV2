@@ -14,9 +14,9 @@ namespace GameSettings {
   //inline float physics_step_multiplier = 1.0f;
   inline bool quit = false;
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
-	inline bool phys_debug_draw = true;
+  inline bool phys_debug_draw = true;
 #else
-	inline bool phys_debug_draw = false;
+  inline bool phys_debug_draw = false;
 #endif
 };
 namespace CameraSettings {

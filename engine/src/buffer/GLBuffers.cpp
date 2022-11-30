@@ -140,7 +140,7 @@ BufferSlots<T>* GLBuffers::_CreateBufferStorageSlots(unsigned long storage_size,
   glBufferStorage(array_type, storage_size, NULL, flags);
   T* buffer_ptr = (T*)glMapBufferRange(array_type, 0,
     storage_size, flags);
-  return new BufferSlots{ {Arena({ 0, storage_size }, slot_size)}, buffer_id , buffer_ptr };
+  return new BufferSlots{ {Arena({ 0, storage_size, 0 }, slot_size)}, buffer_id , buffer_ptr };
 }
 
 template<typename T>

@@ -195,6 +195,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "${ENGINE_SRC_DIR}/Logging.cpp" 
 "${ENGINE_SRC_DIR}/Shader.cpp" 
 "${ENGINE_SRC_DIR}/Texture.cpp" 
+"${ENGINE_SRC_DIR}/Settings.cpp"
 "${ENGINE_SRC_DIR}/buffer/Arena.cpp"
 "${ENGINE_SRC_DIR}/buffer/BufferManager.cpp" 
 "${ENGINE_SRC_DIR}/buffer/BufferStorage.cpp" 
@@ -217,7 +218,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "${ENGINE_SRC_DIR}/systems/physics/BulletDebugDrawer.cpp" 
 "${ENGINE_SRC_DIR}/systems/gui/ScreenOverlayManager.cpp"
 "${ENGINE_SRC_DIR}/systems/world_gen/TerrainManager.cpp"
-${source} "src/structures/OverlayStruct.h")
+${source} "src/structures/OverlayStruct.h" )
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 

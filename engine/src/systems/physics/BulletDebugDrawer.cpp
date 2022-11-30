@@ -79,8 +79,10 @@ void BulletDebugDrawer::flushLines() {
         }
         persist_draws = keep_persist;
         buffer->BufferMeshData(vertices, indices, colors);
-        draw_call_manager->SetToCommandWithOffsets<MeshDataPhysDebugDrawer>(
-          buffer->mesh, 1, false);
+        if (draw_call_manager->SetToCommandWithOffsets<MeshDataPhysDebugDrawer>(
+          buffer->mesh, 1, false)) {
+          draw_call_manager->physics_debug_dc->is_enabled = true;
+        }
         clear();
     }
     else {

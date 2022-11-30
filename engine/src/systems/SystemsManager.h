@@ -1,6 +1,8 @@
 #pragma once
 
 #include "sausage.h"
+#include "Settings.h"
+#include "Settings.cpp"
 #include "Renderer.h"
 #include "RendererContextManager.h"
 #include "Camera.h"

@@ -32,6 +32,8 @@ class BulletDebugDrawer : public btIDebugDraw
   vector<PersistDrawRay> persist_draws;
 
   const unsigned int command_buffer_size = 1;
+
+  bool is_called_AddNewCommandToDrawCall = false;
 public:
   BulletDebugDrawer(
       BufferManager* buffer_manager,
@@ -40,9 +42,8 @@ public:
     buffer{ buffer_manager->GetPhysDebugDrawer() },
     state_manager{ state_manager },
     draw_call_manager{ draw_call_manager }{
-    buffer->Init();
-    draw_call_manager->AddNewCommandToDrawCall<MeshDataPhysDebugDrawer>(buffer->mesh,
-      draw_call_manager->physics_debug_dc, 1, false);
+    // inited in buffer_manager->GetPhysDebugDrawer()
+    //buffer->Init();
   };
 
   ~BulletDebugDrawer() {
@@ -73,7 +74,11 @@ public:
   /////////////////////////////////////////////////////////////////////////////////////////////
 
   void Activate() {
-    draw_call_manager->physics_debug_dc->is_enabled = true;
+    if (!is_called_AddNewCommandToDrawCall) {
+      draw_call_manager->AddNewCommandToDrawCall<MeshDataPhysDebugDrawer>(buffer->mesh,
+        draw_call_manager->physics_debug_dc, 1, false);
+      is_called_AddNewCommandToDrawCall = true;
+    }
   }
   void Deactivate() {
     clearPersist();

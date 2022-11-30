@@ -183,8 +183,11 @@ public:
     bool is_success_slot_alloc = is_alloc_instance_slot ?
       AllocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count, dc) : true;
     if (is_success_slot_alloc) {
-      command.instanceCount = instance_count;
-      mesh->slots.instances_slot.used = instance_count;
+      // to avoid weird situation when count = 0 and used = 1.
+      // even that is not used and doesnt affect anything, avoid it
+      if (is_alloc_instance_slot) {
+        mesh->slots.instances_slot.used = instance_count;
+      }
       _SetToCommandWithOffsets(command, mesh->slots, dc);
       return true;
     }
@@ -215,7 +218,7 @@ private:
     DrawCall* dc
   ) {
     unsigned int command_offset = mesh_slots.buffer_id;
-    command.instanceCount = mesh_slots.instances_slot.count;
+    command.instanceCount = mesh_slots.instances_slot.used;
     command.count = mesh_slots.index_slot.used;
     command.firstIndex = mesh_slots.index_slot.offset;
     command.baseVertex = mesh_slots.vertex_slot.offset;
