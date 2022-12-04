@@ -116,7 +116,7 @@ void GLBuffers::InitBuffers() {
 }
 
 CommandBuffer* GLBuffers::CreateCommandBuffer(unsigned int num_commands) {
-  auto size = num_commands;
+  auto size = sizeof(DrawElementsIndirectCommand) * num_commands;
   CommandBuffer* command_ptr = new CommandBuffer{};
   command_ptr->ptr = _CreateBufferStorageSlots<DrawElementsIndirectCommand>(size,
     GL_SHADER_STORAGE_BUFFER,

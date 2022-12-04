@@ -26,13 +26,9 @@ void Renderer::Render(Camera* camera) {
             glUseProgram(draw->shader->id);
             draw->shader->SetUniforms();
             unsigned int command_count = draw->GetCommandCount();
-            // TODO: stride is not offset to command array.... I interpreted it wrongly...
-            //       have to create command array per shader!
             glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
                                         command_count, 0);
             DEBUG_EXPR(CheckGLError());
-            //glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
-            //                command_count + 20, 0);
           }
         }
       }
