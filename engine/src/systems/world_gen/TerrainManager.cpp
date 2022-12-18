@@ -49,10 +49,10 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
       }
 
       TerrainTile* current_tile = &chunk->tiles[ind];
-      current_tile->x0y0z = { x0, y0, height_values[ind] };
-      current_tile->x0y1z = { x0, y1, height_values[ind_n] };
-      current_tile->x1y0z = { x1, y0, height_values[ind_e] };
-      current_tile->x1y1z = { x1, y1, height_values[ind_ne] };
+      current_tile->x0y0z = { x0, height_values[ind], y0,  };
+      current_tile->x0y1z = { x0, height_values[ind_n], y1  };
+      current_tile->x1y0z = { x1, height_values[ind_e], y0 };
+      current_tile->x1y1z = { x1, height_values[ind_ne], y1 };
 
       if (x == 0) {
         int prev_row_shift = (y - 1) * size_x;
@@ -137,10 +137,10 @@ MeshData* TerrainManager::GetBasePlane(
   float half_size_x = (float)chunk->scale / 2;
   float half_size_y = (float)chunk->scale / 2;
   std::vector<vec3> vertices = {
-      vec3(half_size_x,  half_size_y, 0.0f),  // top right
-      vec3(half_size_x, -half_size_y, 0.0f),  // bottom right
-      vec3(-half_size_x, -half_size_y, 0.0f),  // bottom left
-      vec3(-half_size_x,  half_size_y, 0.0f)   // top left 
+      vec3(half_size_x, 0.0f,  half_size_y),  // top right
+      vec3(half_size_x, 0.0f, -half_size_y),  // bottom right
+      vec3(-half_size_x, 0.0f, -half_size_y),  // bottom left
+      vec3(-half_size_x, 0.0f,  half_size_y)   // top left 
   };
   std::vector<unsigned int> indices = {
     0, 1, 3,  // first Triangle
