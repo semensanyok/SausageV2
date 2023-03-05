@@ -15,17 +15,13 @@
 #include "Texture.h"
 #include "MeshDataStruct.h"
 #include "OverlayStruct.h"
+#include "Vertex.h"
+#include "GPUSynchronizer.h"
 
 /**
 Only command buffer must be contigious
 (to issue drawcall with multiple commands they must be packed together)
 Vertex/Index buffers take offsets from commands, can be allocated anywhere.
-
-TODO:
-Slot release logic on deleted BaseMesh/Command/Vertex/Index etc.
-maybe predefined slot types of same size, to avoid fragmentation
-
-try coroutines instead of locks
 */
 using namespace std;
 using namespace glm;
@@ -35,11 +31,8 @@ using namespace BufferSizes;
 
 class BufferStorage {
 
-private:
-  //  TODO: each drawcall uses contigious range of commands. Need to allocate in advance for shader.
-  //    or place shader with dynamic number of meshes at the end
-
 public:
+
   GLBuffers* gl_buffers;
 
   static BufferStorage* GetInstance() {
@@ -48,18 +41,10 @@ public:
   };
 
   void Reset() {
-    gl_buffers->Reset();
   };
 
   void Init();
 
-  void BufferCommands(CommandBuffer* buffer, vector<DrawElementsIndirectCommand>& active_commands, int command_offset);
-  void BufferCommand(CommandBuffer* buffer, DrawElementsIndirectCommand& command, int command_offset);
-  void BufferMeshData(MeshDataSlots& slots, shared_ptr<MeshLoadData>& load_data);
-  bool AllocateStorage(
-    MeshDataSlots& out_slots,
-    unsigned long vertices_size,
-    unsigned long indices_size);
   template<typename MESH_TYPE>
   bool AllocateInstanceSlot(
       MeshDataSlots& out_slots,
@@ -75,10 +60,9 @@ public:
       return false;
     }
     base_instance_offset_ptr[out_slots.buffer_id] = out_slots.instances_slot.offset;
-    gl_buffers->SetSyncBarrier();
+    GPUSynchronizer::GetInstance()->SetSyncBarrier();
     return true;
   };
-  void ReleaseStorage(MeshDataSlots& out_slots);
   template<typename MESH_TYPE>
   inline void ReleaseInstanceSlot(MeshDataSlots& out_slots) {
     auto& instances_slots = gl_buffers->GetInstancesSlot<MESH_TYPE>();
@@ -91,7 +75,7 @@ public:
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
   inline void BufferTransform(BufferInstanceOffset& mesh, TRANSFORM_TYPE& transform) {
     gl_buffers->GetTransformPtr<TRANSFORM_TYPE, MESH_TYPE>()[mesh.GetInstanceOffset()] = transform;
-    gl_buffers->SetSyncBarrier();
+    GPUSynchronizer::GetInstance()->SetSyncBarrier();
   };
   template<typename MESH_TYPE>
   inline unsigned int GetNumCommands() {

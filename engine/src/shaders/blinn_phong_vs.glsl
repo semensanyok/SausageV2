@@ -21,6 +21,9 @@ uniform mat4 projection_view;
 {{ mesh_vs_out }}
 
 void AnimTransform(inout vec4 pos, inout vec4 norm) {
+  // TODO: avoid branching, or not? 
+  //       separate pass for static mesh results in 2 wavefronts anyway? 
+  //       so keep it as such for now, and migrate static meshes to static_vs/fs.glsl (atm used for terrain)
   if (bone_ids[0] < 0) {
     return;
   }
@@ -38,7 +41,6 @@ void AnimTransform(inout vec4 pos, inout vec4 norm) {
 }
 
 void main(void) {
-  {{ mesh_set_base_instance_with_instance_offset }}
   {{ mesh_set_transform }}
   {{ mesh_set_res_position }}
   {{ mesh_set_res_normal }}

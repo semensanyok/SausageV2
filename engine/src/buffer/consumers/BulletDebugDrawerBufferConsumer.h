@@ -8,20 +8,19 @@
 #include "BufferConsumer.h"
 #include "BufferSettings.h"
 
-class BulletDebugDrawerBufferConsumer : public BufferConsumer<unsigned int, MeshData, mat4> {
+// transform type mat4 not used. change to vec2 when needed.
+class BulletDebugDrawerBufferConsumer : public BufferConsumer<unsigned int, MeshDataOutline, vec2, VertexOutline> {
   unsigned long vertices_size = 1000;
   unsigned long indices_size = 1000;
   bool is_data_inited = false;
-  MeshManager* mesh_manager;
-  BufferStorage* buffer;
 public:
-  MeshData* mesh = nullptr;
+  MeshDataOutline* mesh = nullptr;
 
   BulletDebugDrawerBufferConsumer(BufferStorage* buffer,
-    MeshManager* mesh_manager) :
-    BufferConsumer(buffer, BufferType::PHYSICS_DEBUG_BUFFERS),
-    mesh_manager{ mesh_manager },
-    buffer{ buffer }{
+    GLVertexAttributes* vertex_attributes,
+    MeshManager* mesh_manager
+  )
+    : BufferConsumer(buffer, vertex_attributes, mesh_manager, BufferType::OUTLINE_BUFFERS) {
   };
   ~BulletDebugDrawerBufferConsumer() {
   };
@@ -30,4 +29,7 @@ public:
       vector<vec3>& colors);
   void Init();
   void Reset();
+  void ReleaseSlots(MeshDataBase* mesh) override {
+    vertex_attributes->ReleaseStorage<VertexOutline>(mesh->slots);
+  }
 };

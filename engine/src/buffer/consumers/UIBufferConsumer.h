@@ -11,17 +11,20 @@
 #include "Structures.h"
 #include "GPUStructs.h"
 #include "MeshDataStruct.h"
+#include "Vertex.h"
 
 using namespace std;
 using namespace glm;
 
-class UIBufferConsumer : public BufferConsumer<unsigned int, MeshDataUI, vec2> {
+class UIBufferConsumer : public BufferConsumer<unsigned int, MeshDataUI, vec2, VertexUI> {
   MeshManager* mesh_manager;
 
  public:
   UIBufferConsumer(BufferStorage* buffer,
-    MeshManager* mesh_manager)
-      : BufferConsumer(buffer, BufferType::UI_BUFFERS),
+    GLVertexAttributes* vertex_attributes,
+    MeshManager* mesh_manager
+  )
+    : BufferConsumer(buffer, vertex_attributes, mesh_manager, BufferType::UI_BUFFERS),
         mesh_manager{mesh_manager} {}
   ~UIBufferConsumer() {}
   void BufferMeshData(MeshDataUI* mesh,

@@ -1,33 +1,11 @@
 #include "BufferStorage.h"
 
-void BufferStorage::BufferCommands(
-    CommandBuffer* command_ptr,
-    vector<DrawElementsIndirectCommand>& active_commands, int command_offset) {
-  unique_lock<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
-  if (!command_ptr->buffer_lock->is_mapped) {
-    command_ptr->buffer_lock->Wait(data_lock);
-  }
-  memcpy(&(command_ptr->ptr[command_offset]),
-         active_commands.data(),
-         active_commands.size() * sizeof(DrawElementsIndirectCommand));
-  gl_buffers->SetSyncBarrier();
-}
-void BufferStorage::BufferCommand(CommandBuffer* command_ptr,
-  DrawElementsIndirectCommand& command, int command_offset) {
-  unique_lock<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
-  while (!command_ptr->buffer_lock->is_mapped) {
-    command_ptr->buffer_lock->Wait(data_lock);
-  }
-  command_ptr->ptr->buffer_ptr[command_offset] = command;
-  gl_buffers->SetSyncBarrier();
-}
-
 void BufferStorage::BufferBoneTransform(
     unordered_map<unsigned int, mat4> &id_to_transform) {
   for (auto &id_trans : id_to_transform) {
     gl_buffers->mesh_uniform_ptr->buffer_ptr->bones_transforms[id_trans.first] = id_trans.second;
   }
-  gl_buffers->SetSyncBarrier();
+  GPUSynchronizer::GetInstance()->SetSyncBarrier();
 }
 
 void BufferStorage::BufferBoneTransform(Bone *bone, mat4 &trans,
@@ -36,7 +14,7 @@ void BufferStorage::BufferBoneTransform(Bone *bone, mat4 &trans,
   for (size_t i = 0; i < num_bones; i++) {
     mesh_uniform_ptr->bones_transforms[bone[i].id] = trans;
   }
-  gl_buffers->SetSyncBarrier();
+  GPUSynchronizer::GetInstance()->SetSyncBarrier();
 }
 
 void BufferStorage::BufferLights(vector<Light *> &lights) {
@@ -51,51 +29,9 @@ void BufferStorage::BufferLights(vector<Light *> &lights) {
     gl_buffers->light_ptr->buffer_ptr->lights[i] = *lights[i];
     // memcpy(light_ptr->lights, lights.data(), lights.size() * sizeof(Light));
   }
-  gl_buffers->SetSyncBarrier();
+  GPUSynchronizer::GetInstance()->SetSyncBarrier();
 }
 
-void BufferStorage::BufferMeshData(MeshDataSlots& slots,
-                                   shared_ptr<MeshLoadData>& load_data) {
-  auto mesh_data = load_data.get();
-  // storage must be allocated at this point (via AllocateStorage)
-  DEBUG_ASSERT(slots.index_slot.count > 0);
-  DEBUG_ASSERT(slots.vertex_slot.count > 0);
-  DEBUG_ASSERT(slots.index_slot.count >= mesh_data->indices.size());
-  DEBUG_ASSERT(slots.vertex_slot.count >= mesh_data->vertices.size());
-
-  auto& vertices = mesh_data->vertices;
-  auto& indices = mesh_data->indices;
-  // copy to GPU
-  memcpy(&gl_buffers->vertex_ptr->buffer_ptr[slots.vertex_slot.offset], vertices.data(),
-         vertices.size() * sizeof(Vertex));
-  memcpy(&gl_buffers->index_ptr->buffer_ptr[slots.index_slot.offset], indices.data(),
-         indices.size() * sizeof(unsigned int));
-  gl_buffers->SetSyncBarrier();
-}
-
-bool BufferStorage::AllocateStorage(
-  MeshDataSlots& out_slots,
-  unsigned long vertices_size,
-  unsigned long indices_size
-) {
-  out_slots.vertex_slot = gl_buffers->vertex_ptr->instances_slots.Allocate(vertices_size);
-  if (out_slots.vertex_slot == MemorySlots::NULL_SLOT) {
-    LOG("Error RequestStorageSetOffsets vertices slot allocation.");
-    return false;
-  }
-  out_slots.index_slot = gl_buffers->index_ptr->instances_slots.Allocate(indices_size);
-  if (out_slots.index_slot == MemorySlots::NULL_SLOT) {
-    gl_buffers->vertex_ptr->instances_slots.Release(out_slots.vertex_slot);
-    LOG("Error RequestStorageSetOffsets indices slot allocation.");
-    return false;
-  }
-  return true;
-}
-
-void BufferStorage::ReleaseStorage(MeshDataSlots& out_slots) {
-  gl_buffers->vertex_ptr->instances_slots.Release(out_slots.vertex_slot);
-  gl_buffers->index_ptr->instances_slots.Release(out_slots.index_slot);
-}
 ////////////// ......InstanceSlot END ///////////////////////////////////////////////////
 
 void BufferStorage::Init() {
@@ -114,7 +50,7 @@ void BufferStorage::_BufferTextureHandle(Texture* texture)
 {
   gl_buffers->
     texture_handle_by_texture_id_ptr->buffer_ptr[texture->id] = texture->texture_handle_ARB;
-  gl_buffers->SetSyncBarrier();
+  GPUSynchronizer::GetInstance()->SetSyncBarrier();
 }
 
 void BufferStorage::ReleaseTexture(Texture* texture) {
@@ -129,7 +65,7 @@ void BufferStorage::BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max
   gl_buffers->
     uniforms_ui_ptr->buffer_ptr->
       min_max_x_y[mesh->slots.instances_slot.offset] = { min_x, max_x, min_y, max_y };
-  gl_buffers->SetSyncBarrier();
+  GPUSynchronizer::GetInstance()->SetSyncBarrier();
 }
 
 void BufferStorage::BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click) {
@@ -137,7 +73,7 @@ void BufferStorage::BufferUniformDataController(int mouse_x, int mouse_y, int is
   gl_buffers->uniforms_controller_ptr->buffer_ptr->mouse_y = mouse_y;
   gl_buffers->uniforms_controller_ptr->buffer_ptr->is_pressed = is_pressed;
   gl_buffers->uniforms_controller_ptr->buffer_ptr->is_click = is_click;
-  gl_buffers->SetSyncBarrier();
+  GPUSynchronizer::GetInstance()->SetSyncBarrier();
 }
 
 void BufferStorage::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {

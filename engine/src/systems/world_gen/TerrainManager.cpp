@@ -1,40 +1,47 @@
 #include "TerrainManager.h"
 
-void TerrainManager::CreateTerrain()
-{
-  auto chunk = CreateChunk(vec3(0, 0, 0), 0, 0, 100, 100);
-  Buffer(chunk);
-}
-
-TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y, int size_x, int size_y)
+void TerrainManager::CreateTerrain(int size_x, int size_y)
 {
   vector<vec3> vertices(size_x * size_y);
   vector<unsigned int> indices;
-
-  vector<float> height_values(size_x * size_y);
-  vector<float> moisture_values(size_x * size_y);
-  vector<float> temperature_values(size_x * size_y);
-
-  vector<vec3> normals;
   vector<vec2> uvs(size_x * size_y);
 
-  fnSimplex->GenUniformGrid2D(height_values.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
-  fnSimplex->GenUniformGrid2D(moisture_values.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
-  fnSimplex->GenUniformGrid2D(temperature_values.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
+  auto chunk = CreateChunk(vec3(0, 0, 0), 0, 0, 100, 100,
+    // OUT
+    vertices, indices, uvs);
 
+  vector<vec3> normals = GenNormals(vertices);
+  auto load_data = mesh_manager->CreateLoadData<VertexStatic>(vertices, indices, normals);
+
+  buffer->BufferVertices(chunk->mesh->slots, load_data);
+
+  draw_call_manager->AddNewCommandToDrawCall<MeshDataStatic>(chunk->mesh, draw_call_manager->terrain_dc, 1);
+}
+
+TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y, int size_x, int size_y,
+  // OUT
+  vector<vec3> vertices,
+  // OUT
+  vector<unsigned int> indices,
+  // OUT
+  vector<vec2> uvs)
+{
   const int SIZE = 1;
   TerrainChunk* chunk = new TerrainChunk(size_x, size_y, SIZE, pos);
+  fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
 
   // create chunk in local space, use transform matrix to apply offsetX/Y
   // each tile has 4 vertices
 
   // 1. fill simple array and adjastent tiles references
-  for (int y = 0; y < size_y; y++) {
-    for (int x = 0; x < size_x; x++) {
+  auto& height_values = chunk->heightmap;
+  for (int y = 0; y < size_y; y+=2) {
+    for (int x = 0; x < size_x; x += 2) {
       int x0 = x;
       int x1 = x + 1;
       int y0 = y;
       int y1 = y + 1;
+
       int current_row_shift = y * size_x;
       int next_row_shift = y1 * size_x;
 
@@ -43,110 +50,41 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
       int ind_ne = x1 + next_row_shift;
       int ind_n = x0 + next_row_shift;
 
-      bool is_last_row_vertices = (x == size_x - 1) || (y == size_y - 1);
-      if (is_last_row_vertices) {
-        continue;
-      }
+      size_t start = vertices.size();
+      vertices.push_back({ x0, y0, height_values[ind] });
+      vertices.push_back({ x0, y1, height_values[ind_n] });
+      vertices.push_back({ x1, y0, height_values[ind_e] });
+      vertices.push_back({ x1, y1, height_values[ind_ne] });
 
-      TerrainTile* current_tile = &chunk->tiles[ind];
-      current_tile->x0y0z = { x0, height_values[ind], y0,  };
-      current_tile->x0y1z = { x0, height_values[ind_n], y1  };
-      current_tile->x1y0z = { x1, height_values[ind_e], y0 };
-      current_tile->x1y1z = { x1, height_values[ind_ne], y1 };
+      uvs[start] = { 0.0, 0.0 };
+      uvs[start + 1] = { 0.0, 1.0 };
+      uvs[start + 2] = { 1.0, 0.0 };
+      uvs[start + 3] = { 1.0, 1.0 };
 
-      if (x == 0) {
-        int prev_row_shift = (y - 1) * size_x;
+      // 1 triangle
+      indices.push_back(start);
+      indices.push_back(start + 1);
+      indices.push_back(start + 2);
 
-        int ind_w = x0 - 1 + current_row_shift;
-        int ind_sw = (x0 - 1) + prev_row_shift;
-        int ind_s = x0 + prev_row_shift;
-        int ind_se = (x0 + 1) + prev_row_shift;
-        int ind_nw = (x0 - 1) + next_row_shift;
+      //indices.push_back(ind1);
+      //indices.push_back(ind1_next_row);
+      //indices.push_back(ind2);
 
-        AdjastentTiles& adj = current_tile->adjastent;
+      // 2 triangle
+      indices.push_back(start + 2);
+      indices.push_back(start + 3);
+      indices.push_back(start + 1);
 
-        bool is_east_border = x1 >= size_x;
-        bool is_south_border = y0 == 0;
-        bool is_west_border = x0 == 0;
-        bool is_north_border = y1 >= size_y;
-
-        adj.e = is_east_border ? nullptr : &chunk->tiles[ind_e];
-        adj.se = is_east_border || is_south_border ? nullptr : &chunk->tiles[ind_se];
-        adj.s = is_south_border ? nullptr : &chunk->tiles[ind_s];
-        adj.w = is_west_border ? nullptr : &chunk->tiles[ind_w];
-        adj.nw = is_west_border || is_north_border ? nullptr : &chunk->tiles[ind_nw];
-        adj.n = is_north_border ? nullptr : &chunk->tiles[ind_n];
-        adj.ne = is_north_border || is_east_border ? nullptr : &chunk->tiles[ind_ne];
-        adj.sw = is_south_border || is_west_border ? nullptr : &chunk->tiles[ind_sw];
-      }
-
-      TerrainPixelValues& pixel_values = current_tile->pixel_values;
-      pixel_values.height = (
-        height_values[ind]
-        + height_values[ind_e]
-        + height_values[ind_ne]
-        + height_values[ind_n]
-       ) / 4;
-      pixel_values.moisture = (
-        moisture_values[ind]
-        + moisture_values[ind_e]
-        + moisture_values[ind_ne]
-        + moisture_values[ind_n]
-       ) / 4;
-      pixel_values.temperature = (
-        temperature_values[ind]
-        + temperature_values[ind_e]
-        + temperature_values[ind_ne]
-        + temperature_values[ind_n]
-       ) / 4;
-    }
+      //indices.push_back(ind2);
+      //indices.push_back(ind2_next_row);
+      //indices.push_back(ind1_next_row);
+     }
   }
   return chunk;
 }
 
-void TerrainManager::ReleaseBuffer(TerrainChunk* chunk) {
-  buffer->ReleaseInstanceSlot(chunk->tiles[0].mesh_data);
-}
-
-void TerrainManager::Deactivate(TerrainChunk* chunk)
-{
-  draw_call_manager->DisableCommand<MeshData>(chunk->tiles[0].mesh_data);
-}
-
-void TerrainManager::Buffer(TerrainChunk* chunk) {
-  auto base = GetBasePlane(chunk, &chunk->tiles[0]);
-  buffer->BufferTransform(base, base->transform);
-  for (int i = 0; i < chunk->tiles.size(); i++) {
-    auto tile = &chunk->tiles[i];
-    auto instance = CreatePlaneInstance(base);
-    instance->transform = translate(base->transform, tile->x0y0z);
-    buffer->BufferTransform(instance, instance->transform);
-    // TODO: assign blend textures
-  }
-}
-
-MeshData* TerrainManager::GetBasePlane(
-  TerrainChunk* chunk,
-  TerrainTile* tile
-  //, vec2& out_face_normal
-) {
-  if (planes_base_meshes.contains(chunk->tile_size)) {
-    return planes_base_meshes[chunk->tile_size];
-  }
-  // TODO: for any number of vertices, not just hardcoded 2
-  float half_size_x = (float)chunk->scale / 2;
-  float half_size_y = (float)chunk->scale / 2;
-  std::vector<vec3> vertices = {
-      vec3(half_size_x, 0.0f,  half_size_y),  // top right
-      vec3(half_size_x, 0.0f, -half_size_y),  // bottom right
-      vec3(-half_size_x, 0.0f, -half_size_y),  // bottom left
-      vec3(-half_size_x, 0.0f,  half_size_y)   // top left 
-  };
-  std::vector<unsigned int> indices = {
-    0, 1, 3,  // first Triangle
-    1, 2, 3   // second Triangle
-  };
-
+vector<vec3> TerrainManager::GenNormals(vector<vec3> vertices) {
+  vector<vec3> normals(vertices.size());
   // need to calculate vertex normal as mean of 4 faces normals
   // but we have instanced draw call, same normal for all tiles...
   // but transform mat4 should adjust each vertex normal to be equal to face normal
@@ -154,32 +92,23 @@ MeshData* TerrainManager::GetBasePlane(
   //  expected to see seems between tiles and not smooth shading, each tile having constant light, no interpolation
   //  normal texture should make it a bit less visible though
   //out_face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
-  vec3 face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
-  vector<vec3> normals = {
-    face_normal,
-    face_normal,
-    face_normal,
-    face_normal
-  };
-
-  auto load_data = mesh_manager->CreateLoadData(vertices, indices, normals);
-  auto base_mesh = mesh_manager->CreateMeshData();
-
-  base_mesh->transform = translate(mat4(1), chunk->pos);
-
-  buffer->AllocateStorage(base_mesh->slots, vertices.size(), indices.size());
-  buffer->BufferMeshData(base_mesh->slots, load_data);
-  draw_call_manager->AddNewCommandToDrawCall<MeshData>(base_mesh,
-    draw_call_manager->mesh_dc, chunk->tiles.size());
-
-  tile->mesh_data = base_mesh;
-
-  planes_base_meshes[chunk->tile_size] = base_mesh;
-  return planes_base_meshes[chunk->tile_size];
+  for (int i = 0; i < vertices.size(); i += 4) {
+    vec3 face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
+    for (int j = 0; j < 4; j++) {
+      normals[i + j] = face_normal;
+    }
+  }
+  assert(normals.size() == vertices.size());
+  return normals;
 }
 
-MeshDataInstance* TerrainManager::CreatePlaneInstance(MeshData* base) {
-  return draw_call_manager->AddNewInstance<MeshData>(base);
+void TerrainManager::ReleaseBuffer(TerrainChunk* chunk) {
+  buffer->ReleaseSlots(chunk->mesh);
+}
+
+void TerrainManager::Deactivate(TerrainChunk* chunk)
+{
+  draw_call_manager->DisableCommand<MeshDataStatic>(chunk->mesh);
 }
 
 // Test create terrain, first prototype

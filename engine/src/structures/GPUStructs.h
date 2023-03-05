@@ -8,38 +8,6 @@
 using namespace std;
 using namespace glm;
 
-namespace BufferType {
-  typedef unsigned int BufferTypeFlag;
-  const BufferTypeFlag MESH_VAO = 1;
-  const BufferTypeFlag VERTEX = 1 << 1;
-  const BufferTypeFlag INDEX = 1 << 2;
-  const BufferTypeFlag UNIFORMS = 1 << 3;
-  const BufferTypeFlag TEXTURE = 1 << 4;
-  const BufferTypeFlag LIGHT = 1 << 5;
-  const BufferTypeFlag COMMAND = 1 << 6;
-  const BufferTypeFlag UI_UNIFORMS = 1 << 7;
-  const BufferTypeFlag CONTROLLER_UNIFORMS = 1 << 8;
-
-  // COMPOSITE FLAGS
-  const BufferTypeFlag MESH_BUFFERS =
-    MESH_VAO | VERTEX | INDEX | UNIFORMS | TEXTURE | LIGHT | COMMAND;
-  const BufferTypeFlag PHYSICS_DEBUG_BUFFERS =
-    MESH_VAO | VERTEX | INDEX | COMMAND;
-  const BufferTypeFlag UI_BUFFERS =
-    MESH_VAO | VERTEX | INDEX | COMMAND | TEXTURE | UI_UNIFORMS | CONTROLLER_UNIFORMS;
-  const BufferTypeFlag TERRAIN_BUFFERS =
-    MESH_VAO | VERTEX | INDEX | LIGHT | COMMAND | TEXTURE;
-};  // namespace BufferType
-
-struct BufferLock {
-  mutex data_mutex;
-  condition_variable is_mapped_cv;
-  bool is_mapped;
-  inline void Wait(unique_lock<mutex>& data_lock) {
-    is_mapped_cv.wait(data_lock);
-  }
-};
-
 // --------------------------------------------------------------------------------------------------------------------
 // Indirect structures start
 struct DrawArraysIndirectCommand {

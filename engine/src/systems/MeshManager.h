@@ -49,38 +49,146 @@ class MeshManager : public SausageSystem {
   
   void LoadMeshes(const string& file_name,
                   vector<Light*>& out_lights,
-                  vector<shared_ptr<MeshLoadData>>& out_mesh_load_data,
-                  vector<MaterialTexNames>& out_tex_names,
+                  vector<shared_ptr<MeshLoadData<Vertex>>>& out_mesh_load_data_animated,
+                  vector<shared_ptr<MeshLoadData<VertexStatic>>>& out_mesh_load_data_static,
+                  vector<MaterialTexNames>& out_tex_names_animated,
+                  vector<MaterialTexNames>& out_tex_names_static,
                   bool is_load_transform = true,
                   bool is_load_aabb = true,
                   bool is_load_armature = false);
 
   Bone CreateBone(string bone_name, mat4& offset, mat4& trans);
   MeshData* CreateMeshData();
-  MeshData* CreateMeshData(MeshLoadData* load_data);
-  MeshDataInstance* CreateInstancedMesh(MeshDataBase * base_mesh, const unsigned long instance_id);
-  MeshDataInstance* CreateInstancedMesh(MeshDataBase* base_mesh, const unsigned long instance_id, mat4& transform);
   MeshDataOverlay3D* CreateMeshDataFont3D(string& text, mat4& transform);
   MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr);
-  shared_ptr<MeshLoadData> CreateLoadData(vector<Vertex>& vertices,
+  MeshDataStatic* CreateMeshDataStatic();
+  MeshDataOutline* CreateMeshDataOutline();
+
+  template<typename VERTEX_TYPE>
+  MeshData* CreateMeshData(MeshLoadData<VERTEX_TYPE>* load_data) {
+    auto mesh = new MeshData(mesh_id_pool->ObtainNumber(), load_data);
+    all_meshes[mesh->id] = mesh;
+    return mesh;
+  };
+
+  MeshDataInstance* CreateInstancedMesh(MeshDataBase * base_mesh, const unsigned long instance_id);
+  MeshDataInstance* CreateInstancedMesh(MeshDataBase* base_mesh, const unsigned long instance_id, mat4& transform);
+
+  template<typename VERTEX_TYPE>
+  shared_ptr<MeshLoadData<VERTEX_TYPE>> CreateLoadDataFromVertices(vector<VERTEX_TYPE>& vertices,
                                       vector<unsigned int>& indices,
-                                      Armature* armature = nullptr);
-  shared_ptr<MeshLoadData> CreateLoadData(vector<float>& vertices,
-                                      vector<unsigned int>& indices);
-  shared_ptr<MeshLoadData> CreateLoadData(vector<vec3>& vertices,
-                                      vector<unsigned int>& indices);
-  shared_ptr<MeshLoadData> CreateLoadData(vector<vec3>& vertices,
+                                      Armature* armature = nullptr) {
+    auto mld_ptr =
+      new MeshLoadData<VERTEX_TYPE>{ armature, (PhysicsData*)nullptr, string(), mat4(1), vertices, indices };
+    return shared_ptr<MeshLoadData<VERTEX_TYPE>>(mld_ptr);
+  };
+
+  template<typename VERTEX_TYPE>
+  shared_ptr<MeshLoadData<VERTEX_TYPE>> CreateLoadData(vector<float>& vertices,
+                                      vector<unsigned int>& indices) {
+    vector<VERTEX_TYPE> positions;
+    for (int i = 0; i < vertices.size(); i += 3) {
+      VERTEX_TYPE vert;
+      vert.Position = vec3(vertices[i], vertices[i + 1], vertices[i + 2]);
+      positions.push_back(vert);
+    }
+    return CreateLoadDataFromVertices(positions, indices);
+  }
+
+  template<typename VERTEX_TYPE>
+  shared_ptr<MeshLoadData<VERTEX_TYPE>> CreateLoadData(vector<vec3>& vertices,
+                                      vector<unsigned int>& indices) {
+    vector<vec3> empty;
+    return CreateLoadData<VERTEX_TYPE>(vertices, indices, empty);
+  };
+
+  template<typename VERTEX_TYPE>
+  shared_ptr<MeshLoadData<VERTEX_TYPE>> CreateLoadData(vector<vec3>& vertices,
                                       vector<unsigned int>& indices,
-                                      vector<vec3>& normals);
-  shared_ptr<MeshLoadData> CreateLoadData(vector<vec3>& vertices,
+                                      vector<vec3>& normals) {
+    vector<VERTEX_TYPE> positions;
+    for (int i = 0; i < vertices.size(); i++) {
+      VERTEX_TYPE vert;
+      vert.Position = vertices[i];
+      if (!normals.empty()) {
+        vert.Normal = normals[i];
+      }
+      positions.push_back(vert);
+    }
+    return CreateLoadDataFromVertices<VERTEX_TYPE>(positions, indices);
+  };
+
+  template<typename VERTEX_TYPE>
+  shared_ptr<MeshLoadData<VERTEX_TYPE>> CreateLoadData(vector<vec3>& vertices,
                                       vector<unsigned int>& indices,
                                       vector<vec3>& normals,
-                                      vector<vec2>& uvs);
-  shared_ptr<MeshLoadData> CreateLoadData(vector<vec3>& vertices,
+                                      vector<vec2>& uvs){
+    vector<VERTEX_TYPE> positions;
+    for (int i = 0; i < vertices.size(); i++) {
+      VERTEX_TYPE vert;
+      vert.Position = vertices[i];
+      if (!normals.empty()) {
+        vert.Normal = normals[i];
+      }
+      if (!uvs.empty()) {
+        vert.TexCoords = uvs[i];
+      }
+      positions.push_back(vert);
+    }
+    return CreateLoadDataFromVertices<VERTEX_TYPE>(positions, indices);
+  }
+
+  template<typename VERTEX_TYPE>
+  shared_ptr<MeshLoadData<VERTEX_TYPE>> CreateLoadData(vector<vec3>& vertices,
                                       vector<unsigned int>& indices,
                                       vector<vec3>& normals,
                                       vector<vec2>& uvs,
-                                      vector<vec3>& tangents);
+                                      vector<vec3>& tangents,
+                                      vector<vec3>& bitangents) {
+    vector<VERTEX_TYPE> positions;
+    for (int i = 0; i < vertices.size(); i++) {
+      VERTEX_TYPE vert;
+      vert.Position = vertices[i];
+      if (!normals.empty()) {
+        vert.Normal = normals[i];
+      }
+      if (!uvs.empty()) {
+        vert.TexCoords = uvs[i];
+      }
+      if (!tangents.empty()) {
+        vert.Tangent = tangents[i];
+      }
+      if (!bitangents.empty()) {
+        vert.Bitangent = bitangents[i];
+      }
+      positions.push_back(vert);
+    }
+    return CreateLoadDataFromVertices<VERTEX_TYPE>(positions, indices);
+  };
+  template<typename VERTEX_TYPE>
+  shared_ptr<MeshLoadData<VERTEX_TYPE>> CreateLoadData(vector<vec3>& vertices,
+                                      vector<unsigned int>& indices,
+                                      vector<vec3>& normals,
+                                      vector<vec2>& uvs,
+                                      vector<uint>& uniform_id) {
+    vector<VERTEX_TYPE> positions;
+    for (int i = 0; i < vertices.size(); i++) {
+      VERTEX_TYPE vert;
+      vert.Position = vertices[i];
+      if (!normals.empty()) {
+        vert.Normal = normals[i];
+      }
+      if (!uvs.empty()) {
+        vert.TexCoords = uvs[i];
+      }
+      if (!uniform_id.empty()) {
+        vert.UniformId = uniform_id[i];
+      }
+      positions.push_back(vert);
+    }
+    return CreateLoadDataFromVertices<VERTEX_TYPE>(positions, indices);
+  };
+
   string GetBoneName(const char* bone, Armature* armature, bool is_dae = false);
 
  private:
@@ -89,20 +197,18 @@ class MeshManager : public SausageSystem {
                   const pair<Bone*, aiVertexWeight>& rhs) {
         return lhs.second.mWeight > rhs.second.mWeight;
       });
-  
-  shared_ptr<MeshLoadData> ProcessMesh(aiMesh* mesh, const aiScene* scene,
-                                       bool is_load_armature = false,
+
+  shared_ptr<MeshLoadData<Vertex>> ProcessMesh(aiMesh* mesh, const aiScene* scene,
+                                       bool is_dae = false);
+  shared_ptr<MeshLoadData<VertexStatic>> ProcessMeshStatic(aiMesh* mesh, const aiScene* scene,
                                        bool is_dae = false);
   aiNode* _GetBoneNode(Armature* armature, const char* bone_name,
                        const aiScene* scene, bool is_dae);
   void _LoadMeshesIndices(aiNode* child,
                            vector<unsigned int>& out_mMeshes_indices);
   void _IterChildren(aiNode* ainode);
-  void _ProcessVertex(
-      aiMesh* mesh, int i, vector<Vertex>& vertices,
-      unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
-          vertex_index_to_weights,
-      bool is_load_armature = false);
+  void _ProcessVertex(aiMesh* mesh, int i, vector<Vertex>& vertices, unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>& vertex_index_to_weights);
+  void _ProcessVertexStatic(aiMesh* mesh, int i, vector<VertexStatic>& vertices);
   void _SetVertexBones(
       Vertex& vertex, int i,
       unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&

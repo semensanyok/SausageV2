@@ -160,6 +160,22 @@ public:
     rigidBodies.push_back(rigidBody);
   }
 
+  // TODO: continious collision for terrain
+  // https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h
+  void AddTerrainRigidBody(PhysicsData* physics_data,
+    vector<float>& heightmap,
+    int width,
+    int height,
+    SausageUserPointer* user_pointer,
+    mat4& model_transform,
+    string& name_for_log) {
+    btScalar s_gridHeightScale = 0.02;
+    bool flipQuadEdges = false;
+    btHeightfieldTerrainShape* terrain_shape = new btHeightfieldTerrainShape(
+      width, height, heightmap.data(), s_gridHeightScale, 0.0, 1.0,
+      1, PHY_FLOAT, flipQuadEdges);
+  }
+
   void RemoveRigidBody(btRigidBody* body) {
     if (body && body->getMotionState())
     {

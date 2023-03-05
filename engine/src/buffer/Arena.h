@@ -52,14 +52,13 @@ inline bool operator<(const MemorySlot& lhs, const MemorySlot& rhs) {
  * - expected to be advantageous for vertex/index slots management,
  *   which are frequently allocated/deallocated,
  *   and mostly of different sizes
- *   and single vertex/index buffer is used in all kinds of shaders/commands
  * - should not be used for command slots (Arena* instances_slots; in BufferStorage.cpp),
  *   as most of them have constant count
  *   i.e. ui buffer - constant number of commands (draw elements) are compile time const
  *   back/debug/overlay - 1 draw command
  *   only dynamic command buffer is mesh draw call
  * 
- * For simplier single number allocation look for ThreadSafeNumberPool.cpp
+ * For simplier single number allocation use ThreadSafeNumberPool.cpp
 */
 class Arena {
   // Arena::Release must be called only by aquired class

@@ -7,139 +7,36 @@
 #include "Vertex.h"
 #include "Arena.h"
 #include "ThreadSafeNumberPool.h"
+#include "GLBuffersCommon.h"
+#include "GPUSynchronizer.h"
 
 using namespace std;
 using namespace UniformsLocations;
 using namespace BufferSizes;
 
-struct InstancesSlots {
-  // must be allocated with size = MAX_INSTANCES
-  // index to uniform data as offset + glInstanceId
-  // (or MAX_VERTEX, MAX_INDEX, ...)
-  Arena instances_slots;
-
-  inline MemorySlot Allocate(const unsigned int size) {
-    return instances_slots.Allocate(size);
-  };
-  inline void Release(MemorySlot& slot) {
-    instances_slots.Release(slot);
-    slot = MemorySlots::NULL_SLOT;
-  };
-  inline void Release(MeshDataSlots& slot) {
-    instances_slots.Release(slot.instances_slot);
-    slot.instances_slot = MemorySlots::NULL_SLOT;
-  };
-  inline void Reset() {
-    instances_slots.Reset();
-  };
-};
-
-template<typename T>
-struct BufferSlots {
-  InstancesSlots instances_slots;
-  // opengl generated buffer_id
-  // dont confuse with DrawElementsIndirectCommand buffer_id (user provided)
-  GLuint buffer_id;
-  T* buffer_ptr;
-  inline void Reset() {
-    instances_slots.Reset();
-  };
-};
-
-struct CommandBuffer {
-  BufferSlots<DrawElementsIndirectCommand>* ptr;
-  // we have to use lock here
-  // because command buffer must be "unmapped" before each drawcall
-  BufferLock* buffer_lock;
-  inline bool operator==(const CommandBuffer& other) { return ptr->buffer_id == other.ptr->buffer_id; }
-  ~CommandBuffer() {
-    delete buffer_lock;
-  }
-};
-
-template<typename T>
-struct BufferNumberPool {
-  // must be allocated with size = MAX_INSTANCES
-  // index to uniform data as offset + glInstanceId
-  // (or MAX_VERTEX, MAX_INDEX, ...)
-  ThreadSafeNumberPool instances_slots;
-  GLuint buffer_id;
-  T* buffer_ptr;
-
-  inline unsigned int Allocate() {
-    return instances_slots.ObtainNumber();
-  };
-  inline void Release(unsigned int number) {
-    instances_slots.ReleaseNumber(number);
-  };
-  inline void Reset() {
-    instances_slots.Reset();
-  };
-};
-
-struct CommandBuffers {
-  CommandBuffer* blinn_phong;
-  //CommandBuffer* stencil;
-  CommandBuffer* font_ui;
-  CommandBuffer* back_ui;
-  //CommandBuffer* overlay_3d;
-  CommandBuffer* bullet_debug;
-};
-
 class GLBuffers {
-  ///////////
-  /// Buffers
-  ///////////
-  // currently all shaders/commands
-  // are using shared vertex/index array,
-  // associated with this VAO
-  GLuint mesh_VAO;
-
+    
   BufferType::BufferTypeFlag used_buffers = 0;
   BufferType::BufferTypeFlag bound_buffers = 0;
 
-  const GLbitfield flags =
-    GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-  GLsync fence_sync = 0;
-  bool is_need_barrier = false;
 public:
-  //////////////////////////
-  // Mapped buffers pointers
-  //////////////////////////
-  BufferSlots<Vertex>* vertex_ptr;
-  BufferSlots<unsigned int>* index_ptr;
-
-  vector<CommandBuffer*> mapped_command_buffers;
-
-  CommandBuffers command_buffers;
+  
   BufferSlots<LightsUniform>* light_ptr;
   BufferNumberPool<GLuint64>* texture_handle_by_texture_id_ptr;
   BufferSlots<UniformDataMesh>* mesh_uniform_ptr;
   BufferSlots<UniformDataOverlay3D>* uniforms_3d_overlay_ptr;
   BufferSlots<UniformDataUI>* uniforms_ui_ptr;
   BufferSlots<ControllerUniformData>* uniforms_controller_ptr;
+  BufferSlots<UniformDataMeshStatic>* mesh_static_uniform_ptr;
 
-  // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
-  void SetSyncBarrier() {
-    is_need_barrier = true;
-  }
   void InitBuffers();
-  void BindVAOandBuffers();
+  void BindBuffers();
   void Dispose();
   void AddUsedBuffers(BufferType::BufferTypeFlag used_buffers);
   void PreDraw();
   void PostDraw();
   void Reset() {
-    fence_sync = 0;
     used_buffers = 0;
-
-    vertex_ptr->Reset();
-    index_ptr->Reset();
-
-    command_buffers.blinn_phong->ptr->Reset();
-    command_buffers.font_ui->ptr->Reset();
-    command_buffers.back_ui->ptr->Reset();
-    command_buffers.bullet_debug->ptr->Reset();
 
     light_ptr->Reset();
     texture_handle_by_texture_id_ptr->Reset();
@@ -147,6 +44,7 @@ public:
     uniforms_3d_overlay_ptr->Reset();
     uniforms_ui_ptr->Reset();
     uniforms_controller_ptr->Reset();
+    mesh_static_uniform_ptr->Reset();
   };
 
   ///////////////GetBufferSlots template//////////////////////////////////
@@ -165,6 +63,11 @@ public:
   inline BufferSlots<UniformDataMesh>* GetBufferSlots<UniformDataMesh, MeshData>()
   {
     return mesh_uniform_ptr;
+  }
+  template<>
+  inline BufferSlots<UniformDataMeshStatic>* GetBufferSlots<UniformDataMeshStatic, MeshDataStatic>()
+  {
+    return mesh_static_uniform_ptr;
   }
   template<>
   inline BufferSlots<UniformDataUI>* GetBufferSlots<UniformDataUI, MeshDataUI>()
@@ -188,6 +91,11 @@ public:
     return mesh_uniform_ptr->buffer_ptr->base_instance_offset;
   };
   template<>
+  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataStatic>()
+  {
+    return mesh_static_uniform_ptr->buffer_ptr->base_instance_offset;
+  };
+  template<>
   inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataUI>()
   {
     return uniforms_ui_ptr->buffer_ptr->base_instance_offset;
@@ -206,6 +114,11 @@ public:
   inline InstancesSlots& GetInstancesSlot<MeshData>()
   {
     return mesh_uniform_ptr->instances_slots;
+  }
+  template<>
+  inline InstancesSlots& GetInstancesSlot<MeshDataStatic>()
+  {
+    return mesh_static_uniform_ptr->instances_slots;
   }
   template<>
   inline InstancesSlots& GetInstancesSlot<MeshDataUI>()
@@ -230,6 +143,11 @@ public:
     return mesh_uniform_ptr->buffer_ptr->transforms;
   }
   template<>
+  inline mat4* GetTransformPtr<mat4, MeshDataStatic>()
+  {
+    return mesh_static_uniform_ptr->buffer_ptr->transforms;
+  }
+  template<>
   inline vec2* GetTransformPtr<vec2, MeshDataUI>()
   {
     return uniforms_ui_ptr->buffer_ptr->transforms;
@@ -249,6 +167,11 @@ public:
   inline unsigned int GetNumCommands<MeshData>()
   {
     return mesh_uniform_ptr->instances_slots.instances_slots.GetUsed();
+  }
+  template<>
+  inline unsigned int GetNumCommands<MeshDataStatic>()
+  {
+    return mesh_static_uniform_ptr->instances_slots.instances_slots.GetUsed();
   }
   template<>
   inline unsigned int GetNumCommands<MeshDataOverlay3D>()
@@ -273,6 +196,11 @@ public:
       = textures;
   };
   template<>
+  inline void BufferTexture<MeshDataStatic, BlendTextures>(BufferInstanceOffset& mesh, BlendTextures& textures) {
+    mesh_static_uniform_ptr->buffer_ptr->blend_textures[mesh.GetInstanceOffset()]
+      = textures;
+  };
+  template<>
   inline void BufferTexture<MeshDataUI, unsigned int>(BufferInstanceOffset& mesh, unsigned int& texture_id) {
     uniforms_ui_ptr->buffer_ptr->texture_id_by_instance_id[mesh.GetInstanceOffset()]
       = texture_id;
@@ -282,29 +210,4 @@ public:
   inline void BufferTexture<MeshDataOverlay3D, unsigned int>(BufferInstanceOffset& mesh, unsigned int& texture_id) {
     throw runtime_error("Not implemented");
   };
-  /////////////////////////////////////////////////
-
-  CommandBuffer* CreateCommandBuffer(unsigned int size);
-private:
-  void _SyncGPUBufAndUnmap();
-  void MapBuffer(CommandBuffer* buf);
-  void MapBuffers();
-  void UnmapBuffers();
-  void UnmapBuffer(CommandBuffer* buf);
-  void _DeleteCommandBuffer(CommandBuffer* command_ptr) {
-    lock_guard<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, command_ptr->ptr->buffer_id);
-    glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
-    DEBUG_EXPR(CheckGLError());
-    delete command_ptr;
-  }
-  void WaitGPU(GLsync fence_sync,
-               const source_location& location = source_location::current());
-  template<typename T>
-  BufferSlots<T>* _CreateBufferStorageSlots(unsigned long num_elements,
-    GLuint array_type,
-    ArenaSlotSize slot_size = ArenaSlotSize::ONE);
-  template<typename T>
-  BufferNumberPool<T>* _CreateBufferStorageNumberPool(unsigned long storage_size,
-    GLuint array_type);
 };

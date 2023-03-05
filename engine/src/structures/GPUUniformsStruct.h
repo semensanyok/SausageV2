@@ -34,21 +34,28 @@ public:
   virtual unsigned long GetInstanceOffset() = 0;
 };
 
-// TODO: maybe??? extract transforms[MAX_MESHES_INSTANCES] to separate SSBO
-//       because, for example, overlay elements are using mat4 transform
-//       so presumably they can use same instance_offset used for mesh draw calls
+#define BLEND_TEXTURES_ALIGNED_TO_16_BYTES(CAPACITY) BlendTextures blend_textures[CAPACITY]; \
+float pad[3];
+
 // some GPU structs resides in other headers, i.e. Light.h
 struct UniformDataMesh {
   mat4 bones_transforms[MAX_BONES]; // aligned to vec4 == 16 bytes
   mat4 transforms[MAX_MESHES_INSTANCES]; // aligned to vec4 == 16 bytes
-  BlendTextures blend_textures[MAX_MESHES_INSTANCES]; // alignment 4 bytes
-  float pad[3];
+  BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_MESHES_INSTANCES);
   unsigned int base_instance_offset[MAX_BASE_MESHES]; // alignment 4 bytes
+  // no padding needed, topmost structure
+};
+
+struct UniformDataMeshStatic {
+  mat4 transforms[MAX_MESHES_STATIC_INSTANCES]; // aligned to vec4 == 16 bytes
+  BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_MESHES_STATIC_INSTANCES);
+  unsigned int base_instance_offset[MAX_BASE_MESHES_STATIC]; // alignment 4 bytes
   // no padding needed, topmost structure
 };
 
 struct UniformDataOverlay3D {
   mat4 transforms[MAX_3D_OVERLAY_INSTANCES];
+  BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_MESHES_INSTANCES);
   unsigned int base_instance_offset[MAX_3D_OVERLAY_COMMANDS];
 };
 
@@ -79,7 +86,13 @@ struct LightsUniform {
 
 namespace BufferSizes {
   const unsigned long VERTEX_STORAGE_SIZE = MAX_VERTEX * sizeof(Vertex);
+  const unsigned long VERTEX_STATIC_STORAGE_SIZE = MAX_VERTEX_STATIC * sizeof(VertexStatic);
+  const unsigned long VERTEX_UI_STORAGE_SIZE = MAX_VERTEX_UI * sizeof(VertexUI);
+
   const unsigned long INDEX_STORAGE_SIZE = MAX_INDEX * sizeof(unsigned int);
+  const unsigned long INDEX_STATIC_STORAGE_SIZE = MAX_INDEX_STATIC * sizeof(unsigned int);
+  const unsigned long INDEX_UI_STORAGE_SIZE = MAX_INDEX_UI * sizeof(unsigned int);
+
   const unsigned long LIGHT_STORAGE_SIZE = MAX_LIGHTS * sizeof(Light);
   ///////////
   // UNIFORMS
@@ -93,4 +106,7 @@ namespace BufferSizes {
   const unsigned long UNIFORM_OVERLAY_3D_STORAGE_SIZE = sizeof(UniformDataOverlay3D);
   const unsigned long UNIFORM_UI_STORAGE_SIZE = sizeof(UniformDataUI);
   const unsigned long UNIFORM_CONTROLLER_SIZE = sizeof(ControllerUniformData);
+
+  const unsigned long VERTEX_OUTLINE_STORAGE_SIZE = MAX_VERTEX_OUTLINE * sizeof(VertexOutline);
+  const unsigned long INDEX_OUTLINE_STORAGE_SIZE = 2 * MAX_INDEX_OUTLINE * sizeof(unsigned int);
 };

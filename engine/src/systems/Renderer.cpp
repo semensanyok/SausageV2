@@ -11,14 +11,18 @@ void Renderer::Render(Camera* camera) {
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+  GPUSynchronizer::GetInstance()->SyncGPU();
   {
     buffer->PreDraw();
+    command_buffer_manager->PreDraw();
+
     for (auto order_shader : draw_calls) {
       if (order_shader.second.empty()) {
         continue;
       }
       {
         DEBUG_EXPR(CheckGLError());
+        vertex_attributes->BindVAO(GetVertexTypeByDrawOrder(order_shader.first));
         for (auto draw : order_shader.second) {
           if (draw->is_enabled && draw->GetCommandCount() > 0) {
             DEBUG_EXPR(CheckGLError());
@@ -35,6 +39,7 @@ void Renderer::Render(Camera* camera) {
       DEBUG_EXPR(CheckGLError());
     }
     buffer->PostDraw();
+    GPUSynchronizer::GetInstance()->PostDraw();
   }
   IF_PROFILE_ENABLED(auto proft3 = chrono::steady_clock::now(););
   Gui::RenderGui(context_manager->window, camera);

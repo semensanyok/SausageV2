@@ -9,6 +9,7 @@
 #include "StateManager.h"
 #include "BufferManager.h"
 #include "ThreadSafeNumberPool.h"
+#include "BufferManager.h"
 
 using namespace std;
 using namespace glm;
@@ -36,8 +37,8 @@ public:
     state_manager{ state_manager },
     mesh_manager{ mesh_manager },
     mesh_data_buffer{ buffer_manager->mesh_data_buffer },
-    anim_id_pool{ new ThreadSafeNumberPool(MAX_MESHES_INSTANCES) },
-    active_anim_id_pool{ new ThreadSafeNumberPool(MAX_MESHES_INSTANCES) }
+    anim_id_pool{ new ThreadSafeNumberPool() },
+    active_anim_id_pool{ new ThreadSafeNumberPool() }
   {};
   ~AnimationManager() {};
   void Reset();

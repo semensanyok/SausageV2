@@ -6,13 +6,13 @@ void OverlayBufferConsumer3D::BufferMeshData(
   vector<unsigned int>& indices,
   vector<vec3>& colors,
   vector<vec2>& uvs,
-  vector<vec3>& glyph_id,
+  vector<uint>& glyph_id,
   vec3 relative_position,
   Texture* font_data) {
-  shared_ptr<MeshLoadData> load_data =
-    mesh_manager->CreateLoadData(vertices, indices, colors, uvs, glyph_id);
+  shared_ptr<MeshLoadData<VertexStatic>> load_data =
+    mesh_manager->CreateLoadData<VertexStatic>(vertices, indices, colors, uvs, glyph_id);
 
-  buffer->BufferMeshData(mesh->slots, load_data);
+  vertex_attributes->BufferVertices(mesh->slots, load_data);
 
   mesh->texture = font_data;
   mesh->texture->MakeResident();

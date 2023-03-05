@@ -18,6 +18,7 @@
 #include <assimp/postprocess.h>
 
 #include <btBulletDynamicsCommon.h>
+#include <BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h>
 
 #include <optional>
 #include <list>
@@ -53,6 +54,9 @@
 
 #include <stdio.h>
 
+// disables calls to 
+//#define NDEBUG
+//#include <assert.h>
 #include <cassert>
 
 #include "Constants.h"

@@ -119,21 +119,29 @@ TODO_999 (far compartment): noise generators must be constant at least for heigh
 TODO ???: dont store thousands of tiles with transform matrices in memory.
           on gen step buffer instances tranforms, noise values and discard - free memory,
                                                               only reside in GPU uniform
+
+
+19/01/2023 yet another revival.
+terrain mesh is consistent. it is split by tiles logically.
+each vert assigned tileId.
+tile = 4 verts.
+to each tileId its slot in blendTextures array.
+
 */
 class TerrainManager
 {
-  MeshDataBufferConsumer* buffer;
+  MeshStaticBufferConsumer* buffer;
   MeshManager* mesh_manager;
   // TEST VALUES
   FastNoise::SmartNode<FastNoise::FractalFBm> fnFractal;
   FastNoise::SmartNode<FastNoise::Simplex> fnSimplex;
-  unordered_map<TileSizeParameters, MeshData*> planes_base_meshes;
+  vector<TerrainChunk*> chunks;
   DrawCallManager* draw_call_manager;
 public:
   TerrainManager(BufferManager* buffer_manager,
     MeshManager* mesh_manager,
     DrawCallManager* draw_call_manager) :
-    buffer{ buffer_manager->mesh_data_buffer },
+    buffer{ buffer_manager->mesh_static_buffer },
     mesh_manager{ mesh_manager },
     draw_call_manager{ draw_call_manager } {
     //FastNoise::SmartNode<FastNoise::Simplex>
@@ -147,7 +155,7 @@ public:
   };
 
   // testing purposes
-  void CreateTerrain();
+  void CreateTerrain(int size_x, int size_y);
 
 private:
 
@@ -156,16 +164,21 @@ private:
     int noise_offset_x,
     int noise_offset_y,
     int size_x,
-    int size_y
+    int size_y,
+    // OUT
+    vector<vec3> vertices,
+    // OUT
+    vector<unsigned int> indices,
+    // OUT
+    vector<vec2> uvs
   );
   void ReleaseBuffer(TerrainChunk* chunk);
   void Deactivate(TerrainChunk* chunk);
-  void Buffer(TerrainChunk* chunk);
-  // each tile is a single instanced draw command
-  // buffered and disabled alltogether.
-  // same size plane is reused between all commands
-  MeshData* GetBasePlane(TerrainChunk* chunk,
-    TerrainTile* tile);
-  MeshDataInstance* CreatePlaneInstance(MeshData* base);
+  void Buffer(TerrainChunk* chunk,
+        vector<vec3> vertices,
+        vector<unsigned int> indices,
+        vector<vec2> uvs,
+        vector<vec3> normals);
+  vector<vec3> GenNormals(vector<vec3> vertices);
   ~TerrainManager() {};
 };

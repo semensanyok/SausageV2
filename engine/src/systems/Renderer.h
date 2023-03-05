@@ -14,6 +14,9 @@
 #include "ImguiGui.h"
 #include "BufferConsumer.h"
 #include "RendererContextManager.h"
+#include "GLCommandBuffers.h"
+#include "GLVertexAttributes.h"
+#include "BufferManager.h"
 
 using namespace std;
 /**
@@ -24,14 +27,21 @@ class Renderer : public SausageSystem {
 private:
   RendererContextManager* context_manager;
   BufferStorage* buffer;
+  CommandBuffersManager* command_buffer_manager;
+  GLVertexAttributes* vertex_attributes;
+
   ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;
 
   map<DrawOrder, unordered_set<DrawCall*>> draw_calls;
 public:
   Renderer(
     RendererContextManager* context_manager,
-        BufferStorage* buffer
-  ) : context_manager{ context_manager }, buffer{ buffer }{};
+    BufferManager* buffer_manager
+  ) :
+    context_manager{ context_manager },
+    buffer{ buffer_manager->storage },
+    command_buffer_manager{ buffer_manager->command_buffer_manager },
+    vertex_attributes{ buffer_manager->vertex_attributes } {};
   ~Renderer() {};
   void Render(Camera* camera);
   void AddGlCommand(function<void()>& f, bool is_persistent);

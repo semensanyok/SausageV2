@@ -20,6 +20,7 @@ public:
   DrawCallManager* draw_call_manager;
   MeshManager* mesh_manager;
   MeshDataBufferConsumer* mesh_data_buffer;
+  MeshStaticBufferConsumer* mesh_static_buffer;
 
   // custom draws per shader
   vector<MeshDataBase*> all_meshes;
@@ -69,7 +70,7 @@ public:
     // need to implement order independent transparency to not touch command buffer each frame
     //_SortByDistance();
 
-    systems_manager->buffer_manager->mesh_data_buffer->BufferLights(draw_lights);
+    systems_manager->buffer_manager->storage->BufferLights(draw_lights);
     CheckGLError();
   }
 
@@ -83,52 +84,55 @@ private:
     _LoadAnimations();
   }
 
-  struct DataWithTex {
-    MaterialTexNames tex_names;
-    shared_ptr<MeshLoadData> data;
-  };
   void _LoadMeshes(string& path) {
-    vector<shared_ptr<MeshLoadData>> load_data_list;
-    vector<MaterialTexNames> tex_names_list;
+    vector<shared_ptr<MeshLoadData<Vertex>>> mesh_load_data_animated;
+    vector<shared_ptr<MeshLoadData<VertexStatic>>> mesh_load_data_static;
+
+    vector<MaterialTexNames> tex_names_list_animated;
+    vector<MaterialTexNames> tex_names_list_static;
 
     systems_manager->mesh_manager->LoadMeshes(path, all_lights,
-      load_data_list, tex_names_list, true, true, true);
+      mesh_load_data_animated, mesh_load_data_static,
+      tex_names_list_animated, tex_names_list_static,
+      true, true, true);
 
     // SetBaseMeshForInstancedCommand
-    unordered_map<size_t, pair<DataWithTex, vector<DataWithTex>>> base_meshes;
+    unordered_map<size_t, pair<MaterialTexNames, vector<shared_ptr<MeshLoadData<Vertex>>>>> base_meshes;
     hash<MaterialTexNames> tex_hash;
-    for (int i = 0; i < load_data_list.size(); i++) {
-      auto load_data_sptr = load_data_list[i];
+    for (int i = 0; i < mesh_load_data_animated.size(); i++) {
+      auto load_data_sptr = mesh_load_data_animated[i];
       auto load_data = load_data_sptr.get();
-      auto tex_names = tex_names_list[i];
+      auto tex_names = tex_names_list_animated[i];
       auto key =
         tex_hash(tex_names)
         + load_data->vertices.size()
         + load_data->indices.size();
 
       if (!base_meshes.contains(key)) {
-        base_meshes[key] = { { tex_names, load_data_sptr }, {} };
+        base_meshes[key] = { tex_names , {} };
       }
       else {
-        base_meshes[key].second.push_back({ tex_names, load_data_sptr });
+        base_meshes[key].second.push_back(load_data_sptr);
       }
     }
     for (auto& mesh_instances : base_meshes) {
-      auto& base_data = mesh_instances.second.first;
+      auto& tex_names = mesh_instances.second.first;
       auto& instances = mesh_instances.second.second;
 
+      auto base_ptr = instances[0];
+      auto base = base_ptr.get();
       // BASE MESH SETUP
-      auto mesh = mesh_manager->CreateMeshData(base_data.data.get());
+      auto mesh = mesh_manager->CreateMeshData<Vertex>(base);
       if (!mesh_data_buffer->AllocateStorage(mesh->slots,
-        base_data.data->vertices.size(), base_data.data->indices.size())) {
+        base->vertices.size(), base->indices.size())) {
         throw runtime_error("Scene1: failed to Allocate");
       }
-      mesh_data_buffer->BufferMeshData(mesh->slots, base_data.data);
+      mesh_data_buffer->BufferVertices(mesh->slots, base_ptr);
       draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, instances.size());
       mesh_data_buffer->BufferTransform(mesh, mesh->transform);
       // TEXTURE SETUP
       {
-        Texture* texture = systems_manager->texture_manager->LoadTextureArray(base_data.tex_names);
+        Texture* texture = systems_manager->texture_manager->LoadTextureArray(tex_names);
         if (texture != nullptr) {
           mesh->textures = { {1.0, texture->id }, 1 };
           systems_manager->buffer_manager->mesh_data_buffer->BufferTexture(
@@ -138,19 +142,19 @@ private:
       }
       // PHYSICS SETUP
       {
-        if (base_data.data->name != "Terrain") {
-          mesh->physics_data = base_data.data->physics_data;
+        if (base->name != "Terrain") {
+          mesh->physics_data = base->physics_data;
           mesh->physics_data->mass = 10.0;
         }
         mesh->physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
         mesh->physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
       }
-      mesh->armature = base_data.data->armature;
+      mesh->armature = base->armature;
       all_meshes.push_back(mesh);
 
       // INSTANCES SETUP  
       for (auto& idata : instances) {
-        MeshDataInstance* instance = draw_call_manager->AddNewInstance<MeshData>(mesh, idata.data->transform);
+        MeshDataInstance* instance = draw_call_manager->AddNewInstance<MeshData>(mesh, base->transform);
         mesh_data_buffer->BufferTransform(instance, instance->transform);
         // TEXTURE SETUP
         mesh_data_buffer->BufferTexture(instance, mesh->textures);

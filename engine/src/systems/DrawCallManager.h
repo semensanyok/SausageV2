@@ -10,6 +10,8 @@
 #include "MeshDataStruct.h"
 #include "MeshManager.h"
 #include "OverlayStruct.h"
+#include "GLCommandBuffers.h"
+#include "BufferManager.h"
 
 using namespace std;
 
@@ -20,12 +22,15 @@ public:
 
   DrawCall* back_ui_dc;
   DrawCall* font_ui_dc;
+  DrawCall* terrain_dc;
 
   //DrawCall* overlay_3d_dc;
 
   DrawCall* physics_debug_dc;
 
   BufferStorage* buffer;
+
+  CommandBuffersManager* command_buffer_manager;
 
   MeshManager* mesh_manager;
 
@@ -39,25 +44,26 @@ public:
   DrawCallManager(
     ShaderManager* shader_manager,
     Renderer* renderer,
-    BufferStorage* buffer,
+    BufferManager* buffer_manager,
     MeshManager* mesh_manager
   ) : renderer{ renderer },
-    buffer{ buffer },
-    mesh_manager{ mesh_manager }
+    buffer{ buffer_manager->storage },
+    mesh_manager{ mesh_manager },
+    command_buffer_manager{ buffer_manager->command_buffer_manager }
   {
     //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
     //    or place shader with dynamic number of meshes at the end
     font_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
-      buffer->gl_buffers->command_buffers.font_ui,
+      command_buffer_manager->command_buffers.font_ui,
       false
     );
 
     back_ui_dc = _CreateDrawCall(
       shader_manager->all_shaders->back_ui,
       GL_TRIANGLES,
-      buffer->gl_buffers->command_buffers.back_ui,
+      command_buffer_manager->command_buffers.back_ui,
       false
     );
 
@@ -71,22 +77,30 @@ public:
     physics_debug_dc = _CreateDrawCall(
       shader_manager->all_shaders->bullet_debug,
       GL_LINES,
-      buffer->gl_buffers->command_buffers.bullet_debug,
+      command_buffer_manager->command_buffers.outline,
       false
     );
 
     mesh_dc = _CreateDrawCall(
       shader_manager->all_shaders->blinn_phong,
       GL_TRIANGLES,
-      buffer->gl_buffers->command_buffers.blinn_phong,
+      command_buffer_manager->command_buffers.blinn_phong,
+      true
+    );
+
+    terrain_dc = _CreateDrawCall(
+      shader_manager->all_shaders->terrain,
+      GL_TRIANGLES,
+      command_buffer_manager->command_buffers.mesh_static,
       true
     );
 
     renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
     //renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
     renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
-    renderer->AddDraw(physics_debug_dc, DrawOrder::PHYS_DEBUG);
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
+    renderer->AddDraw(terrain_dc, DrawOrder::TERRAIN);
+    renderer->AddDraw(physics_debug_dc, DrawOrder::OUTLINE);
   }
 
   /**
@@ -224,7 +238,7 @@ private:
     command.baseVertex = mesh_slots.vertex_slot.offset;
     command.baseInstance = mesh_slots.buffer_id;
 
-    buffer->BufferCommand(dc->command_buffer, command, command_offset);
+    command_buffer_manager->BufferCommand(dc->command_buffer, command, command_offset);
   }
 
   DrawCall* _CreateDrawCall(Shader* shader, GLenum mode, CommandBuffer* command_buffer, bool is_enabled)

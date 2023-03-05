@@ -73,8 +73,10 @@ void MeshManager::Reset() {
 void MeshManager::LoadMeshes(
     const string& file_name,
     vector<Light*>& out_lights,
-    vector<shared_ptr<MeshLoadData>>& out_mesh_load_data,
-    vector<MaterialTexNames>& out_tex_names,
+    vector<shared_ptr<MeshLoadData<Vertex>>>& out_mesh_load_data_animated,
+    vector<shared_ptr<MeshLoadData<VertexStatic>>>& out_mesh_load_data_static,
+    vector<MaterialTexNames>& out_tex_names_animated,
+    vector<MaterialTexNames>& out_tex_names_static,
     bool is_load_armature,
     bool is_load_transform,
     bool is_load_aabb) {
@@ -114,8 +116,21 @@ void MeshManager::LoadMeshes(
       // organized (like relations between nodes).
       aiMesh* mesh = scene->mMeshes[mMeshes_indices[j]];
 
-      auto data_ptr = ProcessMesh(mesh, scene, is_load_armature, is_dae);
-      auto data = data_ptr.get();
+      shared_ptr<MeshLoadDataBase> data_ptr_base;
+      bool is_animated_mesh = is_load_armature && mesh->mNumBones > 0;
+      if (is_animated_mesh) {
+        auto data_ptr = ProcessMesh(mesh, scene);
+        out_mesh_load_data_animated.push_back(data_ptr);
+        data_ptr_base = data_ptr;
+        out_tex_names_animated.push_back(_GetTexNames(mesh, scene, is_obj));
+      }
+      else {
+        auto data_ptr = ProcessMeshStatic(mesh, scene);
+        out_mesh_load_data_static.push_back(data_ptr);
+        data_ptr_base = data_ptr;
+        out_tex_names_static.push_back(_GetTexNames(mesh, scene, is_obj));
+      }
+      auto data = data_ptr_base.get();
       if (is_load_transform) {
         data->transform = transform;
       }
@@ -124,8 +139,7 @@ void MeshManager::LoadMeshes(
           new PhysicsData(FromAi(mesh->mAABB.mMin), FromAi(mesh->mAABB.mMax));
       }
       data->name = string(mesh->mName.C_Str());
-      out_mesh_load_data.push_back(data_ptr);
-      out_tex_names.push_back(_GetTexNames(mesh, scene, is_obj));
+
     }
   }
 
@@ -160,9 +174,23 @@ MeshData* MeshManager::CreateMeshData() {
   all_meshes[mesh->id] = mesh;
   return mesh;
 }
-
-MeshData* MeshManager::CreateMeshData(MeshLoadData* load_data) {
-  auto mesh = new MeshData(mesh_id_pool->ObtainNumber(), load_data);
+MeshDataStatic* MeshManager::CreateMeshDataStatic() {
+  auto mesh = new MeshDataStatic(mesh_id_pool->ObtainNumber());
+  all_meshes[mesh->id] = mesh;
+  return mesh;
+}
+MeshDataOverlay3D* MeshManager::CreateMeshDataFont3D(string& text, mat4& transform) {
+  auto mesh = new MeshDataOverlay3D(mesh_id_pool->ObtainNumber(), text, transform);
+  all_meshes[mesh->id] = mesh;
+  return mesh;
+}
+MeshDataUI* MeshManager::CreateMeshDataFontUI(vec2 transform, Texture* texture) {
+  auto mesh = new MeshDataUI(mesh_id_pool->ObtainNumber(), transform, texture);
+  all_meshes[mesh->id] = mesh;
+  return mesh;
+}
+MeshDataOutline* MeshManager::CreateMeshDataOutline() {
+  auto mesh = new MeshDataOutline(mesh_id_pool->ObtainNumber());
   all_meshes[mesh->id] = mesh;
   return mesh;
 }
@@ -241,87 +269,6 @@ void MeshManager::DeleteMeshDataInstance(MeshDataInstance* mesh) {
   delete mesh;
 }
 
-MeshDataOverlay3D* MeshManager::CreateMeshDataFont3D(string& text, mat4& transform) {
-  auto mesh = new MeshDataOverlay3D(mesh_id_pool->ObtainNumber(), text, transform);
-  all_meshes[mesh->id] = mesh;
-  return mesh;
-}
-
-MeshDataUI* MeshManager::CreateMeshDataFontUI(vec2 transform, Texture* texture) {
-  auto mesh = new MeshDataUI(mesh_id_pool->ObtainNumber(), transform, texture);
-  all_meshes[mesh->id] = mesh;
-  return mesh;
-}
-
-shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<Vertex>& vertices,
-                                                 vector<unsigned int>& indices,
-                                                 Armature* armature) {
-  auto mld_ptr =
-    new MeshLoadData{ vertices, indices, armature, (PhysicsData*)nullptr, string(), mat4(1) };
-  return shared_ptr<MeshLoadData>(mld_ptr);
-}
-
-shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<vec3>& vertices,
-                                                 vector<unsigned int>& indices) {
-  vector<vec3> empty;
-  return CreateLoadData(vertices, indices, empty);
-}
-
-shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<vec3>& vertices,
-                                                 vector<unsigned int>& indices,
-                                                 vector<vec3>& normals) {
-  vector<Vertex> positions;
-  for (int i = 0; i < vertices.size(); i++) {
-    Vertex vert;
-    vert.Position = vertices[i];
-    if (!normals.empty()) {
-      vert.Normal = normals[i];
-    }
-    positions.push_back(vert);
-  }
-  return CreateLoadData(positions, indices, nullptr);
-}
-
-shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<vec3>& vertices,
-                                                 vector<unsigned int>& indices,
-                                                 vector<vec3>& normals,
-                                                 vector<vec2>& uvs) {
-  vector<Vertex> positions;
-  for (int i = 0; i < vertices.size(); i++) {
-    Vertex vert;
-    vert.Position = vertices[i];
-    if (!normals.empty()) {
-      vert.Normal = normals[i];
-    }
-    if (!uvs.empty()) {
-      vert.TexCoords = uvs[i];
-    }
-    positions.push_back(vert);
-  }
-  return CreateLoadData(positions, indices, nullptr);
-}
-
-shared_ptr<MeshLoadData> MeshManager::CreateLoadData(
-    vector<vec3>& vertices, vector<unsigned int>& indices,
-    vector<vec3>& normals, vector<vec2>& uvs, vector<vec3>& tangents) {
-  vector<Vertex> positions;
-  for (int i = 0; i < vertices.size(); i++) {
-    Vertex vert;
-    vert.Position = vertices[i];
-    if (!normals.empty()) {
-      vert.Normal = normals[i];
-    }
-    if (!uvs.empty()) {
-      vert.TexCoords = uvs[i];
-    }
-    if (!tangents.empty()) {
-      vert.Tangent = tangents[i];
-    }
-    positions.push_back(vert);
-  }
-  return CreateLoadData(positions, indices, nullptr);
-}
-
 string MeshManager::GetBoneName(const char* bone,
                                 Armature* armature,
                                 bool is_dae) {
@@ -336,84 +283,97 @@ string MeshManager::GetBoneName(const char* bone,
   return name;
 }
 
-shared_ptr<MeshLoadData> MeshManager::ProcessMesh(aiMesh* mesh,
+shared_ptr<MeshLoadData<Vertex>> MeshManager::ProcessMesh(aiMesh* mesh,
                                                   const aiScene* scene,
-                                                  bool is_load_armature,
                                                   bool is_dae) {
   // data to fill
   vector<Vertex> vertices;
   vector<unsigned int> indices;
-  Bone* bones = is_load_armature ? new Bone[mesh->mNumBones] : nullptr;
+  Bone* bones = new Bone[mesh->mNumBones];
   Armature* armature =
     mesh->mNumBones > 0
-    ? new Armature{ {}, is_load_armature ? mesh->mNumBones : 0, bones }
+    ? new Armature{ {}, mesh->mNumBones, bones }
   : nullptr;
 
   unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>
     vertex_index_to_weights;
-  if (is_load_armature) {
-    for (size_t i = 0; i < mesh->mNumBones; i++) {
-      auto aibone = mesh->mBones[i];
-      auto offset = FromAi(aibone->mOffsetMatrix);
-      if (i == 0) {
-        armature->name = aibone->mArmature->mName.C_Str();
-        if (is_dae) {
-          armature->transform =
-            FromAi(aibone->mArmature->mTransformation.Inverse());
-        }
-        else {
-          armature->transform = FromAi(aibone->mArmature->mTransformation);
-        }
+  for (size_t i = 0; i < mesh->mNumBones; i++) {
+    auto aibone = mesh->mBones[i];
+    auto offset = FromAi(aibone->mOffsetMatrix);
+    if (i == 0) {
+      armature->name = aibone->mArmature->mName.C_Str();
+      if (is_dae) {
+        armature->transform =
+          FromAi(aibone->mArmature->mTransformation.Inverse());
       }
-      auto bone_name = GetBoneName(aibone->mName.C_Str(), armature, is_dae);
-      auto node = _GetBoneNode(armature, aibone->mName.C_Str(), scene, is_dae);
-      auto trans = FromAi(node->mTransformation);
-      bones[i] = CreateBone(bone_name.c_str(), offset, trans);
-      armature->name_to_bone[bones[i].name] = &bones[i];
-      armature->id_to_bone[bones[i].id] = &bones[i];
-      for (int j = 0; j < aibone->mNumWeights; j++) {
-        auto& weight = aibone->mWeights[j];
-        vertex_index_to_weights[weight.mVertexId].insert({ &bones[i], weight });
+      else {
+        armature->transform = FromAi(aibone->mArmature->mTransformation);
       }
     }
-    aiNode* armatureNode;
-    for (size_t i = 0; i < mesh->mNumBones; i++) {
-      auto aibone = mesh->mBones[i];
-      auto node = _GetBoneNode(armature, aibone->mName.C_Str(), scene, is_dae);
-      if (i == 0 && is_dae) {
-        armatureNode = node;
-      }
-      if (node == NULL) {
-        LOG((ostringstream()
-          << "Bone " << string(aibone->mName.C_Str()) << " for armature "
-          << armature->name << " aiNode not found in scene")
+    auto bone_name = GetBoneName(aibone->mName.C_Str(), armature, is_dae);
+    auto node = _GetBoneNode(armature, aibone->mName.C_Str(), scene, is_dae);
+    auto trans = FromAi(node->mTransformation);
+    bones[i] = CreateBone(bone_name.c_str(), offset, trans);
+    armature->name_to_bone[bones[i].name] = &bones[i];
+    armature->id_to_bone[bones[i].id] = &bones[i];
+    for (int j = 0; j < aibone->mNumWeights; j++) {
+      auto& weight = aibone->mWeights[j];
+      vertex_index_to_weights[weight.mVertexId].insert({ &bones[i], weight });
+    }
+  }
+  aiNode* armatureNode;
+  for (size_t i = 0; i < mesh->mNumBones; i++) {
+    auto aibone = mesh->mBones[i];
+    auto node = _GetBoneNode(armature, aibone->mName.C_Str(), scene, is_dae);
+    if (i == 0 && is_dae) {
+      armatureNode = node;
+    }
+    if (node == NULL) {
+      LOG((ostringstream()
+        << "Bone " << string(aibone->mName.C_Str()) << " for armature "
+        << armature->name << " aiNode not found in scene")
+              .str());
+      continue;
+    }
+    if (node->mNumChildren > 0) {
+      auto mBoneNameFixed =
+        GetBoneName(aibone->mName.C_Str(), armature, is_dae);
+      auto bone = armature->name_to_bone.find(mBoneNameFixed);
+      if (bone == armature->name_to_bone.end()) {
+        LOG((ostringstream() << "Bone " << mBoneNameFixed << "for armature"
+          << armature->name << "not found")
                 .str());
         continue;
       }
-      if (node->mNumChildren > 0) {
-        auto mBoneNameFixed =
-          GetBoneName(aibone->mName.C_Str(), armature, is_dae);
-        auto bone = armature->name_to_bone.find(mBoneNameFixed);
-        if (bone == armature->name_to_bone.end()) {
-          LOG((ostringstream() << "Bone " << mBoneNameFixed << "for armature"
-            << armature->name << "not found")
-                  .str());
-          continue;
-        }
-        _SetBoneHierarchy(armature, node, bone->second, is_dae);
-      }
+      _SetBoneHierarchy(armature, node, bone->second, is_dae);
     }
   }
   for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-    _ProcessVertex(mesh, i, vertices, vertex_index_to_weights,
-                   is_load_armature);
+    _ProcessVertex(mesh, i, vertices, vertex_index_to_weights);
   }
   for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
     aiFace face = mesh->mFaces[i];
     for (unsigned int j = 0; j < face.mNumIndices; j++)
       indices.push_back(face.mIndices[j]);
   }
-  return CreateLoadData(vertices, indices, armature);
+  return CreateLoadDataFromVertices(vertices, indices, armature);
+}
+
+shared_ptr<MeshLoadData<VertexStatic>> MeshManager::ProcessMeshStatic(aiMesh* mesh,
+                                                  const aiScene* scene,
+                                                  bool is_dae) {
+  // data to fill
+  vector<VertexStatic> vertices;
+  vector<unsigned int> indices;
+  for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+    _ProcessVertexStatic(mesh, i, vertices);
+  }
+  for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+    aiFace face = mesh->mFaces[i];
+    for (unsigned int j = 0; j < face.mNumIndices; j++)
+      indices.push_back(face.mIndices[j]);
+  }
+  return CreateLoadDataFromVertices(vertices, indices);
 }
 
 aiNode* MeshManager::_GetBoneNode(Armature* armature, const char* bone_name,
@@ -437,8 +397,7 @@ void MeshManager::_IterChildren(aiNode* ainode) {
 void MeshManager::_ProcessVertex(
     aiMesh* mesh, int i, vector<Vertex>& vertices,
     unordered_map<unsigned int, set<pair<Bone*, aiVertexWeight>, weight_comparator>>&
-        vertex_index_to_weights,
-    bool is_load_armature) {
+        vertex_index_to_weights) {
   Vertex vertex;
   vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y,
                      mesh->mVertices[i].z };
@@ -454,11 +413,30 @@ void MeshManager::_ProcessVertex(
                     mesh->mTangents[i].z };
   vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y,
                       mesh->mBitangents[i].z };
-  if (is_load_armature) {
-    _SetVertexBones(vertex, i, vertex_index_to_weights);
-  }
+  _SetVertexBones(vertex, i, vertex_index_to_weights);
   vertices.push_back(vertex);
 }
+
+void MeshManager::_ProcessVertexStatic(
+    aiMesh* mesh, int i, vector<VertexStatic>& vertices) {
+  VertexStatic vertex;
+  vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y,
+                     mesh->mVertices[i].z };
+  if (mesh->HasNormals()) {
+    vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y,
+                     mesh->mNormals[i].z };
+  }
+  vertex.TexCoords =
+    mesh->mTextureCoords[0]
+    ? vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y)
+    : vec2(0, 0);
+  vertex.Tangent = { mesh->mTangents[i].x, mesh->mTangents[i].y,
+                    mesh->mTangents[i].z };
+  vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y,
+                      mesh->mBitangents[i].z };
+  vertices.push_back(vertex);
+}
+
 
 void MeshManager::_SetVertexBones(
     Vertex& vertex, int i,
@@ -568,15 +546,4 @@ void MeshManager::_BlenderPostprocessLights(vector<Light*>& lights) {
     light->color /= denom;
     light->specular /= denom;
   }
-}
-
-shared_ptr<MeshLoadData> MeshManager::CreateLoadData(vector<float>& vertices,
-                                                 vector<unsigned int>& indices) {
-  vector<Vertex> positions;
-  for (int i = 0; i < vertices.size(); i += 3) {
-    Vertex vert;
-    vert.Position = vec3(vertices[i], vertices[i + 1], vertices[i + 2]);
-    positions.push_back(vert);
-  }
-  return CreateLoadData(positions, indices, nullptr);
 }

@@ -7,7 +7,7 @@ using namespace std;
 
 class TerrainCondition {
 public:
-  virtual bool IsPassed(TerrainPixelValues& values);
+  virtual bool IsPassed();
 };
 
 class ValueEvent {

@@ -17,13 +17,17 @@ class   Texture;
 class   Armature;
 class   PhysicsData;
 
-struct MeshLoadData {
-  vector<Vertex> vertices;
-  vector<unsigned int> indices;
+struct MeshLoadDataBase {
   Armature* armature = nullptr;
   PhysicsData* physics_data = nullptr;
   string name;
   mat4 transform;
+};
+
+template <typename VERTEX_TYPE>
+struct MeshLoadData : public MeshLoadDataBase {
+  vector<VERTEX_TYPE> vertices;
+  vector<unsigned int> indices;
 };
 
 // TODO: move parameters, accessed infrequently, to pointer structure. keep only instances slot as not pointer?
@@ -56,6 +60,8 @@ class MeshDataBase : public BufferInstanceOffset
   friend class MeshDataInstance;
   friend class MeshDataUI;
   friend class MeshDataOverlay3D;
+  friend class MeshDataStatic;
+  friend class MeshDataOutline;
 
 public:
   MeshDataSlots slots;
@@ -82,7 +88,7 @@ public:
 
   string name;
   BlendTextures textures;
-  // _t_odo make reusable (hash + search, like in TextureManager.cpp)
+  // _t_odo make reusable
   Armature* armature;
   // _t_odo make reusable
   PhysicsData* physics_data;
@@ -94,7 +100,7 @@ private:
     physics_data{ nullptr },
     is_transparent{ false },
     transform{ mat4(1.0) } {};
-  MeshData(unsigned long id, MeshLoadData* load_data)
+  MeshData(unsigned long id, MeshLoadDataBase* load_data)
     : MeshDataBase(id), textures{ {0, {}} },
     physics_data{ load_data->physics_data },
     armature{ load_data->armature },
@@ -105,8 +111,36 @@ private:
   };
 };
 
-// TODO: refer to this in storage buffer commands, migrate other systems
-// to not store 100's null initialized pointers for each instance
+
+class MeshDataStatic : public MeshDataBase, public SausageUserPointer {
+  friend class MeshManager;
+public:
+
+  mat4 transform;
+  bool is_transparent;
+
+  string name;
+  BlendTextures textures;
+  // _t_odo make reusable
+  PhysicsData* physics_data;
+
+private:
+  MeshDataStatic(unsigned long id)
+    : MeshDataBase(id),
+    textures{ {0, {}} },
+    physics_data{ nullptr },
+    is_transparent{ false },
+    transform{ mat4(1.0) } {};
+  MeshDataStatic(unsigned long id, MeshLoadDataBase* load_data)
+    : MeshDataBase(id), textures{ {0, {}} },
+    physics_data{ load_data->physics_data },
+    name{ load_data->name },
+    transform{ load_data->transform },
+    is_transparent{ false } {};
+  ~MeshDataStatic() {
+  };
+};
+// $ TODO: ??? ____________---------------podnjkascASLDNSADFCKSDFJNWAOLEFNLWEFO-2
 
 /**
  * instance of MeshData
@@ -164,6 +198,17 @@ private:
     MeshDataBase(id),
     texture{ nullptr } {};
   ~MeshDataOverlay3D() {};
+};
+
+
+class MeshDataOutline : public MeshDataBase {
+  friend class MeshManager;
+public:
+  //vec2 transform;
+private:
+  MeshDataOutline(unsigned long id) :
+    MeshDataBase(id) {};
+  ~MeshDataOutline() {};
 };
 
 class MeshDataClickable : public SausageUserPointer {

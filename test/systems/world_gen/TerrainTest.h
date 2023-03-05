@@ -7,7 +7,7 @@ class TerrainTest {
   public:
     void Init() {
       auto tm = SystemsManager::GetInstance()->terrain_manager;
-      tm->CreateTerrain();
+      tm->CreateTerrain(100, 100);
     };
     void PrepareDraws() {
     };

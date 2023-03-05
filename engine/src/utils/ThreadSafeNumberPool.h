@@ -12,7 +12,7 @@ class ThreadSafeNumberPool {
   stack<unsigned int> released_slots;
   mutex mtx;
 public:
-  ThreadSafeNumberPool(unsigned int max_number) :
+  ThreadSafeNumberPool(unsigned int max_number = UINT_MAX) :
     max_number{ max_number },
     allocated{ 0 } {
   };

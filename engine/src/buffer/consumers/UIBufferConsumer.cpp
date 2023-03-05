@@ -3,10 +3,10 @@
 void UIBufferConsumer::BufferMeshData(MeshDataUI* mesh,
     vector<vec3>& vertices, vector<unsigned int>& indices, vector<vec3>& colors,
     vector<vec2>& uvs) {
-  shared_ptr<MeshLoadData> load_data =
-      mesh_manager->CreateLoadData(vertices, indices, colors, uvs);
+  shared_ptr<MeshLoadData<VertexUI>> load_data =
+      mesh_manager->CreateLoadData<VertexUI>(vertices, indices, colors, uvs);
 
-  buffer->BufferMeshData(mesh->slots, load_data);
+  vertex_attributes->BufferVertices(mesh->slots, load_data);
 
   if (mesh->texture) {
     mesh->texture->MakeResident();

@@ -10,26 +10,23 @@
 #include "BufferSettings.h"
 #include "MeshDataStruct.h"
 #include "GPUUniformsStruct.h"
+#include "MeshManager.h"
 
 using namespace std;
 
-class MeshDataBufferConsumer : public BufferConsumer<BlendTextures, MeshData, mat4> {
+class MeshDataBufferConsumer : public BufferConsumer<BlendTextures, MeshData, mat4, Vertex> {
 public:
-  MeshDataBufferConsumer(BufferStorage* buffer) :
-    BufferConsumer(buffer, BufferType::MESH_BUFFERS) {
+  MeshDataBufferConsumer(BufferStorage* buffer,
+    GLVertexAttributes* vertex_attributes,
+    MeshManager* mesh_manager
+  )
+    : BufferConsumer(buffer, vertex_attributes, mesh_manager, BufferType::MESH_BUFFERS) {
   };
   ~MeshDataBufferConsumer() {
   };
-  void BufferMeshData(
-    MeshDataSlots& slots,
-    shared_ptr<MeshLoadData> load_data);
-  void ReleaseInstanceSlot(MeshDataBase* mesh);
-  void Init();
-  void Reset();
-  // implemented in base template
-  //void BufferTransform(BufferInstanceOffset* offset, mat4& transform);
-  void BufferLights(vector<Light*>& lights);
-  // implemented in base template
-  //void BufferTexture(BlendTextures& textures, BufferInstanceOffset& mesh);
   void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms);
+  void ReleaseSlots(MeshDataBase* mesh) override {
+    buffer->ReleaseInstanceSlot<MeshData>(mesh->slots);
+    vertex_attributes->ReleaseStorage<Vertex>(mesh->slots);
+  }
 };

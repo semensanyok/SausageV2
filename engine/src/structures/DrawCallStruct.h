@@ -8,15 +8,51 @@
 #include "ThreadSafeNumberPool.h"
 #include "Macros.h"
 #include "GLBuffers.h"
+#include "Vertex.h"
+#include "GLCommandBuffers.h"
 
 using namespace std;
 
-enum DrawOrder {
-  MESH,
+/**
+ * make sure to group VertexType in contigious series of draws
+ */
+enum class DrawOrder {
+  //VertexType::STATIC
+  TERRAIN,
   OVERLAY_3D,
-  PHYS_DEBUG,
+  //VertexType::MESH
+  MESH,
+  //VERTEX_TYPE::UI
   UI_BACK,
   UI_TEXT,
+  //VertexType::OUTLINE
+  OUTLINE
+};
+
+// TODO: MESH DRAW HAS BOTH - STATIC AND ANIMATED (VertexType::MESH and VertexType::STATIC)
+//       HANDLE IT SOMEHOW
+inline VertexType GetVertexTypeByDrawOrder(DrawOrder draw_order) {
+  switch (draw_order)
+  {
+  case DrawOrder::MESH:
+    // TODO: MESH DRAW HAS BOTH - STATIC AND ANIMATED (VertexType::MESH and VertexType::STATIC)
+//       HANDLE IT SOMEHOW
+    return VertexType::MESH;
+    break;
+  case DrawOrder::OVERLAY_3D:
+  case DrawOrder::TERRAIN:
+    return VertexType::STATIC;
+    break;
+  case DrawOrder::UI_BACK:
+  case DrawOrder::UI_TEXT:
+    return VertexType::UI;
+    break;
+  case DrawOrder::OUTLINE:
+    return VertexType::OUTLINE;
+    break;
+  default:
+    break;
+  }
 };
 
 // MeshDataClass is used to determine which buffer to use to allocate instance_id for shader
