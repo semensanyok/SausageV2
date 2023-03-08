@@ -78,7 +78,7 @@ public:
       BindOutlineVAO();
       break;
     default:
-      LOG(std::format("Error. Unknown vertex type: {}", vertex_type));
+      LOG(std::format("Error. Unknown vertex type"));
       return;
     };
     bound_array = vertex_type;
@@ -216,6 +216,25 @@ public:
     }
     return true;
   };
+  template<>
+  bool AllocateStorage<VertexUI>(
+    MeshDataSlots& out_slots,
+    unsigned long vertices_size,
+    unsigned long indices_size
+  ) {
+    out_slots.vertex_slot = vertex_ui_ptr->instances_slots.Allocate(vertices_size);
+    if (out_slots.vertex_slot == MemorySlots::NULL_SLOT) {
+      LOG("Error RequestStorageSetOffsets vertices slot allocation.");
+      return false;
+    }
+    out_slots.index_slot = index_ui_ptr->instances_slots.Allocate(indices_size);
+    if (out_slots.index_slot == MemorySlots::NULL_SLOT) {
+      vertex_ui_ptr->instances_slots.Release(out_slots.vertex_slot);
+      LOG("Error RequestStorageSetOffsets indices slot allocation.");
+      return false;
+    }
+    return true;
+  };
   //////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////
   template <typename VERTEX_TYPE>
@@ -256,6 +275,18 @@ public:
     memcpy(&vertex_outline_ptr->buffer_ptr[slots.vertex_slot.offset], vertices.data(),
          vertices.size() * vertex_size);
     memcpy(&index_outline_ptr->buffer_ptr[slots.index_slot.offset], indices.data(),
+           indices.size() * sizeof(unsigned int));
+  }
+  template<>
+  void BufferVerticesIndices<VertexUI>(MeshDataSlots& slots,
+                                       vector<VertexUI>& vertices,
+                                       vector<unsigned int>& indices) {
+    int vertex_size = sizeof(VertexUI);
+    // int vertex_size = sizeof(VERTEX_TYPE);
+
+    memcpy(&vertex_ui_ptr->buffer_ptr[slots.vertex_slot.offset], vertices.data(),
+         vertices.size() * vertex_size);
+    memcpy(&index_ui_ptr->buffer_ptr[slots.index_slot.offset], indices.data(),
            indices.size() * sizeof(unsigned int));
   }
   //////////////////////////////////////////////////////////////////////////////////////////////

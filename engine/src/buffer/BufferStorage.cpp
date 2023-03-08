@@ -81,9 +81,7 @@ void BufferStorage::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {
 }
 
 void BufferStorage::PreDraw() {
-  gl_buffers->PreDraw();
 }
 
 void BufferStorage::PostDraw() {
-  gl_buffers->PostDraw();
 }

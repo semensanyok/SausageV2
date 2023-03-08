@@ -123,23 +123,17 @@ private:
       auto base = base_ptr.get();
       // BASE MESH SETUP
       auto mesh = mesh_manager->CreateMeshData<Vertex>(base);
-      if (!mesh_data_buffer->AllocateStorage(mesh->slots,
-        base->vertices.size(), base->indices.size())) {
-        throw runtime_error("Scene1: failed to Allocate");
-      }
-      mesh_data_buffer->BufferVertices(mesh->slots, base_ptr);
-      draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, instances.size());
-      mesh_data_buffer->BufferTransform(mesh, mesh->transform);
       // TEXTURE SETUP
       {
         Texture* texture = systems_manager->texture_manager->LoadTextureArray(tex_names);
         if (texture != nullptr) {
           mesh->textures = { {1.0, texture->id }, 1 };
-          systems_manager->buffer_manager->mesh_data_buffer->BufferTexture(
-              mesh, mesh->textures);
           texture->MakeResident();
         }
       }
+      mesh_data_buffer->BufferMeshData(mesh, base_ptr);
+      draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, instances.size());
+      
       // PHYSICS SETUP
       {
         if (base->name != "Terrain") {
@@ -152,6 +146,7 @@ private:
       mesh->armature = base->armature;
       all_meshes.push_back(mesh);
 
+      // TODO: move INSTANCES SETUP  to BufferConsumer.h
       // INSTANCES SETUP  
       for (auto& idata : instances) {
         MeshDataInstance* instance = draw_call_manager->AddNewInstance<MeshData>(mesh, base->transform);

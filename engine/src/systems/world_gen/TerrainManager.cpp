@@ -2,7 +2,8 @@
 
 void TerrainManager::CreateTerrain(int size_x, int size_y)
 {
-  vector<vec3> vertices(size_x * size_y);
+  vector<vec3> vertices;
+  vertices.reserve(size_x * size_y);
   vector<unsigned int> indices;
   vector<vec2> uvs(size_x * size_y);
 
@@ -11,9 +12,8 @@ void TerrainManager::CreateTerrain(int size_x, int size_y)
     vertices, indices, uvs);
 
   vector<vec3> normals = GenNormals(vertices);
-  auto load_data = mesh_manager->CreateLoadData<VertexStatic>(vertices, indices, normals);
-
-  buffer->BufferVertices(chunk->mesh->slots, load_data);
+  
+  buffer->BufferMeshData(chunk->mesh, vertices, indices, uvs, normals);
 
   draw_call_manager->AddNewCommandToDrawCall<MeshDataStatic>(chunk->mesh, draw_call_manager->terrain_dc, 1);
 }
@@ -28,6 +28,7 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
 {
   const int SIZE = 1;
   TerrainChunk* chunk = new TerrainChunk(size_x, size_y, SIZE, pos);
+  chunk->mesh = mesh_manager->CreateMeshDataStatic();
   fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
 
   // create chunk in local space, use transform matrix to apply offsetX/Y

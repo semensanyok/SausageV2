@@ -33,7 +33,7 @@ namespace BufferType {
     TEXTURE | UI_UNIFORMS | CONTROLLER_UNIFORMS;
 };  // namespace BufferType
 
-void DeleteBuffer(GLenum target, GLuint buffer_id) {
+inline void DeleteBuffer(GLenum target, GLuint buffer_id) {
   glBindBuffer(target, buffer_id);
   glUnmapBuffer(target);
   glDeleteBuffers(1, &buffer_id);

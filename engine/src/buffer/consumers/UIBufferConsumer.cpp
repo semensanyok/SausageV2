@@ -6,7 +6,8 @@ void UIBufferConsumer::BufferMeshData(MeshDataUI* mesh,
   shared_ptr<MeshLoadData<VertexUI>> load_data =
       mesh_manager->CreateLoadData<VertexUI>(vertices, indices, colors, uvs);
 
-  vertex_attributes->BufferVertices(mesh->slots, load_data);
+  AllocateStorage(mesh->slots, vertices.size(), indices.size());
+  BufferVertices(mesh->slots, load_data);
 
   if (mesh->texture) {
     mesh->texture->MakeResident();

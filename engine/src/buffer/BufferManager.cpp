@@ -4,7 +4,9 @@ void BufferManager::Init() {
   storage = BufferStorage::GetInstance();
   storage->Init();
   command_buffer_manager = new CommandBuffersManager();
+  command_buffer_manager->InitBuffers();
   vertex_attributes = new GLVertexAttributes();
+  vertex_attributes->InitVAO();
 
   mesh_data_buffer = new MeshDataBufferConsumer(storage, vertex_attributes, mesh_manager);
   mesh_data_buffer->Init();

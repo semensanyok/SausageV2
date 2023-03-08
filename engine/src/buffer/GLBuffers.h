@@ -33,8 +33,6 @@ public:
   void BindBuffers();
   void Dispose();
   void AddUsedBuffers(BufferType::BufferTypeFlag used_buffers);
-  void PreDraw();
-  void PostDraw();
   void Reset() {
     used_buffers = 0;
 

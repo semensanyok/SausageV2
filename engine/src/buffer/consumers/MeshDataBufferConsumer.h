@@ -29,4 +29,14 @@ public:
     buffer->ReleaseInstanceSlot<MeshData>(mesh->slots);
     vertex_attributes->ReleaseStorage<Vertex>(mesh->slots);
   }
+  void BufferMeshData(MeshData* mesh,
+    shared_ptr<MeshLoadData<Vertex>>& load_data) {
+     
+    AllocateStorage(mesh->slots, load_data->vertices.size(), load_data->indices.size());
+    BufferVertices(mesh->slots, load_data);
+    if (mesh->textures.num_textures > 0) {
+      BufferTexture(mesh, mesh->textures);
+    }
+    BufferTransform(mesh, mesh->transform);
+  }
 };
