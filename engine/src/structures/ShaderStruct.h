@@ -10,6 +10,6 @@ struct Shaders {
   //Shader* stencil;
   Shader* font_ui;
   Shader* back_ui;
-  Shader* terrain;
+  Shader* mesh_static;
   //Shader* overlay_3d;
 };

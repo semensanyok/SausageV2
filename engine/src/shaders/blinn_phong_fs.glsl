@@ -5,11 +5,12 @@
 
 uniform vec3 view_pos;
 out vec4 color;
+{{ uniforms_locations }}
 {{ light_enums }}
 {{ light_constants }}
 {{ texture_layers_offsets }}
-{{ uniforms_locations }}
 {{ mesh_buffers_capacity }}
+{{ blend_textures }}
 {{ mesh_uniforms }}
 
 {{ mesh_fs_in }}

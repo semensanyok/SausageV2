@@ -20,7 +20,7 @@ namespace BufferType {
   const BufferTypeFlag LIGHT = 1 << 3;
   const BufferTypeFlag UI_UNIFORMS = 1 << 4;
   const BufferTypeFlag CONTROLLER_UNIFORMS = 1 << 5;
-  const BufferTypeFlag MESH_STATIC_UNIFORMS = 1;
+  const BufferTypeFlag MESH_STATIC_UNIFORMS = 1 << 6;
 
   // COMPOSITE FLAGS
   const BufferTypeFlag MESH_BUFFERS =

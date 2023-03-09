@@ -19,13 +19,14 @@ using namespace BufferSettings;
 */
 
 namespace UniformsLocations {
-  const int UNIFORMS_LOC = 0;
+  const int MESH_UNIFORMS_LOC = 0;
   const int TEXTURE_LOC = 1;
   const int LIGHTS_UNIFORM_LOC = 2;
   const int FONT_UNIFORMS_LOC = 3;
   const int UI_UNIFORM_LOC = 4;
   const int CONTROLLER_UNIFORM_LOC = 5;
   const int BLEND_TEXTURES_BY_MESH_ID_LOC = 6;
+  const int MESH_STATIC_UNIFORMS_LOC = 7;
 };
 
 class BufferInstanceOffset {
@@ -98,7 +99,7 @@ namespace BufferSizes {
   // UNIFORMS
   ///////////
   const unsigned long MESH_UNIFORMS_STORAGE_SIZE = sizeof(UniformDataMesh);
-  //const unsigned long BLEND_TEXTURES_BY_MESH_ID_SIZE = sizeof(BlendTexturesMeshUniform);
+  const unsigned long MESH_STATIC_UNIFORMS_STORAGE_SIZE = sizeof(UniformDataMeshStatic);
   const unsigned long TRANSFORM_OFFSET_STORAGE_SIZE =
     MAX_MESHES_INSTANCES * sizeof(unsigned int);
   const unsigned long TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE = MAX_TEXTURE * sizeof(GLuint64);

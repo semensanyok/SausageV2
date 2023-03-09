@@ -9,13 +9,13 @@ void ShaderManager::SetupShaders() {
     _RegisterShader("ui_font_vs.glsl", "ui_font_fs.glsl"),
     _RegisterShader("ui_back_vs.glsl", "ui_back_fs.glsl"),
     //_RegisterShader("3d_overlay_vs.glsl", "3d_overlay_fs.glsl"),
-    _RegisterShader("terrain_vs.glsl", "terrain_fs.glsl"),
+    _RegisterShader("static_vs.glsl", "static_fs.glsl"),
   };
   all_shaders->blinn_phong->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
   all_shaders->blinn_phong->SetVec3Uniform(string("view_pos"), &(camera->pos));
 
-  all_shaders->terrain->SetMat4Uniform(string("projection_view"), &(camera->projection_matrix_ortho));
-  all_shaders->terrain->SetVec3Uniform(string("view_pos"), &(camera->pos));
+  all_shaders->mesh_static->SetMat4Uniform(string("projection_view"), &(camera->projection_matrix_ortho));
+  all_shaders->mesh_static->SetVec3Uniform(string("view_pos"), &(camera->pos));
 
   all_shaders->bullet_debug->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
 

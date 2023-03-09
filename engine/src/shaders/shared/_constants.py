@@ -28,15 +28,22 @@ const int SPECULAR_TEX = 2;
   const uint MAX_TEXTURE = 100;
   const uint MAX_BLEND_TEXTURES = 4;
   const uint MAX_LIGHTS = 100;
-""",
+
+  const unsigned long MAX_VERTEX_STATIC = 1000000;
+  const unsigned long MAX_INDEX_STATIC = 2 * MAX_VERTEX_STATIC;
+  const unsigned long MAX_BASE_MESHES_STATIC = 40;
+  const unsigned long MAX_MESHES_STATIC_INSTANCES = MAX_BASE_MESHES_STATIC * 10;
+"""
+,
     "uniforms_locations":
 """
-const uint UNIFORMS_LOC = 0;
-const uint TEXTURE_HANDLE_BY_TEXTURE_ID_ARRAY_LOC = 1;
-const uint LIGHTS_UNIFORM_LOC = 2;
-const uint FONT_UNIFORMS_LOC = 3;
-const uint UI_UNIFORM_LOC = 4;
-const uint CONTROLLER_UNIFORM_LOC = 5;
-const uint BLEND_TEXTURES_BY_MESH_ID_LOC = 6;
+  const int MESH_UNIFORMS_LOC = 0;
+  const int TEXTURE_LOC = 1;
+  const int LIGHTS_UNIFORM_LOC = 2;
+  const int FONT_UNIFORMS_LOC = 3;
+  const int UI_UNIFORM_LOC = 4;
+  const int CONTROLLER_UNIFORM_LOC = 5;
+  const int BLEND_TEXTURES_BY_MESH_ID_LOC = 6;
+  const int MESH_STATIC_UNIFORMS_LOC = 7;
 """
 }

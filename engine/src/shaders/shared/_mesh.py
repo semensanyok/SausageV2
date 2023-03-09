@@ -24,17 +24,7 @@ void SetBlendColor() {
 """,
     "mesh_uniforms": 
 """
-struct TextureBlend {
-  float blend_weight;
-  uint texture_id;
-};
-
-struct BlendTextures {
-  TextureBlend textures[MAX_BLEND_TEXTURES];
-  uint num_textures;
-};
-
-layout (std430, binding = UNIFORMS_LOC) buffer UniformDataMesh
+layout (std430, binding = MESH_UNIFORMS_LOC) buffer UniformDataMesh
 {
     mat4 bones_transforms[MAX_BONES];
     mat4 transforms[MAX_MESHES_INSTANCES];

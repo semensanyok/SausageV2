@@ -89,7 +89,7 @@ public:
     );
 
     terrain_dc = _CreateDrawCall(
-      shader_manager->all_shaders->terrain,
+      shader_manager->all_shaders->mesh_static,
       GL_TRIANGLES,
       command_buffer_manager->command_buffers.mesh_static,
       true
