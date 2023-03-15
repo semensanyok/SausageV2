@@ -26,8 +26,7 @@ using namespace std;
 class Renderer : public SausageSystem {
 private:
   RendererContextManager* context_manager;
-  BufferStorage* buffer;
-  CommandBuffersManager* command_buffer_manager;
+  BufferManager* buffer_manager;
   GLVertexAttributes* vertex_attributes;
 
   ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;
@@ -39,8 +38,7 @@ public:
     BufferManager* buffer_manager
   ) :
     context_manager{ context_manager },
-    buffer{ buffer_manager->storage },
-    command_buffer_manager{ buffer_manager->command_buffer_manager },
+    buffer_manager{ buffer_manager },
     vertex_attributes{ buffer_manager->vertex_attributes } {};
   ~Renderer() {};
   void Render(Camera* camera);

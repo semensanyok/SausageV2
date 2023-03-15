@@ -20,11 +20,11 @@ class UIBufferConsumer : public BufferConsumer<unsigned int, MeshDataUI, vec2, V
   MeshManager* mesh_manager;
 
  public:
-  UIBufferConsumer(BufferStorage* buffer,
+  UIBufferConsumer(
     GLVertexAttributes* vertex_attributes,
     MeshManager* mesh_manager
   )
-    : BufferConsumer(buffer, vertex_attributes, mesh_manager, BufferType::UI_BUFFERS),
+    : BufferConsumer(vertex_attributes, mesh_manager, BufferType::UI_BUFFERS),
         mesh_manager{mesh_manager} {}
   ~UIBufferConsumer() {}
   void BufferMeshData(MeshDataUI* mesh,

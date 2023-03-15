@@ -79,9 +79,3 @@ void BufferStorage::BufferUniformDataController(int mouse_x, int mouse_y, int is
 void BufferStorage::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {
   gl_buffers->AddUsedBuffers(used_buffers);
 }
-
-void BufferStorage::PreDraw() {
-}
-
-void BufferStorage::PostDraw() {
-}

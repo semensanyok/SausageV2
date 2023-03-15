@@ -16,11 +16,11 @@ using namespace glm;
 class OverlayBufferConsumer3D : public BufferConsumer<unsigned int, MeshDataOverlay3D, mat4, VertexStatic> {
 
 public:
-  OverlayBufferConsumer3D(BufferStorage* buffer,
+  OverlayBufferConsumer3D(
     GLVertexAttributes* vertex_attributes,
     MeshManager* mesh_manager
   )
-    : BufferConsumer(buffer, vertex_attributes, mesh_manager, BufferType::UI_BUFFERS) {}
+    : BufferConsumer(vertex_attributes, mesh_manager, BufferType::UI_BUFFERS) {}
   ~OverlayBufferConsumer3D() {}
   void BufferMeshData(MeshDataOverlay3D* mesh,
                       vector<vec3>& vertices,
@@ -32,7 +32,7 @@ public:
                       Texture* font_data);
   void Init();
   void Reset() { Init(); }
-  void ReleaseSlots(MeshDataBase* mesh) override {
+  void ReleaseSlots(MeshDataBase* mesh) {
     buffer->ReleaseInstanceSlot<MeshDataOverlay3D>(mesh->slots);
     vertex_attributes->ReleaseStorage<VertexStatic>(mesh->slots);
   }

@@ -11,18 +11,18 @@
 #include "MeshManager.h"
 #include "OverlayStruct.h"
 #include "GLCommandBuffers.h"
-#include "BufferManager.h"
 
 using namespace std;
 
 class DrawCallManager {
   Renderer* renderer;
 public:
+
   DrawCall* mesh_dc;
 
   DrawCall* back_ui_dc;
   DrawCall* font_ui_dc;
-  DrawCall* terrain_dc;
+  DrawCall* mesh_static_dc;
 
   //DrawCall* overlay_3d_dc;
 
@@ -44,12 +44,12 @@ public:
   DrawCallManager(
     ShaderManager* shader_manager,
     Renderer* renderer,
-    BufferManager* buffer_manager,
+    CommandBuffersManager* command_buffer_manager,
     MeshManager* mesh_manager
   ) : renderer{ renderer },
-    buffer{ buffer_manager->storage },
+    buffer{ BufferStorage::GetInstance() },
     mesh_manager{ mesh_manager },
-    command_buffer_manager{ buffer_manager->command_buffer_manager }
+    command_buffer_manager{ command_buffer_manager }
   {
     //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
     //    or place shader with dynamic number of meshes at the end
@@ -88,7 +88,7 @@ public:
       true
     );
 
-    terrain_dc = _CreateDrawCall(
+    mesh_static_dc = _CreateDrawCall(
       shader_manager->all_shaders->mesh_static,
       GL_TRIANGLES,
       command_buffer_manager->command_buffers.mesh_static,
@@ -99,7 +99,7 @@ public:
     //renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
     renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
-    renderer->AddDraw(terrain_dc, DrawOrder::TERRAIN);
+    renderer->AddDraw(mesh_static_dc, DrawOrder::TERRAIN);
     renderer->AddDraw(physics_debug_dc, DrawOrder::OUTLINE);
   }
 
@@ -195,7 +195,7 @@ public:
     auto& command = command_by_mesh_id[mesh->id];
     auto dc = dc_by_mesh_id[mesh->id];
     bool is_success_slot_alloc = is_alloc_instance_slot ?
-      AllocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count, dc) : true;
+      buffer->TryReallocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count) : true;
     if (is_success_slot_alloc) {
       // to avoid weird situation when count = 0 and used = 1.
       // even that is not used and doesnt affect anything, avoid it
@@ -208,23 +208,6 @@ public:
     return false;
   }
 private:
-
-  template<typename MESH_TYPE>
-  bool AllocateInstanceSlot(MeshDataSlots& mesh_slots,
-    GLuint& new_instance_count,
-    DrawCall* dc)
-  {
-    if (new_instance_count == 0) {
-      buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
-      return true;
-    } else if (new_instance_count <= mesh_slots.instances_slot.count) {
-    // existing slot already fits requested amount
-      return true;
-    } else if (mesh_slots.instances_slot != MemorySlots::NULL_SLOT) {
-      buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
-    }
-    return buffer->AllocateInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count);
-  }
 
   void _SetToCommandWithOffsets(
     DrawElementsIndirectCommand& command,

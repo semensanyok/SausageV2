@@ -169,16 +169,6 @@ Bone MeshManager::CreateBone(string bone_name, mat4& offset, mat4& trans) {
   return { bone_id_pool->ObtainNumber(), bone_name, offset, trans, nullptr, {} };
 }
 
-MeshData* MeshManager::CreateMeshData() {
-  auto mesh = new MeshData(mesh_id_pool->ObtainNumber());
-  all_meshes[mesh->id] = mesh;
-  return mesh;
-}
-MeshDataStatic* MeshManager::CreateMeshDataStatic() {
-  auto mesh = new MeshDataStatic(mesh_id_pool->ObtainNumber());
-  all_meshes[mesh->id] = mesh;
-  return mesh;
-}
 MeshDataOverlay3D* MeshManager::CreateMeshDataFont3D(string& text, mat4& transform) {
   auto mesh = new MeshDataOverlay3D(mesh_id_pool->ObtainNumber(), text, transform);
   all_meshes[mesh->id] = mesh;

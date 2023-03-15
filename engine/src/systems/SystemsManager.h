@@ -22,6 +22,7 @@
 #include "ShaderManager.h"
 #include "TerrainManager.h"
 #include "DrawCallManager.h"
+#include "MeshDataUtils.h"
 
 class SystemsManager
 {
@@ -47,6 +48,7 @@ public:
   BufferManager* buffer_manager = nullptr;
   TerrainManager* terrain_manager = nullptr;
   DrawCallManager* draw_call_manager = nullptr;
+  MeshDataUtils* mesh_data_utils = nullptr;
 
   static SystemsManager* GetInstance() {
     static SystemsManager* instance = new SystemsManager();

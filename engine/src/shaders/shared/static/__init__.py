@@ -11,14 +11,15 @@ parameters = static_mesh.copy()
 
 # vs
 parameters["uniforms_locations"] = constants["uniforms_locations"]
-parameters["mesh_vs_out"] = mesh["mesh_vs_out"];
 parameters["mesh_set_transform"] = mesh["mesh_set_transform"];
 parameters["mesh_set_res_position"] = mesh["mesh_set_res_position"];
 parameters["mesh_set_res_normal"] = mesh["mesh_set_res_normal"];
-parameters["mesh_set_vs_out"] = mesh["mesh_set_vs_out"];
 parameters["mesh_set_gl_Position"] = mesh["mesh_set_gl_Position"];
+# parameters["mesh_vs_out"] = mesh["mesh_vs_out"];
+# parameters["mesh_set_vs_out"] = mesh["mesh_set_vs_out"];
+
 # fs
-parameters["mesh_fs_in"] = mesh["mesh_fs_in"];
+# parameters["mesh_fs_in"] = mesh["mesh_fs_in"];
 
 parameters.update(light)
 parameters.update(texture)

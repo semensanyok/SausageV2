@@ -4,7 +4,7 @@ ControllerEventProcessorEditor::ControllerEventProcessorEditor(
   Camera* camera,
   ScreenOverlayManager* screen_overlay_manager,
   BufferManager* buffer_manager) :
-  ControllerEventProcessor(camera, screen_overlay_manager), buffer_storage{ buffer_manager->storage } {
+  ControllerEventProcessor(camera, screen_overlay_manager) {
 }
 
 ControllerEventProcessorEditor::~ControllerEventProcessorEditor() {
@@ -68,6 +68,6 @@ void ControllerEventProcessorEditor::Update() {
 		camera->MouseMotionCallback(screen_x, screen_y);
 	}
   screen_overlay_manager->OnHover(screen_x, screen_y);
-  buffer_storage->BufferUniformDataController(screen_x, screen_y, (int)is_mouse_left_pressed, (int)is_mouse_left_click);
+  BufferStorage::GetInstance()->BufferUniformDataController(screen_x, screen_y, (int)is_mouse_left_pressed, (int)is_mouse_left_click);
   is_mouse_left_click = false;
 }

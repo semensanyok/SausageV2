@@ -11,32 +11,24 @@
 #include "MeshDataStruct.h"
 #include "GPUUniformsStruct.h"
 #include "MeshManager.h"
+#include "TextureStruct.h"
+#include "TextureManager.h"
+#include "MeshDataBufferConsumerShared.h"
 
 using namespace std;
 
-class MeshDataBufferConsumer : public BufferConsumer<BlendTextures, MeshData, mat4, Vertex> {
+class MeshDataBufferConsumer : public MeshDataBufferConsumerShared<BlendTextures, MeshData, Vertex> {
 public:
-  MeshDataBufferConsumer(BufferStorage* buffer,
+  MeshDataBufferConsumer(
     GLVertexAttributes* vertex_attributes,
-    MeshManager* mesh_manager
+    MeshManager* mesh_manager,
+    TextureManager* texture_manager
   )
-    : BufferConsumer(buffer, vertex_attributes, mesh_manager, BufferType::MESH_BUFFERS) {
+    : MeshDataBufferConsumerShared(vertex_attributes, mesh_manager, texture_manager, BufferType::MESH_BUFFERS) {
   };
   ~MeshDataBufferConsumer() {
   };
-  void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms);
-  void ReleaseSlots(MeshDataBase* mesh) override {
-    buffer->ReleaseInstanceSlot<MeshData>(mesh->slots);
-    vertex_attributes->ReleaseStorage<Vertex>(mesh->slots);
-  }
-  void BufferMeshData(MeshData* mesh,
-    shared_ptr<MeshLoadData<Vertex>>& load_data) {
-     
-    AllocateStorage(mesh->slots, load_data->vertices.size(), load_data->indices.size());
-    BufferVertices(mesh->slots, load_data);
-    if (mesh->textures.num_textures > 0) {
-      BufferTexture(mesh, mesh->textures);
-    }
-    BufferTransform(mesh, mesh->transform);
-  }
+  void BufferBoneTransform(unordered_map<unsigned int, mat4>& bones_transforms) {
+    buffer->BufferBoneTransform(bones_transforms);
+  };
 };

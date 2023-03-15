@@ -5,7 +5,7 @@
 #include "BufferStorage.h"
 #include "MeshDataStruct.h"
 #include "GLVertexAttributes.h"
-
+#include "MeshManager.h"
 
 /**
  * @brief Adapter/Interface to Uniforms/vertex arrays
@@ -22,12 +22,11 @@ public:
 
   BufferType::BufferTypeFlag used_buffers;
   BufferConsumer(
-    BufferStorage* buffer,
     GLVertexAttributes* vertex_attributes,
     MeshManager* mesh_manager,
     BufferType::BufferTypeFlag used_buffers
   ) :
-    buffer{ buffer },
+    buffer{ BufferStorage::GetInstance() },
     vertex_attributes{ vertex_attributes },
     mesh_manager{ mesh_manager },
     used_buffers{ used_buffers }
@@ -43,18 +42,25 @@ public:
     unsigned long indices_size) {
     return vertex_attributes->AllocateStorage<VERTEX_TYPE>(out_slots, vertices_size, indices_size);
   };
+  inline bool AllocateStorage(
+    MeshDataSlots& out_slots,
+    shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
+    return vertex_attributes->AllocateStorage<VERTEX_TYPE>(out_slots,
+      load_data->vertices.size(),
+      load_data->indices.size());
+  };
   bool AllocateInstanceSlot(
     MeshDataSlots& out_slots,
     unsigned long num_instances) {
     return buffer->AllocateInstanceSlot<MESH_TYPE>(out_slots, num_instances);
   }
-  inline void BufferTransform(BufferInstanceOffset* offset, TRANSFORM_TYPE& transform) {
-    buffer->BufferTransform<TRANSFORM_TYPE, MESH_TYPE>(*offset, transform);
+  void BufferTransform(BufferInstanceOffset* offset, TRANSFORM_TYPE& transform) {
+    buffer->BufferTransform<TRANSFORM_TYPE, MESH_TYPE>(offset, transform);
   }
-  inline void BufferTexture(BufferInstanceOffset* mesh, TEXTURE_ARRAY_TYPE& texture) {
-    return buffer->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(*mesh, texture);
+  void BufferTexture(BufferInstanceOffset* mesh, TEXTURE_ARRAY_TYPE& texture) {
+    return buffer->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(mesh, texture);
   }
-  virtual void ReleaseSlots(MeshDataBase* mesh) {
+  void ReleaseSlots(MeshDataBase* mesh) {
     // child override to not try/catch or check nptr
     //buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh->slots);
     //vertex_attributes->ReleaseStorage(mesh->slots);

@@ -63,6 +63,28 @@ public:
     GPUSynchronizer::GetInstance()->SetSyncBarrier();
     return true;
   };
+
+  /**
+   * reallocate instance slot if new_instance_count doesnt fit existing slot
+  */
+  template<typename MESH_TYPE>
+  bool TryReallocateInstanceSlot(MeshDataSlots& mesh_slots,
+    GLuint& new_instance_count)
+  {
+    if (new_instance_count == 0) {
+      ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
+      return true;
+    }
+    else if (new_instance_count <= mesh_slots.instances_slot.count) {
+      // existing slot already fits requested amount
+      return true;
+    }
+    else if (mesh_slots.instances_slot != MemorySlots::NULL_SLOT) {
+      ReleaseInstanceSlot<MESH_TYPE>(mesh_slots);
+    }
+    return AllocateInstanceSlot<MESH_TYPE>(mesh_slots, new_instance_count);
+  }
+
   template<typename MESH_TYPE>
   inline void ReleaseInstanceSlot(MeshDataSlots& out_slots) {
     auto& instances_slots = gl_buffers->GetInstancesSlot<MESH_TYPE>();
@@ -73,17 +95,17 @@ public:
   void BufferLights(vector<Light*>& lights);
 
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
-  inline void BufferTransform(BufferInstanceOffset& mesh, TRANSFORM_TYPE& transform) {
-    gl_buffers->GetTransformPtr<TRANSFORM_TYPE, MESH_TYPE>()[mesh.GetInstanceOffset()] = transform;
+  void BufferTransform(BufferInstanceOffset* mesh, TRANSFORM_TYPE& transform) {
+    gl_buffers->GetTransformPtr<TRANSFORM_TYPE, MESH_TYPE>()[mesh->GetInstanceOffset()] = transform;
     GPUSynchronizer::GetInstance()->SetSyncBarrier();
   };
   template<typename MESH_TYPE>
-  inline unsigned int GetNumCommands() {
+  unsigned int GetNumCommands() {
     return gl_buffers->GetNumCommands<MESH_TYPE>();
   };
 
   template<typename MESH_TYPE, typename TEXTURE_ARRAY_TYPE>
-  inline void BufferTexture(BufferInstanceOffset& mesh, TEXTURE_ARRAY_TYPE& texture) {
+  void BufferTexture(BufferInstanceOffset* mesh, TEXTURE_ARRAY_TYPE& texture) {
     gl_buffers->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(mesh, texture);
   }
 
@@ -97,8 +119,6 @@ public:
 
   void AddUsedBuffers(BufferType::BufferTypeFlag used_buffers);
 
-  void PreDraw();
-  void PostDraw();
 private:
   void _BufferTextureHandle(Texture* texture);
   BufferStorage() :

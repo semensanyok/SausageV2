@@ -10,17 +10,18 @@
 #include <systems/SystemsManager.h>
 #include <systems/TextureManager.h>
 #include <Scene.h>
+#include <MeshDataUtils.h>
 
 using namespace std;
 
 class Scene1 : public Scene {
 public:
   SystemsManager* systems_manager;
-  DrawCall* mesh_dc;
   DrawCallManager* draw_call_manager;
   MeshManager* mesh_manager;
   MeshDataBufferConsumer* mesh_data_buffer;
   MeshStaticBufferConsumer* mesh_static_buffer;
+  MeshDataUtils* mesh_data_utils;
 
   // custom draws per shader
   vector<MeshDataBase*> all_meshes;
@@ -47,9 +48,9 @@ public:
   Scene1()
     : systems_manager{ SystemsManager::GetInstance() },
     draw_call_manager{ systems_manager->draw_call_manager },
-    mesh_dc{ systems_manager->draw_call_manager->mesh_dc },
     mesh_data_buffer{ systems_manager->buffer_manager->mesh_data_buffer },
-    mesh_manager{ systems_manager->mesh_manager }{
+    mesh_manager{ systems_manager->mesh_manager },
+    mesh_data_utils{ systems_manager->mesh_data_utils } {
   }
   ~Scene1() {};
   void Init() override {
@@ -70,7 +71,7 @@ public:
     // need to implement order independent transparency to not touch command buffer each frame
     //_SortByDistance();
 
-    systems_manager->buffer_manager->storage->BufferLights(draw_lights);
+    BufferStorage::GetInstance()->BufferLights(draw_lights);
     CheckGLError();
   }
 
@@ -91,72 +92,30 @@ private:
     vector<MaterialTexNames> tex_names_list_animated;
     vector<MaterialTexNames> tex_names_list_static;
 
-    systems_manager->mesh_manager->LoadMeshes(path, all_lights,
+    mesh_manager->LoadMeshes(path, all_lights,
       mesh_load_data_animated, mesh_load_data_static,
       tex_names_list_animated, tex_names_list_static,
       true, true, true);
 
     // SetBaseMeshForInstancedCommand
-    unordered_map<size_t, pair<MaterialTexNames, vector<shared_ptr<MeshLoadData<Vertex>>>>> base_meshes;
-    hash<MaterialTexNames> tex_hash;
-    for (int i = 0; i < mesh_load_data_animated.size(); i++) {
-      auto load_data_sptr = mesh_load_data_animated[i];
-      auto load_data = load_data_sptr.get();
-      auto tex_names = tex_names_list_animated[i];
-      auto key =
-        tex_hash(tex_names)
-        + load_data->vertices.size()
-        + load_data->indices.size();
-
-      if (!base_meshes.contains(key)) {
-        base_meshes[key] = { tex_names , {} };
-      }
-      else {
-        base_meshes[key].second.push_back(load_data_sptr);
-      }
-    }
-    for (auto& mesh_instances : base_meshes) {
-      auto& tex_names = mesh_instances.second.first;
-      auto& instances = mesh_instances.second.second;
-
-      auto base_ptr = instances[0];
-      auto base = base_ptr.get();
-      // BASE MESH SETUP
-      auto mesh = mesh_manager->CreateMeshData<Vertex>(base);
-      // TEXTURE SETUP
-      {
-        Texture* texture = systems_manager->texture_manager->LoadTextureArray(tex_names);
-        if (texture != nullptr) {
-          mesh->textures = { {1.0, texture->id }, 1 };
-          texture->MakeResident();
-        }
-      }
-      mesh_data_buffer->BufferMeshData(mesh, base_ptr);
-      draw_call_manager->AddNewCommandToDrawCall<MeshData>(mesh, mesh_dc, instances.size());
-      
-      // PHYSICS SETUP
-      {
-        if (base->name != "Terrain") {
-          mesh->physics_data = base->physics_data;
-          mesh->physics_data->mass = 10.0;
-        }
-        mesh->physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
-        mesh->physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
-      }
-      mesh->armature = base->armature;
-      all_meshes.push_back(mesh);
-
-      // TODO: move INSTANCES SETUP  to BufferConsumer.h
-      // INSTANCES SETUP  
-      for (auto& idata : instances) {
-        MeshDataInstance* instance = draw_call_manager->AddNewInstance<MeshData>(mesh, base->transform);
-        mesh_data_buffer->BufferTransform(instance, instance->transform);
-        // TEXTURE SETUP
-        mesh_data_buffer->BufferTexture(instance, mesh->textures);
-      }
-    }
+    SetupInstancedMesh(mesh_load_data_animated, tex_names_list_animated);
+    SetupInstancedMeshStatic(mesh_load_data_static, tex_names_list_static);
     // LIGHTS SETUP
     draw_lights.insert(draw_lights.end(), all_lights.begin(), all_lights.end());
+  }
+
+  void SetupInstancedMeshStatic(std::vector<std::shared_ptr<MeshLoadData<VertexStatic>>>& mesh_load_data_animated,
+    std::vector<MaterialTexNames>& tex_names_list_animated)
+  {
+    auto res = mesh_data_utils->SetupInstancedMesh<MeshDataStatic, VertexStatic, BlendTextures>(draw_call_manager->mesh_static_dc,
+      mesh_load_data_animated, tex_names_list_animated);
+  }
+
+  void SetupInstancedMesh(std::vector<std::shared_ptr<MeshLoadData<Vertex>>>& mesh_load_data_animated,
+    std::vector<MaterialTexNames>& tex_names_list_animated)
+  {
+    auto res = mesh_data_utils->SetupInstancedMeshWithAnim(draw_call_manager->mesh_dc,
+      mesh_load_data_animated, tex_names_list_animated);
   }
 
   void _LoadGui() {

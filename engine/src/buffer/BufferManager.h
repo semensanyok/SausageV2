@@ -12,22 +12,27 @@
 #include "OverlayBufferConsumer3D.h"
 #include "MeshStaticBufferConsumer.h"
 #include "MeshManager.h"
+#include "TextureManager.h"
 ;
 class BufferManager : public SausageSystem {
   MeshManager* mesh_manager = nullptr;
   BulletDebugDrawerBufferConsumer* bullet_debug_drawer_buffer = nullptr;
+  // external systems
+  TextureManager* texture_manager;
 public:
-  BufferStorage* storage = nullptr;
-  CommandBuffersManager* command_buffer_manager;
-  GLVertexAttributes* vertex_attributes;
 
+  // initialized via this class
+  CommandBuffersManager* command_buffer_manager = nullptr;
+  GLVertexAttributes* vertex_attributes = nullptr;
   MeshDataBufferConsumer* mesh_data_buffer = nullptr;
   UIBufferConsumer* ui_buffer = nullptr;
   OverlayBufferConsumer3D* overlay_3d_buffer = nullptr;
   MeshStaticBufferConsumer* mesh_static_buffer = nullptr;
 
-  BufferManager(MeshManager* mesh_manager) :
-    mesh_manager{ mesh_manager } {};
+  BufferManager(MeshManager* mesh_manager,
+    TextureManager* texture_manager) :
+    mesh_manager{ mesh_manager },
+    texture_manager{ texture_manager } {};
   void Init();
   void Reset();
   BulletDebugDrawerBufferConsumer* GetPhysDebugDrawer();
@@ -36,4 +41,12 @@ public:
   //	buffer->Dispose();
   //	delete buffer;
   //}
+
+  void PreDraw() {
+    command_buffer_manager->PreDraw();
+  }
+
+  void PostDraw() {
+    command_buffer_manager->PostDraw();
+  }
 };

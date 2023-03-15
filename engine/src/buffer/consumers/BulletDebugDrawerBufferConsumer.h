@@ -16,11 +16,11 @@ class BulletDebugDrawerBufferConsumer : public BufferConsumer<unsigned int, Mesh
 public:
   MeshDataOutline* mesh = nullptr;
 
-  BulletDebugDrawerBufferConsumer(BufferStorage* buffer,
+  BulletDebugDrawerBufferConsumer(
     GLVertexAttributes* vertex_attributes,
     MeshManager* mesh_manager
   )
-    : BufferConsumer(buffer, vertex_attributes, mesh_manager, BufferType::OUTLINE_BUFFERS) {
+    : BufferConsumer(vertex_attributes, mesh_manager, BufferType::OUTLINE_BUFFERS) {
   };
   ~BulletDebugDrawerBufferConsumer() {
   };
@@ -29,7 +29,7 @@ public:
       vector<vec3>& colors);
   void Init();
   void Reset();
-  void ReleaseSlots(MeshDataBase* mesh) override {
+  void ReleaseSlots(MeshDataBase* mesh) {
     vertex_attributes->ReleaseStorage<VertexOutline>(mesh->slots);
   }
 };

@@ -69,7 +69,7 @@ public:
       BindMeshVAO();
       break;
     case VertexType::STATIC:
-      BindTerrainVAO();
+      BindStaticVAO();
       break;
     case VertexType::UI:
       BindUiVAO();
@@ -90,7 +90,22 @@ public:
     MeshDataSlots& out_slots,
     unsigned long vertices_size,
     unsigned long indices_size
-  );
+  ) {
+    auto vertex_ptr = GetVertexSlots<VERTEX_TYPE>();
+    out_slots.vertex_slot = vertex_ptr->instances_slots.Allocate(vertices_size);
+    if (out_slots.vertex_slot == MemorySlots::NULL_SLOT) {
+      LOG("Error RequestStorageSetOffsets vertices slot allocation.");
+      return false;
+    }
+    auto index_ptr = GetIndexSlots<VERTEX_TYPE>();
+    out_slots.index_slot = index_ptr->instances_slots.Allocate(indices_size);
+    if (out_slots.index_slot == MemorySlots::NULL_SLOT) {
+      vertex_ptr->instances_slots.Release(out_slots.vertex_slot);
+      LOG("Error RequestStorageSetOffsets indices slot allocation.");
+      return false;
+    }
+    return true;
+  };
   template <typename VERTEX_TYPE>
   void BufferVertices(MeshDataSlots& slots,
                       shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
@@ -158,84 +173,7 @@ public:
     index_outline_ptr->instances_slots.Release(out_slots.index_slot);
   };
   //////////////////////////////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  template<>
-  bool AllocateStorage<Vertex>(
-    MeshDataSlots& out_slots,
-    unsigned long vertices_size,
-    unsigned long indices_size
-  ) {
-    out_slots.vertex_slot = vertex_ptr->instances_slots.Allocate(vertices_size);
-    if (out_slots.vertex_slot == MemorySlots::NULL_SLOT) {
-      LOG("Error RequestStorageSetOffsets vertices slot allocation.");
-      return false;
-    }
-    out_slots.index_slot = index_ptr->instances_slots.Allocate(indices_size);
-    if (out_slots.index_slot == MemorySlots::NULL_SLOT) {
-      vertex_ptr->instances_slots.Release(out_slots.vertex_slot);
-      LOG("Error RequestStorageSetOffsets indices slot allocation.");
-      return false;
-    }
-    return true;
-  };
-  template<>
-  bool AllocateStorage<VertexStatic>(
-    MeshDataSlots& out_slots,
-    unsigned long vertices_size,
-    unsigned long indices_size
-  ) {
-    out_slots.vertex_slot = vertex_static_ptr->instances_slots.Allocate(vertices_size);
-    if (out_slots.vertex_slot == MemorySlots::NULL_SLOT) {
-      LOG("Error RequestStorageSetOffsets vertices slot allocation.");
-      return false;
-    }
-    out_slots.index_slot = index_static_ptr->instances_slots.Allocate(indices_size);
-    if (out_slots.index_slot == MemorySlots::NULL_SLOT) {
-      vertex_static_ptr->instances_slots.Release(out_slots.vertex_slot);
-      LOG("Error RequestStorageSetOffsets indices slot allocation.");
-      return false;
-    }
-    return true;
-  };
-  template<>
-  bool AllocateStorage<VertexOutline>(
-    MeshDataSlots& out_slots,
-    unsigned long vertices_size,
-    unsigned long indices_size
-  ) {
-    out_slots.vertex_slot = vertex_outline_ptr->instances_slots.Allocate(vertices_size);
-    if (out_slots.vertex_slot == MemorySlots::NULL_SLOT) {
-      LOG("Error RequestStorageSetOffsets vertices slot allocation.");
-      return false;
-    }
-    out_slots.index_slot = index_outline_ptr->instances_slots.Allocate(indices_size);
-    if (out_slots.index_slot == MemorySlots::NULL_SLOT) {
-      vertex_outline_ptr->instances_slots.Release(out_slots.vertex_slot);
-      LOG("Error RequestStorageSetOffsets indices slot allocation.");
-      return false;
-    }
-    return true;
-  };
-  template<>
-  bool AllocateStorage<VertexUI>(
-    MeshDataSlots& out_slots,
-    unsigned long vertices_size,
-    unsigned long indices_size
-  ) {
-    out_slots.vertex_slot = vertex_ui_ptr->instances_slots.Allocate(vertices_size);
-    if (out_slots.vertex_slot == MemorySlots::NULL_SLOT) {
-      LOG("Error RequestStorageSetOffsets vertices slot allocation.");
-      return false;
-    }
-    out_slots.index_slot = index_ui_ptr->instances_slots.Allocate(indices_size);
-    if (out_slots.index_slot == MemorySlots::NULL_SLOT) {
-      vertex_ui_ptr->instances_slots.Release(out_slots.vertex_slot);
-      LOG("Error RequestStorageSetOffsets indices slot allocation.");
-      return false;
-    }
-    return true;
-  };
-  //////////////////////////////////////////////////////////////////////////////////////////////
+private:
   //////////////////////////////////////////////////////////////////////////////////////////////
   template <typename VERTEX_TYPE>
   void BufferVerticesIndices(MeshDataSlots& slots,
@@ -290,7 +228,29 @@ public:
            indices.size() * sizeof(unsigned int));
   }
   //////////////////////////////////////////////////////////////////////////////////////////////
-private:
+  //////////////////////////////////////////////////////////////////////////////////////////////
+  template<typename VERTEX_TYPE>
+  BufferSlots<VERTEX_TYPE>* GetVertexSlots();
+  template<typename VERTEX_TYPE>
+  BufferSlots<unsigned int>* GetIndexSlots();
+
+  template<>
+  BufferSlots<Vertex>* GetVertexSlots() { return vertex_ptr; }
+  template<>
+  BufferSlots<VertexStatic>* GetVertexSlots() { return vertex_static_ptr; }
+  template<>
+  BufferSlots<VertexOutline>* GetVertexSlots() { return vertex_outline_ptr; }
+  template<>
+  BufferSlots<VertexUI>* GetVertexSlots() { return vertex_ui_ptr; }
+  template<>
+  BufferSlots<unsigned int>* GetIndexSlots<Vertex>() { return index_ptr; }
+  template<>
+  BufferSlots<unsigned int>* GetIndexSlots<VertexStatic>() { return index_static_ptr; }
+  template<>
+  BufferSlots<unsigned int>* GetIndexSlots<VertexOutline>() { return index_outline_ptr; }
+  template<>
+  BufferSlots<unsigned int>* GetIndexSlots<VertexUI>() { return index_ui_ptr; }
+  //////////////////////////////////////////////////////////////////////////////////////////////
 
   void BindOutlineVAO()
   {
@@ -313,7 +273,7 @@ private:
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUI),
       (void*)offsetof(VertexUI, TexCoords));
   }
-  void BindTerrainVAO()
+  void BindStaticVAO()
   {
     glBindVertexArray(static_VAO);
     glEnableVertexAttribArray(0);
@@ -329,6 +289,8 @@ private:
     glEnableVertexAttribArray(4);
     glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
       (void*)offsetof(VertexStatic, Bitangent));
+    glVertexAttribIPointer(5, 3, GL_UNSIGNED_INT, sizeof(VertexStatic),
+      (void*)offsetof(VertexStatic, UniformId));
   }
   void BindMeshVAO()
   {

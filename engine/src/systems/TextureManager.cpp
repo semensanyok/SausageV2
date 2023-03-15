@@ -133,7 +133,7 @@ Texture* TextureManager::CreateTexture(GLuint texture_id, GLuint sampler)
 {
   GLuint64 tex_handle = glGetTextureSamplerHandleARB(texture_id, sampler);
   DEBUG_EXPR(CheckGLError());
-  return buffer->storage->CreateTextureWithBufferSlot(texture_id, tex_handle);
+  return BufferStorage::GetInstance()->CreateTextureWithBufferSlot(texture_id, tex_handle);
 }
 
 void TextureManager::Dispose(Texture* texture)
@@ -143,7 +143,7 @@ void TextureManager::Dispose(Texture* texture)
     if (texture->material_tex_names_hash != nullptr) {
       texture_by_material_tex_names_hash.erase(*(texture->material_tex_names_hash));
     }
-    buffer->storage->ReleaseTexture(texture);
+    BufferStorage::GetInstance()->ReleaseTexture(texture);
   }
 }
 

@@ -64,6 +64,9 @@ public:
   void PreDraw() {
     UnmapBuffers();
   }
+  void PostDraw() {
+    MapBuffers();
+  }
 
   void BufferCommands(
     CommandBuffer* command_ptr,
@@ -111,6 +114,14 @@ private:
     UnmapBuffer(command_buffers.mesh_static);
   }
 
+  void MapBuffers() {
+    MapBuffer(command_buffers.blinn_phong);
+    MapBuffer(command_buffers.font_ui);
+    MapBuffer(command_buffers.back_ui);
+    MapBuffer(command_buffers.outline);
+    MapBuffer(command_buffers.mesh_static);
+  }
+
   void UnmapBuffer(CommandBuffer* buf) {
     lock_guard<mutex> data_lock(buf->buffer_lock->data_mutex);
     if (buf->buffer_lock->is_mapped == false) {
@@ -143,9 +154,13 @@ private:
     }
     // MUST unmap INDIRECT DRAW pointer after buffering. Hence - map on demand.
     buf->ptr->buffer_ptr = (DrawElementsIndirectCommand*)glMapNamedBufferRange(
-      buf->ptr->buffer_id, 0, buf->ptr->instances_slots.instances_slots.GetSize(), GLBuffersCommon::flags);
+      buf->ptr->buffer_id,
+      0,
+      buf->ptr->instances_slots.instances_slots.GetSize() * sizeof(DrawElementsIndirectCommand),
+      GLBuffersCommon::flags);
     buf->buffer_lock->is_mapped = true;
     buf->buffer_lock->is_mapped_cv.notify_all();
+
   }
 
   void Dispose() {

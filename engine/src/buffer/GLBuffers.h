@@ -185,27 +185,27 @@ public:
 
   //////////////BufferBlendTextures template///////////
   template<typename MESH_TYPE, typename TEXTURE_ARRAY_TYPE>
-  void BufferTexture(BufferInstanceOffset& mesh, TEXTURE_ARRAY_TYPE& texture) {
+  void BufferTexture(BufferInstanceOffset* mesh, TEXTURE_ARRAY_TYPE& texture) {
     throw runtime_error("Not implemented");
   }
   template<>
-  inline void BufferTexture<MeshData, BlendTextures>(BufferInstanceOffset& mesh, BlendTextures& textures) {
-    mesh_uniform_ptr->buffer_ptr->blend_textures[mesh.GetInstanceOffset()]
+  inline void BufferTexture<MeshData, BlendTextures>(BufferInstanceOffset* mesh, BlendTextures& textures) {
+    mesh_uniform_ptr->buffer_ptr->blend_textures[mesh->GetInstanceOffset()]
       = textures;
   };
   template<>
-  inline void BufferTexture<MeshDataStatic, BlendTextures>(BufferInstanceOffset& mesh, BlendTextures& textures) {
-    mesh_static_uniform_ptr->buffer_ptr->blend_textures[mesh.GetInstanceOffset()]
+  inline void BufferTexture<MeshDataStatic, BlendTextures>(BufferInstanceOffset* mesh, BlendTextures& textures) {
+    mesh_static_uniform_ptr->buffer_ptr->blend_textures[mesh->GetInstanceOffset()]
       = textures;
   };
   template<>
-  inline void BufferTexture<MeshDataUI, unsigned int>(BufferInstanceOffset& mesh, unsigned int& texture_id) {
-    uniforms_ui_ptr->buffer_ptr->texture_id_by_instance_id[mesh.GetInstanceOffset()]
+  inline void BufferTexture<MeshDataUI, unsigned int>(BufferInstanceOffset* mesh, unsigned int& texture_id) {
+    uniforms_ui_ptr->buffer_ptr->texture_id_by_instance_id[mesh->GetInstanceOffset()]
       = texture_id;
   };
   // TODO: 
   template<>
-  inline void BufferTexture<MeshDataOverlay3D, unsigned int>(BufferInstanceOffset& mesh, unsigned int& texture_id) {
+  inline void BufferTexture<MeshDataOverlay3D, unsigned int>(BufferInstanceOffset* mesh, unsigned int& texture_id) {
     throw runtime_error("Not implemented");
   };
 };

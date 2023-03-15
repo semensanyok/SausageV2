@@ -37,16 +37,16 @@ class MeshManager : public SausageSystem {
     unordered_map<unsigned long, MeshDataInstance*>> instances_by_base_mesh_id;
   vector<Armature*> all_armatures;
   vector<Light*> all_lights;
- public:
-   MeshManager();
-   ~MeshManager();
+public:
+  MeshManager();
+  ~MeshManager();
 
 
   void DeleteMeshData(MeshDataBase* mesh);
   void DeleteMeshDataInstance(MeshDataInstance* mesh);
 
   void Reset();
-  
+
   void LoadMeshes(const string& file_name,
                   vector<Light*>& out_lights,
                   vector<shared_ptr<MeshLoadData<Vertex>>>& out_mesh_load_data_animated,
@@ -58,15 +58,20 @@ class MeshManager : public SausageSystem {
                   bool is_load_armature = false);
 
   Bone CreateBone(string bone_name, mat4& offset, mat4& trans);
-  MeshData* CreateMeshData();
   MeshDataOverlay3D* CreateMeshDataFont3D(string& text, mat4& transform);
   MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr);
-  MeshDataStatic* CreateMeshDataStatic();
   MeshDataOutline* CreateMeshDataOutline();
 
-  template<typename VERTEX_TYPE>
-  MeshData* CreateMeshData(MeshLoadData<VERTEX_TYPE>* load_data) {
-    auto mesh = new MeshData(mesh_id_pool->ObtainNumber(), load_data);
+  template<typename MESH_TYPE>
+  MESH_TYPE* CreateMeshData() {
+    auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber());
+    all_meshes[mesh->id] = mesh;
+    return mesh;
+  }
+
+  template<typename VERTEX_TYPE, typename MESH_TYPE>
+  MESH_TYPE* CreateMeshData(MeshLoadData<VERTEX_TYPE>* load_data) {
+    auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber(), load_data);
     all_meshes[mesh->id] = mesh;
     return mesh;
   };

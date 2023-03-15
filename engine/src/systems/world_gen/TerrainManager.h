@@ -166,19 +166,14 @@ private:
     int size_x,
     int size_y,
     // OUT
-    vector<vec3> vertices,
+    vector<vec3>& vertices,
     // OUT
-    vector<unsigned int> indices,
+    vector<unsigned int>& indices,
     // OUT
-    vector<vec2> uvs
+    vector<vec2>& uvs
   );
   void ReleaseBuffer(TerrainChunk* chunk);
   void Deactivate(TerrainChunk* chunk);
-  void Buffer(TerrainChunk* chunk,
-        vector<vec3> vertices,
-        vector<unsigned int> indices,
-        vector<vec2> uvs,
-        vector<vec3> normals);
   vector<vec3> GenNormals(vector<vec3> vertices);
   ~TerrainManager() {};
 };
