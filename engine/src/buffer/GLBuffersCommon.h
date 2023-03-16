@@ -42,6 +42,7 @@ inline void DeleteBuffer(GLenum target, GLuint buffer_id) {
 
 template<typename T>
 BufferSlots<T>* CreateBufferSlots(unsigned long storage_size,
+  unsigned long max_arena_slots,
   GLuint array_type,
   ArenaSlotSize slot_size = ArenaSlotSize::ONE) {
   GLuint buffer_id;
@@ -51,17 +52,18 @@ BufferSlots<T>* CreateBufferSlots(unsigned long storage_size,
   T* buffer_ptr = (T*)glMapBufferRange(array_type, 0,
     storage_size, flags);
   // TODO: test correctness and adjust if necessary
-  return new BufferSlots{ {Arena({ 0, storage_size / sizeof(T), 0}, slot_size)}, buffer_id , buffer_ptr};
+  return new BufferSlots{ {Arena({ 0, max_arena_slots, 0}, slot_size)}, buffer_id , buffer_ptr };
 }
 
 template<typename T>
 BufferNumberPool<T>* CreateBufferStorageNumberPool(unsigned long storage_size,
-    GLuint array_type) {
+  unsigned long max_number,
+  GLuint array_type) {
   GLuint buffer_id;
   glGenBuffers(1, &buffer_id);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
   glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, storage_size, NULL, flags);
   T* buffer_ptr = (T*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0,
     storage_size, flags);
-  return new BufferNumberPool{ ThreadSafeNumberPool(storage_size), buffer_id , buffer_ptr };
+  return new BufferNumberPool{ ThreadSafeNumberPool(max_number), buffer_id , buffer_ptr };
 }

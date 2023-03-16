@@ -100,7 +100,7 @@ private:
   void Allocate(MeshDataSlots& out_slots, unsigned int instances_count) {
     MemorySlot command_buffer_slot = command_buffer->ptr->instances_slots.Allocate(instances_count);
     out_slots.buffer_id = command_buffer_slot.offset;
-    DEBUG_ASSERT(out_slots.IsBufferIdAllocated());
+    assert(out_slots.IsBufferIdAllocated());
   }
   void Release(MeshDataSlots& out_slots) {
     MemorySlot to_release = { out_slots.buffer_id, 1 };

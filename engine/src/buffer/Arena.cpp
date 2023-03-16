@@ -45,7 +45,7 @@ MemorySlot Arena::Allocate(const unsigned int size) {
 
 void Arena::Release(MemorySlot slot) {
   lock_guard l(mtx);
-  DEBUG_ASSERT(slot.offset + slot.count <= allocated);
+  assert(slot.offset + slot.count <= allocated);
   if (slot.offset + slot.count == allocated) {
     allocated -= slot.count;
     return;

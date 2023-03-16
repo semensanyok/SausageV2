@@ -43,17 +43,17 @@ public:
     glGenVertexArrays(1, &ui_VAO);
     glGenVertexArrays(1, &outline_VAO);
 
-    vertex_ptr = CreateBufferSlots<Vertex>(VERTEX_STORAGE_SIZE, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
-    index_ptr = CreateBufferSlots<unsigned int>(INDEX_STORAGE_SIZE, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    vertex_ptr = CreateBufferSlots<Vertex>(VERTEX_STORAGE_SIZE, MAX_VERTEX, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    index_ptr = CreateBufferSlots<unsigned int>(INDEX_STORAGE_SIZE, MAX_INDEX, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
 
-    vertex_static_ptr = CreateBufferSlots<VertexStatic>(VERTEX_STATIC_STORAGE_SIZE, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
-    index_static_ptr = CreateBufferSlots<unsigned int>(INDEX_STATIC_STORAGE_SIZE, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    vertex_static_ptr = CreateBufferSlots<VertexStatic>(VERTEX_STATIC_STORAGE_SIZE, MAX_VERTEX_STATIC, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    index_static_ptr = CreateBufferSlots<unsigned int>(INDEX_STATIC_STORAGE_SIZE, MAX_INDEX_STATIC, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
 
-    vertex_ui_ptr = CreateBufferSlots<VertexUI>(VERTEX_UI_STORAGE_SIZE, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
-    index_ui_ptr = CreateBufferSlots<unsigned int>(INDEX_UI_STORAGE_SIZE, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    vertex_ui_ptr = CreateBufferSlots<VertexUI>(VERTEX_UI_STORAGE_SIZE, MAX_VERTEX_UI, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    index_ui_ptr = CreateBufferSlots<unsigned int>(INDEX_UI_STORAGE_SIZE, MAX_INDEX_UI, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
 
-    vertex_outline_ptr = CreateBufferSlots<VertexOutline>(VERTEX_OUTLINE_STORAGE_SIZE, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
-    index_outline_ptr = CreateBufferSlots<unsigned int>(INDEX_OUTLINE_STORAGE_SIZE, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    vertex_outline_ptr = CreateBufferSlots<VertexOutline>(VERTEX_OUTLINE_STORAGE_SIZE, MAX_VERTEX_OUTLINE, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    index_outline_ptr = CreateBufferSlots<unsigned int>(INDEX_OUTLINE_STORAGE_SIZE, MAX_INDEX_OUTLINE, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
     DEBUG_EXPR(CheckGLError());
   };
 
@@ -111,10 +111,10 @@ public:
                       shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
     auto mesh_data = load_data.get();
     // storage must be allocated at this point (via AllocateStorage)
-    DEBUG_ASSERT(slots.index_slot.count > 0);
-    DEBUG_ASSERT(slots.vertex_slot.count > 0);
-    DEBUG_ASSERT(slots.index_slot.count >= mesh_data->indices.size());
-    DEBUG_ASSERT(slots.vertex_slot.count >= mesh_data->vertices.size());
+    assert("AllocateStorage was not called", slots.index_slot.count > 0);
+    assert("AllocateStorage was not called", slots.vertex_slot.count > 0);
+    assert("AllocateStorage was not called", slots.index_slot.count >= mesh_data->indices.size());
+    assert("AllocateStorage was not called", slots.vertex_slot.count >= mesh_data->vertices.size());
 
     auto& vertices = mesh_data->vertices;
     auto& indices = mesh_data->indices;

@@ -95,7 +95,8 @@ private:
     auto size = sizeof(DrawElementsIndirectCommand) * num_commands;
     CommandBuffer* command_ptr = new CommandBuffer{};
     command_ptr->ptr = CreateBufferSlots<DrawElementsIndirectCommand>(size,
-      GL_SHADER_STORAGE_BUFFER,
+      num_commands,
+      GL_DRAW_INDIRECT_BUFFER,
       //ArenaSlotSize::FOUR
       ArenaSlotSize::ONE
       );

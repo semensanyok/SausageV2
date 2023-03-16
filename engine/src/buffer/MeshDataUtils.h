@@ -85,6 +85,7 @@ public:
           texture->MakeResident();
         }
       }
+      vertex_attributes->AllocateStorage<VERTEX_TYPE>(mesh->slots, base_ptr->vertices.size(), base_ptr->indices.size());
       vertex_attributes->BufferVertices<VERTEX_TYPE>(mesh->slots, base_ptr);
       draw_call_manager->AddNewCommandToDrawCall<MESH_TYPE>(mesh, dc, instances.size());
 

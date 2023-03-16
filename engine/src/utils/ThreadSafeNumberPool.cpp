@@ -3,7 +3,7 @@
 unsigned int ThreadSafeNumberPool::ObtainNumber()
 {
   lock_guard l(mtx);
-  DEBUG_ASSERT(allocated < max_number);
+  assert(allocated < max_number);
   if (!released_slots.empty()) {
     auto res = released_slots.top();
     released_slots.pop();
@@ -15,8 +15,8 @@ unsigned int ThreadSafeNumberPool::ObtainNumber()
 void ThreadSafeNumberPool::ReleaseNumber(unsigned int number)
 {
   lock_guard l(mtx);
-  DEBUG_ASSERT(number > 0);
-  DEBUG_ASSERT(number < max_number);
+  assert(number > 0);
+  assert(number < max_number);
   if (number == allocated - 1) {
     allocated--;
   }

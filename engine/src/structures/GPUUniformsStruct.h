@@ -56,7 +56,7 @@ struct UniformDataMeshStatic {
 
 struct UniformDataOverlay3D {
   mat4 transforms[MAX_3D_OVERLAY_INSTANCES];
-  BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_MESHES_INSTANCES);
+  BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_3D_OVERLAY_INSTANCES);
   unsigned int base_instance_offset[MAX_3D_OVERLAY_COMMANDS];
 };
 

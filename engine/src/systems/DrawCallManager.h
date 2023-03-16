@@ -121,8 +121,8 @@ public:
     bool is_alloc_instance_slot = true
   ) {
     lock_guard l(dc->mtx);
-    DEBUG_ASSERT(!dc_by_mesh_id.contains(mesh->id));
-    DEBUG_ASSERT(!command_by_mesh_id.contains(mesh->id));
+    assert(!dc_by_mesh_id.contains(mesh->id));
+    assert(!command_by_mesh_id.contains(mesh->id));
     DrawElementsIndirectCommand& command = command_by_mesh_id[mesh->id];
     dc->Allocate(mesh->slots, 1);
     dc_by_mesh_id[mesh->id] = dc;
@@ -133,7 +133,7 @@ public:
   MeshDataInstance* AddNewInstance(MeshDataBase* mesh,
     mat4& transform,
     bool is_alloc_instance_slot = true) {
-    DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
+    assert(command_by_mesh_id.contains(mesh->id));
     auto& command = command_by_mesh_id[mesh->id];
     //auto instance_id = command.instanceCount - 1;
     // start with 1 because 0 is reserved for base mesh
@@ -190,8 +190,8 @@ public:
   bool SetToCommandWithOffsets(MeshDataBase* mesh,
     GLuint instance_count,
     bool is_alloc_instance_slot = true) {
-    DEBUG_ASSERT(command_by_mesh_id.contains(mesh->id));
-    DEBUG_ASSERT(dc_by_mesh_id.contains(mesh->id));
+    assert(command_by_mesh_id.contains(mesh->id));
+    assert(dc_by_mesh_id.contains(mesh->id));
     auto& command = command_by_mesh_id[mesh->id];
     auto dc = dc_by_mesh_id[mesh->id];
     bool is_success_slot_alloc = is_alloc_instance_slot ?
