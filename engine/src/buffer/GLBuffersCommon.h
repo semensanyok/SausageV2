@@ -44,7 +44,7 @@ template<typename T>
 BufferSlots<T>* CreateBufferSlots(unsigned long storage_size,
   unsigned long max_arena_slots,
   GLuint array_type,
-  ArenaSlotSize slot_size = ArenaSlotSize::ONE) {
+  ArenaSlotSize slot_size) {
   GLuint buffer_id;
   glGenBuffers(1, &buffer_id);
   glBindBuffer(array_type, buffer_id);
@@ -52,7 +52,7 @@ BufferSlots<T>* CreateBufferSlots(unsigned long storage_size,
   T* buffer_ptr = (T*)glMapBufferRange(array_type, 0,
     storage_size, flags);
   // TODO: test correctness and adjust if necessary
-  return new BufferSlots{ {Arena({ 0, max_arena_slots, 0}, slot_size)}, buffer_id , buffer_ptr };
+  return new BufferSlots<T>{ {Arena({ 0, max_arena_slots, 0}, slot_size)}, buffer_id , buffer_ptr };
 }
 
 template<typename T>

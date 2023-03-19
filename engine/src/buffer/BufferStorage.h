@@ -51,10 +51,9 @@ public:
       unsigned long num_instances
   ) {
     unsigned int* base_instance_offset_ptr = gl_buffers->GetBufferSlotsBaseInstanceOffset<MESH_TYPE>();
-    InstancesSlots& instances_slot = gl_buffers->GetInstancesSlot<MESH_TYPE>();
+    out_slots.instances_slot = gl_buffers->GetInstancesSlot<MESH_TYPE>().Allocate(num_instances);
     // because buffer id must be initialized before this call. (currently in DrawCall)
     assert(out_slots.IsBufferIdAllocated());
-    out_slots.instances_slot = instances_slot.Allocate(num_instances);
     if (out_slots.instances_slot == MemorySlots::NULL_SLOT) {
       LOG("Error _AllocateInstanceSlot.");
       return false;
@@ -66,6 +65,8 @@ public:
 
   /**
    * reallocate instance slot if new_instance_count doesnt fit existing slot
+   * --- @return if slot changed
+   * +++ @return if slot allocated successfully
   */
   template<typename MESH_TYPE>
   bool TryReallocateInstanceSlot(MeshDataSlots& mesh_slots,
@@ -96,6 +97,7 @@ public:
 
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
   void BufferTransform(BufferInstanceOffset* mesh, TRANSFORM_TYPE& transform) {
+    assert(mesh->IsInstanceOffsetAllocated());
     gl_buffers->GetTransformPtr<TRANSFORM_TYPE, MESH_TYPE>()[mesh->GetInstanceOffset()] = transform;
     GPUSynchronizer::GetInstance()->SetSyncBarrier();
   };
@@ -106,6 +108,7 @@ public:
 
   template<typename MESH_TYPE, typename TEXTURE_ARRAY_TYPE>
   void BufferTexture(BufferInstanceOffset* mesh, TEXTURE_ARRAY_TYPE& texture) {
+    assert(mesh->IsInstanceOffsetAllocated());
     gl_buffers->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(mesh, texture);
   }
 

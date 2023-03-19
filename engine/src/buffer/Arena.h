@@ -22,6 +22,15 @@ struct MemorySlot {
   // to correctly setup DrawElementsIndirectCommand.count
   // i.e. when allocated 64 slot but actual indices used == 36
   unsigned long used;
+
+  //vector<MemorySlot> Split(unsigned long used_per_instance) {
+  //  assert(used % used_per_instance == 0);
+  //  vector<MemorySlot> res = {};
+  //  for (int i = 0; i < used; i += used_per_instance) {
+  //    res.push_back({offset + i, used_per_instance, used_per_});
+  //  }
+  //  return res;
+  //}
 };
 
 namespace MemorySlots {

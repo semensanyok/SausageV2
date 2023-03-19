@@ -7,6 +7,7 @@
 #include "MeshManager.h"
 #include "AnimationStruct.h"
 #include "GLVertexAttributes.h"
+#include "MeshDataBufferConsumerShared.h"
 
 using namespace std;
 
@@ -15,25 +16,34 @@ class MeshDataUtils {
   DrawCallManager* draw_call_manager;
   TextureManager* texture_manager;
   MeshManager* mesh_manager;
-  BufferStorage* buffer_storage;
-  GLVertexAttributes* vertex_attributes;
+  BufferManager* buffer_manager;
 public:
   MeshDataUtils(
     DrawCallManager* draw_call_manager,
     TextureManager* texture_manager,
     MeshManager* mesh_manager,
-    GLVertexAttributes* vertex_attributes
+    BufferManager* buffer_manager
   ) : draw_call_manager{ draw_call_manager },
     texture_manager{ texture_manager },
     mesh_manager{ mesh_manager },
-    vertex_attributes{ vertex_attributes },
-    buffer_storage{ BufferStorage::GetInstance() } {};
+    buffer_manager{ buffer_manager } {};
 
   template<typename MESH_TYPE, typename VERTEX_TYPE>
   struct SetupInstancedMeshRes {
     shared_ptr<MeshLoadData<VERTEX_TYPE>> load_data;
     MESH_TYPE* mesh;
     vector<MeshDataInstance*> instances;
+  };
+
+  template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
+  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* GetBuffer();
+  template<>
+  MeshDataBufferConsumerShared<BlendTextures, MeshData, Vertex>* GetBuffer() {
+    return buffer_manager->mesh_data_buffer;
+  };
+  template<>
+  MeshDataBufferConsumerShared<BlendTextures, MeshDataStatic, VertexStatic>* GetBuffer() {
+    return buffer_manager->mesh_static_buffer;
   };
 
   /**
@@ -58,7 +68,7 @@ public:
         + load_data->indices.size();
 
       if (!base_meshes.contains(key)) {
-        base_meshes[key] = { tex_names ,{} };
+        base_meshes[key] = { tex_names ,{ load_data_sptr } };
       }
       else {
         base_meshes[key].second.push_back(load_data_sptr);
@@ -67,9 +77,6 @@ public:
     for (auto& mesh_instances : base_meshes) {
       auto& tex_names = mesh_instances.second.first;
       auto& instances = mesh_instances.second.second;
-      if (instances.empty()) {
-        continue;
-      }
 
       shared_ptr<MeshLoadData<VERTEX_TYPE>>& base_ptr = instances[0];
       auto base = base_ptr.get();
@@ -85,9 +92,13 @@ public:
           texture->MakeResident();
         }
       }
-      vertex_attributes->AllocateStorage<VERTEX_TYPE>(mesh->slots, base_ptr->vertices.size(), base_ptr->indices.size());
-      vertex_attributes->BufferVertices<VERTEX_TYPE>(mesh->slots, base_ptr);
+      auto mesh_data_buffer_consumer = GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>();
+      if (!mesh_data_buffer_consumer->AllocateStorage(mesh->slots, base_ptr->vertices.size(), base_ptr->indices.size())) {
+        // logged in vertex_attributes AllocateStorage
+        continue;
+      };
       draw_call_manager->AddNewCommandToDrawCall<MESH_TYPE>(mesh, dc, instances.size());
+      mesh_data_buffer_consumer->BufferMeshData(mesh, base_ptr, instances.size());
 
       // PHYSICS SETUP
       {
@@ -100,11 +111,12 @@ public:
       }
 
       // INSTANCES SETUP
-      for (shared_ptr<MeshLoadData<VERTEX_TYPE>>& idata : instances) {
+      for (int i = 1; i < instances.size(); i++) {
+        shared_ptr<MeshLoadData<VERTEX_TYPE>>& idata = instances[i];
+        // already have set correct instance_count, no need to update (via AddNewCommandToDrawCall<MESH_TYPE>(mesh, dc, instances.size()))
         MeshDataInstance* mesh_instance = draw_call_manager->AddNewInstance<MESH_TYPE>(mesh, idata->transform);
-        buffer_storage->BufferTransform<mat4, MESH_TYPE>(mesh_instance, mesh_instance->transform);
-        // TEXTURE SETUP
-        buffer_storage->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(mesh_instance, mesh->textures);
+        mesh_data_buffer_consumer->BufferMeshDataInstance(mesh_instance, mesh->textures);
+        mesh_data_buffer_consumer->BufferTexture(mesh_instance, mesh->textures);
         mesh_res.instances.push_back(mesh_instance);
       }
     }

@@ -69,6 +69,9 @@ public:
   inline unsigned long GetInstanceOffset() override {
     return slots.instances_slot.offset;
   }
+  inline bool IsInstanceOffsetAllocated() override {
+    return slots.instances_slot != MemorySlots::NULL_SLOT;
+  }
 private:
   MeshDataBase(unsigned long id)
     : slots{ MeshDataSlots() }, id{ id }
@@ -159,6 +162,9 @@ public:
   const MeshDataBase* base_mesh;
   inline unsigned long GetInstanceOffset() override {
     return base_mesh->slots.instances_slot.offset + instance_id;
+  }
+  inline bool IsInstanceOffsetAllocated() override {
+    return base_mesh->slots.instances_slot != MemorySlots::NULL_SLOT;
   }
 private:
   MeshDataInstance(mat4& transform, long instance_id, MeshDataBase* base_mesh) :

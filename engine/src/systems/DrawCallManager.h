@@ -99,7 +99,7 @@ public:
     //renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
     renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
-    renderer->AddDraw(mesh_static_dc, DrawOrder::TERRAIN);
+    renderer->AddDraw(mesh_static_dc, DrawOrder::MESH_STATIC);
     renderer->AddDraw(physics_debug_dc, DrawOrder::OUTLINE);
   }
 
@@ -196,7 +196,8 @@ public:
     auto dc = dc_by_mesh_id[mesh->id];
     bool is_success_slot_alloc = is_alloc_instance_slot ?
       buffer->TryReallocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count) : true;
-    if (is_success_slot_alloc) {
+    bool is_need_buffer_update = is_success_slot_alloc;
+    if (is_need_buffer_update) {
       // to avoid weird situation when count = 0 and used = 1.
       // even that is not used and doesnt affect anything, avoid it
       if (is_alloc_instance_slot) {

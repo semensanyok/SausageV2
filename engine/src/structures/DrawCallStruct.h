@@ -18,10 +18,10 @@ using namespace std;
  */
 enum class DrawOrder {
   //VertexType::STATIC
-  TERRAIN,
-  OVERLAY_3D,
+  MESH_STATIC,
   //VertexType::MESH
   MESH,
+  OVERLAY_3D,
   //VERTEX_TYPE::UI
   UI_BACK,
   UI_TEXT,
@@ -40,7 +40,7 @@ inline VertexType GetVertexTypeByDrawOrder(DrawOrder draw_order) {
     return VertexType::MESH;
     break;
   case DrawOrder::OVERLAY_3D:
-  case DrawOrder::TERRAIN:
+  case DrawOrder::MESH_STATIC:
     return VertexType::STATIC;
     break;
   case DrawOrder::UI_BACK:

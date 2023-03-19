@@ -13,6 +13,7 @@ static ThreadSafeQueue<LogEntry> log_queue;
 
 static void _LogMessage(ostream& stream, const std::source_location& location, const string& message) {
   stream
+    << (unsigned long)time(NULL) << " "
     << "["
     << location.file_name() << "("
     << location.line() << ":"

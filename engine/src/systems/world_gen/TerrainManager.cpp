@@ -12,10 +12,10 @@ void TerrainManager::CreateTerrain(int size_x, int size_y)
     vertices, indices, uvs);
 
   vector<vec3> normals = GenNormals(vertices);
-  
-  buffer->BufferMeshData(chunk->mesh, vertices, indices, uvs, normals);
 
+  buffer->AllocateStorage(chunk->mesh->slots, vertices.size(), indices.size());
   draw_call_manager->AddNewCommandToDrawCall<MeshDataStatic>(chunk->mesh, draw_call_manager->mesh_static_dc, 1);
+  buffer->BufferMeshData(chunk->mesh, vertices, indices, uvs, normals);
 }
 
 TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y, int size_x, int size_y,

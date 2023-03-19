@@ -33,6 +33,8 @@ class BufferInstanceOffset {
 public:
   // - used as offset to buffer uniform arrays: transform, texture, ...?
   virtual unsigned long GetInstanceOffset() = 0;
+
+  virtual bool IsInstanceOffsetAllocated() = 0;
 };
 
 #define BLEND_TEXTURES_ALIGNED_TO_16_BYTES(CAPACITY) BlendTextures blend_textures[CAPACITY]; \

@@ -16,18 +16,22 @@ void Renderer::Render(Camera* camera) {
     buffer_manager->PreDraw();
 
     for (auto order_shader : draw_calls) {
+      //if (order_shader.first == DrawOrder::MESH_STATIC) {
+      //  continue;
+      //}
       if (order_shader.second.empty()) {
         continue;
       }
       {
         DEBUG_EXPR(CheckGLError());
         vertex_attributes->BindVAO(GetVertexTypeByDrawOrder(order_shader.first));
-        DEBUG_EXPR(CheckGLError());
+        //DEBUG_EXPR(CheckGLError());
         for (auto draw : order_shader.second) {
           if (draw->is_enabled && draw->GetCommandCount() > 0) {
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer->ptr->buffer_id);
             glUseProgram(draw->shader->id);
             draw->shader->SetUniforms();
+            DEBUG_EXPR(CheckGLError());
             unsigned int command_count = draw->GetCommandCount();
             glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
                                         command_count, 0);

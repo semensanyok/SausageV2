@@ -27,6 +27,10 @@ public:
   };
   ~MeshDataBufferConsumerShared() {
   };
+  void ReleaseSlots(MeshDataBase* mesh) {
+    BufferStorage::GetInstance()->ReleaseInstanceSlot<MESH_TYPE>(mesh->slots);
+    vertex_attributes->ReleaseStorage<VERTEX_TYPE>(mesh->slots);
+  }
   void BufferMeshData(MESH_TYPE* mesh,
     vector<vec3>& vertices,
     vector<unsigned int>& indices,
@@ -35,16 +39,21 @@ public:
     auto load_data = mesh_manager->CreateLoadData<VERTEX_TYPE>(vertices, indices, normals, uvs);
     BufferMeshData(mesh, load_data);
   }
-  void ReleaseSlots(MeshDataBase* mesh) {
-    BufferStorage::GetInstance()->ReleaseInstanceSlot<MESH_TYPE>(mesh->slots);
-    vertex_attributes->ReleaseStorage<VERTEX_TYPE>(mesh->slots);
-  }
   void BufferMeshData(MESH_TYPE* mesh,
-    shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
-    this->AllocateStorage(mesh->slots, load_data);
+    shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data,
+    unsigned int num_instances = 1) {
+    //allocated in DrawCallManager->SetToCommandWithOffsets (via buffer->TryReallocateInstanceSlot)
+    //this->AllocateInstanceSlot(mesh->slots, num_instances);
     this->BufferVertices(mesh->slots, load_data);
     if (mesh->textures.num_textures > 0) {
       this->BufferTexture(mesh, mesh->textures);
+    }
+    this->BufferTransform(mesh, mesh->transform);
+  }
+  void BufferMeshDataInstance(MeshDataInstance* mesh,
+    BlendTextures& textures) {
+    if (textures.num_textures > 0) {
+      this->BufferTexture(mesh, textures);
     }
     this->BufferTransform(mesh, mesh->transform);
   }

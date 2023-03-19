@@ -109,18 +109,18 @@ private:
 
   void UnmapBuffers() {
     UnmapBuffer(command_buffers.blinn_phong);
+    UnmapBuffer(command_buffers.mesh_static);
     UnmapBuffer(command_buffers.back_ui);
     UnmapBuffer(command_buffers.font_ui);
     UnmapBuffer(command_buffers.outline);
-    UnmapBuffer(command_buffers.mesh_static);
   }
 
   void MapBuffers() {
     MapBuffer(command_buffers.blinn_phong);
+    MapBuffer(command_buffers.mesh_static);
     MapBuffer(command_buffers.font_ui);
     MapBuffer(command_buffers.back_ui);
     MapBuffer(command_buffers.outline);
-    MapBuffer(command_buffers.mesh_static);
   }
 
   void UnmapBuffer(CommandBuffer* buf) {
