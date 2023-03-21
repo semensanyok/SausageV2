@@ -31,7 +31,6 @@ void Renderer::Render(Camera* camera) {
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer->ptr->buffer_id);
             glUseProgram(draw->shader->id);
             draw->shader->SetUniforms();
-            DEBUG_EXPR(CheckGLError());
             unsigned int command_count = draw->GetCommandCount();
             glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
                                         command_count, 0);

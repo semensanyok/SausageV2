@@ -178,62 +178,45 @@ private:
   template <typename VERTEX_TYPE>
   void BufferVerticesIndices(MeshDataSlots& slots,
                              vector<VERTEX_TYPE>& vertices,
-                             vector<unsigned int>& indices);
-  template<>
-  void BufferVerticesIndices<Vertex>(MeshDataSlots& slots,
-                                     vector<Vertex>& vertices,
-                                     vector<unsigned int>& indices) {
-    int vertex_size = sizeof(Vertex);
-    // int vertex_size = sizeof(VERTEX_TYPE);
+                             vector<unsigned int>& indices) {
+    //int vertex_size = sizeof(Vertex);
+    int vertex_size = sizeof(VERTEX_TYPE);
+    auto vertex_ptr = GetVertexPtr<VERTEX_TYPE>();
+    auto index_ptr = GetIndexPtr<VERTEX_TYPE>();
 
     memcpy(&vertex_ptr->buffer_ptr[slots.vertex_slot.offset], vertices.data(),
          vertices.size() * vertex_size);
     memcpy(&index_ptr->buffer_ptr[slots.index_slot.offset], indices.data(),
            indices.size() * sizeof(unsigned int));
-  }
-  template<>
-  void BufferVerticesIndices<VertexStatic>(MeshDataSlots& slots,
-                                           vector<VertexStatic>& vertices,
-                                           vector<unsigned int>& indices) {
-    int vertex_size = sizeof(VertexStatic);
-    // int vertex_size = sizeof(VERTEX_TYPE);
+  };
 
-    memcpy(&vertex_static_ptr->buffer_ptr[slots.vertex_slot.offset], vertices.data(),
-         vertices.size() * vertex_size);
-    memcpy(&index_static_ptr->buffer_ptr[slots.index_slot.offset], indices.data(),
-           indices.size() * sizeof(unsigned int));
-  }
-  template<>
-  void BufferVerticesIndices<VertexOutline>(MeshDataSlots& slots,
-                                           vector<VertexOutline>& vertices,
-                                           vector<unsigned int>& indices) {
-    int vertex_size = sizeof(VertexOutline);
-    // int vertex_size = sizeof(VERTEX_TYPE);
-
-    memcpy(&vertex_outline_ptr->buffer_ptr[slots.vertex_slot.offset], vertices.data(),
-         vertices.size() * vertex_size);
-    memcpy(&index_outline_ptr->buffer_ptr[slots.index_slot.offset], indices.data(),
-           indices.size() * sizeof(unsigned int));
-  }
-  template<>
-  void BufferVerticesIndices<VertexUI>(MeshDataSlots& slots,
-                                       vector<VertexUI>& vertices,
-                                       vector<unsigned int>& indices) {
-    int vertex_size = sizeof(VertexUI);
-    // int vertex_size = sizeof(VERTEX_TYPE);
-
-    memcpy(&vertex_ui_ptr->buffer_ptr[slots.vertex_slot.offset], vertices.data(),
-         vertices.size() * vertex_size);
-    memcpy(&index_ui_ptr->buffer_ptr[slots.index_slot.offset], indices.data(),
-           indices.size() * sizeof(unsigned int));
-  }
   //////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////
+  template<typename VERTEX_TYPE>
+  BufferSlots<VERTEX_TYPE>* GetVertexPtr();
+  template<typename VERTEX_TYPE>
+  BufferSlots<unsigned int>* GetIndexPtr();
   template<typename VERTEX_TYPE>
   BufferSlots<VERTEX_TYPE>* GetVertexSlots();
   template<typename VERTEX_TYPE>
   BufferSlots<unsigned int>* GetIndexSlots();
 
+  template<>
+  BufferSlots<Vertex>* GetVertexPtr() { return vertex_ptr; };
+  template<>
+  BufferSlots<VertexStatic>* GetVertexPtr() { return vertex_static_ptr; };
+  template<>
+  BufferSlots<VertexUI>* GetVertexPtr() { return vertex_ui_ptr; };
+  template<>
+  BufferSlots<VertexOutline>* GetVertexPtr() { return vertex_outline_ptr; };
+  template<>
+  BufferSlots<unsigned int>* GetIndexPtr<Vertex>() { return index_ptr; };
+  template<>
+  BufferSlots<unsigned int>* GetIndexPtr<VertexStatic>() { return index_static_ptr; };
+  template<>
+  BufferSlots<unsigned int>* GetIndexPtr<VertexUI>() { return index_ui_ptr; };
+  template<>
+  BufferSlots<unsigned int>* GetIndexPtr<VertexOutline>() { return index_outline_ptr; };
   template<>
   BufferSlots<Vertex>* GetVertexSlots() { return vertex_ptr; }
   template<>
@@ -255,6 +238,7 @@ private:
   void BindOutlineVAO()
   {
     glBindVertexArray(outline_VAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_outline_ptr->buffer_id);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexOutline), (void*)0);
     glEnableVertexAttribArray(1);
@@ -264,6 +248,7 @@ private:
   void BindUiVAO()
   {
     glBindVertexArray(ui_VAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ui_ptr->buffer_id);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUI), (void*)0);
     glEnableVertexAttribArray(1);
@@ -276,6 +261,7 @@ private:
   void BindStaticVAO()
   {
     glBindVertexArray(static_VAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_static_ptr->buffer_id);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic), (void*)0);
     glEnableVertexAttribArray(1);
@@ -289,12 +275,13 @@ private:
     glEnableVertexAttribArray(4);
     glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
       (void*)offsetof(VertexStatic, Bitangent));
-    glVertexAttribIPointer(5, 3, GL_UNSIGNED_INT, sizeof(VertexStatic),
+    glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, sizeof(VertexStatic),
       (void*)offsetof(VertexStatic, UniformId));
   }
   void BindMeshVAO()
   {
     glBindVertexArray(mesh_VAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ptr->buffer_id);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(1);
