@@ -14,7 +14,7 @@ void ShaderManager::SetupShaders() {
   all_shaders->blinn_phong->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
   all_shaders->blinn_phong->SetVec3Uniform(string("view_pos"), &(camera->pos));
 
-  all_shaders->mesh_static->SetMat4Uniform(string("projection_view"), &(camera->projection_matrix_ortho));
+  all_shaders->mesh_static->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
   all_shaders->mesh_static->SetVec3Uniform(string("view_pos"), &(camera->pos));
 
   all_shaders->bullet_debug->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
