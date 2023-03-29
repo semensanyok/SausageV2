@@ -81,7 +81,7 @@ public:
       shared_ptr<MeshLoadData<VERTEX_TYPE>>& base_ptr = instances[0];
       auto base = base_ptr.get();
       // BASE MESH SETUP
-      MESH_TYPE* mesh = mesh_manager->CreateMeshData<VERTEX_TYPE, MESH_TYPE>(base_ptr.get());
+      MESH_TYPE* mesh = mesh_manager->CreateMeshData<VERTEX_TYPE, MESH_TYPE>(base_ptr);
       SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE> mesh_res = { base_ptr, mesh, {} };
       res.push_back(mesh_res);
       // TEXTURE SETUP

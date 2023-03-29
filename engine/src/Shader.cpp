@@ -66,8 +66,13 @@ void Shader::CompileShader(
   GLuint shader_id = glCreateShader(shader_type);
   glShaderSource(shader_id, 1, &code_c, NULL);
   glCompileShader(shader_id);
-  auto is_success = CheckCompileErrors(shader_id, shader_type_str, shader_path);
-  if (is_success && CheckGLError() == false) {
+  auto is_no_compile_err = CheckCompileErrors(shader_id, shader_type_str, shader_path);
+
+  // TODO: fix hot reload when CheckGLError has errs.
+  // bool is_no_gl_err = !CheckGLError();
+  bool is_no_gl_err = true;
+
+  if (is_no_compile_err && is_no_gl_err) {
     out_is_shader_updated = true;
     out_shader_id = shader_id;
   }

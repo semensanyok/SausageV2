@@ -25,6 +25,8 @@ public:
 
   // custom draws per shader
   vector<MeshDataBase*> all_meshes;
+  vector<MeshDataInstance*> all_meshes_instances;
+
   vector<MeshDataBase*> all_transparent_meshes;
 
   vector<MeshDataBase*> draw_meshes;
@@ -109,6 +111,12 @@ private:
   {
     auto res = mesh_data_utils->SetupInstancedMesh<MeshDataStatic, VertexStatic, BlendTextures>(draw_call_manager->mesh_static_dc,
       mesh_load_data_animated, tex_names_list_animated);
+    for (auto r : res) {
+      all_meshes.push_back(r.mesh);
+      for (auto i : r.instances) {
+        all_meshes_instances.push_back(i);
+      }
+    }
   }
 
   void SetupInstancedMesh(std::vector<std::shared_ptr<MeshLoadData<Vertex>>>& mesh_load_data_animated,
@@ -116,6 +124,12 @@ private:
   {
     auto res = mesh_data_utils->SetupInstancedMeshWithAnim(draw_call_manager->mesh_dc,
       mesh_load_data_animated, tex_names_list_animated);
+    for (auto r : res) {
+      all_meshes.push_back(r.mesh);
+      for (auto i : r.instances) {
+        all_meshes_instances.push_back(i);
+      }
+    }
   }
 
   void _LoadGui() {
@@ -129,23 +143,28 @@ private:
   }
   void _LoadAnimations() {
     for (auto mesh_base : all_meshes) {
-      if (MeshData* mesh = dynamic_cast<MeshData*>(mesh_base)) {
-        if (mesh->armature != nullptr) {
-          auto active_anim = systems_manager->anim_manager->CreateActiveAnimInstance(mesh->armature);
-          systems_manager->anim_manager->LoadAnimationForArmature(scene_path, mesh->armature);
-          systems_manager->anim_manager->QueueAnimUpdate(active_anim);
-          if (!mesh->armature->name_to_anim.empty()) {
-            auto anim1 = mesh->armature->name_to_anim["Stretch"];
-            auto anim2 = mesh->armature->name_to_anim["ShakeHead"];
-            auto anim3 = mesh->armature->name_to_anim["UpHead"];
-            active_anim->AddAnim(AnimIndependentChannel::CHANNEL1, anim1);
-            active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim2);
-            active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim3);
-          }
+      _LoadAnimationsMesh(mesh_base);
+    }
+    CheckGLError();
+  }
+
+  void _LoadAnimationsMesh(MeshDataBase*& mesh_base)
+  {
+    if (MeshData* mesh = dynamic_cast<MeshData*>(mesh_base)) {
+      if (mesh->armature != nullptr) {
+        auto active_anim = systems_manager->anim_manager->CreateActiveAnimInstance(mesh->armature);
+        systems_manager->anim_manager->LoadAnimationForArmature(scene_path, mesh->armature);
+        systems_manager->anim_manager->QueueAnimUpdate(active_anim);
+        if (!mesh->armature->name_to_anim.empty()) {
+          auto anim1 = mesh->armature->name_to_anim["Stretch"];
+          auto anim2 = mesh->armature->name_to_anim["ShakeHead"];
+          auto anim3 = mesh->armature->name_to_anim["UpHead"];
+          active_anim->AddAnim(AnimIndependentChannel::CHANNEL1, anim1);
+          active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim2);
+          active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim3);
         }
       }
     }
-    CheckGLError();
   }
 
   void _AddRigidBodies(vector<MeshDataBase*>& new_meshes) {

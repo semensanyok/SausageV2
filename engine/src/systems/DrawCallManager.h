@@ -203,7 +203,7 @@ public:
       if (is_alloc_instance_slot) {
         mesh->slots.instances_slot.used = instance_count;
       }
-      _SetToCommandWithOffsets(command, mesh->slots, dc);
+      _SetToCommandWithOffsets(command, mesh->slots, dc, instance_count);
       return true;
     }
     return false;
@@ -213,10 +213,11 @@ private:
   void _SetToCommandWithOffsets(
     DrawElementsIndirectCommand& command,
     MeshDataSlots& mesh_slots,
-    DrawCall* dc
+    DrawCall* dc,
+    unsigned int instance_count
   ) {
     unsigned int command_offset = mesh_slots.buffer_id;
-    command.instanceCount = mesh_slots.instances_slot.used;
+    command.instanceCount = instance_count;
     command.count = mesh_slots.index_slot.used;
     command.firstIndex = mesh_slots.index_slot.offset;
     command.baseVertex = mesh_slots.vertex_slot.offset;

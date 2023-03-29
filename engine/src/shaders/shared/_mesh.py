@@ -29,7 +29,7 @@ layout (std430, binding = MESH_UNIFORMS_LOC) buffer UniformDataMesh
     mat4 bones_transforms[MAX_BONES];
     mat4 transforms[MAX_MESHES_INSTANCES];
     BlendTextures blend_textures[MAX_MESHES_INSTANCES];
-    float UniformDataMesh_pad[3];
+    float pad[3];
     uint base_instance_offset[MAX_BASE_MESHES];
 };
 """,
@@ -56,8 +56,8 @@ in vs_out {
 # MAIN FUNCIONS, mesh_set_VARIABLE_NAME
 "mesh_set_transform":
 """
-mat4 transform = transforms[base_instance_offset[gl_BaseInstanceARB] + gl_InstanceID];
-// mat4 transform = mat4(1.0);
+//mat4 transform = transforms[base_instance_offset[gl_BaseInstanceARB] + gl_InstanceID];
+mat4 transform = mat4(1.0);
 """,
 "mesh_set_res_position":
 """
@@ -82,5 +82,6 @@ Out.TBN = mat3(T, B, N);
 # projection_view defined directly in shader not in template
 """
 gl_Position = projection_view * vec4(Out.frag_pos, 1.0);
+//gl_Position = vec4(Out.frag_pos, 1.0);
 """
 }

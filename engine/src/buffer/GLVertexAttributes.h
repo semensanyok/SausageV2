@@ -39,21 +39,83 @@ class GLVertexAttributes {
 public:
   void InitVAO() {
     glGenVertexArrays(1, &mesh_VAO);
-    glGenVertexArrays(1, &static_VAO);
-    glGenVertexArrays(1, &ui_VAO);
-    glGenVertexArrays(1, &outline_VAO);
-
+    glBindVertexArray(mesh_VAO);
     vertex_ptr = CreateBufferSlots<Vertex>(VERTEX_STORAGE_SIZE, MAX_VERTEX, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
     index_ptr = CreateBufferSlots<unsigned int>(INDEX_STORAGE_SIZE, MAX_INDEX, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ptr->buffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_ptr->buffer_id);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+      (void*)offsetof(Vertex, Normal));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+      (void*)offsetof(Vertex, TexCoords));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+      (void*)offsetof(Vertex, Tangent));
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+      (void*)offsetof(Vertex, Bitangent));
+    glEnableVertexAttribArray(5);
+    glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex),
+      (void*)offsetof(Vertex, BoneIds));
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+      (void*)offsetof(Vertex, BoneWeights));
 
+    glGenVertexArrays(1, &static_VAO);
+    glBindVertexArray(static_VAO);
     vertex_static_ptr = CreateBufferSlots<VertexStatic>(VERTEX_STATIC_STORAGE_SIZE, MAX_VERTEX_STATIC, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
     index_static_ptr = CreateBufferSlots<unsigned int>(INDEX_STATIC_STORAGE_SIZE, MAX_INDEX_STATIC, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_static_ptr->buffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_static_ptr->buffer_id);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
+      (void*)offsetof(VertexStatic, Normal));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
+      (void*)offsetof(VertexStatic, TexCoords));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
+      (void*)offsetof(VertexStatic, Tangent));
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
+      (void*)offsetof(VertexStatic, Bitangent));
+    glEnableVertexAttribArray(5);
+    glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, sizeof(VertexStatic),
+      (void*)offsetof(VertexStatic, UniformId));
 
+    glGenVertexArrays(1, &ui_VAO);
+    glBindVertexArray(ui_VAO);
     vertex_ui_ptr = CreateBufferSlots<VertexUI>(VERTEX_UI_STORAGE_SIZE, MAX_VERTEX_UI, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
     index_ui_ptr = CreateBufferSlots<unsigned int>(INDEX_UI_STORAGE_SIZE, MAX_INDEX_UI, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ui_ptr->buffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_ui_ptr->buffer_id);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUI), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUI),
+      (void*)offsetof(VertexUI, Normal));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUI),
+      (void*)offsetof(VertexUI, TexCoords));
 
+    glGenVertexArrays(1, &outline_VAO);
+    glBindVertexArray(outline_VAO);
     vertex_outline_ptr = CreateBufferSlots<VertexOutline>(VERTEX_OUTLINE_STORAGE_SIZE, MAX_VERTEX_OUTLINE, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
     index_outline_ptr = CreateBufferSlots<unsigned int>(INDEX_OUTLINE_STORAGE_SIZE, MAX_INDEX_OUTLINE, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_outline_ptr->buffer_id);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_outline_ptr->buffer_id);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexOutline), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexOutline),
+      (void*)offsetof(VertexOutline, Normal));
+
     DEBUG_EXPR(CheckGLError());
   };
 
@@ -91,13 +153,13 @@ public:
     unsigned long vertices_size,
     unsigned long indices_size
   ) {
-    auto vertex_ptr = GetVertexSlots<VERTEX_TYPE>();
+    auto vertex_ptr = GetVertexPtr<VERTEX_TYPE>();
     out_slots.vertex_slot = vertex_ptr->instances_slots.Allocate(vertices_size);
     if (out_slots.vertex_slot == MemorySlots::NULL_SLOT) {
       LOG("Error RequestStorageSetOffsets vertices slot allocation.");
       return false;
     }
-    auto index_ptr = GetIndexSlots<VERTEX_TYPE>();
+    auto index_ptr = GetIndexPtr<VERTEX_TYPE>();
     out_slots.index_slot = index_ptr->instances_slots.Allocate(indices_size);
     if (out_slots.index_slot == MemorySlots::NULL_SLOT) {
       vertex_ptr->instances_slots.Release(out_slots.vertex_slot);
@@ -196,10 +258,6 @@ private:
   BufferSlots<VERTEX_TYPE>* GetVertexPtr();
   template<typename VERTEX_TYPE>
   BufferSlots<unsigned int>* GetIndexPtr();
-  template<typename VERTEX_TYPE>
-  BufferSlots<VERTEX_TYPE>* GetVertexSlots();
-  template<typename VERTEX_TYPE>
-  BufferSlots<unsigned int>* GetIndexSlots();
 
   template<>
   BufferSlots<Vertex>* GetVertexPtr() { return vertex_ptr; };
@@ -214,93 +272,25 @@ private:
   template<>
   BufferSlots<unsigned int>* GetIndexPtr<VertexStatic>() { return index_static_ptr; };
   template<>
-  BufferSlots<unsigned int>* GetIndexPtr<VertexUI>() { return index_ui_ptr; };
-  template<>
   BufferSlots<unsigned int>* GetIndexPtr<VertexOutline>() { return index_outline_ptr; };
   template<>
-  BufferSlots<Vertex>* GetVertexSlots() { return vertex_ptr; }
-  template<>
-  BufferSlots<VertexStatic>* GetVertexSlots() { return vertex_static_ptr; }
-  template<>
-  BufferSlots<VertexOutline>* GetVertexSlots() { return vertex_outline_ptr; }
-  template<>
-  BufferSlots<VertexUI>* GetVertexSlots() { return vertex_ui_ptr; }
-  template<>
-  BufferSlots<unsigned int>* GetIndexSlots<Vertex>() { return index_ptr; }
-  template<>
-  BufferSlots<unsigned int>* GetIndexSlots<VertexStatic>() { return index_static_ptr; }
-  template<>
-  BufferSlots<unsigned int>* GetIndexSlots<VertexOutline>() { return index_outline_ptr; }
-  template<>
-  BufferSlots<unsigned int>* GetIndexSlots<VertexUI>() { return index_ui_ptr; }
+  BufferSlots<unsigned int>* GetIndexPtr<VertexUI>() { return index_ui_ptr; };
   //////////////////////////////////////////////////////////////////////////////////////////////
 
   void BindOutlineVAO()
   {
     glBindVertexArray(outline_VAO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_outline_ptr->buffer_id);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexOutline), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexOutline),
-      (void*)offsetof(VertexOutline, Normal));
   }
   void BindUiVAO()
   {
     glBindVertexArray(ui_VAO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ui_ptr->buffer_id);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUI), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUI),
-      (void*)offsetof(VertexUI, Normal));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUI),
-      (void*)offsetof(VertexUI, TexCoords));
   }
   void BindStaticVAO()
   {
     glBindVertexArray(static_VAO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_static_ptr->buffer_id);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
-      (void*)offsetof(VertexStatic, Normal));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
-      (void*)offsetof(VertexStatic, TexCoords));
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
-      (void*)offsetof(VertexStatic, Tangent));
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(VertexStatic),
-      (void*)offsetof(VertexStatic, Bitangent));
-    glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, sizeof(VertexStatic),
-      (void*)offsetof(VertexStatic, UniformId));
   }
   void BindMeshVAO()
   {
     glBindVertexArray(mesh_VAO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ptr->buffer_id);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-      (void*)offsetof(Vertex, Normal));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-      (void*)offsetof(Vertex, TexCoords));
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-      (void*)offsetof(Vertex, Tangent));
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-      (void*)offsetof(Vertex, Bitangent));
-    glEnableVertexAttribArray(5);
-    glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex),
-      (void*)offsetof(Vertex, BoneIds));
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-      (void*)offsetof(Vertex, BoneWeights));
   }
 };

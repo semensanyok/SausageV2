@@ -70,8 +70,8 @@ public:
   }
 
   template<typename VERTEX_TYPE, typename MESH_TYPE>
-  MESH_TYPE* CreateMeshData(MeshLoadData<VERTEX_TYPE>* load_data) {
-    auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber(), load_data);
+  MESH_TYPE* CreateMeshData(shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
+    auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber(), load_data.get());
     all_meshes[mesh->id] = mesh;
     return mesh;
   };

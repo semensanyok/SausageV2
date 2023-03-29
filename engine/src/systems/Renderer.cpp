@@ -16,7 +16,7 @@ void Renderer::Render(Camera* camera) {
     buffer_manager->PreDraw();
 
     for (auto order_shader : draw_calls) {
-      //if (order_shader.first == DrawOrder::MESH_STATIC) {
+      //if (order_shader.first != DrawOrder::MESH_STATIC) {
       //  continue;
       //}
       if (order_shader.second.empty()) {

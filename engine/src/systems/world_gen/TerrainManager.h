@@ -174,6 +174,7 @@ private:
   );
   void ReleaseBuffer(TerrainChunk* chunk);
   void Deactivate(TerrainChunk* chunk);
+  void CreateTerrain();
   vector<vec3> GenNormals(vector<vec3> vertices);
   ~TerrainManager() {};
 };
