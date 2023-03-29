@@ -26,7 +26,7 @@ namespace BufferType {
   const BufferTypeFlag MESH_BUFFERS =
     MESH_UNIFORMS | TEXTURE | LIGHT;
   const BufferTypeFlag MESH_STATIC_BUFFERS =
-    MESH_UNIFORMS | TEXTURE | LIGHT;
+    MESH_STATIC_UNIFORMS | TEXTURE | LIGHT;
   const BufferTypeFlag OUTLINE_BUFFERS =
     0;
   const BufferTypeFlag UI_BUFFERS =

@@ -56,8 +56,8 @@ in vs_out {
 # MAIN FUNCIONS, mesh_set_VARIABLE_NAME
 "mesh_set_transform":
 """
-//mat4 transform = transforms[base_instance_offset[gl_BaseInstanceARB] + gl_InstanceID];
-mat4 transform = mat4(1.0);
+mat4 transform = transforms[base_instance_offset[gl_BaseInstanceARB] + gl_InstanceID];
+//mat4 transform = mat4(1.0);
 """,
 "mesh_set_res_position":
 """

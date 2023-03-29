@@ -1,7 +1,7 @@
 #include "BufferManager.h"
 
 void BufferManager::Init() {
-  BufferStorage::GetInstance()->Init();
+  buffer_storage->Init();
   command_buffer_manager = new CommandBuffersManager();
   command_buffer_manager->InitBuffers();
   vertex_attributes = new GLVertexAttributes();
@@ -17,7 +17,7 @@ void BufferManager::Init() {
   overlay_3d_buffer->Init();
 }
 void BufferManager::Reset() {
-  BufferStorage::GetInstance()->Reset();
+  buffer_storage->Reset();
   mesh_data_buffer->Reset();
   ui_buffer->Reset();
   overlay_3d_buffer->Reset();

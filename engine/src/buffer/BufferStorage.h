@@ -121,7 +121,7 @@ public:
   void BufferUniformDataController(int mouse_x, int mouse_y, int is_pressed, int is_click);
 
   void AddUsedBuffers(BufferType::BufferTypeFlag used_buffers);
-
+  void BindBuffers();
 private:
   void _BufferTextureHandle(Texture* texture);
   BufferStorage() :

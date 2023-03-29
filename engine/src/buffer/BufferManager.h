@@ -28,11 +28,13 @@ public:
   UIBufferConsumer* ui_buffer = nullptr;
   OverlayBufferConsumer3D* overlay_3d_buffer = nullptr;
   MeshStaticBufferConsumer* mesh_static_buffer = nullptr;
+  BufferStorage* buffer_storage = nullptr;
 
   BufferManager(MeshManager* mesh_manager,
     TextureManager* texture_manager) :
     mesh_manager{ mesh_manager },
-    texture_manager{ texture_manager } {};
+    texture_manager{ texture_manager },
+    buffer_storage{ BufferStorage::GetInstance() } {};
   void Init();
   void Reset();
   BulletDebugDrawerBufferConsumer* GetPhysDebugDrawer();
@@ -43,6 +45,7 @@ public:
   //}
 
   void PreDraw() {
+    buffer_storage->BindBuffers();
     command_buffer_manager->PreDraw();
   }
 
