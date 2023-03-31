@@ -202,7 +202,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "${ENGINE_SRC_DIR}/buffer/GLBuffers.cpp"
 "${ENGINE_SRC_DIR}/buffer/consumers/BufferConsumer.cpp"  
 "${ENGINE_SRC_DIR}/buffer/consumers/BulletDebugDrawerBufferConsumer.cpp" 
-"${ENGINE_SRC_DIR}/buffer/consumers/MeshDataBufferConsumer.cpp" 
+ 
 "${ENGINE_SRC_DIR}/buffer/consumers/OverlayBufferConsumer3D.cpp" 
 "${ENGINE_SRC_DIR}/buffer/consumers/UIBufferConsumer.cpp" 
 "${ENGINE_SRC_DIR}/systems/Animation.cpp" 

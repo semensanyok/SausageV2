@@ -24,18 +24,18 @@ public:
   MeshDataUtils* mesh_data_utils;
 
   // custom draws per shader
-  vector<MeshDataBase*> all_meshes;
+  vector<MeshData*> all_meshes;
   vector<MeshDataInstance*> all_meshes_instances;
 
-  vector<MeshDataBase*> all_transparent_meshes;
-
-  vector<MeshDataBase*> draw_meshes;
-  vector<MeshDataBase*> draw_transparent_meshes;
+  vector<MeshDataStatic*> all_static_meshes;
+  vector<MeshDataInstance*> all_static_meshes_instances;
 
   vector<Light*> all_lights;
   vector<Light*> draw_lights;
 
-  string scene_path = GetModelPath("Frog.fbx");
+  //string scene_path = GetModelPath("Frog.fbx");
+  string scene_path = GetModelPath("Frog2.fbx");
+
   // string scene_path = GetModelPath("dae/Frog.dae");
   // string scene_path = GetModelPath("Frog.gltf");
 
@@ -84,6 +84,12 @@ private:
     _LoadMeshes(scene_path);
 
     _AddRigidBodies(all_meshes);
+    _AddRigidBodies(all_meshes);
+    _AddRigidBodies<MeshData, Vertex>(all_meshes_instances);
+
+    _AddRigidBodies(all_static_meshes);
+    _AddRigidBodies<MeshDataStatic, VertexStatic>(all_static_meshes_instances);
+
     _LoadAnimations();
   }
 
@@ -112,9 +118,9 @@ private:
     auto res = mesh_data_utils->SetupInstancedMesh<MeshDataStatic, VertexStatic, BlendTextures>(draw_call_manager->mesh_static_dc,
       mesh_load_data_animated, tex_names_list_animated);
     for (auto r : res) {
-      all_meshes.push_back(r.mesh);
+      all_static_meshes.push_back(r.mesh);
       for (auto i : r.instances) {
-        all_meshes_instances.push_back(i);
+        all_static_meshes_instances.push_back(i);
       }
     }
   }
@@ -148,39 +154,78 @@ private:
     CheckGLError();
   }
 
-  void _LoadAnimationsMesh(MeshDataBase*& mesh_base)
+  void _LoadAnimationsMesh(MeshData*& mesh)
   {
-    if (MeshData* mesh = dynamic_cast<MeshData*>(mesh_base)) {
-      if (mesh->armature != nullptr) {
-        auto active_anim = systems_manager->anim_manager->CreateActiveAnimInstance(mesh->armature);
-        systems_manager->anim_manager->LoadAnimationForArmature(scene_path, mesh->armature);
-        systems_manager->anim_manager->QueueAnimUpdate(active_anim);
-        if (!mesh->armature->name_to_anim.empty()) {
-          auto anim1 = mesh->armature->name_to_anim["Stretch"];
-          auto anim2 = mesh->armature->name_to_anim["ShakeHead"];
-          auto anim3 = mesh->armature->name_to_anim["UpHead"];
-          active_anim->AddAnim(AnimIndependentChannel::CHANNEL1, anim1);
-          active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim2);
-          active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim3);
-        }
+    if (mesh->armature != nullptr) {
+      auto active_anim = systems_manager->anim_manager->CreateActiveAnimInstance(mesh->armature);
+      systems_manager->anim_manager->LoadAnimationForArmature(scene_path, mesh->armature);
+      systems_manager->anim_manager->QueueAnimUpdate(active_anim);
+      if (!mesh->armature->name_to_anim.empty()) {
+        auto anim1 = mesh->armature->name_to_anim["Stretch"];
+        auto anim2 = mesh->armature->name_to_anim["ShakeHead"];
+        auto anim3 = mesh->armature->name_to_anim["UpHead"];
+        active_anim->AddAnim(AnimIndependentChannel::CHANNEL1, anim1);
+        active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim2);
+        active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim3);
       }
     }
   }
 
-  void _AddRigidBodies(vector<MeshDataBase*>& new_meshes) {
-    for (auto& mesh_base : new_meshes) {
-      if (MeshData* mesh = dynamic_cast<MeshData*>(mesh_base)) {
-        SausageUserPointer* up = nullptr;
-        if (clickable_meshes_names.contains(mesh->name)) {
-          up = new MeshDataClickable(mesh);
-        }
-        else {
-          up = mesh;
-        }
-        systems_manager->physics_manager->AddBoxRigidBody(
-          mesh->physics_data, up, mesh->transform, mesh->name
-        );
+  void _AddRigidBodies(vector<MeshData*>& new_meshes) {
+    for (auto& mesh : new_meshes) {
+      SausageUserPointer* up = nullptr;
+      if (clickable_meshes_names.contains(mesh->name)) {
+        up = new MeshDataClickable(mesh);
       }
+      else {
+        up = mesh;
+      }
+
+      systems_manager->physics_manager->AddBoxRigidBody(
+        mesh->physics_data,
+        new PhysicsTransformUpdateMesh<BlendTextures, MeshData, Vertex>(mesh),
+        mesh->transform,
+        mesh->name
+      );
+    }
+  }
+
+  template<typename MESH_TYPE, typename VERTEX_TYPE>
+  void _AddRigidBodies(vector<MeshDataInstance*>& new_meshes) {
+    for (auto& mesh : new_meshes) {
+      SausageUserPointer* up = nullptr;
+      if (clickable_meshes_names.contains(mesh->base_mesh->name)) {
+        up = new MeshDataInstanceClickable(mesh);
+      }
+      else {
+        up = mesh;
+      }
+
+      systems_manager->physics_manager->AddBoxRigidBody(
+        ((MESH_TYPE*)mesh->base_mesh)->physics_data,
+        new PhysicsTransformUpdateMeshInstance<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
+        mesh->transform,
+        mesh->name
+      );
+    }
+  }
+
+  void _AddRigidBodies(vector<MeshDataStatic*>& new_meshes) {
+    for (auto& mesh : new_meshes) {
+      SausageUserPointer* up = nullptr;
+      if (clickable_meshes_names.contains(mesh->name)) {
+        up = new MeshDataStaticClickable(mesh);
+      }
+      else {
+        up = mesh;
+      }
+
+      systems_manager->physics_manager->AddBoxRigidBody(
+        mesh->physics_data,
+        new PhysicsTransformUpdateMesh<BlendTextures, MeshDataStatic, VertexStatic>(mesh),
+        mesh->transform,
+        mesh->name
+      );
     }
   }
 
@@ -194,28 +239,6 @@ private:
   void _CleanupScene() {
     systems_manager->Reset();
     all_meshes.clear();
-    all_transparent_meshes.clear();
     all_lights.clear();
-  }
-
-  using distance_comparator =
-    decltype([](const pair<float, MeshDataBase*>& lhs,
-      const pair<float, MeshDataBase*>& rhs) {
-        return lhs.first > rhs.first;
-    });
-
-  void _SortByDistance() {
-    set<pair<float, MeshDataBase*>, distance_comparator> back_to_front;
-    for (auto mesh_base : draw_meshes) {
-      if (MeshData* mesh = dynamic_cast<MeshData*>(mesh_base)) {
-        back_to_front.insert(
-            { distance(systems_manager->camera->pos, vec3(mesh->transform[3])),
-             mesh });
-      }
-    }
-    draw_meshes.clear();
-    for (auto& mesh_dist : back_to_front) {
-      draw_meshes.push_back(mesh_dist.second);
-    }
   }
 };

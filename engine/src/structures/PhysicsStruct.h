@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../sausage.h"
+#include "sausage.h"
 
 using namespace glm;
 
@@ -25,4 +25,10 @@ public:
     : min_AABB{ min_AABB }, max_AABB{ max_AABB }, mass{ mass },
     collision_group{ collision_group },
     collides_with_groups{ collides_with_groups } {}
+};
+
+class PhysicsTransformUpdate : public SausageUserPointer {
+public:
+  virtual mat4& GetOutMatrix() = 0;
+  virtual void OnTransformUpdate() = 0;
 };

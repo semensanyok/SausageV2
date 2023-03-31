@@ -8,6 +8,7 @@
 #include "AnimationStruct.h"
 #include "GLVertexAttributes.h"
 #include "MeshDataBufferConsumerShared.h"
+#include "PhysicsStruct.h"
 
 using namespace std;
 
@@ -33,17 +34,6 @@ public:
     shared_ptr<MeshLoadData<VERTEX_TYPE>> load_data;
     MESH_TYPE* mesh;
     vector<MeshDataInstance*> instances;
-  };
-
-  template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
-  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* GetBuffer();
-  template<>
-  MeshDataBufferConsumerShared<BlendTextures, MeshData, Vertex>* GetBuffer() {
-    return buffer_manager->mesh_data_buffer;
-  };
-  template<>
-  MeshDataBufferConsumerShared<BlendTextures, MeshDataStatic, VertexStatic>* GetBuffer() {
-    return buffer_manager->mesh_static_buffer;
   };
 
   /**
@@ -92,7 +82,7 @@ public:
           texture->MakeResident();
         }
       }
-      auto mesh_data_buffer_consumer = GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>();
+      auto mesh_data_buffer_consumer = buffer_manager->GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>();
       if (!mesh_data_buffer_consumer->AllocateStorage(mesh->slots, base_ptr->vertices.size(), base_ptr->indices.size())) {
         // logged in vertex_attributes AllocateStorage
         continue;
@@ -136,4 +126,38 @@ public:
     }
     return res;
   }
+};
+
+template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
+class PhysicsTransformUpdateMesh : public PhysicsTransformUpdate {
+  MESH_TYPE* mesh;
+  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* buffer;
+public:
+  PhysicsTransformUpdateMesh(MESH_TYPE* mesh) :
+    mesh{ mesh },
+    buffer{ buffer } {};
+  mat4& GetOutMatrix() override {
+    return mesh->transform;
+  };
+  void OnTransformUpdate() override {
+    BufferManager::GetInstance()->
+      GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>()->BufferTransform(mesh, mesh->transform);
+  };
+};
+
+template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
+class PhysicsTransformUpdateMeshInstance : public PhysicsTransformUpdate {
+  MeshDataInstance* mesh;
+  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* buffer;
+public:
+  PhysicsTransformUpdateMeshInstance(MeshDataInstance* mesh) :
+    mesh{ mesh },
+    buffer{ buffer } {};
+  mat4& GetOutMatrix() override {
+    return mesh->transform;
+  };
+  void OnTransformUpdate() override {
+    BufferManager::GetInstance()->
+      GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>()->BufferTransform(mesh, mesh->transform);
+  };
 };

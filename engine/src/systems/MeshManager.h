@@ -58,7 +58,7 @@ public:
                   bool is_load_armature = false);
 
   Bone CreateBone(string bone_name, mat4& offset, mat4& trans);
-  MeshDataOverlay3D* CreateMeshDataFont3D(string& text, mat4& transform);
+  MeshDataOverlay3D* CreateMeshDataFont3D(const char* text, mat4& transform);
   MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr);
   MeshDataOutline* CreateMeshDataOutline();
 

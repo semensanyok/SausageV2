@@ -4,7 +4,6 @@
 #include "Structures.h"
 #include "Interfaces.h"
 #include "PhysicsStruct.h"
-#include "MeshDataBufferConsumer.h"
 #include "BulletDebugDrawer.h"
 #include "Settings.h"
 #include "AssetUtils.h"
@@ -27,13 +26,12 @@ class PhysicsManager : public SausageSystem {
   btDiscreteDynamicsWorld* dynamicsWorld;
 
   StateManager* state_manager;
-  MeshDataBufferConsumer* mesh_buffer;
 public:
 
   PhysicsManager(
     StateManager* state_manager,
     MeshDataBufferConsumer* mesh_buffer
-  ) : state_manager{ state_manager }, mesh_buffer{ mesh_buffer } {
+  ) : state_manager{ state_manager } {
     collisionConfiguration = new btDefaultCollisionConfiguration();
     dispatcher = new btCollisionDispatcher(collisionConfiguration);
     overlappingPairCache = new btDbvtBroadphase();
@@ -102,28 +100,22 @@ public:
     {
       auto rigidBody = nonStatic[i];
       rigidBody->getMotionState()->getWorldTransform(btTrans);
-      SausageUserPointer* sausage_up = ((SausageUserPointer*)rigidBody->getUserPointer());
-      MeshData* mesh_data = nullptr;
-      if (dynamic_cast<MeshDataClickable*>(sausage_up)) {
-        mesh_data = ((MeshDataClickable*)sausage_up)->mesh_data;
-      }
-      else if (dynamic_cast<MeshDataBase*>(sausage_up)) {
-        mesh_data = ((MeshData*)sausage_up);
-      }
-
+      // perhaps dynamic_cast will be required because of MeshDataClickable raytest
+      PhysicsTransformUpdate* sausage_up = ((PhysicsTransformUpdate*)rigidBody->getUserPointer());
+      
       //auto& update = state_manager->GetPhysicsUpdate(mesh_data);
       //update.first = mesh_data;
       //btTrans.getOpenGLMatrix(&mesh_data->transform[0][0]);
 
-      btTrans.getOpenGLMatrix(&mesh_data->transform[0][0]);
-      mesh_buffer->BufferTransform(mesh_data, mesh_data->transform);
+      btTrans.getOpenGLMatrix(&sausage_up->GetOutMatrix()[0][0]);
+      sausage_up->OnTransformUpdate();
     }
     IF_PROFILE_ENABLED(ProfTime::physics_buf_trans_ns = chrono::steady_clock::now() - proft4);
   }
   void AddBoxRigidBody(PhysicsData* physics_data,
-    SausageUserPointer* user_pointer,
+    PhysicsTransformUpdate* user_pointer,
     mat4& model_transform,
-    string& name_for_log) {
+    const char* name_for_log) {
     vec3 half_extents = physics_data->max_AABB - physics_data->min_AABB;
     half_extents.x = half_extents.x / 2;
     half_extents.y = half_extents.y / 2;

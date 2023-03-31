@@ -8,7 +8,9 @@
 #include "MeshDataBufferConsumerShared.h"
 
 class MeshStaticBufferConsumer : public MeshDataBufferConsumerShared<BlendTextures, MeshDataStatic, VertexStatic> {
+
 public:
+
   MeshStaticBufferConsumer(
     GLVertexAttributes* vertex_attributes,
     MeshManager* mesh_manager,
