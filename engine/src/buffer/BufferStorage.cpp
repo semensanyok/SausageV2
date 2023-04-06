@@ -64,7 +64,7 @@ void BufferStorage::BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max
   assert(mesh->slots.instances_slot != MemorySlots::NULL_SLOT);
   gl_buffers->
     uniforms_ui_ptr->buffer_ptr->
-      min_max_x_y[mesh->slots.instances_slot.offset] = { min_x, max_x, min_y, max_y };
+      min_max_x_y[mesh->GetInstanceOffset()] = {min_x, max_x, min_y, max_y};
   GPUSynchronizer::GetInstance()->SetSyncBarrier();
 }
 

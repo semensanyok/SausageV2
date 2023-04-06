@@ -34,7 +34,7 @@ class MeshManager : public SausageSystem {
   unordered_map<unsigned long, MeshDataBase*> all_meshes;
   // base_mesh_id -> instance_id -> mesh
   unordered_map<unsigned long,
-    unordered_map<unsigned long, MeshDataInstance*>> instances_by_base_mesh_id;
+  unordered_map<unsigned long, vector<MeshDataInstance*>>> instances_by_base_mesh_id;
   vector<Armature*> all_armatures;
   vector<Light*> all_lights;
 public:
@@ -71,7 +71,7 @@ public:
 
   template<typename VERTEX_TYPE, typename MESH_TYPE>
   MESH_TYPE* CreateMeshData(shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
-    auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber(), load_data.get());
+    auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber(), load_data.get(), load_data->name.c_str());
     all_meshes[mesh->id] = mesh;
     return mesh;
   };

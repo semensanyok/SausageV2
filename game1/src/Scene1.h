@@ -83,15 +83,13 @@ private:
     _LoadGui();
     _LoadMeshes(scene_path);
 
-    _AddRigidBodies(all_meshes);
-    _AddRigidBodies(all_meshes);
-    _AddRigidBodies<MeshData, Vertex>(all_meshes_instances);
+    _AddRigidBodies<MeshData, Vertex>(all_meshes);
 
-    _AddRigidBodies(all_static_meshes);
+    _AddRigidBodies<MeshDataStatic, VertexStatic>(all_static_meshes);
     _AddRigidBodies<MeshDataStatic, VertexStatic>(all_static_meshes_instances);
 
     _LoadAnimations();
-  }
+  } 
 
   void _LoadMeshes(string& path) {
     vector<shared_ptr<MeshLoadData<Vertex>>> mesh_load_data_animated;
@@ -115,7 +113,8 @@ private:
   void SetupInstancedMeshStatic(std::vector<std::shared_ptr<MeshLoadData<VertexStatic>>>& mesh_load_data_animated,
     std::vector<MaterialTexNames>& tex_names_list_animated)
   {
-    auto res = mesh_data_utils->SetupInstancedMesh<MeshDataStatic, VertexStatic, BlendTextures>(draw_call_manager->mesh_static_dc,
+    auto res = mesh_data_utils->SetupInstancedMesh<MeshDataStatic, VertexStatic, BlendTextures>(
+      draw_call_manager->mesh_static_dc,
       mesh_load_data_animated, tex_names_list_animated);
     for (auto r : res) {
       all_static_meshes.push_back(r.mesh);
@@ -128,7 +127,8 @@ private:
   void SetupInstancedMesh(std::vector<std::shared_ptr<MeshLoadData<Vertex>>>& mesh_load_data_animated,
     std::vector<MaterialTexNames>& tex_names_list_animated)
   {
-    auto res = mesh_data_utils->SetupInstancedMeshWithAnim(draw_call_manager->mesh_dc,
+    auto res = mesh_data_utils->SetupInstancedMeshWithAnim(
+      draw_call_manager->mesh_dc,
       mesh_load_data_animated, tex_names_list_animated);
     for (auto r : res) {
       all_meshes.push_back(r.mesh);
@@ -171,11 +171,12 @@ private:
     }
   }
 
-  void _AddRigidBodies(vector<MeshData*>& new_meshes) {
+  template<typename MESH_TYPE, typename VERTEX_TYPE>
+  void _AddRigidBodies(vector<MESH_TYPE*>& new_meshes) {
     for (auto& mesh : new_meshes) {
       SausageUserPointer* up = nullptr;
       if (clickable_meshes_names.contains(mesh->name)) {
-        up = new MeshDataClickable(mesh);
+        up = new MeshDataClickable(mesh->name);
       }
       else {
         up = mesh;
@@ -183,9 +184,9 @@ private:
 
       systems_manager->physics_manager->AddBoxRigidBody(
         mesh->physics_data,
-        new PhysicsTransformUpdateMesh<BlendTextures, MeshData, Vertex>(mesh),
+        new PhysicsTransformUpdateMesh<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
         mesh->transform,
-        mesh->name
+        mesh->name.c_str()
       );
     }
   }
@@ -195,7 +196,7 @@ private:
     for (auto& mesh : new_meshes) {
       SausageUserPointer* up = nullptr;
       if (clickable_meshes_names.contains(mesh->base_mesh->name)) {
-        up = new MeshDataInstanceClickable(mesh);
+        up = new MeshDataClickable(mesh->name);
       }
       else {
         up = mesh;
@@ -205,26 +206,7 @@ private:
         ((MESH_TYPE*)mesh->base_mesh)->physics_data,
         new PhysicsTransformUpdateMeshInstance<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
         mesh->transform,
-        mesh->name
-      );
-    }
-  }
-
-  void _AddRigidBodies(vector<MeshDataStatic*>& new_meshes) {
-    for (auto& mesh : new_meshes) {
-      SausageUserPointer* up = nullptr;
-      if (clickable_meshes_names.contains(mesh->name)) {
-        up = new MeshDataStaticClickable(mesh);
-      }
-      else {
-        up = mesh;
-      }
-
-      systems_manager->physics_manager->AddBoxRigidBody(
-        mesh->physics_data,
-        new PhysicsTransformUpdateMesh<BlendTextures, MeshDataStatic, VertexStatic>(mesh),
-        mesh->transform,
-        mesh->name
+        mesh->name.c_str()
       );
     }
   }

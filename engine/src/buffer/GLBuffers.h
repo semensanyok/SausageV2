@@ -190,17 +190,20 @@ public:
   }
   template<>
   inline void BufferTexture<MeshData, BlendTextures>(BufferInstanceOffset* mesh, BlendTextures& textures) {
-    mesh_uniform_ptr->buffer_ptr->blend_textures[mesh->GetInstanceOffset()]
+    auto offset = mesh->GetInstanceOffset();
+    mesh_uniform_ptr->buffer_ptr->blend_textures[offset]
       = textures;
   };
   template<>
   inline void BufferTexture<MeshDataStatic, BlendTextures>(BufferInstanceOffset* mesh, BlendTextures& textures) {
-    mesh_static_uniform_ptr->buffer_ptr->blend_textures[mesh->GetInstanceOffset()]
+    auto offset = mesh->GetInstanceOffset();
+    mesh_static_uniform_ptr->buffer_ptr->blend_textures[offset]
       = textures;
   };
   template<>
   inline void BufferTexture<MeshDataUI, unsigned int>(BufferInstanceOffset* mesh, unsigned int& texture_id) {
-    uniforms_ui_ptr->buffer_ptr->texture_id_by_instance_id[mesh->GetInstanceOffset()]
+    auto offset = mesh->GetInstanceOffset();
+    uniforms_ui_ptr->buffer_ptr->texture_id_by_instance_id[offset]
       = texture_id;
   };
   // TODO: 

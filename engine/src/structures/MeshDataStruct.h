@@ -65,8 +65,9 @@ class MeshDataBase : public BufferInstanceOffset
 
 public:
   MeshDataSlots slots;
+  // used for engine references. not used as index to gl buffers.
   const unsigned long id;
-  const char* name;
+  string name;
   inline unsigned long GetInstanceOffset() override {
     return slots.instances_slot.offset;
   }
@@ -74,8 +75,8 @@ public:
     return slots.instances_slot != MemorySlots::NULL_SLOT;
   }
 private:
-  MeshDataBase(unsigned long id, const char* name)
-    : slots{ MeshDataSlots() }, id{ id }, name{ name }
+  MeshDataBase(unsigned long id, string name)
+    : slots{ MeshDataSlots() }, id{ id }, name{ name.empty() ? to_string(id) : name}
   {};
   virtual ~MeshDataBase() {};
 };
@@ -90,7 +91,6 @@ public:
   mat4 transform;
   bool is_transparent;
 
-  const char* name;
   BlendTextures textures;
   // _t_odo make reusable
   Armature* armature;
@@ -98,17 +98,16 @@ public:
   PhysicsData* physics_data;
 
 private:
-  MeshData(unsigned long id, const char* name = "\0")
+  MeshData(unsigned long id, string name = "")
     : MeshDataBase(id, name),
     textures{ {0, {}} },
     physics_data{ nullptr },
     is_transparent{ false },
     transform{ mat4(1.0) } {};
-  MeshData(unsigned long id, MeshLoadDataBase* load_data, const char* name = "\0")
+  MeshData(unsigned long id, MeshLoadDataBase* load_data, string name = "")
     : MeshDataBase(id, name), textures{ {0, {}} },
     physics_data{ load_data->physics_data },
     armature{ load_data->armature },
-    name{ name },
     transform{ load_data->transform },
     is_transparent{ false } {};
   ~MeshData() {
@@ -116,6 +115,11 @@ private:
 };
 
 
+/**
+ * mesh with VertexStatic format, which doesnt contain armature bones (not animated).
+ * name is a bit misleading. initially separated for VAO as mesh without armature.
+ * however, it can move or be moved. in physics it can be dynamic body
+*/
 class MeshDataStatic : public MeshDataBase, public SausageUserPointer {
   friend class MeshManager;
 public:
@@ -123,18 +127,16 @@ public:
   mat4 transform;
   bool is_transparent;
 
-  const char* name;
   BlendTextures textures;
   // _t_odo make reusable
   PhysicsData* physics_data;
 
 private:
-  MeshDataStatic(unsigned long id, const char* name = "\0")
+  MeshDataStatic(unsigned long id, string name = "")
     : MeshDataStatic(id, nullptr, name) {};
-  MeshDataStatic(unsigned long id, MeshLoadDataBase* load_data, const char* name = "\0")
+  MeshDataStatic(unsigned long id, MeshLoadDataBase* load_data, string name = "")
     : MeshDataBase(id, name), textures{ {0, {}} },
     physics_data{ load_data->physics_data },
-    name{ load_data->name.c_str() },
     transform{ load_data->transform },
     is_transparent{ false } {};
   ~MeshDataStatic() {
@@ -149,7 +151,7 @@ private:
 class MeshDataInstance : public BufferInstanceOffset, public SausageUserPointer {
   friend class MeshManager;
 public:
-  const char* name;
+  string name;
   mat4 transform;
   const long instance_id;
   // 1. base mesh can reallocate its command slot
@@ -167,7 +169,8 @@ public:
 private:
   MeshDataInstance(mat4& transform, long instance_id, MeshDataBase* base_mesh) :
     transform{ transform }, instance_id{ instance_id }, base_mesh{ base_mesh },
-    name{ format("{}_{}", base_mesh->name, instance_id).c_str() } {}
+    name{ format("{}_{}", base_mesh->name, to_string(instance_id))} {
+}
   ~MeshDataInstance() {};
 };
 
@@ -177,9 +180,9 @@ public:
   vec2 transform;
   Texture* texture;
 private:
-  MeshDataUI(unsigned long id, const char* name = "\0") :
+  MeshDataUI(unsigned long id, string name = "") :
     MeshDataUI(id, { 0, 0 }, nullptr, name) {};
-  MeshDataUI(unsigned long id, vec2 transform, Texture* texture, const char* name = "\0") :
+  MeshDataUI(unsigned long id, vec2 transform, Texture* texture, string name = "") :
     MeshDataBase(id, name),
     transform{ transform },
     texture{ texture } {};
@@ -193,7 +196,7 @@ public:
   mat4 transform;
   Texture* texture;
 private:
-  MeshDataOverlay3D(unsigned long id, mat4 transform, const char* text = nullptr, const char* name = "\0") :
+  MeshDataOverlay3D(unsigned long id, mat4 transform, const char* text = nullptr, string name = "") :
     MeshDataBase(id, name),
     text{ text },
     transform{ transform },
@@ -207,33 +210,17 @@ class MeshDataOutline : public MeshDataBase {
 public:
   //vec2 transform;
 private:
-  MeshDataOutline(unsigned long id, const char* name = "\0") :
+  MeshDataOutline(unsigned long id, string name = "") :
     MeshDataBase(id, name) {};
   ~MeshDataOutline() {};
 };
 
 class MeshDataClickable : public SausageUserPointer {
 public:
-  MeshData* mesh_data;
-  MeshDataClickable(MeshData* mesh_data) : mesh_data{ mesh_data } {};
+  string message;
+  MeshDataClickable(string message) : message{ message } {};
   void Call() {
-    cout << "RayHit from mesh " << mesh_data->name << endl;
-  }
-};
-class MeshDataStaticClickable : public SausageUserPointer {
-public:
-  MeshDataStatic* mesh_data;
-  MeshDataStaticClickable(MeshDataStatic* mesh_data) : mesh_data{ mesh_data } {};
-  void Call() {
-    cout << "RayHit from mesh " << mesh_data->name << endl;
-  }
-};
-class MeshDataInstanceClickable : public SausageUserPointer {
-public:
-  MeshDataInstance* mesh_data;
-  MeshDataInstanceClickable(MeshDataInstance* mesh_data) : mesh_data{ mesh_data } {};
-  void Call() {
-    cout << format("RayHit from instance {} of mesh {}", mesh_data->instance_id, mesh_data->base_mesh->id) << endl;
+    cout << "RayHit from mesh " << message << endl;
   }
 };
 

@@ -51,7 +51,7 @@ public:
 		{
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
 			ImGui::Begin("Camera");
-			ImGui::Text("POSITION: %.1f %.1f %.1f", camera->pos.x, camera->pos.y, camera->pos.z);
+            ImGui::InputFloat3("POSITION", &camera->pos[0], "%.0f", ImGuiInputTextFlags_None);
 			ImGui::Text("Yaw: %.1f Pitch: %.1f", camera->yaw_angle, camera->pitch_angle);
 			ImGui::Text("Right: %.1f %.1f %.1f", camera->right.x, camera->right.y, camera->right.z);
 			ImGui::Text("Up: %.1f %.1f %.1f", camera->up.x, camera->up.y, camera->up.z);

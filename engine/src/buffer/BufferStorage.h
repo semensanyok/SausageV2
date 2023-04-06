@@ -98,7 +98,8 @@ public:
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
   void BufferTransform(BufferInstanceOffset* mesh, TRANSFORM_TYPE& transform) {
     assert(mesh->IsInstanceOffsetAllocated());
-    gl_buffers->GetTransformPtr<TRANSFORM_TYPE, MESH_TYPE>()[mesh->GetInstanceOffset()] = transform;
+    auto offset = mesh->GetInstanceOffset();
+    gl_buffers->GetTransformPtr<TRANSFORM_TYPE, MESH_TYPE>()[offset] = transform;
     GPUSynchronizer::GetInstance()->SetSyncBarrier();
   };
   template<typename MESH_TYPE>

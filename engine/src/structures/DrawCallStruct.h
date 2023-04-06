@@ -17,10 +17,10 @@ using namespace std;
  * make sure to group VertexType in contigious series of draws
  */
 enum class DrawOrder {
-  //VertexType::STATIC
-  MESH_STATIC,
   //VertexType::MESH
   MESH,
+  //VertexType::STATIC
+  MESH_STATIC,
   OVERLAY_3D,
   //VERTEX_TYPE::UI
   UI_BACK,
@@ -97,8 +97,9 @@ public:
   }
 
 private:
-  void Allocate(MeshDataSlots& out_slots, unsigned int instances_count) {
-    MemorySlot command_buffer_slot = command_buffer->ptr->instances_slots.Allocate(instances_count);
+  // allocates slot for single DrawElementsIndirectCommand
+  void Allocate(MeshDataSlots& out_slots) {
+    MemorySlot command_buffer_slot = command_buffer->ptr->instances_slots.Allocate(1);
     out_slots.buffer_id = command_buffer_slot.offset;
     assert(out_slots.IsBufferIdAllocated());
   }

@@ -30,14 +30,20 @@ namespace UniformsLocations {
 };
 
 class BufferInstanceOffset {
+
 public:
-  // - used as offset to buffer uniform arrays: transform, texture, ...?
+  // used as offset to array, containing offset to buffer uniform arrays: transform, texture, ...
+  // to not rebuffer data for instanced meshes (transform matrices) each time slot is reallocated.
+  //    e.g. when we have 2 buffered instanced meshes, but then increased instances to 4.
+  //    so we must buffer 4 subsequent data, which identifies given instance.
+  //    we cannot rebuffer all buffered data to the end of each array.
+  //    so, we rebuffer only subsequent indices to intance data arrays.
   virtual unsigned long GetInstanceOffset() = 0;
 
   virtual bool IsInstanceOffsetAllocated() = 0;
 };
 
-#define BLEND_TEXTURES_ALIGNED_TO_16_BYTES(CAPACITY) BlendTextures blend_textures[CAPACITY]; \
+#define BLEND_TEXTURES_ALIGNED_TO_16_BYTES(CAPACITY) BlendTextures blend_textures[CAPACITY];\
 float pad[3];
 
 // some GPU structs resides in other headers, i.e. Light.h

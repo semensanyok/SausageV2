@@ -40,8 +40,7 @@ public:
     BufferMeshData(mesh, load_data);
   }
   void BufferMeshData(MESH_TYPE* mesh,
-    shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data,
-    unsigned int num_instances = 1) {
+    shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
     //allocated in DrawCallManager->SetToCommandWithOffsets (via buffer->TryReallocateInstanceSlot)
     //this->AllocateInstanceSlot(mesh->slots, num_instances);
     this->BufferVertices(mesh->slots, load_data);

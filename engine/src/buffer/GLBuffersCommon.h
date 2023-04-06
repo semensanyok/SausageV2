@@ -61,9 +61,9 @@ BufferNumberPool<T>* CreateBufferStorageNumberPool(unsigned long storage_size,
   GLuint array_type) {
   GLuint buffer_id;
   glGenBuffers(1, &buffer_id);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
-  glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, storage_size, NULL, flags);
-  T* buffer_ptr = (T*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0,
+  glBindBuffer(array_type, buffer_id);
+  glBufferStorage(array_type, storage_size, NULL, flags);
+  T* buffer_ptr = (T*)glMapBufferRange(array_type, 0,
     storage_size, flags);
-  return new BufferNumberPool{ ThreadSafeNumberPool(max_number), buffer_id , buffer_ptr };
+  return new BufferNumberPool<T>{ ThreadSafeNumberPool(max_number), buffer_id , buffer_ptr };
 }

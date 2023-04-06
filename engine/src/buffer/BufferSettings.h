@@ -12,7 +12,7 @@ namespace BufferSettings {
   const unsigned long MAX_VERTEX_STATIC = 1000000;
   const unsigned long MAX_INDEX_STATIC = 2 * MAX_VERTEX_STATIC;
   const unsigned long MAX_BASE_MESHES_STATIC = 40;
-  const unsigned long MAX_MESHES_STATIC_INSTANCES = MAX_BASE_MESHES * 10;
+  const unsigned long MAX_MESHES_STATIC_INSTANCES = MAX_BASE_MESHES_STATIC * 10;
 
   const unsigned long MAX_VERTEX_UI = 10000;
   const unsigned long MAX_INDEX_UI = 2 * MAX_VERTEX_UI;

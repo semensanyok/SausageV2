@@ -49,11 +49,11 @@ void Renderer::Render(Camera* camera) {
   SDL_GL_SwapWindow(context_manager->window);
   IF_PROFILE_ENABLED(
     auto proft5 = chrono::steady_clock::now();
-  ProfTime::render_total_ns = proft5 - proft1;
-  ProfTime::render_commands_ns = proft2 - proft1;
-  ProfTime::render_draw_ns = proft3 - proft2;
-  ProfTime::render_gui_ns = proft4 - proft3;
-  ProfTime::render_swap_window_ns = proft5 - proft4;
+    ProfTime::render_total_ns = proft5 - proft1;
+    ProfTime::render_commands_ns = proft2 - proft1;
+    ProfTime::render_draw_ns = proft3 - proft2;
+    ProfTime::render_gui_ns = proft4 - proft3;
+    ProfTime::render_swap_window_ns = proft5 - proft4;
   );
   Events::end_render_frame_event.notify_all();
 }

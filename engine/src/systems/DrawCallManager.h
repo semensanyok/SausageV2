@@ -124,9 +124,9 @@ public:
     assert(!dc_by_mesh_id.contains(mesh->id));
     assert(!command_by_mesh_id.contains(mesh->id));
     DrawElementsIndirectCommand& command = command_by_mesh_id[mesh->id];
-    dc->Allocate(mesh->slots, 1);
+    dc->Allocate(mesh->slots);
     dc_by_mesh_id[mesh->id] = dc;
-    SetToCommandWithOffsets<MESH_TYPE>(mesh, 1, is_alloc_instance_slot);
+    SetToCommandWithOffsets<MESH_TYPE>(mesh, 1, is_alloc_instance_slot, instance_count);
   }
 
   template<typename MESH_TYPE>
@@ -147,8 +147,9 @@ public:
     }
     else {
       LOG(format("unable to allocate contigious instance slot in buffer for mesh {} instance count {}",mesh->name, command.instanceCount));
-    return nullptr;
-  }
+      return nullptr;
+    }
+  } 
 
   template<typename MESH_TYPE>
   MeshDataInstance* AddNewInstance(MeshDataBase* mesh,
@@ -191,24 +192,25 @@ public:
   template<typename MESH_TYPE>
   bool SetToCommandWithOffsets(MeshDataBase* mesh,
     GLuint instance_count,
-    bool is_alloc_instance_slot = true) {
+    bool is_alloc_instance_slot = true,
+    GLuint pre_allocate_buffer_instance_count = 0) {
     assert(command_by_mesh_id.contains(mesh->id));
     assert(dc_by_mesh_id.contains(mesh->id));
     auto& command = command_by_mesh_id[mesh->id];
     auto dc = dc_by_mesh_id[mesh->id];
+    pre_allocate_buffer_instance_count = std::max(instance_count, pre_allocate_buffer_instance_count);
     bool is_success_slot_alloc = is_alloc_instance_slot ?
-      buffer->TryReallocateInstanceSlot<MESH_TYPE>(mesh->slots, instance_count) : true;
+      buffer->TryReallocateInstanceSlot<MESH_TYPE>(mesh->slots, pre_allocate_buffer_instance_count) : true;
     bool is_need_buffer_update = is_success_slot_alloc;
-    if (is_need_buffer_update) {
-      // to avoid weird situation when count = 0 and used = 1.
-      // even that is not used and doesnt affect anything, avoid it
-      if (is_alloc_instance_slot) {
-        mesh->slots.instances_slot.used = instance_count;
-      }
+    if (is_alloc_instance_slot && is_need_buffer_update) {
+      //// to avoid weird situation when count = 0 and used = 1.
+      //// even that is not used and doesnt affect anything, avoid it
+      //if (is_alloc_instance_slot) {
+      //  mesh->slots.instances_slot.used = instance_count;
+      //}
       _SetToCommandWithOffsets(command, mesh->slots, dc, instance_count);
-      return true;
     }
-    return false;
+    return is_success_slot_alloc;
   }
 private:
 

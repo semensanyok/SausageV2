@@ -42,14 +42,14 @@ public:
   template<typename MESH_TYPE, typename VERTEX_TYPE, typename TEXTURE_ARRAY_TYPE>
   vector<SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE>> SetupInstancedMesh(
     DrawCall* dc,
-    std::vector<std::shared_ptr<MeshLoadData<VERTEX_TYPE>>>& mesh_load_data_animated,
+    std::vector<std::shared_ptr<MeshLoadData<VERTEX_TYPE>>>& mesh_load,
     std::vector<MaterialTexNames>& tex_names_list_animated)
   {
     vector<SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE>> res;
     unordered_map<size_t, pair<MaterialTexNames, vector<shared_ptr<MeshLoadData<VERTEX_TYPE>>>>> base_meshes;
     hash<MaterialTexNames> tex_hash;
-    for (int i = 0; i < mesh_load_data_animated.size(); i++) {
-      auto load_data_sptr = mesh_load_data_animated[i];
+    for (int i = 0; i < mesh_load.size(); i++) {
+      auto load_data_sptr = mesh_load[i];
       auto load_data = load_data_sptr.get();
       auto tex_names = tex_names_list_animated[i];
       auto key =
@@ -88,13 +88,16 @@ public:
         continue;
       };
       draw_call_manager->AddNewCommandToDrawCall<MESH_TYPE>(mesh, dc, instances.size());
-      mesh_data_buffer_consumer->BufferMeshData(mesh, base_ptr, instances.size());
+      mesh_data_buffer_consumer->BufferMeshData(mesh, base_ptr);
 
       // PHYSICS SETUP
       {
+        mesh->physics_data = base->physics_data;
         if (base->name != "Terrain") {
-          mesh->physics_data = base->physics_data;
           mesh->physics_data->mass = 10.0;
+        }
+        else {
+          mesh->physics_data->mass = 0.0;
         }
         mesh->physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
         mesh->physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;

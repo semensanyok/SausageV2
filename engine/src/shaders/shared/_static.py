@@ -5,7 +5,7 @@ layout (std430, binding = MESH_STATIC_UNIFORMS_LOC) buffer UniformDataStaticMesh
   mat4 transforms[MAX_MESHES_STATIC_INSTANCES];
   BlendTextures blend_textures[MAX_MESHES_STATIC_INSTANCES];
   float pad[3];
-  unsigned int base_instance_offset[MAX_BASE_MESHES_STATIC];
+  uint base_instance_offset[MAX_BASE_MESHES_STATIC];
 };
 """,
 "mesh_vs_out": 
@@ -34,6 +34,7 @@ in vs_out {
 """
 Out.frag_pos = vec3(transform * res_position);
 Out.base_instance = gl_BaseInstanceARB;
+// Out.base_instance = int(base_instance_offset[0] == 0);
 Out.instance_id = gl_InstanceID;
 Out.uv = uv;
 vec3 T = normalize(vec3(transform * vec4(tangent, 0.0)));

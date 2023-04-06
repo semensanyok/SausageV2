@@ -58,7 +58,7 @@ public:
     buffer->BufferTransform<TRANSFORM_TYPE, MESH_TYPE>(offset, transform);
   }
   void BufferTexture(BufferInstanceOffset* mesh, TEXTURE_ARRAY_TYPE& texture) {
-    return buffer->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(mesh, texture);
+    buffer->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(mesh, texture);
   }
   void ReleaseSlots(MeshDataBase* mesh) {
     // child override to not try/catch or check nptr

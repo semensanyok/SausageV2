@@ -195,7 +195,7 @@ MeshDataInstance* MeshManager::CreateInstancedMesh(MeshDataBase* base_mesh,
   mat4& transform) {
   auto* mesh = new MeshDataInstance(transform, instance_id, base_mesh);
   auto instances_by_id = instances_by_base_mesh_id[base_mesh->id];
-  instances_by_id[mesh->instance_id] = mesh;
+  instances_by_id[mesh->instance_id].push_back(mesh);
   return mesh;
 }
 
@@ -220,8 +220,10 @@ void MeshManager::DeleteMeshData(MeshDataBase* mesh) {
   //  delete armature;
   //}
   if (instances_by_base_mesh_id.contains(mesh->id)) {
-    for (auto instance_by_id : instances_by_base_mesh_id[mesh->id]) {
-      delete instance_by_id.second;
+    for (auto instances_by_id : instances_by_base_mesh_id[mesh->id]) {
+      for (auto instance_by_id : instances_by_id.second) {
+        delete instance_by_id;
+      }
     }
     instances_by_base_mesh_id.erase(mesh->id);
   }
@@ -231,13 +233,7 @@ void MeshManager::DeleteMeshData(MeshDataBase* mesh) {
 
 void MeshManager::_ClearInstances() {
   for (auto mesh : all_meshes) {
-    auto instances = instances_by_base_mesh_id.find(mesh.second->id);
-    if (instances_by_base_mesh_id.contains(mesh.second->id)) {
-      for (auto instance : instances_by_base_mesh_id[mesh.second->id]) {
-        delete instance.second;
-      }
-    }
-    delete mesh.second;
+    DeleteMeshData(mesh.second);
   }
   for (auto armature : all_armatures) {
     if (armature != NULL && armature != nullptr)
