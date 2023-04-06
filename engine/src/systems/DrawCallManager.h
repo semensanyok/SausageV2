@@ -145,6 +145,8 @@ public:
       auto instance = mesh_manager->CreateInstancedMesh(mesh, instance_id, transform);
       return instance;
     }
+    else {
+      LOG(format("unable to allocate contigious instance slot in buffer for mesh {} instance count {}",mesh->name, command.instanceCount));
     return nullptr;
   }
 
