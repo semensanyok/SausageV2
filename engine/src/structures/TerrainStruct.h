@@ -26,9 +26,11 @@ class TerrainChunk {
   vec3 pos;
   // number of TerrainTile patches by axes.
   int sizeX, sizeY;
+  float spacing;
 
-  TerrainChunk(int sizeX, int sizeY, vec3 pos) :
+  TerrainChunk(int sizeX, int sizeY, float spacing, vec3 pos) :
     pos{ pos },
     sizeX{ sizeX }, sizeY{ sizeY },
+    spacing{ spacing },
     heightmap{ vector<float>(sizeX * sizeY) } {}
 };

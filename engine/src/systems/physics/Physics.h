@@ -154,18 +154,60 @@ public:
 
   // TODO: continious collision for terrain
   // https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h
-  void AddTerrainRigidBody(PhysicsData* physics_data,
+  void AddTerrainRigidBody(
+    //PhysicsData* physics_data,
     vector<float>& heightmap,
     int width,
     int height,
+    btScalar spacing,
     SausageUserPointer* user_pointer,
     mat4& model_transform,
     string& name_for_log) {
-    btScalar s_gridHeightScale = 0.02;
     bool flipQuadEdges = false;
-    btHeightfieldTerrainShape* terrain_shape = new btHeightfieldTerrainShape(
-      width, height, heightmap.data(), s_gridHeightScale, 0.0, 1.0,
-      1, PHY_FLOAT, flipQuadEdges);
+
+    // legacy constructor
+    //btScalar s_gridHeightScale = 0.02;
+    //btHeightfieldTerrainShape* terrain_shape = new btHeightfieldTerrainShape(
+    //  width, height, heightmap.data(), s_gridHeightScale, 0.0, 1.0,
+    //  1, PHY_FLOAT, flipQuadEdges);
+
+    btHeightfieldTerrainShape* shape = new btHeightfieldTerrainShape(
+      width, height, heightmap.data(), 0.0, 1.0,
+      1, flipQuadEdges);
+
+    btVector3 localScaling = { spacing, spacing, 1.0 };
+    shape->setLocalScaling(localScaling);
+
+    // create ground object
+    float mass = 0.0;
+    auto transform = btTransform();
+    if (model_transform[0].x > 1 || model_transform[1].y > 1 || model_transform[2].z > 1) {
+      LOG((ostringstream()
+        << "model scale must be 1 for bullet rigidbody. "
+        "Incorrect collision prediction for mesh: "
+        << name_for_log).str());
+    }
+    transform.setFromOpenGLMatrix(&model_transform[0][0]);
+
+    bool isDynamic = (mass != 0.f);
+    btVector3 localInertia(0, 0, 0);
+    if (isDynamic) {
+      shape->calculateLocalInertia(mass,
+                                   localInertia);
+    }
+    btDefaultMotionState* motionstate = new btDefaultMotionState(transform);
+    btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(
+      mass,  // mass, in kg. 0 -> Static object, will never move.
+      motionstate,
+      shape,  // collision shape of body
+      localInertia    // local inertia
+    );
+    btRigidBody* rigidBody = new btRigidBody(rigidBodyCI);
+
+    dynamicsWorld->addRigidBody(rigidBody,
+      SausageCollisionMasks::ALL,
+      SausageCollisionMasks::ALL);
+    rigidBodies.push_back(rigidBody);
   }
 
   void RemoveRigidBody(btRigidBody* body) {

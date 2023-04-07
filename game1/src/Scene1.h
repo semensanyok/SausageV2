@@ -33,8 +33,8 @@ public:
   vector<Light*> all_lights;
   vector<Light*> draw_lights;
 
-  //string scene_path = GetModelPath("Frog.fbx");
-  string scene_path = GetModelPath("Frog2.fbx");
+  string scene_path = GetModelPath("Frog.fbx");
+  //string scene_path = GetModelPath("Frog2.fbx");
 
   // string scene_path = GetModelPath("dae/Frog.dae");
   // string scene_path = GetModelPath("Frog.gltf");
@@ -127,6 +127,20 @@ private:
   void SetupInstancedMesh(std::vector<std::shared_ptr<MeshLoadData<Vertex>>>& mesh_load_data_animated,
     std::vector<MaterialTexNames>& tex_names_list_animated)
   {
+    // animation stress test
+    //for (int i = 0; i < 1000; i++) {
+    //  auto copy = mesh_manager->CreateLoadDataFromVertices(
+    //    mesh_load_data_animated[0]->vertices,
+    //    mesh_load_data_animated[0]->indices,
+    //    mesh_load_data_animated[0]->armature);
+    //  copy->transform = glm::translate(mesh_load_data_animated[0]->transform,
+    //    i%2 == 0 ? vec3(i % 3, i % 3 + 1, i % 3 + 2) : -vec3(i % 3, i % 3 + 1, i % 3 + 2));
+    //  copy->name = mesh_load_data_animated[0]->name;
+    //  //format("{}_{}", mesh_load_data_animated[0]->name, i);
+    //  mesh_load_data_animated.push_back(copy);
+    //  tex_names_list_animated.push_back(tex_names_list_animated[0]);
+    //}
+
     auto res = mesh_data_utils->SetupInstancedMeshWithAnim(
       draw_call_manager->mesh_dc,
       mesh_load_data_animated, tex_names_list_animated);

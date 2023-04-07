@@ -11,6 +11,7 @@
 #include "MeshDataBufferConsumer.h"
 #include <FastNoise/FastNoise.h>
 #include "Constants.h"
+#include "Physics.h"
 
 using namespace std;
 using namespace glm;
@@ -137,13 +138,16 @@ class TerrainManager
   FastNoise::SmartNode<FastNoise::Simplex> fnSimplex;
   vector<TerrainChunk*> chunks;
   DrawCallManager* draw_call_manager;
+  PhysicsManager* physics_manager;
 public:
   TerrainManager(BufferManager* buffer_manager,
     MeshManager* mesh_manager,
-    DrawCallManager* draw_call_manager) :
+    DrawCallManager* draw_call_manager,
+    PhysicsManager* physics_manager) :
     buffer{ buffer_manager->mesh_static_buffer },
     mesh_manager{ mesh_manager },
-    draw_call_manager{ draw_call_manager } {
+    draw_call_manager{ draw_call_manager },
+    physics_manager{ physics_manager } {
     //FastNoise::SmartNode<FastNoise::Simplex>
     fnSimplex = FastNoise::New<FastNoise::Simplex>();
     FastNoise::SmartNode sm = fnSimplex;

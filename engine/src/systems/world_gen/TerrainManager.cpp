@@ -15,6 +15,10 @@ void TerrainManager::CreateTerrain(int size_x, int size_y)
   buffer->AllocateStorage(chunk->mesh->slots, vertices.size(), indices.size());
   draw_call_manager->AddNewCommandToDrawCall<MeshDataStatic>(chunk->mesh, draw_call_manager->mesh_static_dc, 1);
   buffer->BufferMeshData(chunk->mesh, vertices, indices, uvs, normals);
+
+  string name = "Terrain";
+  physics_manager->AddTerrainRigidBody(chunk->heightmap, chunk->sizeX, chunk->sizeY, chunk->spacing,
+    new MeshDataClickable(name), chunk->mesh->transform, name);
 }
 
 TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y, int size_x, int size_y,
@@ -25,7 +29,7 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   // OUT
   vector<vec2>& uvs)
 {
-  TerrainChunk* chunk = new TerrainChunk(size_x, size_y, pos);
+  TerrainChunk* chunk = new TerrainChunk(size_x, size_y, 1, pos);
   chunk->mesh = mesh_manager->CreateMeshData<MeshDataStatic>();
   fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
 
@@ -34,13 +38,12 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
 
   // 1. fill simple array and adjastent tiles references
   // distance between vertices
-  const int INTERVERTEX_DISTANCE = 1;
   auto& height_values = chunk->heightmap;
   // set vertices array
   for (int y = 0; y < size_y; y += 1) {
     for (int x = 0; x < size_x; x += 1) {
-      int x0 = x * INTERVERTEX_DISTANCE;
-      int y0 = y * INTERVERTEX_DISTANCE;
+      int x0 = x * chunk->spacing;
+      int y0 = y * chunk->spacing;
       int current_row_shift = y * size_x;
       int ind = x + current_row_shift;
       vertices.push_back({ x0, height_values[ind], y0 });
@@ -80,13 +83,6 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
 
 vector<vec3> TerrainManager::GenNormals(vector<vec3> vertices) {
   vector<vec3> normals(vertices.size());
-  // need to calculate vertex normal as mean of 4 faces normals
-  // but we have instanced draw call, same normal for all tiles...
-  // but transform mat4 should adjust each vertex normal to be equal to face normal
-  // TODO: check that:
-  //  expected to see seems between tiles and not smooth shading, each tile having constant light, no interpolation
-  //  normal texture should make it a bit less visible though
-  //out_face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
   for (int i = 0; i < vertices.size(); i += 4) {
     vec3 face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
     for (int j = 0; j < 4; j++) {

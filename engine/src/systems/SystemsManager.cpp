@@ -14,7 +14,6 @@ void SystemsManager::InitSystems() {
   shader_manager = new ShaderManager(file_watcher, renderer, camera);
   shader_manager->SetupShaders();
   draw_call_manager = new DrawCallManager(shader_manager, renderer, buffer_manager->command_buffer_manager, mesh_manager);
-  terrain_manager = new TerrainManager(buffer_manager, mesh_manager, draw_call_manager);
   state_manager = new StateManager(buffer_manager);
   samplers = new Samplers();
   samplers->Init();
@@ -30,16 +29,20 @@ void SystemsManager::InitSystems() {
   };
   anim_manager = new AnimationManager(state_manager, mesh_manager, buffer_manager);
 
-  async_manager = new AsyncTaskManager();
   screen_overlay_manager = new ScreenOverlayManager(
     buffer_manager->ui_buffer,
     mesh_manager,
     font_manager,
     draw_call_manager);
   screen_overlay_manager->Init();
+
   controller_event_processor = new ControllerEventProcessorEditor(camera, screen_overlay_manager, buffer_manager);
   controller = new Controller(camera, state_manager, physics_manager);
   controller->AddProcessor(controller_event_processor);
+
+  terrain_manager = new TerrainManager(buffer_manager, mesh_manager, draw_call_manager, physics_manager);
+
+  async_manager = new AsyncTaskManager();
   _SubmitAsyncTasks();
 }
 

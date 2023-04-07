@@ -17,11 +17,11 @@ using namespace std;
  * make sure to group VertexType in contigious series of draws
  */
 enum class DrawOrder {
-  //VertexType::MESH
-  MESH,
   //VertexType::STATIC
   MESH_STATIC,
   OVERLAY_3D,
+  //VertexType::MESH
+  MESH,
   //VERTEX_TYPE::UI
   UI_BACK,
   UI_TEXT,

@@ -54,3 +54,5 @@ ${GRESOURCE_C_LOC}
 target_link_libraries(${PROJECT_NAME} engine)
 target_include_directories(${PROJECT_NAME} PUBLIC ${GRECOURCES_GENERATED_PATH})
 #add_dependencies(${SAUSAGE_TEST_PROJ} ${TEST_GRESOURCE})
+
+FILE(COPY "assets/" DESTINATION "${CMAKE_BINARY_DIR}/assets")
