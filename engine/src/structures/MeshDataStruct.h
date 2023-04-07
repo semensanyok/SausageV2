@@ -136,8 +136,8 @@ private:
     : MeshDataStatic(id, nullptr, name) {};
   MeshDataStatic(unsigned long id, MeshLoadDataBase* load_data, string name = "")
     : MeshDataBase(id, name), textures{ {0, {}} },
-    physics_data{ load_data->physics_data },
-    transform{ load_data->transform },
+    physics_data{ load_data == nullptr ? nullptr : load_data->physics_data },
+    transform{ load_data == nullptr ? mat4(1) : load_data->transform},
     is_transparent{ false } {};
   ~MeshDataStatic() {
   };

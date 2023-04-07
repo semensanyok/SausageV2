@@ -3,11 +3,10 @@
 void TerrainManager::CreateTerrain(int size_x, int size_y)
 {
   vector<vec3> vertices;
-  vertices.reserve(size_x * size_y);
   vector<unsigned int> indices;
-  vector<vec2> uvs(size_x * size_y);
+  vector<vec2> uvs;
 
-  auto chunk = CreateChunk(vec3(0, 0, 0), 0, 0, 100, 100,
+  auto chunk = CreateChunk(vec3(0, 0, 0), 0, 0, size_x, size_y,
     // OUT
     vertices, indices, uvs);
 
@@ -26,8 +25,7 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   // OUT
   vector<vec2>& uvs)
 {
-  const int SIZE = 1;
-  TerrainChunk* chunk = new TerrainChunk(size_x, size_y, SIZE, pos);
+  TerrainChunk* chunk = new TerrainChunk(size_x, size_y, pos);
   chunk->mesh = mesh_manager->CreateMeshData<MeshDataStatic>();
   fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
 
@@ -35,51 +33,47 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   // each tile has 4 vertices
 
   // 1. fill simple array and adjastent tiles references
+  // distance between vertices
+  const int INTERVERTEX_DISTANCE = 1;
   auto& height_values = chunk->heightmap;
-  for (int y = 0; y < size_y; y+=2) {
-    for (int x = 0; x < size_x; x += 2) {
-      int x0 = x;
-      int x1 = x + 1;
-      int y0 = y;
-      int y1 = y + 1;
+  // set vertices array
+  for (int y = 0; y < size_y; y += 1) {
+    for (int x = 0; x < size_x; x += 1) {
+      int x0 = x * INTERVERTEX_DISTANCE;
+      int y0 = y * INTERVERTEX_DISTANCE;
+      int current_row_shift = y * size_x;
+      int ind = x + current_row_shift;
+      vertices.push_back({ x0, height_values[ind], y0 });
+    }
+  }
+  // set indices / uv's arrays
+  // counter clockwise
+  for (int y = 0; y < size_y; y ++) {
+    for (int x = 0; x < size_x; x ++) {
+      if (x == size_x - 1 || y == size_y - 1) {
+        continue;
+      }
+      uvs.push_back({ 0.0, 0.0 });
+      uvs.push_back({ 0.0, 1.0 });
+      uvs.push_back({ 1.0, 0.0 });
+      uvs.push_back({ 1.0, 1.0 });
 
       int current_row_shift = y * size_x;
-      int next_row_shift = y1 * size_x;
+      int next_row_shift = (y + 1) * size_x;
 
-      int ind = x0 + current_row_shift;
-      int ind_e = x1 + current_row_shift;
-      int ind_ne = x1 + next_row_shift;
-      int ind_n = x0 + next_row_shift;
+      int ind = x + current_row_shift;
+      int ind_e = (x + 1) + current_row_shift;
+      int ind_n = x + next_row_shift;
+      int ind_ne = (x + 1) + next_row_shift;
 
-      size_t start = vertices.size();
-      vertices.push_back({ x0, y0, height_values[ind] });
-      vertices.push_back({ x0, y1, height_values[ind_n] });
-      vertices.push_back({ x1, y0, height_values[ind_e] });
-      vertices.push_back({ x1, y1, height_values[ind_ne] });
+      indices.push_back(ind);
+      indices.push_back(ind_e);
+      indices.push_back(ind_n);
 
-      uvs[start] = { 0.0, 0.0 };
-      uvs[start + 1] = { 0.0, 1.0 };
-      uvs[start + 2] = { 1.0, 0.0 };
-      uvs[start + 3] = { 1.0, 1.0 };
-
-      // 1 triangle
-      indices.push_back(start);
-      indices.push_back(start + 1);
-      indices.push_back(start + 2);
-
-      //indices.push_back(ind1);
-      //indices.push_back(ind1_next_row);
-      //indices.push_back(ind2);
-
-      // 2 triangle
-      indices.push_back(start + 2);
-      indices.push_back(start + 3);
-      indices.push_back(start + 1);
-
-      //indices.push_back(ind2);
-      //indices.push_back(ind2_next_row);
-      //indices.push_back(ind1_next_row);
-     }
+      indices.push_back(ind_e);
+      indices.push_back(ind_ne);
+      indices.push_back(ind_n);
+    }
   }
   return chunk;
 }

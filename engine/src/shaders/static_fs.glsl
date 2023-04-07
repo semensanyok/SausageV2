@@ -22,40 +22,42 @@ out vec4 color;
 
 {{ mesh_fs_functions }}
 
-vec3 GetInstCol() {
+// vec3 GetInstCol() {
     
-  vec3 inst_col;
-  if (In.base_instance == 0) {
-    inst_col = vec3(255, 0, 0);
-  }
-  if (In.base_instance == 1) {
-    inst_col = vec3(0, 255, 0);
-  }
-  if (In.base_instance == 2) {
-    inst_col = vec3(0, 0, 255);
-  }
-  if (In.base_instance == 3) {
-    inst_col = vec3(255, 255, 0);
-  }
-  if (In.base_instance == 4) {
-    inst_col = vec3(255, 0, 255);
-  }
-  if (In.base_instance == 5) {
-    inst_col = vec3(0, 255, 255);
-  }
-  if (In.base_instance == 6) {
-    inst_col = vec3(255, 255, 255);
-  }
-  return inst_col;
-}
+//   vec3 inst_col;
+//   if (In.base_instance == 0) {
+//     inst_col = vec3(255, 0, 0);
+//   }
+//   if (In.base_instance == 1) {
+//     inst_col = vec3(0, 255, 0);
+//   }
+//   if (In.base_instance == 2) {
+//     inst_col = vec3(0, 0, 255);
+//   }
+//   if (In.base_instance == 3) {
+//     inst_col = vec3(255, 255, 0);
+//   }
+//   if (In.base_instance == 4) {
+//     inst_col = vec3(255, 0, 255);
+//   }
+//   if (In.base_instance == 5) {
+//     inst_col = vec3(0, 255, 255);
+//   }
+//   if (In.base_instance == 6) {
+//     inst_col = vec3(255, 255, 255);
+//   }
+//   return inst_col;
+// }
 
 void main(void) {
-  // SetBlendColor();
+  SetBlendColor();
   //color = vec4(res, 0.04 + clamp(In.base_instance - 4, 0, 1)*0.5); //test transparency back to front sorting
 
-  // color = vec4(255.0,0.0,0.0,0.3);
+  color = vec4(255.0,0.0,0.0,0.3);
+  
   // color = vec4(int(In.instance_id == 0) * 255.0, int(In.instance_id == 1) * 255.0, int(In.instance_id == 2) * 255.0,0.3);
   // color = vec4(int(In.base_instance == 1) * 255.0, int(In.base_instance == 3) * 255.0, int(In.instance_id == 2) * 255.0,0.3);
-  vec3 inst_col = GetInstCol();
-  color = vec4(inst_col[0],inst_col[1],inst_col[2],0.3);
+  
+  // vec3 inst_col = GetInstCol();
+  // color = vec4(inst_col[0],inst_col[1],inst_col[2],0.3);
 }

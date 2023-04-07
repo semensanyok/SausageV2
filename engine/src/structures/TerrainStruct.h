@@ -26,12 +26,9 @@ class TerrainChunk {
   vec3 pos;
   // number of TerrainTile patches by axes.
   int sizeX, sizeY;
-  // distance between `TerrainTile` vertices
-  int scale = 1;
 
-  TerrainChunk(int sizeX, int sizeY, int scale, vec3 pos) :
+  TerrainChunk(int sizeX, int sizeY, vec3 pos) :
     pos{ pos },
     sizeX{ sizeX }, sizeY{ sizeY },
-    scale{ scale },
     heightmap{ vector<float>(sizeX * sizeY) } {}
 };
