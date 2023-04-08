@@ -43,8 +43,12 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   // set vertices array
   for (int y = 0; y < size_y; y += 1) {
     for (int x = 0; x < size_x; x += 1) {
-      int x0 = x * chunk->spacing;
-      int y0 = y * chunk->spacing;
+      // ORIGIN AT SOUTH WEST
+      //int x0 = x * chunk->spacing;
+      //int y0 = y * chunk->spacing;
+      // ORIGIN AT CENTER (for bullet heightmap physics)
+      int x0 = x * chunk->spacing - (size_x / 2);
+      int y0 = y * chunk->spacing - (size_y / 2);
       int current_row_shift = y * size_x;
       int ind = x + current_row_shift;
       vertices.push_back({ x0, height_values[ind], y0 });

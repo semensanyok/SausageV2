@@ -154,14 +154,22 @@ public:
 
   // TODO: continious collision for terrain
   // https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h
+  /*
+  * cites from btHeightfieldTerrainShape
+  * 
+  *   Most (but not all) rendering and heightfield libraries assume
+  *   upAxis = 1 (that is, the y-axis is "up").
+  *   This class allows any of the 3 coordinates to be "up".
+  *   Make sure your choice of axis is consistent with your rendering system.
+  */
   void AddTerrainRigidBody(
     //PhysicsData* physics_data,
-    vector<float>& heightmap,
+    vector<float> heightmap,
     int width,
     int height,
     btScalar spacing,
     SausageUserPointer* user_pointer,
-    mat4& model_transform,
+    mat4 model_transform,
     string& name_for_log) {
     bool flipQuadEdges = false;
 
@@ -171,12 +179,20 @@ public:
     //  width, height, heightmap.data(), s_gridHeightScale, 0.0, 1.0,
     //  1, PHY_FLOAT, flipQuadEdges);
 
+    // Y axis
+    int up_axis = 1;
     btHeightfieldTerrainShape* shape = new btHeightfieldTerrainShape(
-      width, height, heightmap.data(), 0.0, 1.0,
-      1, flipQuadEdges);
-
-    btVector3 localScaling = { spacing, spacing, 1.0 };
+      width, height, heightmap.data(), -1.0, 1.0,
+      up_axis,
+      flipQuadEdges
+    );
+    //spacing *= 100;
+    btVector3 localScaling = { spacing, spacing, spacing };
+    localScaling[up_axis] = 1.0;
     shape->setLocalScaling(localScaling);
+
+    //if (m_upAxis == 2)
+      //shape->setFlipTriangleWinding(true);
 
     // create ground object
     float mass = 0.0;
@@ -187,8 +203,13 @@ public:
         "Incorrect collision prediction for mesh: "
         << name_for_log).str());
     }
-    transform.setFromOpenGLMatrix(&model_transform[0][0]);
-
+    {
+      transform.setFromOpenGLMatrix(&model_transform[0][0]);
+      // SAUSAGE sets plain origin to southwest, not center
+      // bullet expects origin to be at the center
+      //  auto trans_with_world_origin_at_center = translate(model_transform, vec3(width / 2, 0, height / 2));
+      //  transform.setFromOpenGLMatrix(&trans_with_world_origin_at_center[0][0]);
+    }
     bool isDynamic = (mass != 0.f);
     btVector3 localInertia(0, 0, 0);
     if (isDynamic) {
