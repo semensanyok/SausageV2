@@ -21,29 +21,36 @@ class TerrainTest {
       SausageGameLoop::Init();
       sm = SystemsManager::GetInstance();
       auto tm = sm->terrain_manager;
-      tm->CreateTerrain(100, 100);
+      auto size = 100;
+      // center to world origin
+      tm->CreateTerrain(size, size, vec3(- size / 2, 0, -size / 2));
 
       _LoadMeshes(scene_path);
-      _AddRigidBodies<MeshData, Vertex>(all_meshes);
+      // multiply instances
+      auto mesh_static_buffer = sm->buffer_manager->GetBuffer<BlendTextures, MeshDataStatic, VertexStatic>();
+      for (size_t i = 0; i < 100; i++)
+      {
+        mat4 t1 = glm::translate(all_static_meshes[0]->transform,
+            i % 2 == 0 ? vec3(i % 3, i % 3 + 1, i % 3 + 2) : -vec3(i % 3, i % 3 + 1, i % 3 + 2));
+        auto inst = sm->draw_call_manager->AddNewInstance<MeshDataStatic>(all_static_meshes[0], t1);
+        mesh_static_buffer->BufferMeshDataInstance(inst, all_static_meshes[0]->textures);
+        all_static_meshes_instances.push_back(inst);
+      }
+
+      for (auto mesh : all_static_meshes)
+      {
+        sm->mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh);
+      }
+      for (auto mesh : all_static_meshes_instances)
+      {
+        sm->mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh);
+      }
+
+      sm->camera->pos = vec3(all_static_meshes[0]->transform[3] + vec4(0,5,5, 0));
+      sm->camera->SetUpdateMatrices();
     };
     void PrepareDraws() {
     };
-
-
-    template<typename MESH_TYPE, typename VERTEX_TYPE>
-    void _AddRigidBodies(vector<MESH_TYPE*>& new_meshes) {
-      for (auto& mesh : new_meshes) {
-        SausageUserPointer* up = nullptr;
-        up = mesh;
-
-        sm->physics_manager->AddBoxRigidBody(
-          mesh->physics_data,
-          new PhysicsTransformUpdateMesh<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
-          mesh->transform,
-          mesh->name.c_str()
-        );
-      }
-    }
 
     void _LoadMeshes(string& path) {
       vector<shared_ptr<MeshLoadData<Vertex>>> mesh_load_data_animated;

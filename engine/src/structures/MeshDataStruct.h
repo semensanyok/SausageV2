@@ -167,7 +167,7 @@ public:
     return base_mesh->slots.instances_slot != MemorySlots::NULL_SLOT;
   }
 private:
-  MeshDataInstance(mat4& transform, long instance_id, MeshDataBase* base_mesh) :
+  MeshDataInstance(mat4 transform, long instance_id, MeshDataBase* base_mesh) :
     transform{ transform }, instance_id{ instance_id }, base_mesh{ base_mesh },
     name{ format("{}_{}", base_mesh->name, to_string(instance_id))} {
 }

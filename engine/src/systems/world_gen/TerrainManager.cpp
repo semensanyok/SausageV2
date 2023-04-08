@@ -1,12 +1,12 @@
 #include "TerrainManager.h"
 
-void TerrainManager::CreateTerrain(int size_x, int size_y)
+void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord)
 {
   vector<vec3> vertices;
   vector<unsigned int> indices;
   vector<vec2> uvs;
 
-  auto chunk = CreateChunk(vec3(0, 0, 0), 0, 0, size_x, size_y,
+  auto chunk = CreateChunk(origin_coord, 0, 0, size_x, size_y,
     // OUT
     vertices, indices, uvs);
 
@@ -31,6 +31,7 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
 {
   TerrainChunk* chunk = new TerrainChunk(size_x, size_y, 1, pos);
   chunk->mesh = mesh_manager->CreateMeshData<MeshDataStatic>();
+  chunk->mesh->transform = translate(mat4(1), pos);
   fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
 
   // create chunk in local space, use transform matrix to apply offsetX/Y

@@ -26,24 +26,24 @@ void AnimTransform(inout vec4 pos, inout vec4 norm) {
     return;
   }
 
-  // vec4 final_pos = vec4(0);
-  // vec4 final_norm = vec4(0);
-  // for (int i = 0; i < 4; i++) {
-  //   if (bone_ids[i] < 0) {
-  //       break;
-  //   }
-  //   final_pos += (bones_transforms[bone_ids[i]] * pos) * bone_weights[i];
-  //   final_norm += (bones_transforms[bone_ids[i]] * norm) * bone_weights[i];
-  // }
+  vec4 final_pos = vec4(0);
+  vec4 final_norm = vec4(0);
+  for (int i = 0; i < 4; i++) {
+    if (bone_ids[i] < 0) {
+        break;
+    }
+    final_pos += (bones_transforms[bone_ids[i]] * pos) * bone_weights[i];
+    final_norm += (bones_transforms[bone_ids[i]] * norm) * bone_weights[i];
+  }
 
   // no if branching
-  vec4 zero = vec4(0);
-  vec4 final_pos = zero;
-  vec4 final_norm = zero;
-  for (int i = 0; i < 4; i++) {
-    final_pos += bone_ids[i] < 0 ? zero : (bones_transforms[bone_ids[i]] * pos) * bone_weights[i];
-    final_norm += bone_ids[i] < 0 ? zero : (bones_transforms[bone_ids[i]] * norm) * bone_weights[i];
-  }
+  // vec4 zero = vec4(0);
+  // vec4 final_pos = zero;
+  // vec4 final_norm = zero;
+  // for (int i = 0; i < 4; i++) {
+  //   final_pos += bone_ids[i] < 0 ? zero : (bones_transforms[bone_ids[i]] * pos) * bone_weights[i];
+  //   final_norm += bone_ids[i] < 0 ? zero : (bones_transforms[bone_ids[i]] * norm) * bone_weights[i];
+  // }
 
   pos = final_pos;
   norm = final_norm;

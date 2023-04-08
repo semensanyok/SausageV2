@@ -9,8 +9,43 @@
 #include "GLVertexAttributes.h"
 #include "MeshDataBufferConsumerShared.h"
 #include "PhysicsStruct.h"
+#include "Physics.h"
 
 using namespace std;
+
+template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
+class PhysicsTransformUpdateMesh : public PhysicsTransformUpdate {
+  MESH_TYPE* mesh;
+  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* buffer;
+public:
+  PhysicsTransformUpdateMesh(MESH_TYPE* mesh) :
+    mesh{ mesh },
+    buffer{ buffer } {};
+  mat4& GetOutMatrix() override {
+    return mesh->transform;
+  };
+  void OnTransformUpdate() override {
+    BufferManager::GetInstance()->
+      GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>()->BufferTransform(mesh, mesh->transform);
+  };
+};
+
+template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
+class PhysicsTransformUpdateMeshInstance : public PhysicsTransformUpdate {
+  MeshDataInstance* mesh;
+  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* buffer;
+public:
+  PhysicsTransformUpdateMeshInstance(MeshDataInstance* mesh) :
+    mesh{ mesh },
+    buffer{ buffer } {};
+  mat4& GetOutMatrix() override {
+    return mesh->transform;
+  };
+  void OnTransformUpdate() override {
+    BufferManager::GetInstance()->
+      GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>()->BufferTransform(mesh, mesh->transform);
+  };
+};
 
 class MeshDataUtils {
 
@@ -18,16 +53,19 @@ class MeshDataUtils {
   TextureManager* texture_manager;
   MeshManager* mesh_manager;
   BufferManager* buffer_manager;
+  PhysicsManager* physics_manager;
 public:
   MeshDataUtils(
     DrawCallManager* draw_call_manager,
     TextureManager* texture_manager,
     MeshManager* mesh_manager,
-    BufferManager* buffer_manager
+    BufferManager* buffer_manager,
+    PhysicsManager* physics_manager
   ) : draw_call_manager{ draw_call_manager },
     texture_manager{ texture_manager },
     mesh_manager{ mesh_manager },
-    buffer_manager{ buffer_manager } {};
+    buffer_manager{ buffer_manager },
+    physics_manager{ physics_manager } {};
 
   template<typename MESH_TYPE, typename VERTEX_TYPE>
   struct SetupInstancedMeshRes {
@@ -72,8 +110,8 @@ public:
       auto base = base_ptr.get();
       // BASE MESH SETUP
       MESH_TYPE* mesh = mesh_manager->CreateMeshData<VERTEX_TYPE, MESH_TYPE>(base_ptr);
-      SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE> mesh_res = { base_ptr, mesh, {} };
-      res.push_back(mesh_res);
+      res.push_back({ base_ptr, mesh, {} });
+      SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE>& mesh_res = res[res.size() - 1];
       // TEXTURE SETUP
       {
         Texture* texture = texture_manager->LoadTextureArray(tex_names);
@@ -129,38 +167,53 @@ public:
     }
     return res;
   }
+
+  /**
+   * @tparam MESH_TYPE
+   * @tparam VERTEX_TYPE
+   * @param new_meshes
+   * @param custom_up custom user pointer for physics subsystem. i.e. MeshDataClickable
+  */
+  template<typename MESH_TYPE, typename VERTEX_TYPE>
+  void AddRigidBody(MESH_TYPE* mesh, SausageUserPointer* custom_up = nullptr) {
+    SausageUserPointer* up;
+    if (custom_up == nullptr) {
+      up = mesh;
+    }
+    else {
+      up = custom_up;
+    }
+
+    physics_manager->AddBoxRigidBody(
+      mesh->physics_data,
+      new PhysicsTransformUpdateMesh<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
+      mesh->transform,
+      mesh->name.c_str()
+    );
+  }
+
+  /**
+   * @tparam MESH_TYPE
+   * @tparam VERTEX_TYPE
+   * @param new_meshes
+   * @param custom_up custom user pointer for physics subsystem. i.e. MeshDataClickable
+  */
+  template<typename MESH_TYPE, typename VERTEX_TYPE>
+  void AddRigidBody(MeshDataInstance* mesh, SausageUserPointer* custom_up = nullptr) {
+    SausageUserPointer* up;
+    if (custom_up == nullptr) {
+      up = mesh;
+    }
+    else {
+      up = custom_up;
+    }
+    auto base_mesh_physics_data = ((MESH_TYPE*)mesh->base_mesh)->physics_data;
+    physics_manager->AddBoxRigidBody(
+      base_mesh_physics_data,
+      new PhysicsTransformUpdateMeshInstance<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
+      mesh->transform,
+      mesh->name.c_str()
+    );
+  }
 };
 
-template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
-class PhysicsTransformUpdateMesh : public PhysicsTransformUpdate {
-  MESH_TYPE* mesh;
-  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* buffer;
-public:
-  PhysicsTransformUpdateMesh(MESH_TYPE* mesh) :
-    mesh{ mesh },
-    buffer{ buffer } {};
-  mat4& GetOutMatrix() override {
-    return mesh->transform;
-  };
-  void OnTransformUpdate() override {
-    BufferManager::GetInstance()->
-      GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>()->BufferTransform(mesh, mesh->transform);
-  };
-};
-
-template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
-class PhysicsTransformUpdateMeshInstance : public PhysicsTransformUpdate {
-  MeshDataInstance* mesh;
-  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* buffer;
-public:
-  PhysicsTransformUpdateMeshInstance(MeshDataInstance* mesh) :
-    mesh{ mesh },
-    buffer{ buffer } {};
-  mat4& GetOutMatrix() override {
-    return mesh->transform;
-  };
-  void OnTransformUpdate() override {
-    BufferManager::GetInstance()->
-      GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>()->BufferTransform(mesh, mesh->transform);
-  };
-};

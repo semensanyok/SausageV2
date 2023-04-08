@@ -33,8 +33,8 @@ public:
   vector<Light*> all_lights;
   vector<Light*> draw_lights;
 
-  string scene_path = GetModelPath("Frog.fbx");
-  //string scene_path = GetModelPath("Frog2.fbx");
+  //string scene_path = GetModelPath("Frog.fbx");
+  string scene_path = GetModelPath("Frog2.fbx");
 
   // string scene_path = GetModelPath("dae/Frog.dae");
   // string scene_path = GetModelPath("Frog.gltf");
@@ -56,6 +56,9 @@ public:
   }
   ~Scene1() {};
   void Init() override {
+    vec3 cam_pos = { 0,15,15 };
+    systems_manager->camera->SetPosition(cam_pos);
+
     _LoadData();
 
     function<void()> scene_reload_callback = bind(&Scene1::_ReloadScene, this);
@@ -83,10 +86,43 @@ private:
     _LoadGui();
     _LoadMeshes(scene_path);
 
-    _AddRigidBodies<MeshData, Vertex>(all_meshes);
+    for (auto mesh : all_meshes)
+    {
+      if (clickable_meshes_names.contains(mesh->name)) {
+        mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh, new MeshDataClickable(mesh->name));
+      }
+      else {
+        mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh);
+      }
+    }
+    for (auto mesh : all_meshes_instances)
+    {
+      if (clickable_meshes_names.contains(mesh->name)) {
+        mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh, new MeshDataClickable(mesh->name));
+      }
+      else {
+        mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh);
+      }
+    }
 
-    _AddRigidBodies<MeshDataStatic, VertexStatic>(all_static_meshes);
-    _AddRigidBodies<MeshDataStatic, VertexStatic>(all_static_meshes_instances);
+    for (auto mesh : all_static_meshes)
+    {
+      if (clickable_meshes_names.contains(mesh->name)) {
+        mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh, new MeshDataClickable(mesh->name));
+      }
+      else {
+        mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh);
+      }
+    }
+    for (auto mesh : all_static_meshes_instances)
+    {
+      if (clickable_meshes_names.contains(mesh->name)) {
+        mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh, new MeshDataClickable(mesh->name));
+      }
+      else {
+        mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh);
+      }
+    }
 
     _LoadAnimations();
   } 
@@ -182,46 +218,6 @@ private:
         active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim2);
         active_anim->AddAnim(AnimIndependentChannel::CHANNEL2, anim3);
       }
-    }
-  }
-
-  template<typename MESH_TYPE, typename VERTEX_TYPE>
-  void _AddRigidBodies(vector<MESH_TYPE*>& new_meshes) {
-    for (auto& mesh : new_meshes) {
-      SausageUserPointer* up = nullptr;
-      if (clickable_meshes_names.contains(mesh->name)) {
-        up = new MeshDataClickable(mesh->name);
-      }
-      else {
-        up = mesh;
-      }
-
-      systems_manager->physics_manager->AddBoxRigidBody(
-        mesh->physics_data,
-        new PhysicsTransformUpdateMesh<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
-        mesh->transform,
-        mesh->name.c_str()
-      );
-    }
-  }
-
-  template<typename MESH_TYPE, typename VERTEX_TYPE>
-  void _AddRigidBodies(vector<MeshDataInstance*>& new_meshes) {
-    for (auto& mesh : new_meshes) {
-      SausageUserPointer* up = nullptr;
-      if (clickable_meshes_names.contains(mesh->base_mesh->name)) {
-        up = new MeshDataClickable(mesh->name);
-      }
-      else {
-        up = mesh;
-      }
-
-      systems_manager->physics_manager->AddBoxRigidBody(
-        ((MESH_TYPE*)mesh->base_mesh)->physics_data,
-        new PhysicsTransformUpdateMeshInstance<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
-        mesh->transform,
-        mesh->name.c_str()
-      );
     }
   }
 

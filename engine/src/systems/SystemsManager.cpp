@@ -21,7 +21,7 @@ void SystemsManager::InitSystems() {
   font_manager = new FontManager(samplers, texture_manager);
   font_manager->Init();
   physics_manager = new PhysicsManager(state_manager, buffer_manager->mesh_data_buffer);
-  mesh_data_utils = new MeshDataUtils(draw_call_manager, texture_manager, mesh_manager, buffer_manager);
+  mesh_data_utils = new MeshDataUtils(draw_call_manager, texture_manager, mesh_manager, buffer_manager, physics_manager);
   if (GameSettings::phys_debug_draw) {
     _CreateDebugDrawer();
     bullet_debug_drawer->Activate();

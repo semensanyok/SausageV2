@@ -32,17 +32,27 @@ void Camera::MouseWheelCallback(SDL_MouseWheelEvent &mw_event) {
   }
   this->pos.y -= (mw_event.y * CameraSettings::scroll_speed);
 
+  SetUpdateMatrices();
+}
+void Camera::SetUpdateMatrices()
+{
   is_update_need = true;
-};
+}
+void Camera::SetPosition(vec3& pos)
+{
+  this->pos = pos;
+  SetUpdateMatrices();
+}
+;
 void Camera::MouseWheelCallbackRTS(SDL_MouseWheelEvent &mw_event) {
   this->pos.y -= (mw_event.y * CameraSettings::scroll_speed);
 
-  is_update_need = true;
+  SetUpdateMatrices();
 };
 void Camera::MouseWheelCallbackFreeCam(SDL_MouseWheelEvent &mw_event) {
   this->pos += direction;
 
-  is_update_need = true;
+  SetUpdateMatrices();
 };
 void Camera::PreUpdate(float delta_time) {
   this->velocity = delta_time * CameraSettings::movement_speed;
@@ -100,7 +110,7 @@ void Camera::ResizeCallback(int new_width, int new_height) {
                   this->near_plane, this->far_plane);
   this->projection_matrix_ortho = ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
 
-  is_update_need = true;
+  SetUpdateMatrices();
 }
 void Camera::MouseMotionCallback(float screen_x, float screen_y) {
   switch (camera_mode) {
@@ -137,7 +147,7 @@ void Camera::MouseMotionCallbackFreeCam(float motion_x, float motion_y) {
   if (pitch_angle < -90.0f) {
     pitch_angle = -90.0f;
   }
-  is_update_need = true;
+  SetUpdateMatrices();
 }
 
 bool Camera::IsCursorOnWindowBorder(float screen_x, float screen_y) {
@@ -168,5 +178,5 @@ void Camera::_CameraMove(bool is_left, bool is_right, bool is_up, bool is_down,
     }
     pos -= delta;
   }
-  is_update_need = true;
+  SetUpdateMatrices();
 }

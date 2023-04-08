@@ -158,8 +158,12 @@ public:
     fnFractal->SetOctaveCount(5);
   };
 
-  // testing purposes
-  void CreateTerrain(int size_x, int size_y);
+  /**
+   * @param size_x 
+   * @param size_y 
+   * @param origin_coord south west corner of terrain rectangle
+  */
+  void CreateTerrain(int size_x, int size_y, vec3 origin_coord);
 
 private:
 

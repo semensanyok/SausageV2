@@ -82,6 +82,8 @@ public:
 	~Camera() {};
 	void UpdateCameraFrontUpRight();
 	void MouseWheelCallback(SDL_MouseWheelEvent& mw_event);
+    void SetUpdateMatrices();
+    void SetPosition(vec3& pos);
 	void MouseWheelCallbackRTS(SDL_MouseWheelEvent& mw_event);
 	void MouseWheelCallbackFreeCam(SDL_MouseWheelEvent& mw_event);
 	void PreUpdate(float delta_time);
