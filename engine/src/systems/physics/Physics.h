@@ -164,13 +164,14 @@ public:
   */
   void AddTerrainRigidBody(
     //PhysicsData* physics_data,
-    vector<float> heightmap,
+    vector<float>& heightmap,
     int width,
     int height,
     btScalar spacing,
     SausageUserPointer* user_pointer,
-    mat4 model_transform,
-    string& name_for_log) {
+    mat4& model_transform,
+    string& name_for_log
+  ) {
     bool flipQuadEdges = false;
 
     // legacy constructor
@@ -182,7 +183,7 @@ public:
     // Y axis
     int up_axis = 1;
     btHeightfieldTerrainShape* shape = new btHeightfieldTerrainShape(
-      width, height, heightmap.data(), -1.0, 1.0,
+      width, height, heightmap.data(), 0.0, 0.0,
       up_axis,
       flipQuadEdges
     );

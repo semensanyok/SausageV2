@@ -58,5 +58,5 @@ struct VertexUI {
 // for points/lines draw, for physics debug drawer
 struct VertexOutline {
   vec3 Position;
-  vec3 Normal; // used as Color; kept name Normal for template polymorphysm
+  vec3 Normal; // used as Color; kept name Normal for template polymorphysm in MeshManager.CreateLoadData
 };

@@ -61,7 +61,7 @@ public:
 		{
 			ImGui::SetNextWindowPos(ImVec2(0, 20));
 			ImGui::Begin("Physics");
-			ImGui::InputFloat("physics step multiplier", &GameSettings::physics_step_multiplier, 0.00001f, 1.0f, "%.6f");
+			ImGui::InputFloat("physics step multiplier", &GameSettings::physics_step_multiplier, INIT_PHYSICS_STEP_MULTIPLIER, 1.0f, "%.6f");
 			ImGui::InputInt("ray_debug_draw_lifetime_milliseconds", &GameSettings::ray_debug_draw_lifetime_milliseconds, 500);
 
 			ImGui::End();
