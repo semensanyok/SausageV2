@@ -178,7 +178,8 @@ private:
     // OUT
     vector<unsigned int>& indices,
     // OUT
-    vector<vec2>& uvs
+    vector<vec2>& uvs,
+    float noise_scale
   );
   void ReleaseBuffer(TerrainChunk* chunk);
   void Deactivate(TerrainChunk* chunk);

@@ -1,6 +1,7 @@
 #pragma once
 #include <TerrainManager.h>
 #include <GameLoop.h>
+#include <LightStruct.h>
 
 class TerrainTest {
   class TestScene : public Scene {
@@ -32,7 +33,7 @@ class TerrainTest {
       {
         int spread = 2;
         mat4 t1 = glm::translate(all_static_meshes[0]->transform,
-            i % 2 == 0 ? vec3((i % 10) * spread, 5, (i % 10) * spread + 2) : -vec3((i % 10) * spread, -5, (i % 3) * spread + 2));
+            i % 2 == 0 ? vec3((i % 10) * spread, 100, (i % 10) * spread + 2) : -vec3((i % 10) * spread, -100, (i % 3) * spread + 2));
         auto inst = sm->draw_call_manager->AddNewInstance<MeshDataStatic>(all_static_meshes[0], t1);
         mesh_static_buffer->BufferMeshDataInstance(inst, all_static_meshes[0]->textures);
         all_static_meshes_instances.push_back(inst);
@@ -68,6 +69,18 @@ class TerrainTest {
       SetupInstancedMeshStatic(mesh_load_data_static, tex_names_list_static);
       // LIGHTS SETUP
       draw_lights.insert(draw_lights.end(), all_lights.begin(), all_lights.end());
+
+      draw_lights.push_back(new Light{ vec4{-5, 5,5,0},
+                                       vec4{2,2,2,0},
+                                       vec4{22,22,22,0},
+                                       vec4{22,22,22,0},
+                     LightType::Point,
+                     0,
+                     0,
+                     1,
+                     0.7,
+                     0.7 });
+      BufferStorage::GetInstance()->BufferLights(draw_lights);
     }
 
     void SetupInstancedMeshStatic(std::vector<std::shared_ptr<MeshLoadData<VertexStatic>>>& mesh_load_data_animated,

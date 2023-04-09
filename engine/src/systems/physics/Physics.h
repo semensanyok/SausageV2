@@ -170,7 +170,9 @@ public:
     btScalar spacing,
     SausageUserPointer* user_pointer,
     mat4& model_transform,
-    string& name_for_log
+    string& name_for_log,
+    btScalar minHeight,
+    btScalar maxHeight
   ) {
     bool flipQuadEdges = false;
 
@@ -183,7 +185,7 @@ public:
     // Y axis
     int up_axis = 1;
     btHeightfieldTerrainShape* shape = new btHeightfieldTerrainShape(
-      width, height, heightmap.data(), 0.0, 0.0,
+      width, height, heightmap.data(), minHeight, maxHeight,
       up_axis,
       flipQuadEdges
     );

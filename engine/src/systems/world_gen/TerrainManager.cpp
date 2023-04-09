@@ -6,9 +6,11 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord)
   vector<unsigned int> indices;
   vector<vec2> uvs;
 
+  // SCALE noise values for mesh and bullet physics.
+  int noise_scale = 10;
   auto chunk = CreateChunk(origin_coord, 0, 0, size_x, size_y,
     // OUT
-    vertices, indices, uvs);
+    vertices, indices, uvs, noise_scale);
 
   vector<vec3> normals = GenNormals(vertices);
 
@@ -17,8 +19,9 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord)
   buffer->BufferMeshData(chunk->mesh, vertices, indices, uvs, normals);
 
   string name = "Terrain";
+
   physics_manager->AddTerrainRigidBody(chunk->heightmap, chunk->sizeX, chunk->sizeY, chunk->spacing,
-    new MeshDataClickable(name), chunk->mesh->transform, name);
+    new MeshDataClickable(name), chunk->mesh->transform, name, -noise_scale, noise_scale);
 }
 
 TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y, int size_x, int size_y,
@@ -27,13 +30,15 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   // OUT
   vector<unsigned int>& indices,
   // OUT
-  vector<vec2>& uvs)
+  vector<vec2>& uvs,
+  float noise_scale)
 {
   TerrainChunk* chunk = new TerrainChunk(size_x, size_y, 1, pos);
   chunk->mesh = mesh_manager->CreateMeshData<MeshDataStatic>();
   chunk->mesh->transform = translate(mat4(1), pos);
   fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
-
+  transform(chunk->heightmap.begin(), chunk->heightmap.end(), chunk->heightmap.begin(),
+    [&noise_scale](float i) {return i * noise_scale;});
   // create chunk in local space, use transform matrix to apply offsetX/Y
   // each tile has 4 vertices
 
