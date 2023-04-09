@@ -115,8 +115,4 @@ void SystemsManager::_SubmitAsyncTasks() {
 void SystemsManager::_CreateDebugDrawer() {
   if (bullet_debug_drawer == nullptr) {
     bullet_debug_drawer = new BulletDebugDrawer(buffer_manager, draw_call_manager, state_manager);
-    //int debug_mask = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints;
-    int debug_mask = btIDebugDraw::DBG_DrawWireframe;
-    bullet_debug_drawer->setDebugMode(debug_mask);
-  }
 }
