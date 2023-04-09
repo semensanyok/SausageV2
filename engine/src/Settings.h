@@ -10,8 +10,8 @@ namespace GameSettings {
   //int SCR_HEIGHT = 1080;
   
   inline int ray_debug_draw_lifetime_milliseconds = 2000;
-  inline float physics_step_multiplier = 0.00001f;
-   //inline float physics_step_multiplier = 1.0f;
+  inline float physics_step_multiplier = 0.001f;
+  //inline float physics_step_multiplier = 1.0f;
   inline bool quit = false;
 #ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
   inline bool phys_debug_draw = true;

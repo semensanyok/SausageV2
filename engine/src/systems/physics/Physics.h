@@ -46,8 +46,8 @@ public:
     dynamicsWorld->setDebugDrawer(debugDrawer);
   }
   void Simulate() {
-    //dynamicsWorld->stepSimulation(GameSettings::delta_time, 1);
     IF_PROFILE_ENABLED(auto proft3 = chrono::steady_clock::now(););
+    //dynamicsWorld->stepSimulation(state_manager->delta_time, 1);
     dynamicsWorld->stepSimulation(state_manager->delta_time * GameSettings::physics_step_multiplier, 1000);
     IF_PROFILE_ENABLED(ProfTime::physics_sym_ns = chrono::steady_clock::now() - proft3; auto proft8 = chrono::steady_clock::now(););
     dynamicsWorld->debugDrawWorld();
