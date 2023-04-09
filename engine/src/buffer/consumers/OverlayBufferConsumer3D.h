@@ -20,7 +20,7 @@ public:
     GLVertexAttributes* vertex_attributes,
     MeshManager* mesh_manager
   )
-    : BufferConsumer(vertex_attributes, mesh_manager, BufferType::UI_BUFFERS) {}
+    : BufferConsumer(vertex_attributes, mesh_manager, BufferType::OUTLINE_BUFFERS) {}
   ~OverlayBufferConsumer3D() {}
   void BufferMeshData(MeshDataOverlay3D* mesh,
                       vector<vec3>& vertices,

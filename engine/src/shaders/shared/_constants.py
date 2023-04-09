@@ -26,8 +26,8 @@ const int SPECULAR_TEX = 2;
   const uint MAX_UI_INSTANCES = 5;
   const uint MAX_BONES = 100;
 
-  const unsigned long MAX_BASE_MESHES_STATIC = 40;
-  const unsigned long MAX_MESHES_STATIC_INSTANCES = MAX_BASE_MESHES_STATIC * 10;
+  const uint MAX_BASE_MESHES_STATIC = 40;
+  const uint MAX_MESHES_STATIC_INSTANCES = MAX_BASE_MESHES_STATIC * 10;
 
   const uint MAX_TEXTURE = 100;
   const uint MAX_BLEND_TEXTURES = 4;

@@ -88,7 +88,7 @@ public:
         ((MeshDataClickable*)sausage_up)->Call();
       }
     }
-    if (GameSettings::phys_debug_draw) {
+    if (state_manager->phys_debug_draw) {
       debugDrawer->drawLinePersist(btStart, btEnd, { 255,0,0 });
     }
   }

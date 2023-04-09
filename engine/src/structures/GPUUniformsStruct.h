@@ -117,5 +117,5 @@ namespace BufferSizes {
   const unsigned long UNIFORM_CONTROLLER_SIZE = sizeof(ControllerUniformData);
 
   const unsigned long VERTEX_OUTLINE_STORAGE_SIZE = MAX_VERTEX_OUTLINE * sizeof(VertexOutline);
-  const unsigned long INDEX_OUTLINE_STORAGE_SIZE = 2 * MAX_INDEX_OUTLINE * sizeof(unsigned int);
+  const unsigned long INDEX_OUTLINE_STORAGE_SIZE = MAX_INDEX_OUTLINE * sizeof(unsigned int);
 };

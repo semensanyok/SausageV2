@@ -3,8 +3,6 @@
 #include "sausage.h"
 #include <SDL.h>
 
-#define INIT_PHYSICS_STEP_MULTIPLIER 0.0001f
-
 namespace GameSettings {
   inline int SCR_WIDTH = 800;
   inline int SCR_HEIGHT = 800;
@@ -12,13 +10,8 @@ namespace GameSettings {
   //int SCR_HEIGHT = 1080;
   
   inline int ray_debug_draw_lifetime_milliseconds = 2000;
-  inline float physics_step_multiplier = INIT_PHYSICS_STEP_MULTIPLIER;
+  inline float physics_step_multiplier = 0.001f;
   inline bool quit = false;
-#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
-  inline bool phys_debug_draw = true;
-#else
-  inline bool phys_debug_draw = false;
-#endif
 };
 namespace CameraSettings {
 	inline float sensivity = 0.1f;

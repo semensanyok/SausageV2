@@ -9,12 +9,24 @@
 using namespace std;
 
 class StateManager : public SausageSystem {
+  static inline StateManager* instance;
   MeshDataBufferConsumer* mesh_data_buffer;
   //unordered_map<unsigned long, pair<MeshData*, mat4>> physics_update;
 
 public:
+#ifdef SAUSAGE_DEBUG_DRAW_PHYSICS
+  bool phys_debug_draw = true;
+#else
+  bool phys_debug_draw = false;
+#endif
+
+  static StateManager* GetInstance() {
+    return instance;
+  }
   StateManager(BufferManager* buffer_manager)
-      : mesh_data_buffer{ buffer_manager->mesh_data_buffer } {};
+      : mesh_data_buffer{ buffer_manager->mesh_data_buffer } {
+    instance = this;
+  };
 	float delta_time = 0;
 	float last_ticks = 0;
 	uint32_t milliseconds_since_start = 0;

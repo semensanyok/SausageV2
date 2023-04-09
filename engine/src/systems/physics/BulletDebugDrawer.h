@@ -44,6 +44,10 @@ public:
     draw_call_manager{ draw_call_manager }{
     // inited in buffer_manager->GetPhysDebugDrawer()
     //buffer->Init();
+
+    //int debug_mask = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints;
+    int debug_mask = btIDebugDraw::DBG_DrawWireframe;
+    setDebugMode(debug_mask);
   };
 
   ~BulletDebugDrawer() {

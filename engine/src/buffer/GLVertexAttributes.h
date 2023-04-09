@@ -109,8 +109,8 @@ public:
     vertex_outline_ptr = CreateBufferSlots<VertexOutline>(VERTEX_OUTLINE_STORAGE_SIZE, MAX_VERTEX_OUTLINE, GL_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
     index_outline_ptr = CreateBufferSlots<unsigned int>(INDEX_OUTLINE_STORAGE_SIZE, MAX_INDEX_OUTLINE, GL_ELEMENT_ARRAY_BUFFER, ArenaSlotSize::POWER_OF_TWO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_outline_ptr->buffer_id);
-    glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_outline_ptr->buffer_id);
+    glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexOutline), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexOutline),

@@ -11,6 +11,7 @@
 #include "MeshManager.h"
 #include "OverlayStruct.h"
 #include "GLCommandBuffers.h"
+#include "StateManager.h"
 
 using namespace std;
 
@@ -45,7 +46,8 @@ public:
     ShaderManager* shader_manager,
     Renderer* renderer,
     CommandBuffersManager* command_buffer_manager,
-    MeshManager* mesh_manager
+    MeshManager* mesh_manager,
+    StateManager* state_manager
   ) : renderer{ renderer },
     buffer{ BufferStorage::GetInstance() },
     mesh_manager{ mesh_manager },
@@ -78,7 +80,7 @@ public:
       shader_manager->all_shaders->bullet_debug,
       GL_LINES,
       command_buffer_manager->command_buffers.outline,
-      false
+      state_manager->phys_debug_draw
     );
 
     mesh_dc = _CreateDrawCall(
@@ -201,8 +203,7 @@ public:
     pre_allocate_buffer_instance_count = std::max(instance_count, pre_allocate_buffer_instance_count);
     bool is_success_slot_alloc = is_alloc_instance_slot ?
       buffer->TryReallocateInstanceSlot<MESH_TYPE>(mesh->slots, pre_allocate_buffer_instance_count) : true;
-    bool is_need_buffer_update = is_success_slot_alloc;
-    if (is_alloc_instance_slot && is_need_buffer_update) {
+    if (is_success_slot_alloc) {
       //// to avoid weird situation when count = 0 and used = 1.
       //// even that is not used and doesnt affect anything, avoid it
       //if (is_alloc_instance_slot) {

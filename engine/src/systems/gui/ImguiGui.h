@@ -6,6 +6,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
+#include "StateManager.h"
 
 using namespace std;
 
@@ -61,7 +62,7 @@ public:
 		{
 			ImGui::SetNextWindowPos(ImVec2(0, 20));
 			ImGui::Begin("Physics");
-			ImGui::InputFloat("physics step multiplier", &GameSettings::physics_step_multiplier, INIT_PHYSICS_STEP_MULTIPLIER, 1.0f, "%.6f");
+			ImGui::InputFloat("physics step multiplier", &GameSettings::physics_step_multiplier, 0.001f, 1.0f, "%.6f");
 			ImGui::InputInt("ray_debug_draw_lifetime_milliseconds", &GameSettings::ray_debug_draw_lifetime_milliseconds, 500);
 
 			ImGui::End();
@@ -119,7 +120,7 @@ public:
 					ImGui::TreePop();
 				}
 				ImGui::Checkbox("Update time", &is_update_time);
-				ImGui::Checkbox("Debug Draw Physics", &GameSettings::phys_debug_draw);
+				ImGui::Checkbox("Debug Draw Physics", &StateManager::GetInstance()->phys_debug_draw);
 				ImGui::TreePop();
 			}
 			for (auto& button : buttons_callbacks) {

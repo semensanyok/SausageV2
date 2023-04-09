@@ -64,6 +64,7 @@ void   BulletDebugDrawer::drawContactPoint(const btVector3& PointOnB, const btVe
     colors.push_back(color3);
 };
 void BulletDebugDrawer::flushLines() {
+  Activate();
     if (vertices.size() > 0) {
         vector<PersistDrawRay> keep_persist;
         for (auto& persist_draw : persist_draws) {

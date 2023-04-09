@@ -21,6 +21,6 @@ namespace BufferSettings {
   const unsigned long MAX_BLEND_TEXTURES = 4;
   const unsigned long MAX_LIGHTS = 100; // TODO: figure out correct size
 
-  const unsigned long MAX_VERTEX_OUTLINE = 1000000;
+  const unsigned long MAX_VERTEX_OUTLINE = 100000;
   const unsigned long MAX_INDEX_OUTLINE = 2 * MAX_VERTEX_OUTLINE;
 };

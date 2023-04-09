@@ -18,7 +18,7 @@ public:
     is_need_barrier = true;
   }
   void SyncGPU() {
-    WaitGPU(fence_sync);
+    WaitGPU();
     if (is_need_barrier) {
       glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
       is_need_barrier = false;
@@ -28,8 +28,7 @@ public:
     fence_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     DEBUG_EXPR(CheckGLError());
   }
-  void WaitGPU(GLsync fence_sync,
-               const source_location& location = source_location::current()) {
+  void WaitGPU(const source_location& location = source_location::current()) {
     if (fence_sync == 0) {
       return;
     }
@@ -37,7 +36,9 @@ public:
     GLuint64 waitDuration = 0;
     while (true) {
       GLenum waitRet = glClientWaitSync(fence_sync, waitFlags, waitDuration);
-      if (waitRet ==  GL_ALREADY_SIGNALED || waitRet == GL_CONDITION_SATISFIED) {
+      if (
+        waitRet == 0 // when debug draw physics activated, it hanged forever because waitRet was always 0. dont know how to handle that
+        || waitRet ==  GL_ALREADY_SIGNALED || waitRet == GL_CONDITION_SATISFIED) {
         return;
       }
 

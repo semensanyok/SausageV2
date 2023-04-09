@@ -13,8 +13,10 @@ void SystemsManager::InitSystems() {
   renderer = new Renderer(renderer_context_manager, buffer_manager);
   shader_manager = new ShaderManager(file_watcher, renderer, camera);
   shader_manager->SetupShaders();
-  draw_call_manager = new DrawCallManager(shader_manager, renderer, buffer_manager->command_buffer_manager, mesh_manager);
   state_manager = new StateManager(buffer_manager);
+  draw_call_manager = new DrawCallManager(shader_manager, renderer,
+    buffer_manager->command_buffer_manager,
+    mesh_manager, state_manager);
   samplers = new Samplers();
   samplers->Init();
   texture_manager = new TextureManager(samplers);
@@ -22,7 +24,7 @@ void SystemsManager::InitSystems() {
   font_manager->Init();
   physics_manager = new PhysicsManager(state_manager, buffer_manager->mesh_data_buffer);
   mesh_data_utils = new MeshDataUtils(draw_call_manager, texture_manager, mesh_manager, buffer_manager, physics_manager);
-  if (GameSettings::phys_debug_draw) {
+  if (state_manager->phys_debug_draw) {
     _CreateDebugDrawer();
     bullet_debug_drawer->Activate();
     physics_manager->SetDebugDrawer(bullet_debug_drawer);
@@ -47,18 +49,17 @@ void SystemsManager::InitSystems() {
 }
 
 void SystemsManager::ChangeStateUpdate() {
-  static bool prev_phys_debug_draw = GameSettings::phys_debug_draw;
-  if (prev_phys_debug_draw != GameSettings::phys_debug_draw) {
+  static bool prev_phys_debug_draw = state_manager->phys_debug_draw;
+  if (prev_phys_debug_draw != state_manager->phys_debug_draw) {
     function<void()> f = bind(&SystemsManager::_ChangePhysicsDebugDrawer, this);
     renderer->AddGlCommand(f, false);
   }
-  prev_phys_debug_draw = GameSettings::phys_debug_draw;
+  prev_phys_debug_draw = state_manager->phys_debug_draw;
 }
 
 void SystemsManager::_ChangePhysicsDebugDrawer() {
-  if (GameSettings::phys_debug_draw) {
+  if (state_manager->phys_debug_draw) {
     _CreateDebugDrawer();
-    bullet_debug_drawer->Activate();
     physics_manager->SetDebugDrawer(bullet_debug_drawer);
   }
   else {
@@ -115,4 +116,5 @@ void SystemsManager::_SubmitAsyncTasks() {
 void SystemsManager::_CreateDebugDrawer() {
   if (bullet_debug_drawer == nullptr) {
     bullet_debug_drawer = new BulletDebugDrawer(buffer_manager, draw_call_manager, state_manager);
+  }
 }
