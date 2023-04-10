@@ -29,9 +29,13 @@ const int SPECULAR_TEX = 2;
   const uint MAX_BASE_MESHES_STATIC = 40;
   const uint MAX_MESHES_STATIC_INSTANCES = MAX_BASE_MESHES_STATIC * 10;
 
+  const uint MAX_MESHES_TERRAIN = 40;
+
   const uint MAX_TEXTURE = 100;
   const uint MAX_BLEND_TEXTURES = 4;
   const uint MAX_LIGHTS = 100;
+
+  const uint TERRAIN_PATCH_MAX_TEX_BLENDS = 1000;
 """
 ,
     "uniforms_locations":

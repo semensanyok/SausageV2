@@ -39,6 +39,7 @@ struct CommandBuffers {
   //CommandBuffer* overlay_3d;
   CommandBuffer* outline;
   CommandBuffer* mesh_static;
+  CommandBuffer* terrain;
 };
 
 class CommandBuffersManager {
@@ -52,6 +53,7 @@ public:
     command_buffers.outline = CreateCommandBuffer(1);
     command_buffers.blinn_phong = CreateCommandBuffer(MAX_BASE_MESHES);
     command_buffers.mesh_static = CreateCommandBuffer(MAX_BASE_MESHES_STATIC);
+    command_buffers.terrain = CreateCommandBuffer(MAX_MESHES_TERRAIN);
   }
 
   void Reset() {
@@ -60,6 +62,7 @@ public:
     command_buffers.back_ui->ptr->Reset();
     command_buffers.outline->ptr->Reset();
     command_buffers.mesh_static->ptr->Reset();
+    command_buffers.terrain->ptr->Reset();
   }
   void PreDraw() {
     UnmapBuffers();
@@ -110,6 +113,7 @@ private:
   void UnmapBuffers() {
     UnmapBuffer(command_buffers.blinn_phong);
     UnmapBuffer(command_buffers.mesh_static);
+    UnmapBuffer(command_buffers.terrain);
     UnmapBuffer(command_buffers.back_ui);
     UnmapBuffer(command_buffers.font_ui);
     UnmapBuffer(command_buffers.outline);
@@ -118,6 +122,7 @@ private:
   void MapBuffers() {
     MapBuffer(command_buffers.blinn_phong);
     MapBuffer(command_buffers.mesh_static);
+    MapBuffer(command_buffers.terrain);
     MapBuffer(command_buffers.font_ui);
     MapBuffer(command_buffers.back_ui);
     MapBuffer(command_buffers.outline);
@@ -172,6 +177,7 @@ private:
     DeleteBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.blinn_phong->ptr->buffer_id);
     DeleteBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.outline->ptr->buffer_id);
     DeleteBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.mesh_static->ptr->buffer_id);
+    DeleteBuffer(GL_DRAW_INDIRECT_BUFFER, command_buffers.terrain->ptr->buffer_id);
   }
 
 };

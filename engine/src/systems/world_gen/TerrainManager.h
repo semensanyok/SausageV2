@@ -179,11 +179,12 @@ private:
     vector<unsigned int>& indices,
     // OUT
     vector<vec2>& uvs,
+    // OUT
+    vector<unsigned int>& uniform_id,
     float noise_scale
   );
   void ReleaseBuffer(TerrainChunk* chunk);
   void Deactivate(TerrainChunk* chunk);
-  void CreateTerrain();
   vector<vec3> GenNormals(vector<vec3> vertices);
   ~TerrainManager() {};
 };

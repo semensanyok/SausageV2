@@ -24,6 +24,7 @@ public:
   DrawCall* back_ui_dc;
   DrawCall* font_ui_dc;
   DrawCall* mesh_static_dc;
+  DrawCall* terrain_dc;
 
   //DrawCall* overlay_3d_dc;
 
@@ -97,10 +98,18 @@ public:
       true
     );
 
+    terrain_dc = _CreateDrawCall(
+      shader_manager->all_shaders->terrain,
+      GL_TRIANGLES,
+      command_buffer_manager->command_buffers.terrain,
+      true
+    );
+
     renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
     //renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
     renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
     renderer->AddDraw(mesh_dc, DrawOrder::MESH);
+    renderer->AddDraw(terrain_dc, DrawOrder::TERRAIN);
     renderer->AddDraw(mesh_static_dc, DrawOrder::MESH_STATIC);
     renderer->AddDraw(physics_debug_dc, DrawOrder::OUTLINE);
   }

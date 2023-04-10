@@ -56,9 +56,9 @@ struct UniformDataMesh {
 };
 
 struct UniformDataMeshStatic {
-  mat4 transforms[MAX_MESHES_STATIC_INSTANCES]; // aligned to vec4 == 16 bytes
-  BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_MESHES_STATIC_INSTANCES);
-  unsigned int base_instance_offset[MAX_BASE_MESHES_STATIC]; // alignment 4 bytes
+  mat4 transforms[MAX_MESHES_STATIC_INSTANCES + MAX_MESHES_TERRAIN]; // aligned to vec4 == 16 bytes
+  BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_MESHES_STATIC_INSTANCES + TERRAIN_PATCH_MAX_TEX_BLENDS);
+  unsigned int base_instance_offset[MAX_BASE_MESHES_STATIC + MAX_MESHES_TERRAIN]; // alignment 4 bytes
   // no padding needed, topmost structure
 };
 

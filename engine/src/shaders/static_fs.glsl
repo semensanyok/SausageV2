@@ -50,10 +50,10 @@ out vec4 color;
 // }
 
 void main(void) {
-  // SetBlendColor();
+  SetBlendColor();
   //color = vec4(res, 0.04 + clamp(In.base_instance - 4, 0, 1)*0.5); //test transparency back to front sorting
 
-  color = vec4(255.0,0.0,0.0,0.3);
+  // color = vec4(255.0,0.0,0.0,0.3);
   
   // color = vec4(int(In.instance_id == 0) * 255.0, int(In.instance_id == 1) * 255.0, int(In.instance_id == 2) * 255.0,0.3);
   // color = vec4(int(In.base_instance == 1) * 255.0, int(In.base_instance == 3) * 255.0, int(In.instance_id == 2) * 255.0,0.3);

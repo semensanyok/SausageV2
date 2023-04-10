@@ -1,3 +1,4 @@
+// !!! currently same implementation as in static_fs.glsl
 #version 460
 
 #extension GL_ARB_bindless_texture : require
@@ -10,6 +11,7 @@ out vec4 color;
 {{ texture_layers_offsets }}
 {{ uniforms_locations }}
 {{ mesh_buffers_capacity }}
+{{ blend_textures }}
 {{ mesh_uniforms }}
 
 {{ mesh_fs_in }}

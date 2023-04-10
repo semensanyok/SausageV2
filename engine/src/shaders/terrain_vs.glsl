@@ -16,6 +16,7 @@ layout (location = 5) in uint uniform_id;
 uniform mat4 projection_view;
 
 {{ mesh_buffers_capacity }}
+{{ blend_textures }}
 {{ mesh_uniforms }}
 {{ mesh_vs_out }}
 

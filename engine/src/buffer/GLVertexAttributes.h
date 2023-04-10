@@ -198,24 +198,28 @@ public:
     glDeleteVertexArrays(1, &mesh_VAO);
     glDeleteVertexArrays(1, &static_VAO);
     glDeleteVertexArrays(1, &ui_VAO);
+    glDeleteVertexArrays(1, &outline_VAO);
     DEBUG_EXPR(CheckGLError());
 
     DeleteBuffer(GL_ARRAY_BUFFER, vertex_ptr->buffer_id);
     DeleteBuffer(GL_ARRAY_BUFFER, vertex_static_ptr->buffer_id);
     DeleteBuffer(GL_ARRAY_BUFFER, vertex_ui_ptr->buffer_id);
+    DeleteBuffer(GL_ARRAY_BUFFER, vertex_outline_ptr->buffer_id);
 
     DeleteBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ptr->buffer_id);
     DeleteBuffer(GL_ELEMENT_ARRAY_BUFFER, index_static_ptr->buffer_id);
     DeleteBuffer(GL_ELEMENT_ARRAY_BUFFER, index_ui_ptr->buffer_id);
+    DeleteBuffer(GL_ELEMENT_ARRAY_BUFFER, index_outline_ptr->buffer_id);
   }
   void Reset() {
     vertex_ptr->Reset();
     vertex_static_ptr->Reset();
-    vertex_ui_ptr->Reset();
+    vertex_outline_ptr->Reset();
 
     index_ptr->Reset();
     index_static_ptr->Reset();
     index_ui_ptr->Reset();
+    index_outline_ptr->Reset();
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////

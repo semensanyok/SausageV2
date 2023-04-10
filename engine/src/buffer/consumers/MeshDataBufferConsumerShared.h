@@ -40,6 +40,15 @@ public:
     BufferMeshData(mesh, load_data);
   }
   void BufferMeshData(MESH_TYPE* mesh,
+    vector<vec3>& vertices,
+    vector<unsigned int>& indices,
+    vector<vec2>& uvs,
+    vector<vec3>& normals,
+    vector<unsigned int>& uniform_id) {
+    auto load_data = mesh_manager->CreateLoadData<VERTEX_TYPE>(vertices, indices, normals, uvs, uniform_id);
+    BufferMeshData(mesh, load_data);
+  }
+  void BufferMeshData(MESH_TYPE* mesh,
     shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
     //allocated in DrawCallManager->SetToCommandWithOffsets (via buffer->TryReallocateInstanceSlot)
     //this->AllocateInstanceSlot(mesh->slots, num_instances);

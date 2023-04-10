@@ -14,6 +14,8 @@ namespace BufferSettings {
   const unsigned long MAX_BASE_MESHES_STATIC = 40;
   const unsigned long MAX_MESHES_STATIC_INSTANCES = MAX_BASE_MESHES_STATIC * 10;
 
+  const unsigned long MAX_MESHES_TERRAIN = 40;
+
   const unsigned long MAX_VERTEX_UI = 10000;
   const unsigned long MAX_INDEX_UI = 2 * MAX_VERTEX_UI;
 
@@ -23,4 +25,8 @@ namespace BufferSettings {
 
   const unsigned long MAX_VERTEX_OUTLINE = 100000;
   const unsigned long MAX_INDEX_OUTLINE = 2 * MAX_VERTEX_OUTLINE;
+
+  // max num of BlendTexture's for terrain chunk's tiles. (number of differently coloured tiles in chunk)
+  // to not reallocate instance slot too often
+  const unsigned long TERRAIN_PATCH_MAX_TEX_BLENDS = 1000;
 };

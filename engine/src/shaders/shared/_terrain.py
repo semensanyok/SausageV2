@@ -1,11 +1,11 @@
-static_mesh = {
+terrain = {
   "mesh_uniforms":
 """
 layout (std430, binding = MESH_STATIC_UNIFORMS_LOC) buffer UniformDataStaticMesh {
-  mat4 transforms[MAX_MESHES_STATIC_INSTANCES];
-  BlendTextures blend_textures[MAX_MESHES_STATIC_INSTANCES];
+  mat4 transforms[MAX_MESHES_STATIC_INSTANCES + MAX_MESHES_TERRAIN];
+  BlendTextures blend_textures[MAX_MESHES_STATIC_INSTANCES + TERRAIN_PATCH_MAX_TEX_BLENDS];
   float pad[3];
-  uint base_instance_offset[MAX_BASE_MESHES_STATIC];
+  uint base_instance_offset[MAX_BASE_MESHES_STATIC + MAX_MESHES_TERRAIN];
 };
 """,
 "mesh_vs_out": 
@@ -33,9 +33,10 @@ in vs_out {
 "mesh_set_vs_out":
 """
 Out.frag_pos = vec3(transform * res_position);
-Out.base_instance = gl_BaseInstanceARB;
-// Out.base_instance = int(base_instance_offset[0] == 0);
-Out.instance_id = gl_InstanceID;
+// id for blend texture's array.
+// terrain chunk is contigious mesh, where each tile referenced by vertex value (uniform_id)
+Out.base_instance = uniform_id;
+Out.instance_id = 0;
 Out.uv = uv;
 vec3 T = normalize(vec3(transform * vec4(tangent, 0.0)));
 vec3 B = normalize(vec3(transform * vec4(bitangent, 0.0)));
