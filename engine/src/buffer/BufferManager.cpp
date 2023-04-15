@@ -11,6 +11,8 @@ void BufferManager::Init() {
   mesh_data_buffer->Init();
   mesh_static_buffer = new MeshStaticBufferConsumer(vertex_attributes, mesh_manager, texture_manager);
   mesh_static_buffer->Init();
+  mesh_terrain_buffer = new MeshTerrainBufferConsumer(vertex_attributes, mesh_manager, texture_manager);
+  mesh_terrain_buffer->Init();
   ui_buffer = new UIBufferConsumer(vertex_attributes, mesh_manager);
   ui_buffer->Init();
   overlay_3d_buffer = new OverlayBufferConsumer3D(vertex_attributes, mesh_manager);

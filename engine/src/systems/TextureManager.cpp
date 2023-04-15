@@ -81,6 +81,97 @@ Texture* TextureManager::LoadTextureArray(MaterialTexNames& tex_names) {
     return texture;
 }
 
+
+/**
+* This function operates mostly like SDL_CreateRGBSurface(),
+except it does not allocate memory for the pixel data,
+instead the caller provides an existing buffer of data for the surface to use.
+* No copy is made of the pixel data.
+Pixel data is not managed automatically;
+you must free the surface before you free the pixel data.
+*
+* @param pixels
+* @param format
+* @param width
+* @param height
+* @param depth number of bits per pixel. 24 for RGB.
+* @param pitch
+* @param Rmask e.g. 0xff0000 for RGB
+* @param Gmask e.g. 0x00ff00 for RGB
+* @param Bmask e.g. 0x0000ff for RGB
+* @param Amask e.g. 0 for RGB
+* @param num of mipmaps to generate
+* @param diffuse_tex_name name for hash, to deduplicate loaded by same name
+* @param normal_tex_name name for hash, to deduplicate loaded by same name
+* @param specular_tex_name name for hash, to deduplicate loaded by same name
+* @return
+*/
+
+Texture* TextureManager::GenTextureArray(void* pixels_diffuse, void* pixels_normal, void* pixels_specular, int width, int height, int depth, int pitch, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask, GLsizei levels, string diffuse_tex_name, string normal_tex_name, string specular_tex_name) {
+  SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(pixels_diffuse, width, height, depth, pitch,
+    Rmask, Gmask, Bmask, Amask);
+  if (surface == NULL)
+  {
+    LOG((ostringstream() << "Error on IMG_Load: " << SDL_GetError()).str());
+    return nullptr;
+  }
+  GLuint texture_id = AllocateGLTextureId();
+
+  glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
+  glTexStorage3D(GL_TEXTURE_2D_ARRAY,
+    levels,                    //mipmaps. 1 == no mipmaps.
+    GetTexFormat(surface->format->BytesPerPixel, true), //Internal format
+    surface->w, surface->h,//width,height
+    3            //Number of layers
+  );
+  glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+    0,                               //Mipmap number
+    0, 0, (int)TextureType::Diffuse, //xoffset, yoffset, zoffset
+    surface->w, surface->h, 1,       //width, height, depth
+    GetTexFormat(surface->format->BytesPerPixel, false), //format
+    GL_UNSIGNED_BYTE,      //type
+    surface->pixels);
+
+  //int max_texture_array_levels;
+  //glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_texture_array_levels);
+  SDL_FreeSurface(surface);
+  {
+    surface = SDL_CreateRGBSurfaceFrom(pixels_normal, width, height, depth, pitch,
+      Rmask, Gmask, Bmask, Amask);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+      0,
+      0, 0, (int)TextureType::Normal,
+      surface->w, surface->h, 1,
+      GetTexFormat(surface->format->BytesPerPixel, false),
+      GL_UNSIGNED_BYTE,
+      surface->pixels);
+    DEBUG_EXPR(CheckGLError());
+    SDL_FreeSurface(surface);
+  }
+  {
+    surface = SDL_CreateRGBSurfaceFrom(pixels_diffuse, width, height, depth, pitch,
+      Rmask, Gmask, Bmask, Amask);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+      0,
+      0, 0, (int)TextureType::Specular,
+      surface->w, surface->h, 1,
+      GetTexFormat(surface->format->BytesPerPixel, false),
+      GL_UNSIGNED_BYTE,
+      surface->pixels);
+    DEBUG_EXPR(CheckGLError());
+    SDL_FreeSurface(surface);
+  }
+
+  Texture* texture = CreateTexture(texture_id, samplers->basic_repeat);
+  MaterialTexNames tex_names = { diffuse_tex_name, normal_tex_name, specular_tex_name };
+  hash<MaterialTexNames> mtn_hash;
+  texture->material_tex_names_hash = new size_t(mtn_hash(tex_names));
+  texture_by_material_tex_names_hash[mtn_hash(tex_names)] = texture;
+  texture_used_count_by_id[texture->id] = 1;
+
+  return texture;
+}
+
 unique_ptr<RawTextureData> TextureManager::LoadRawTextureData(string& path)
 {
   SDL_Surface* surface = IMG_Load(path.c_str());

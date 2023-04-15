@@ -20,13 +20,6 @@ class BaseTerrainEvent {
 };
 //////////
 
-/**
- * @brief buffer contains array of textures to blend (mix, multiply or whatever)
-*/
-class TerrainTexture {
-  int blend_weight;
-};
-
 enum EventPriority {
   // lowest priority, because doesnt affect other events in any meaningfull way
   ASSIGN_BASE_TEXTURE

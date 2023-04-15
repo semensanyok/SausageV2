@@ -67,7 +67,54 @@ struct TextureBlend {
 
 // largest base alignment value of any of its members == 4 bytes
 struct BlendTextures {
-  TextureBlend textures[BufferSettings::MAX_BLEND_TEXTURES]; // alignment 4 bytes (or 8?)
+  // KEEP SORTED BY TEXTURE ID! (to deduplicate)
+  TextureBlend textures[BufferSettings::MAX_BLEND_TEXTURES]; // alignment 4 bytes
   unsigned int num_textures; // alignment 4 bytes for 64 bit build
   // no padding needed, as all members are of equal size
 };
+// hash function for unordered map
+template<> struct std::hash<BlendTextures> {
+  size_t operator()(BlendTextures const& t) const {
+    auto s1 = ostringstream() << t.num_textures;
+    for (int i = 0; i < min(t.num_textures, BufferSettings::MAX_BLEND_TEXTURES); i++) {
+      auto tex = t.textures[i];
+      s1 << tex.texture_id << tex.blend_weight;
+    }
+    return hash<string>{}(s1.str());
+  }
+};
+// eq for hashmap/hashset
+inline bool operator==(const BlendTextures& lhs, const BlendTextures& rhs) {
+  if (lhs.num_textures != rhs.num_textures) {
+    return false;
+  }
+  for (int i = 0; i < lhs.num_textures; i++) {
+    auto t1 = lhs.textures[i];
+    auto t2 = rhs.textures[i];
+    if (lhs.textures[i].texture_id != rhs.textures[i].texture_id) {
+      return false;
+    }
+    float eps = 0.01; // 1%
+    if (fabs(lhs.textures[i].blend_weight - rhs.textures[i].blend_weight) >= eps) {
+      return false;
+    }
+
+  }
+  return true;
+}
+// compare for map/set
+inline bool operator<(const BlendTextures& lhs, const BlendTextures& rhs) {
+  if (lhs.num_textures != rhs.num_textures) {
+    return lhs.num_textures < rhs.num_textures;
+  }
+  for (int i = 0; i < lhs.num_textures; i++) {
+    if (lhs.textures[i].texture_id != rhs.textures[i].texture_id) {
+      return lhs.textures[i].texture_id < rhs.textures[i].texture_id;
+    }
+    float eps = 0.01; // 1%
+    if (fabs(lhs.textures[i].blend_weight - rhs.textures[i].blend_weight) >= eps) {
+      return lhs.textures[i].blend_weight < rhs.textures[i].blend_weight;
+    }
+  }
+  return false;
+}

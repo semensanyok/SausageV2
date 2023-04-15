@@ -8,7 +8,7 @@
 #include "TerrainStruct.h"
 #include "DrawCallManager.h"
 #include "BufferManager.h"
-#include "MeshDataBufferConsumer.h"
+#include "MeshTerrainBufferConsumer.h"
 #include <FastNoise/FastNoise.h>
 #include "Constants.h"
 #include "Physics.h"
@@ -131,7 +131,7 @@ to each tileId its slot in blendTextures array.
 */
 class TerrainManager
 {
-  MeshStaticBufferConsumer* buffer;
+  MeshTerrainBufferConsumer* buffer;
   MeshManager* mesh_manager;
   // TEST VALUES
   FastNoise::SmartNode<FastNoise::FractalFBm> fnFractal;
@@ -139,15 +139,20 @@ class TerrainManager
   vector<TerrainChunk*> chunks;
   DrawCallManager* draw_call_manager;
   PhysicsManager* physics_manager;
+  TextureManager* texture_manager;
+
+  unordered_map<BlendTextures, TerrainBlendTextures*> shared_tiles_textures;
 public:
   TerrainManager(BufferManager* buffer_manager,
     MeshManager* mesh_manager,
     DrawCallManager* draw_call_manager,
-    PhysicsManager* physics_manager) :
-    buffer{ buffer_manager->mesh_static_buffer },
+    PhysicsManager* physics_manager,
+    TextureManager* texture_manager) :
+    buffer{ buffer_manager->mesh_terrain_buffer },
     mesh_manager{ mesh_manager },
     draw_call_manager{ draw_call_manager },
-    physics_manager{ physics_manager } {
+    physics_manager{ physics_manager },
+    texture_manager{ texture_manager } {
     //FastNoise::SmartNode<FastNoise::Simplex>
     fnSimplex = FastNoise::New<FastNoise::Simplex>();
     FastNoise::SmartNode sm = fnSimplex;
@@ -177,11 +182,9 @@ private:
     vector<vec3>& vertices,
     // OUT
     vector<unsigned int>& indices,
-    // OUT
-    vector<vec2>& uvs,
-    // OUT
-    vector<unsigned int>& uniform_id,
-    float noise_scale
+    float noise_scale,
+    float frequency,
+    int seed
   );
   void ReleaseBuffer(TerrainChunk* chunk);
   void Deactivate(TerrainChunk* chunk);

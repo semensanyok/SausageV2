@@ -40,13 +40,14 @@ const int SPECULAR_TEX = 2;
 ,
     "uniforms_locations":
 """
-  const int MESH_UNIFORMS_LOC = 0;
-  const int TEXTURE_LOC = 1;
-  const int LIGHTS_UNIFORM_LOC = 2;
-  const int FONT_UNIFORMS_LOC = 3;
-  const int UI_UNIFORM_LOC = 4;
-  const int CONTROLLER_UNIFORM_LOC = 5;
-  const int BLEND_TEXTURES_BY_MESH_ID_LOC = 6;
-  const int MESH_STATIC_UNIFORMS_LOC = 7;
+const int MESH_UNIFORMS_LOC = 0;
+const int TEXTURE_LOC = 1;
+const int LIGHTS_UNIFORM_LOC = 2;
+const int FONT_UNIFORMS_LOC = 3;
+const int UI_UNIFORM_LOC = 4;
+const int CONTROLLER_UNIFORM_LOC = 5;
+const int BLEND_TEXTURES_BY_MESH_ID_LOC = 6;
+const int MESH_STATIC_UNIFORMS_LOC = 7;
+const int MESH_TERRAIN_UNIFORMS_LOC = 8;
 """
 }

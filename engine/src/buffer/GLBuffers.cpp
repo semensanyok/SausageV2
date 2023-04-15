@@ -7,11 +7,14 @@ void GLBuffers::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {
 void GLBuffers::InitBuffers() {
   mesh_uniform_ptr = CreateBufferSlots<UniformDataMesh>(MESH_UNIFORMS_STORAGE_SIZE, MAX_MESHES_INSTANCES, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
   mesh_static_uniform_ptr = CreateBufferSlots<UniformDataMeshStatic>(MESH_STATIC_UNIFORMS_STORAGE_SIZE, MAX_MESHES_STATIC_INSTANCES, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
+  mesh_terrain_uniform_ptr = CreateBufferSlots<UniformDataMeshTerrain>(MESH_TERRAIN_UNIFORMS_STORAGE_SIZE, MAX_MESHES_TERRAIN, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
   texture_handle_by_texture_id_ptr = CreateBufferStorageNumberPool<GLuint64>(TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE, MAX_TEXTURE, GL_SHADER_STORAGE_BUFFER);
   light_ptr = CreateBufferSlots<LightsUniform>(LIGHT_STORAGE_SIZE, MAX_LIGHTS, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
   uniforms_3d_overlay_ptr = CreateBufferSlots<UniformDataOverlay3D>(UNIFORM_OVERLAY_3D_STORAGE_SIZE, MAX_3D_OVERLAY_INSTANCES, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
   uniforms_ui_ptr = CreateBufferSlots<UniformDataUI>(UNIFORM_UI_STORAGE_SIZE, MAX_UI_INSTANCES, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
   uniforms_controller_ptr = CreateBufferSlots<ControllerUniformData>(UNIFORM_CONTROLLER_SIZE, 1, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
+
+  terrain_texture_instance_slots = new Arena({0,TERRAIN_MAX_TEXTURES,0});
 }
 
 void GLBuffers::BindBuffers() {
@@ -26,6 +29,12 @@ void GLBuffers::BindBuffers() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, mesh_static_uniform_ptr->buffer_id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, MESH_STATIC_UNIFORMS_LOC, mesh_static_uniform_ptr->buffer_id);
     bound_buffers |= BufferType::MESH_STATIC_UNIFORMS;
+  }
+  if ((used_buffers & BufferType::MESH_TERRAIN_UNIFORMS) &&
+    !(bound_buffers & BufferType::MESH_TERRAIN_UNIFORMS)) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, mesh_terrain_uniform_ptr->buffer_id);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, MESH_TERRAIN_UNIFORMS_LOC, mesh_terrain_uniform_ptr->buffer_id);
+    bound_buffers |= BufferType::MESH_TERRAIN_UNIFORMS;
   }
 
   if ((used_buffers & BufferType::TEXTURE) &&
@@ -57,6 +66,7 @@ void GLBuffers::BindBuffers() {
       uniforms_controller_ptr->buffer_id);
     bound_buffers |= BufferType::UI_UNIFORMS;
   }
+
 }
 
 void GLBuffers::Dispose() {

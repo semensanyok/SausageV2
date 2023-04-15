@@ -21,12 +21,15 @@ namespace BufferType {
   const BufferTypeFlag UI_UNIFORMS = 1 << 4;
   const BufferTypeFlag CONTROLLER_UNIFORMS = 1 << 5;
   const BufferTypeFlag MESH_STATIC_UNIFORMS = 1 << 6;
+  const BufferTypeFlag MESH_TERRAIN_UNIFORMS = 1 << 7;
 
   // COMPOSITE FLAGS
   const BufferTypeFlag MESH_BUFFERS =
     MESH_UNIFORMS | TEXTURE | LIGHT;
   const BufferTypeFlag MESH_STATIC_BUFFERS =
     MESH_STATIC_UNIFORMS | TEXTURE | LIGHT;
+  const BufferTypeFlag MESH_TERRAIN_BUFFERS =
+    MESH_TERRAIN_UNIFORMS | TEXTURE | LIGHT;
   const BufferTypeFlag OUTLINE_BUFFERS =
     0;
   const BufferTypeFlag UI_BUFFERS =

@@ -42,7 +42,7 @@ void SystemsManager::InitSystems() {
   controller = new Controller(camera, state_manager, physics_manager);
   controller->AddProcessor(controller_event_processor);
 
-  terrain_manager = new TerrainManager(buffer_manager, mesh_manager, draw_call_manager, physics_manager);
+  terrain_manager = new TerrainManager(buffer_manager, mesh_manager, draw_call_manager, physics_manager, texture_manager);
 
   async_manager = new AsyncTaskManager();
   _SubmitAsyncTasks();

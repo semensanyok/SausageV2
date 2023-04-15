@@ -9,19 +9,69 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord)
 
   // SCALE noise values for mesh and bullet physics.
   int noise_scale = 10;
-  auto chunk = CreateChunk(origin_coord, 0, 0, size_x, size_y,
+  int noise_offset_x = 0;
+  int noise_offset_y = 0;
+  float frequency = 0.02f;
+  int seed = 1337;
+  auto chunk = CreateChunk(origin_coord, noise_offset_x, noise_offset_y, size_x, size_y,
     // OUT
-    vertices, indices, uvs, uniform_id, noise_scale);
+    vertices, indices,
+    noise_scale, frequency, seed);
 
   vector<vec3> normals = GenNormals(vertices);
 
   buffer->AllocateStorage(chunk->mesh->slots, vertices.size(), indices.size());
-  draw_call_manager->AddNewCommandToDrawCall<MeshDataStatic>(chunk->mesh, draw_call_manager->terrain_dc, 1);
+  draw_call_manager->AddNewCommandToDrawCall<MeshDataTerrain>(chunk->mesh, draw_call_manager->terrain_dc, 1);
+
+
+  Texture* tex;
+  {
+    vector<unsigned int> tex_pixels(size_x * size_y);
+    transform(chunk->heightmap.begin(), chunk->heightmap.end(), tex_pixels.begin(),
+      [](float i) {return (int)(i * 100000); });
+    auto tex_name = (ostringstream() << 
+        size_x << size_y << noise_scale << noise_offset_x << noise_offset_y << frequency << seed).str();
+    tex = texture_manager->GenTextureArray(tex_pixels.data(), tex_pixels.data(), tex_pixels.data(),
+      size_x, size_y, 24, 0, 0x0000ff, 0x00ff00, 0xff0000, 0, 1, tex_name, tex_name, tex_name);
+    tex->MakeResident();
+  }
+
+  uniform_id.resize(size_x * size_y);
+  uvs.resize(size_x * size_y);
+  // setup 4 vert's chunks texture data
+  for (size_t y = 0; y < size_y; y += 2)
+  {
+    for (size_t x = 0; x < size_x; x += 2)
+    {
+      auto tex_indices = chunk->GetTileIndices(x, y);
+      // for test - texture with id == 0 and 1.0 weight.
+      TerrainBlendTextures* ter_tex;
+      BlendTextures blend_tex = { {1.0,tex->id}, 1 };
+      if (shared_tiles_textures.find(blend_tex) == shared_tiles_textures.end()) {
+        ter_tex = buffer->GetTexturesSlot();
+        ter_tex->textures = blend_tex;
+        shared_tiles_textures[blend_tex] = ter_tex;
+        buffer->BufferTexture(ter_tex, blend_tex);
+      }
+      else {
+        ter_tex = shared_tiles_textures[blend_tex];
+      }
+      uniform_id[tex_indices.ne] = ter_tex->uniform_id;
+      uniform_id[tex_indices.nw] = ter_tex->uniform_id;
+      uniform_id[tex_indices.se] = ter_tex->uniform_id;
+      uniform_id[tex_indices.sw] = ter_tex->uniform_id;
+
+      uvs[tex_indices.ne] = { 0.0, 0.0 };
+      uvs[tex_indices.nw] = { 0.0, 1.0 };
+      uvs[tex_indices.se] = { 1.0, 0.0 };
+      uvs[tex_indices.sw] = { 1.0, 1.0 };
+    }
+  }
   buffer->BufferMeshData(chunk->mesh, vertices, indices, uvs, normals, uniform_id);
 
   string name = "Terrain";
 
-  physics_manager->AddTerrainRigidBody(chunk->heightmap, chunk->sizeX, chunk->sizeY, chunk->spacing,
+  physics_manager->AddTerrainRigidBody(chunk->heightmap, chunk->size_x, chunk->size_y, chunk->spacing,
     new MeshDataClickable(name), chunk->mesh->transform, name, -noise_scale, noise_scale);
 }
 
@@ -30,16 +80,14 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   vector<vec3>& vertices,
   // OUT
   vector<unsigned int>& indices,
-  // OUT
-  vector<vec2>& uvs,
-  // OUT
-  vector<unsigned int>& uniform_id,
-  float noise_scale)
+  float noise_scale,
+  float frequency,
+  int seed)
 {
   TerrainChunk* chunk = new TerrainChunk(size_x, size_y, 1, pos);
-  chunk->mesh = mesh_manager->CreateMeshData<MeshDataStatic>();
+  chunk->mesh = mesh_manager->CreateMeshData<MeshDataTerrain>();
   chunk->mesh->transform = translate(mat4(1), pos);
-  fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, 0.02f, 1337);
+  fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, frequency, seed);
   transform(chunk->heightmap.begin(), chunk->heightmap.end(), chunk->heightmap.begin(),
     [&noise_scale](float i) {return i * noise_scale;});
   // create chunk in local space, use transform matrix to apply offsetX/Y
@@ -62,27 +110,7 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
       vertices.push_back({ x0, height_values[ind], y0 });
     }
   }
-  // TODO: setup 4 vert's chunks
-  for (int y = 0; y < size_y; y += 1) {
-    for (int x = 0; x < size_x; x += 2) {
-      uniform_id.push_back(0);
-      uniform_id.push_back(0);
-      //uniform_id.push_back(0);
-      //uniform_id.push_back(0);
-
-      if (x % 2 == 0) {
-        uvs.push_back({ 0.0, 0.0 });
-        uvs.push_back({ 0.0, 1.0 });
-      }
-      else {
-        uvs.push_back({ 1.0, 0.0 });
-        uvs.push_back({ 1.0, 1.0 });
-      }
-    }
-  }
-
-  // set indices / uv's arrays
-  // counter clockwise
+  // TODO: x+=2 ????
   for (int y = 0; y < size_y; y ++) {
     for (int x = 0; x < size_x; x ++) {
       if (x == size_x - 1 || y == size_y - 1) {

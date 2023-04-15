@@ -127,6 +127,9 @@ public:
       };
       draw_call_manager->AddNewCommandToDrawCall<MESH_TYPE>(mesh, dc, instances.size());
       mesh_data_buffer_consumer->BufferMeshData(mesh, base_ptr);
+      if (mesh->textures.num_textures > 0) {
+        mesh_data_buffer_consumer->BufferTexture(mesh, mesh->textures);
+      }
 
       // PHYSICS SETUP
       {
@@ -147,7 +150,9 @@ public:
         // already have set correct instance_count, no need to update (via AddNewCommandToDrawCall<MESH_TYPE>(mesh, dc, instances.size()))
         MeshDataInstance* mesh_instance = draw_call_manager->AddNewInstance<MESH_TYPE>(mesh, idata->transform);
         mesh_data_buffer_consumer->BufferMeshDataInstance(mesh_instance, mesh->textures);
-        mesh_data_buffer_consumer->BufferTexture(mesh_instance, mesh->textures);
+        if (mesh->textures.num_textures > 0) {
+          mesh_data_buffer_consumer->BufferTexture(mesh_instance, mesh->textures);
+        }
         mesh_res.instances.push_back(mesh_instance);
       }
     }

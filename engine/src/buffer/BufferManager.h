@@ -12,6 +12,7 @@
 #include "BulletDebugDrawerBufferConsumer.h"
 #include "UIBufferConsumer.h"
 #include "OverlayBufferConsumer3D.h"
+#include "MeshTerrainBufferConsumer.h"
 #include "MeshManager.h"
 #include "TextureManager.h"
 ;
@@ -33,6 +34,7 @@ public:
   UIBufferConsumer* ui_buffer = nullptr;
   OverlayBufferConsumer3D* overlay_3d_buffer = nullptr;
   MeshStaticBufferConsumer* mesh_static_buffer = nullptr;
+  MeshTerrainBufferConsumer* mesh_terrain_buffer = nullptr;
   BufferStorage* buffer_storage = nullptr;
 
   BufferManager(MeshManager* mesh_manager,

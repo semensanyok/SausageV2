@@ -4,6 +4,7 @@
 #include "GPUStructs.h"
 #include "GPUUniformsStruct.h"
 #include "MeshDataStruct.h"
+#include "TerrainStruct.h"
 #include "Vertex.h"
 #include "Arena.h"
 #include "ThreadSafeNumberPool.h"
@@ -28,6 +29,10 @@ public:
   BufferSlots<UniformDataUI>* uniforms_ui_ptr;
   BufferSlots<ControllerUniformData>* uniforms_controller_ptr;
   BufferSlots<UniformDataMeshStatic>* mesh_static_uniform_ptr;
+  BufferSlots<UniformDataMeshTerrain>* mesh_terrain_uniform_ptr;
+
+  // terrain specific
+  Arena* terrain_texture_instance_slots;
 
   void InitBuffers();
   void BindBuffers();
@@ -43,6 +48,7 @@ public:
     uniforms_ui_ptr->Reset();
     uniforms_controller_ptr->Reset();
     mesh_static_uniform_ptr->Reset();
+    mesh_terrain_uniform_ptr->Reset();
   };
 
   ///////////////GetBufferSlots template//////////////////////////////////
@@ -66,6 +72,11 @@ public:
   inline BufferSlots<UniformDataMeshStatic>* GetBufferSlots<UniformDataMeshStatic, MeshDataStatic>()
   {
     return mesh_static_uniform_ptr;
+  }
+  template<>
+  inline BufferSlots<UniformDataMeshTerrain>* GetBufferSlots<UniformDataMeshTerrain, MeshDataTerrain>()
+  {
+    return mesh_terrain_uniform_ptr;
   }
   template<>
   inline BufferSlots<UniformDataUI>* GetBufferSlots<UniformDataUI, MeshDataUI>()
@@ -94,6 +105,11 @@ public:
     return mesh_static_uniform_ptr->buffer_ptr->base_instance_offset;
   };
   template<>
+  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataTerrain>()
+  {
+    return mesh_terrain_uniform_ptr->buffer_ptr->base_instance_offset;
+  };
+  template<>
   inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataUI>()
   {
     return uniforms_ui_ptr->buffer_ptr->base_instance_offset;
@@ -119,6 +135,11 @@ public:
     return mesh_static_uniform_ptr->instances_slots;
   }
   template<>
+  inline InstancesSlots& GetInstancesSlot<MeshDataTerrain>()
+  {
+    return mesh_terrain_uniform_ptr->instances_slots;
+  }
+  template<>
   inline InstancesSlots& GetInstancesSlot<MeshDataUI>()
   {
     return uniforms_ui_ptr->instances_slots;
@@ -129,6 +150,21 @@ public:
     return uniforms_3d_overlay_ptr->instances_slots;
   }
   /////////////////////////////////////////////////
+
+  template<typename TEXTURE_TYPE>
+  TEXTURE_TYPE* GetTexturesSlot() {
+  }
+
+  template<>
+  inline TerrainBlendTextures* GetTexturesSlot<TerrainBlendTextures>()
+  {
+    auto slot = terrain_texture_instance_slots->Allocate(1);
+    if (slot == MemorySlots::NULL_SLOT) {
+      LOG("Error allocating slot for TerrainBlendTextures");
+      return nullptr;
+    }
+    return new TerrainBlendTextures(slot.offset);
+  }
 
   //////////////GetTransformPtr template///////////
   template<typename TRANSFORM_TYPE, typename MESH_TYPE>
@@ -144,6 +180,11 @@ public:
   inline mat4* GetTransformPtr<mat4, MeshDataStatic>()
   {
     return mesh_static_uniform_ptr->buffer_ptr->transforms;
+  }
+  template<>
+  inline mat4* GetTransformPtr<mat4, MeshDataTerrain>()
+  {
+    return mesh_terrain_uniform_ptr->buffer_ptr->transforms;
   }
   template<>
   inline vec2* GetTransformPtr<vec2, MeshDataUI>()
@@ -172,6 +213,11 @@ public:
     return mesh_static_uniform_ptr->instances_slots.instances_slots.GetUsed();
   }
   template<>
+  inline unsigned int GetNumCommands<MeshDataTerrain>()
+  {
+    return mesh_terrain_uniform_ptr->instances_slots.instances_slots.GetUsed();
+  }
+  template<>
   inline unsigned int GetNumCommands<MeshDataOverlay3D>()
   {
     return uniforms_3d_overlay_ptr->instances_slots.instances_slots.GetUsed();
@@ -198,6 +244,12 @@ public:
   inline void BufferTexture<MeshDataStatic, BlendTextures>(BufferInstanceOffset* mesh, BlendTextures& textures) {
     auto offset = mesh->GetInstanceOffset();
     mesh_static_uniform_ptr->buffer_ptr->blend_textures[offset]
+      = textures;
+  };
+  template<>
+  inline void BufferTexture<MeshDataTerrain, BlendTextures>(BufferInstanceOffset* mesh, BlendTextures& textures) {
+    auto offset = mesh->GetInstanceOffset();
+    mesh_terrain_uniform_ptr->buffer_ptr->blend_textures[offset]
       = textures;
   };
   template<>

@@ -94,6 +94,48 @@ public:
     */
     Texture* LoadTextureArray(MaterialTexNames& tex_names);
 
+    /**
+     * This function operates mostly like SDL_CreateRGBSurface(),
+       except it does not allocate memory for the pixel data,
+       instead the caller provides an existing buffer of data for the surface to use.
+     * No copy is made of the pixel data.
+       Pixel data is not managed automatically;
+       you must free the surface before you free the pixel data.
+     *
+     * @param pixels 
+     * @param format 
+     * @param width 
+     * @param height 
+     * @param depth number of bits per pixel. 24 for RGB.
+     * @param pitch 
+     * @param Rmask e.g. 0xff0000 for RGB
+     * @param Gmask e.g. 0x00ff00 for RGB
+     * @param Bmask e.g. 0x0000ff for RGB
+     * @param Amask e.g. 0 for RGB
+     * @param num of mipmaps to generate
+     * @param diffuse_tex_name name for hash, to deduplicate loaded by same name
+     * @param normal_tex_name name for hash, to deduplicate loaded by same name
+     * @param specular_tex_name name for hash, to deduplicate loaded by same name
+     * @return 
+    */
+    Texture* GenTextureArray(
+      void* pixels_diffuse,
+      void* pixels_normal,
+      void* pixels_specular,
+      int width,
+      int height,
+      int depth,
+      int pitch,
+      Uint32 Rmask,
+      Uint32 Gmask,
+      Uint32 Bmask,
+      Uint32 Amask,
+      GLsizei levels = 8,
+      string diffuse_tex_name = {},
+      string normal_tex_name = {},
+      string specular_tex_name = {}
+    );;
+
     unique_ptr<RawTextureData> LoadRawTextureData(string& path);
 
     GLuint AllocateGLTextureId();

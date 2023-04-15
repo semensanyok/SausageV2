@@ -20,13 +20,12 @@ namespace BufferSettings {
   const unsigned long MAX_INDEX_UI = 2 * MAX_VERTEX_UI;
 
   const unsigned long MAX_TEXTURE = 100;
-  const unsigned long MAX_BLEND_TEXTURES = 4;
+  const unsigned int MAX_BLEND_TEXTURES = 4;
   const unsigned long MAX_LIGHTS = 100; // TODO: figure out correct size
 
   const unsigned long MAX_VERTEX_OUTLINE = 100000;
   const unsigned long MAX_INDEX_OUTLINE = 2 * MAX_VERTEX_OUTLINE;
 
   // max num of BlendTexture's for terrain chunk's tiles. (number of differently coloured tiles in chunk)
-  // to not reallocate instance slot too often
-  const unsigned long TERRAIN_PATCH_MAX_TEX_BLENDS = 1000;
+  const unsigned long TERRAIN_MAX_TEXTURES = 1000;
 };

@@ -53,9 +53,6 @@ public:
     //allocated in DrawCallManager->SetToCommandWithOffsets (via buffer->TryReallocateInstanceSlot)
     //this->AllocateInstanceSlot(mesh->slots, num_instances);
     this->BufferVertices(mesh->slots, load_data);
-    if (mesh->textures.num_textures > 0) {
-      this->BufferTexture(mesh, mesh->textures);
-    }
     this->BufferTransform(mesh, mesh->transform);
   }
   void BufferMeshDataInstance(MeshDataInstance* mesh,
