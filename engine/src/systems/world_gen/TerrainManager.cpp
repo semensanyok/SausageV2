@@ -1,19 +1,20 @@
 #include "TerrainManager.h"
 
-void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord)
+void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
+  int noise_scale, float spacing)
 {
   vector<vec3> vertices;
   vector<unsigned int> indices;
   vector<vec2> uvs;
   vector<unsigned int> uniform_id;
 
-  // SCALE noise values for mesh and bullet physics.
-  int noise_scale = 10;
   int noise_offset_x = 0;
   int noise_offset_y = 0;
-  float frequency = 0.02f;
+  //float frequency = 0.02f;
+  float frequency = 0.2f;
   int seed = 1337;
-  auto chunk = CreateChunk(origin_coord, noise_offset_x, noise_offset_y, size_x, size_y,
+  auto chunk = CreateChunk(origin_coord, noise_offset_x, noise_offset_y,
+    size_x, size_y, spacing,
     // OUT
     vertices, indices,
     noise_scale, frequency, seed);
@@ -26,16 +27,76 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord)
 
   Texture* tex;
   {
-    vector<unsigned int> tex_pixels(size_x * size_y);
-    transform(chunk->heightmap.begin(), chunk->heightmap.end(), tex_pixels.begin(),
-      [](float i) {return (int)(i * 100000); });
+    //vector<unsigned int> tex_pixels(size_x * size_y);
+    //transform(chunk->heightmap.begin(), chunk->heightmap.end(), tex_pixels.begin(),
+    //  [](float i) {return (int)(fabs(i) * 1000); });
+    vector<unsigned int> tex_pixels(size_x * size_y,
+      //0xff0000ff
+      0xffff0000
+    );
+    vector<unsigned int> tex_specular_pixels(size_x * size_y, 0xfffffff);
+    vector<unsigned int> tex_normal_pixels(size_x * size_y, 0xfffffff);
+
     auto tex_name = (ostringstream() << 
-        size_x << size_y << noise_scale << noise_offset_x << noise_offset_y << frequency << seed).str();
-    tex = texture_manager->GenTextureArray(tex_pixels.data(), tex_pixels.data(), tex_pixels.data(),
-      size_x, size_y, 24, 0, 0x0000ff, 0x00ff00, 0xff0000, 0, 1, tex_name, tex_name, tex_name);
+        size_x << size_y << noise_scale << noise_offset_x << noise_offset_y << frequency << "1").str();
+    auto levels = 8;
+    tex = texture_manager->GenTextureArray(
+      tex_pixels.data(), tex_normal_pixels.data(), tex_specular_pixels.data(),
+      size_x, size_y,
+      32, 0,
+      0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff,
+      levels,
+      tex_name, tex_name, tex_name);
     tex->MakeResident();
   }
+  // G texture
+  Texture* tex2;
+  {
+    //vector<unsigned int> tex_pixels(size_x * size_y);
+    //transform(chunk->heightmap.begin(), chunk->heightmap.end(), tex_pixels.begin(),
+    //  [](float i) {return (int)(fabs(i) * 1000); });
+    vector<unsigned int> tex_pixels(size_x * size_y,
+      //0xff0000ff
+      0xff0000ff
+    );
+    vector<unsigned int> tex_specular_pixels(size_x * size_y, 0xfffffff);
+    vector<unsigned int> tex_normal_pixels(size_x * size_y, 0xfffffff);
 
+    auto tex_name = (ostringstream() <<
+        size_x << size_y << noise_scale << noise_offset_x << noise_offset_y << frequency << "2").str();
+    auto levels = 8;
+    tex2 = texture_manager->GenTextureArray(
+      tex_pixels.data(), tex_normal_pixels.data(), tex_specular_pixels.data(),
+      size_x, size_y,
+      32, 0,
+      0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff,
+      levels,
+      tex_name, tex_name, tex_name);
+    tex2->MakeResident();
+  }
+
+  BlendTextures blend_tex;
+  blend_tex.num_textures = 2;
+  blend_tex.textures[0] = { 0.5, tex->id };
+  blend_tex.textures[1] = { 0.5, tex2->id };
+
+  SetTilesData(uniform_id, size_x, size_y, uvs, chunk, blend_tex);
+  buffer->BufferMeshData(chunk->mesh, vertices, indices, uvs, normals, uniform_id);
+
+  string name = "Terrain";
+
+  physics_manager->AddTerrainRigidBody(chunk->heightmap, chunk->size_x, chunk->size_y, chunk->spacing,
+    new MeshDataClickable(name), chunk->mesh->transform, name, -noise_scale, noise_scale);
+}
+
+void TerrainManager::SetTilesData(
+  std::vector<unsigned int>& uniform_id,
+  int size_x,
+  int size_y,
+  std::vector<glm::vec2>& uvs,
+  TerrainChunk* chunk,
+  BlendTextures& blend_tex)
+{
   uniform_id.resize(size_x * size_y);
   uvs.resize(size_x * size_y);
   // setup 4 vert's chunks texture data
@@ -46,7 +107,6 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord)
       auto tex_indices = chunk->GetTileIndices(x, y);
       // for test - texture with id == 0 and 1.0 weight.
       TerrainBlendTextures* ter_tex;
-      BlendTextures blend_tex = { {1.0,tex->id}, 1 };
       if (shared_tiles_textures.find(blend_tex) == shared_tiles_textures.end()) {
         ter_tex = buffer->GetTexturesSlot();
         ter_tex->textures = blend_tex;
@@ -67,15 +127,10 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord)
       uvs[tex_indices.sw] = { 1.0, 1.0 };
     }
   }
-  buffer->BufferMeshData(chunk->mesh, vertices, indices, uvs, normals, uniform_id);
-
-  string name = "Terrain";
-
-  physics_manager->AddTerrainRigidBody(chunk->heightmap, chunk->size_x, chunk->size_y, chunk->spacing,
-    new MeshDataClickable(name), chunk->mesh->transform, name, -noise_scale, noise_scale);
 }
 
-TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y, int size_x, int size_y,
+TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y,
+  int size_x, int size_y, float spacing,
   // OUT
   vector<vec3>& vertices,
   // OUT

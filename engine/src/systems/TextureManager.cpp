@@ -101,22 +101,36 @@ you must free the surface before you free the pixel data.
 * @param Bmask e.g. 0x0000ff for RGB
 * @param Amask e.g. 0 for RGB
 * @param num of mipmaps to generate
+*        mipmap. max == take logarithm inverse because
+*        GL_INVALID_OPERATION is generated if target is GL_TEXTURE_3D or GL_PROXY_TEXTURE_3D
+*        and levels is greater than log2(max(width, height, depth))+1
 * @param diffuse_tex_name name for hash, to deduplicate loaded by same name
 * @param normal_tex_name name for hash, to deduplicate loaded by same name
 * @param specular_tex_name name for hash, to deduplicate loaded by same name
 * @return
 */
 
-Texture* TextureManager::GenTextureArray(void* pixels_diffuse, void* pixels_normal, void* pixels_specular, int width, int height, int depth, int pitch, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask, GLsizei levels, string diffuse_tex_name, string normal_tex_name, string specular_tex_name) {
+Texture* TextureManager::GenTextureArray(
+  void* pixels_diffuse, void* pixels_normal, void* pixels_specular,
+  int width, int height,
+  int depth, int pitch,
+  Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask,
+  GLsizei levels,
+  string diffuse_tex_name, string normal_tex_name, string specular_tex_name) {
   SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(pixels_diffuse, width, height, depth, pitch,
     Rmask, Gmask, Bmask, Amask);
+  auto max_allowed_levels = log2(std::max((float)width, (float)height));
+  if (levels > max_allowed_levels) {
+    levels = max_allowed_levels;
+  }
+  assert(levels <= max_allowed_levels);
   if (surface == NULL)
   {
     LOG((ostringstream() << "Error on IMG_Load: " << SDL_GetError()).str());
     return nullptr;
   }
   GLuint texture_id = AllocateGLTextureId();
-
+  DEBUG_EXPR(CheckGLError());
   glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
   glTexStorage3D(GL_TEXTURE_2D_ARRAY,
     levels,                    //mipmaps. 1 == no mipmaps.
@@ -124,6 +138,7 @@ Texture* TextureManager::GenTextureArray(void* pixels_diffuse, void* pixels_norm
     surface->w, surface->h,//width,height
     3            //Number of layers
   );
+  DEBUG_EXPR(CheckGLError());
   glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
     0,                               //Mipmap number
     0, 0, (int)TextureType::Diffuse, //xoffset, yoffset, zoffset
@@ -131,7 +146,7 @@ Texture* TextureManager::GenTextureArray(void* pixels_diffuse, void* pixels_norm
     GetTexFormat(surface->format->BytesPerPixel, false), //format
     GL_UNSIGNED_BYTE,      //type
     surface->pixels);
-
+  DEBUG_EXPR(CheckGLError());
   //int max_texture_array_levels;
   //glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_texture_array_levels);
   SDL_FreeSurface(surface);
@@ -161,6 +176,8 @@ Texture* TextureManager::GenTextureArray(void* pixels_diffuse, void* pixels_norm
     DEBUG_EXPR(CheckGLError());
     SDL_FreeSurface(surface);
   }
+  glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+  DEBUG_EXPR(CheckGLError());
 
   Texture* texture = CreateTexture(texture_id, samplers->basic_repeat);
   MaterialTexNames tex_names = { diffuse_tex_name, normal_tex_name, specular_tex_name };

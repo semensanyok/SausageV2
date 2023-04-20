@@ -3,7 +3,7 @@ terrain = {
 """
 layout (std430, binding = MESH_TERRAIN_UNIFORMS_LOC) buffer UniformDataTerrainMesh {
   mat4 transforms[MAX_MESHES_TERRAIN];
-  BlendTextures blend_textures[TERRAIN_PATCH_MAX_TEX_BLENDS];
+  BlendTextures blend_textures[TERRAIN_MAX_TEXTURES];
   float pad[3];
   uint base_instance_offset[MAX_MESHES_TERRAIN];
 };

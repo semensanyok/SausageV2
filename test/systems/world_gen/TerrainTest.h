@@ -22,9 +22,9 @@ class TerrainTest {
       SausageGameLoop::Init();
       sm = SystemsManager::GetInstance();
       auto tm = sm->terrain_manager;
-      auto size = 100;
+      auto size = 256;
       // center to world origin
-      tm->CreateTerrain(size, size, vec3(0, 0, 0));
+      tm->CreateTerrain(size, size, vec3(0, 0, 0), 10);
 
       _LoadMeshes(scene_path);
       // multiply instances
@@ -72,14 +72,29 @@ class TerrainTest {
 
       draw_lights.push_back(new Light{ vec4{-5, 5,5,0},
                                        vec4{2,2,2,0},
-                                       vec4{22,22,22,0},
+                                       vec4{22,22,22,0},//vec4{22,22,22,0},
                                        vec4{22,22,22,0},
                      LightType::Point,
                      0,
                      0,
-                     1,
-                     0.7,
-                     0.7 });
+                     1,//1,
+
+                     0.7,//0.7,
+                     0.7//0.7
+        });
+
+      //draw_lights.push_back(new Light{ vec4{5, 5,5,0},
+      //                           vec4{2,20,2,0},
+      //                           vec4{22,22,22,0},//vec4{22,22,22,0},
+      //                           vec4{22,22,22,0},
+      //         LightType::Spot,
+      //         0,
+      //         0,
+      //         0.1,//1,
+
+      //         0.07,//0.7,
+      //         0.07//0.7
+      //  });
       BufferStorage::GetInstance()->BufferLights(draw_lights);
     }
 

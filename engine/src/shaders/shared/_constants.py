@@ -35,7 +35,7 @@ const int SPECULAR_TEX = 2;
   const uint MAX_BLEND_TEXTURES = 4;
   const uint MAX_LIGHTS = 100;
 
-  const uint TERRAIN_PATCH_MAX_TEX_BLENDS = 1000;
+  const uint TERRAIN_MAX_TEXTURES = 1000;
 """
 ,
     "uniforms_locations":

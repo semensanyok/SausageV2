@@ -139,6 +139,7 @@ private:
       tex_names_list_animated, tex_names_list_static,
       true, true, true);
 
+    systems_manager->terrain_manager->CreateTerrain(100, 100, vec3(0, 0, 0), 1);
     // SetBaseMeshForInstancedCommand
     SetupInstancedMesh(mesh_load_data_animated, tex_names_list_animated);
     SetupInstancedMeshStatic(mesh_load_data_static, tex_names_list_static);

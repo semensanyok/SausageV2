@@ -167,17 +167,35 @@ public:
    * @param size_x 
    * @param size_y 
    * @param origin_coord south west corner of terrain rectangle
+   * @param noise_scale SCALE noise values for mesh
   */
-  void CreateTerrain(int size_x, int size_y, vec3 origin_coord);
+  void CreateTerrain(int size_x, int size_y, vec3 origin_coord, int noise_scale, float spacing = 1);
+
+  void SetTilesData(std::vector<unsigned int, std::allocator<unsigned int>>& uniform_id, int size_x, int size_y, std::vector<glm::vec2>& uvs, TerrainChunk* chunk,
+    BlendTextures& blend_tex);
 
 private:
 
+  /**
+   * @param pos position of terrain center
+   * @param noise_offset_x 
+   * @param noise_offset_y 
+   * @param size_x number of vertices
+   * @param size_y number of vertices
+   * @param spacing distance between tile vertices
+   * @param vertices 
+   * @param indices 
+   * @param noise_scale 
+   * @param frequency 
+   * @param seed noise seed
+  */
   TerrainChunk* CreateChunk(
     vec3 pos,
     int noise_offset_x,
     int noise_offset_y,
     int size_x,
     int size_y,
+    float spacing,
     // OUT
     vector<vec3>& vertices,
     // OUT

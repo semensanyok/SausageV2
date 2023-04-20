@@ -1,12 +1,9 @@
 mesh = {
     "mesh_fs_functions": 
 """
-// TODO: choose blend color function. blend normals and specular
-//       for starter just diffuse color blend
-void SetBlendColor() {
-    // TODO: add light color for all blend textures, before blend
-
-    uint texture_id = blend_textures[base_instance_offset[In.base_instance] + In.instance_id].textures[0].texture_id;
+vec4 GetTextureColor(in const BlendTextures tex, int texture_index) {
+    uint texture_id = tex
+      .textures[texture_index].texture_id;
     vec4 mat_diffuse_with_opacity = texture(textures[texture_id], vec3(In.uv, DIFFUSE_TEX)).rgba;
     vec3 mat_diffuse = mat_diffuse_with_opacity.rgb;
     vec3 mat_specular = texture(textures[texture_id], vec3(In.uv, SPECULAR_TEX)).rgb;
@@ -14,11 +11,21 @@ void SetBlendColor() {
     mat_normal = normalize(In.TBN * mat_normal);
 
     vec3 view_dir = normalize(view_pos - In.frag_pos);
-  
+
     vec3 res = mat_diffuse * AMBIENT_CONST;
     AddLightColor(In.frag_pos, mat_normal, res, view_dir, mat_diffuse, mat_specular);
+    return vec4(res, mat_diffuse_with_opacity.a);
+};
+
+void SetBlendColor() {
+    BlendTextures blend_texture = blend_textures[base_instance_offset[In.base_instance] + In.instance_id];
     
-    color = vec4(res, mat_diffuse_with_opacity.a);
+    uint num_tex = blend_texture.num_textures;
+    vec4 res = vec4(0);
+    for (int i = 0; i < num_tex; i++) {
+        res += GetTextureColor(blend_texture, i);
+    }
+    color = res;
     // color = vec4(255.0,0.0,0.0,0.3);
 };
 """,
