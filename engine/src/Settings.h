@@ -12,6 +12,8 @@ namespace GameSettings {
   inline int ray_debug_draw_lifetime_milliseconds = 2000;
   inline float physics_step_multiplier = 0.001f;
   inline bool quit = false;
+
+  //inline int MAX_DRAW_DISTANCE = 1000;
 };
 namespace CameraSettings {
 	inline float sensivity = 0.1f;

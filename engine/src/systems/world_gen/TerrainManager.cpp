@@ -24,56 +24,12 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
   buffer->AllocateStorage(chunk->mesh->slots, vertices.size(), indices.size());
   draw_call_manager->AddNewCommandToDrawCall<MeshDataTerrain>(chunk->mesh, draw_call_manager->terrain_dc, 1);
 
-
-  Texture* tex;
-  {
-    //vector<unsigned int> tex_pixels(size_x * size_y);
-    //transform(chunk->heightmap.begin(), chunk->heightmap.end(), tex_pixels.begin(),
-    //  [](float i) {return (int)(fabs(i) * 1000); });
-    vector<unsigned int> tex_pixels(size_x * size_y,
-      //0xff0000ff
-      0xffff0000
-    );
-    vector<unsigned int> tex_specular_pixels(size_x * size_y, 0xfffffff);
-    vector<unsigned int> tex_normal_pixels(size_x * size_y, 0xfffffff);
-
-    auto tex_name = (ostringstream() << 
-        size_x << size_y << noise_scale << noise_offset_x << noise_offset_y << frequency << "1").str();
-    auto levels = 8;
-    tex = texture_manager->GenTextureArray(
-      tex_pixels.data(), tex_normal_pixels.data(), tex_specular_pixels.data(),
-      size_x, size_y,
-      32, 0,
-      0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff,
-      levels,
-      tex_name, tex_name, tex_name);
-    tex->MakeResident();
-  }
+  // R texture
+  auto tex = GenConstColorTex(0xffff0000, size_x, size_y, "1");
+  tex->MakeResident();
   // G texture
-  Texture* tex2;
-  {
-    //vector<unsigned int> tex_pixels(size_x * size_y);
-    //transform(chunk->heightmap.begin(), chunk->heightmap.end(), tex_pixels.begin(),
-    //  [](float i) {return (int)(fabs(i) * 1000); });
-    vector<unsigned int> tex_pixels(size_x * size_y,
-      //0xff0000ff
-      0xff0000ff
-    );
-    vector<unsigned int> tex_specular_pixels(size_x * size_y, 0xfffffff);
-    vector<unsigned int> tex_normal_pixels(size_x * size_y, 0xfffffff);
-
-    auto tex_name = (ostringstream() <<
-        size_x << size_y << noise_scale << noise_offset_x << noise_offset_y << frequency << "2").str();
-    auto levels = 8;
-    tex2 = texture_manager->GenTextureArray(
-      tex_pixels.data(), tex_normal_pixels.data(), tex_specular_pixels.data(),
-      size_x, size_y,
-      32, 0,
-      0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff,
-      levels,
-      tex_name, tex_name, tex_name);
-    tex2->MakeResident();
-  }
+  auto tex2 = GenConstColorTex(0xff0000ff, size_x, size_y, "2");
+  tex2->MakeResident();
 
   BlendTextures blend_tex;
   blend_tex.num_textures = 2;
@@ -87,6 +43,34 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
 
   physics_manager->AddTerrainRigidBody(chunk->heightmap, chunk->size_x, chunk->size_y, chunk->spacing,
     new MeshDataClickable(name), chunk->mesh->transform, name, -noise_scale, noise_scale);
+}
+
+Texture* TerrainManager::GenConstColorTex(unsigned int color,
+  unsigned int size_x,
+  unsigned int size_y,
+  const char* tex_name_suffix) {
+  Texture* tex;
+  //vector<unsigned int> tex_pixels(size_x * size_y);
+  //transform(chunk->heightmap.begin(), chunk->heightmap.end(), tex_pixels.begin(),
+  //  [](float i) {return (int)(fabs(i) * 1000); });
+  vector<unsigned int> tex_pixels(size_x * size_y,
+    //0xff0000ff
+    color
+  );
+  vector<unsigned int> tex_specular_pixels(size_x * size_y, 0xfffffff);
+  vector<unsigned int> tex_normal_pixels(size_x * size_y, 0xfffffff);
+
+  auto tex_name = (ostringstream() <<
+      size_x << size_y << tex_name_suffix).str();
+  auto levels = 8;
+  tex = texture_manager->GenTextureArray(
+    tex_pixels.data(), tex_normal_pixels.data(), tex_specular_pixels.data(),
+    size_x, size_y,
+    32, 0,
+    0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff,
+    levels,
+    tex_name, tex_name, tex_name);
+  return tex;
 }
 
 void TerrainManager::SetTilesData(

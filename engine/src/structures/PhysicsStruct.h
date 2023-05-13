@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sausage.h"
+#include "BoundingVolume.h"
 
 using namespace glm;
 
@@ -14,23 +15,22 @@ namespace SausageCollisionMasks {
 
 class PhysicsData {
 public:
-  vec3 max_AABB;
-  vec3 min_AABB;
+  BoundingBox* bounding_box;
   float mass;
   int collision_group;
   int collides_with_groups;
 
-  PhysicsData(vec3 min_AABB, vec3 max_AABB)
-    : min_AABB{ min_AABB },
-    max_AABB{ max_AABB },
+  PhysicsData(mat4& transform, vec3 min_AABB, vec3 max_AABB)
+    : bounding_box{ new BoundingBox(transform, min_AABB, max_AABB) },
     mass{ 0.0 },
     collision_group{ 0 },
     collides_with_groups{ 0 } {}
-  PhysicsData(vec3 min_AABB, vec3 max_AABB,
+  PhysicsData(mat4& transform, vec3 min_AABB, vec3 max_AABB,
     float mass,
     int collision_group,
     int collides_with_groups)
-    : min_AABB{ min_AABB }, max_AABB{ max_AABB }, mass{ mass },
+    : bounding_box{ new BoundingBox(transform, min_AABB, max_AABB) },
+    mass{ mass },
     collision_group{ collision_group },
     collides_with_groups{ collides_with_groups } {}
 };

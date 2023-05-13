@@ -2,6 +2,7 @@
 
 #include "sausage.h"
 #include "Structures.h"
+#include "Constants.h"
 #include "ThreadSafeNumberPool.h"
 #include "MeshDataStruct.h"
 #include "AnimationStruct.h"

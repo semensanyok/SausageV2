@@ -136,7 +136,7 @@ void MeshManager::LoadMeshes(
       }
       if (is_load_aabb) {
         data->physics_data =
-          new PhysicsData(FromAi(mesh->mAABB.mMin), FromAi(mesh->mAABB.mMax));
+          new PhysicsData(transform, FromAi(mesh->mAABB.mMin), FromAi(mesh->mAABB.mMax));
       }
       data->name = string(mesh->mName.C_Str());
 

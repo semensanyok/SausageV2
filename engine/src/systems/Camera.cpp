@@ -11,13 +11,34 @@ void Camera::_UpdateMatrices() {
   this->projection_view_inverse =
       inverse(view_matrix) * inverse(projection_matrix);
 }
-void Camera::UpdateCameraFrontUpRight() {
+void Camera::_UpdateFrustum() {
+  const float half_back_width = far_plane * tanf(this->FOV_rad * .5f);
+  const float half_back_height = half_back_width * aspect;
+  const glm::vec3 far_center = far_plane * this->direction;
+
+  auto cam_dist_from_origin = glm::length(this->pos);
+  this->frustum.near = { glm::length(this->pos + near_plane * this->direction),
+    this->direction };
+  this->frustum.far = { glm::length(this->pos + far_center),
+    -this->direction };
+  this->frustum.right = { cam_dist_from_origin,
+      normalize(glm::cross(far_center - this->right * half_back_height, this->up)) };
+  this->frustum.left = { cam_dist_from_origin,
+      normalize(glm::cross(this->up,far_center + this->right * half_back_height)) };
+  this->frustum.up = { cam_dist_from_origin,
+      normalize(glm::cross(this->right, far_center - this->up * half_back_width)) };
+  this->frustum.down = { cam_dist_from_origin,
+      normalize(glm::cross(far_center + this->up * half_back_width, this->right)) };
+}
+void Camera::UpdateCamera() {
   vec3 target = vec3(sin(radians(yaw_angle)) * cos(radians(pitch_angle)),
                      sin(radians(pitch_angle)),
                      -cos(radians(yaw_angle)) * cos(radians(pitch_angle)));
   direction = normalize(target);
   right = normalize(cross(target, world_up));
   up = normalize(cross(right, target));
+  _UpdateMatrices();
+  _UpdateFrustum();
 }
 void Camera::MouseWheelCallback(SDL_MouseWheelEvent &mw_event) {
   switch (camera_mode) {
@@ -61,8 +82,7 @@ void Camera::PreUpdate(float delta_time) {
 void Camera::Update() {
   if (is_update_need) {
     is_update_need = false;
-    UpdateCameraFrontUpRight();
-    _UpdateMatrices();
+    UpdateCamera();
   }
 }
 void Camera::KeyCallback(int scan_code) {
@@ -106,7 +126,7 @@ void Camera::ResizeCallback(int new_width, int new_height) {
   this->width = new_width;
   this->height = new_height;
   this->projection_matrix =
-      perspective(radians(this->FOV), (float)this->width / (float)this->height,
+      perspective(this->FOV_rad, (float)this->width / (float)this->height,
                   this->near_plane, this->far_plane);
   this->projection_matrix_ortho = ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
 

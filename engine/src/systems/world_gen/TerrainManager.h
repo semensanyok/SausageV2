@@ -171,6 +171,8 @@ public:
   */
   void CreateTerrain(int size_x, int size_y, vec3 origin_coord, int noise_scale, float spacing = 1);
 
+  Texture* GenConstColorTex(unsigned int color, unsigned int size_x, unsigned int size_y, const char* tex_name_suffix);
+
   void SetTilesData(std::vector<unsigned int, std::allocator<unsigned int>>& uniform_id, int size_x, int size_y, std::vector<glm::vec2>& uvs, TerrainChunk* chunk,
     BlendTextures& blend_tex);
 

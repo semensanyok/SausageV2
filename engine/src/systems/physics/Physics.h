@@ -116,12 +116,11 @@ public:
     PhysicsTransformUpdate* user_pointer,
     mat4& model_transform,
     const char* name_for_log) {
-    vec3 half_extents = physics_data->max_AABB - physics_data->min_AABB;
-    half_extents.x = half_extents.x / 2;
-    half_extents.y = half_extents.y / 2;
-    half_extents.z = half_extents.z / 2;
 
-    btBoxShape* shape = new btBoxShape(btVector3(half_extents.x, half_extents.y, half_extents.z));
+    btBoxShape* shape = new btBoxShape(btVector3(
+      physics_data->bounding_box->half_extents.x,
+      physics_data->bounding_box->half_extents.y,
+      physics_data->bounding_box->half_extents.z));
     collisionShapes.push_back(shape);
     auto transform = btTransform();
     if (model_transform[0].x > 1 || model_transform[1].y > 1 || model_transform[2].z > 1) {

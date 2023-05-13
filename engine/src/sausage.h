@@ -1,5 +1,6 @@
 #pragma once
 // Engine header file, common imports
+// standart and external lib imports.
 
 //#include <SDL.h>
 #include <glad/glad.h>
@@ -58,5 +59,3 @@
 //#define NDEBUG
 //#include <assert.h>
 #include <cassert>
-
-#include "Constants.h"
