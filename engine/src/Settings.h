@@ -3,17 +3,23 @@
 #include "sausage.h"
 #include <SDL.h>
 
+using namespace glm;
+
 namespace GameSettings {
   inline int SCR_WIDTH = 800;
   inline int SCR_HEIGHT = 800;
   //int SCR_WIDTH = 1920;
   //int SCR_HEIGHT = 1080;
-  
+
   inline int ray_debug_draw_lifetime_milliseconds = 2000;
   inline float physics_step_multiplier = 0.001f;
   inline bool quit = false;
 
-  //inline int MAX_DRAW_DISTANCE = 1000;
+  inline int MAX_DRAW_DISTANCE = 1000;
+
+  inline const vec3 world_right = { 1,0,0 };
+  inline const vec3 world_up = { 0,1,0 };
+  inline const vec3 world_forward = { 0,0,-1 };
 };
 namespace CameraSettings {
 	inline float sensivity = 0.1f;
