@@ -4,29 +4,36 @@
 #include "Frustum.h"
 #include "Spatial.h"
 #include "BoundingVolume.h"
+#include "ThreadSafeVector.h"
 
 /**
  * @brief octree of bounding boxes, acceleration of frustum culling and other spatial checks
+ *
+ * to not have thread safe vectors, allow only one thread to traverse tree at a time.
+ * other threads only setting `is_dirty` flag on Spatial, marking its to be reinserted to Octree
+ * during frustum or raytest
+ *
+ * TODO:
+ *  one mutex access, on insertion?
+ *  currently just keep same thread insert/iterate tree
 */
 class Octree {
 public:
 
   Octree* parent;
-  unsigned int objects_ids;
 
   BoundingBox* bv;
-  map<unsigned int, Spatial*> objects;
+  //ThreadSafeVector<Spatial*> objects;
+  vector<Spatial*> objects;
   bool is_leaf;
 
+  mutex insert_mtx;
   // clockwise start from down south west
   vector<Octree*> children;
 
-  Octree(Octree* parent, BoundingBox* bv,
-    unsigned long num_levels) :
-    parent{ parent },
-    bv { bv },
-    objects_ids{ 0 } {
+  Octree(BoundingBox* bv, unsigned long num_levels) : Octree(nullptr, bv, num_levels) {}
 
+  Octree(Octree* parent, BoundingBox* bv, unsigned long num_levels) : parent{ parent }, bv { bv } {
     is_leaf = num_levels <= 1;
     Split(num_levels);
   };
@@ -63,9 +70,7 @@ public:
    *         return value used to check if containing parent node can be narrowed to any children.
    *         to stop recurse when none of children returned `true`
    *
-   TODO: problem - objects, intersecting midpoint,
-         will be assigned to topmost box,
-         and ever checked/rendered.
+   TODO: problem - on rotation/scale, objects AABB changes. need to reinsert into the tree.
   */
   bool Insert(Spatial* object) {
     return Insert(this, object);
@@ -80,12 +85,12 @@ public:
         return true;
       }
     }
-    auto parent_idx = objects_ids++;
-    objects[parent_idx] = object;
-    object->SetParentIndex(parent_idx);
+    objects.push_back(object);
+    object->SetParentIndex(objects.size() - 1);
+    return true;
   }
 
-  bool ProcessNode(Frustrum* frustum,
+  void ProcessNode(Frustrum* frustum,
     vec3& camera_pos,
     Octree* node,
     vector<Spatial*>& out_inside_frustum
@@ -97,7 +102,8 @@ public:
       return;
     }
     // TODO: maybe narrower phase, frustum per object.
-    out_inside_frustum.insert(out_inside_frustum.end(), objects.begin(), objects.end());
+    out_inside_frustum.insert(out_inside_frustum.end(),
+      objects.begin(), objects.end());
     for (auto child : node->children) {
       ProcessNode(frustum, camera_pos, child, out_inside_frustum);
     }
@@ -112,8 +118,6 @@ public:
     vec3 child_extents = bv->half_extents / 2.0f;
 
     children.resize(8, nullptr);
-    bv->center + vec3(child_extents.x, child_extents.y, child_extents.z);
-    bv->center + vec3(-child_extents.x, -child_extents.y, -child_extents.z);
 
     // order matters
     // clockwise start from down south west

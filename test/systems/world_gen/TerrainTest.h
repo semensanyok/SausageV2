@@ -17,6 +17,8 @@ class TerrainTest {
     string scene_path = GetModelPath("Cube.001.fbx");
 
   public:
+    TestScene(vec3 world_extents, unsigned int octree_num_levels) :
+      Scene(world_extents, octree_num_levels) {}
     SystemsManager* sm;
     void Init() {
       SausageGameLoop::Init();
@@ -114,6 +116,7 @@ class TerrainTest {
   };
 public:
   static void run() {
-    SausageGameLoop::run(new TestScene());
+    auto extents = vec3(1000, 1000, 1000);
+    SausageGameLoop::run(new TestScene(extents, 4));
   };
 };

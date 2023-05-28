@@ -48,7 +48,7 @@ public:
   };
 
   Scene1()
-    : systems_manager{ SystemsManager::GetInstance() },
+    : Scene(vec3(1000, 1000, 1000), 4), systems_manager{ SystemsManager::GetInstance() },
     draw_call_manager{ systems_manager->draw_call_manager },
     mesh_data_buffer{ systems_manager->buffer_manager->mesh_data_buffer },
     mesh_manager{ systems_manager->mesh_manager },

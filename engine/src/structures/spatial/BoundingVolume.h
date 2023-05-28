@@ -8,12 +8,14 @@
 using namespace std;
 using namespace glm;
 
+class BoundingBox;
+
 class BoundingVolume {
 public:
   vec3 center;
   bool is_cull_by_distance;
   BoundingVolume(mat4& transform,
-    // in cases of large area meshes like terrain,
+    // in cases of large area meshes like terrain, or Octree topmost box
     // cull by distance must be disabled
     bool is_cull_by_distance = false) :
     center{ transform[3] },
@@ -68,8 +70,8 @@ public:
   BoundingBox(vec3& center, vec3& half_extents,
     bool is_cull_by_distance = false) :
     BoundingVolume(center, is_cull_by_distance),
-    min_AABB{ min_AABB },
-    max_AABB{ max_AABB },
+    min_AABB{ center - half_extents },
+    max_AABB{ center + half_extents },
     half_extents{ half_extents } {
   }
 
