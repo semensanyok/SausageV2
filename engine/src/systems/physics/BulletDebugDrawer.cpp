@@ -11,17 +11,17 @@ void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, con
     long index_from = -1;
     long index_to = -1;
 
-    for (int i = 0; i < vertices.size(); i++) {
-        if (vertices[i] == from3) {
-            is_new_from = false;
-            index_from = i;
-        }
-        if (vertices[i] == to3) {
-            is_new_to = false;
-            index_to = i;
-        }
-    }
-    if (is_new_from || is_new_to) {
+    //for (int i = 0; i < vertices.size(); i++) {
+    //    if (vertices[i] == from3) {
+    //        is_new_from = false;
+    //        index_from = i;
+    //    }
+    //    if (vertices[i] == to3) {
+    //        is_new_to = false;
+    //        index_to = i;
+    //    }
+    //}
+    //if (is_new_from || is_new_to) {
         vec3 color3;
         memcpy(&color3[0], &color[0], 3 * sizeof(float));
         if (is_new_from) {
@@ -34,7 +34,7 @@ void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, con
             vertices.push_back(to3);
             colors.push_back(color3);
         }
-    }
+    //}
     indices.push_back(index_from);
     indices.push_back(index_to);
 };

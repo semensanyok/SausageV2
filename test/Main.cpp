@@ -22,7 +22,10 @@ int main()
   //GtkGLOverlayTest().run();
 
   //ScreenOverlayManagerTest().run();
-  TerrainTest().run();
+
+  auto extents = vec3(1000, 1000, 1000);
+  SausageGameLoop::Init();
+  SausageGameLoop::run(new TerrainTest(extents, 4));
 
   //GLHelpersTest().run();
   return 0;
