@@ -163,6 +163,7 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
 "${ENGINE_SRC_DIR}/buffer/consumers/" 
 "${ENGINE_SRC_DIR}/systems/world_gen/" 
 "${ENGINE_SRC_DIR}/structures/" 
+"${ENGINE_SRC_DIR}/structures/spatial/" 
 ${IMGUI_HEADERS} 
 ${DEPENDENCIES_INCLUDE_DIRS})
 
