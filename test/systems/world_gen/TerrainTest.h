@@ -24,7 +24,7 @@ public:
     auto tm = sm->terrain_manager;
     auto size = 256;  
     // center to world origin
-    tm->CreateTerrain(size, size, vec3(0, 0, 0), 10);
+    tm->CreateTerrain(size, size, vec3(0, 0, 0), 1);
 
     _LoadMeshes(scene_path);
     // multiply instances

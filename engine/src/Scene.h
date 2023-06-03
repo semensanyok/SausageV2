@@ -69,15 +69,30 @@ public:
       bv->center + vec3(ext.x, ext.y, ext.z),
       bv->center + vec3(ext.x, ext.y, -ext.z),
     };
-    for (int i = 0; i < box_verts.size(); i+=2) {
 
-      drawer->drawLinePersist(box_verts[i], box_verts[i + 1], color,
+    vector<pair<int, int>> edges = {
+      {0, 1},
+      {1, 2},
+      {2, 3},
+      {3, 0},
+      {0, 0 + 4},
+      {1, 1 + 4},
+      {2, 2 + 4},
+      {3, 3 + 4},
+      {0 + 4, 1 + 4},
+      {1 + 4, 2 + 4},
+      {2 + 4, 3 + 4},
+      {3 + 4, 0 + 4},
+    };
+    for (auto& edge : edges) {
+      drawer->drawLinePersist(box_verts[edge.first], box_verts[edge.second], color,
         UINT32_MAX);
+    }
       //out_vert.push_back(box_verts[i]);
       //out_colors.push_back(vec3(255,0,0));
       //out_ind.push_back(i);
-    }
-    for (auto child : node->children) {
+
+      for (auto child : node->children) {
       AddVertices(drawer, child
         //, out_vert, out_ind, out_colors
       );

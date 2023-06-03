@@ -23,9 +23,9 @@ int main()
 
   //ScreenOverlayManagerTest().run();
 
-  auto extents = vec3(1000, 1000, 1000);
+  auto extents = vec3(10, 10, 10);
   SausageGameLoop::Init();
-  SausageGameLoop::run(new TerrainTest(extents, 4));
+  SausageGameLoop::run(new TerrainTest(extents, 2));
 
   //GLHelpersTest().run();
   return 0;
