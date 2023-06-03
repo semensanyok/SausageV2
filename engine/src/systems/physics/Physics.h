@@ -13,10 +13,10 @@
 using namespace std;
 
 class PhysicsManager : public SausageSystem {
-  btDefaultCollisionConfiguration* collisionConfiguration;
-  btCollisionDispatcher* dispatcher;
-  btBroadphaseInterface* overlappingPairCache;
-  BulletDebugDrawer* debugDrawer;
+  btDefaultCollisionConfiguration* collisionConfiguration = nullptr;
+  btCollisionDispatcher* dispatcher = nullptr;
+  btBroadphaseInterface* overlappingPairCache = nullptr;
+  BulletDebugDrawer* debugDrawer = nullptr;
 
   vector<btRigidBody*> rigidBodies;
   // TODO: reuse colision shapes. (from bullet docs)
@@ -88,7 +88,7 @@ public:
         ((MeshDataClickable*)sausage_up)->Call();
       }
     }
-    if (state_manager->phys_debug_draw) {
+    if (state_manager->phys_debug_draw && debugDrawer != nullptr) {
       debugDrawer->drawLinePersist(btStart, btEnd, { 255,0,0 });
     }
   }

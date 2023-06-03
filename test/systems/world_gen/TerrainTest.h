@@ -50,6 +50,7 @@ public:
 
     auto pos = vec3(all_static_meshes[0]->transform[3] + vec4(0, 15, 15, 0));
     sm->camera->SetPosition(pos);
+    DebugDrawOctree();
   };
   void PrepareDraws() {
   };

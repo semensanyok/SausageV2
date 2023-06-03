@@ -21,7 +21,7 @@ void ShaderManager::SetupShaders() {
   all_shaders->terrain->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
   all_shaders->terrain->SetVec3Uniform(string("view_pos"), &(camera->pos));
 
-  all_shaders->bullet_debug->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
+  all_shaders->outline->SetMat4Uniform(string("projection_view"), &(camera->projection_view));
 
   all_shaders->font_ui->SetMat4Uniform(string("projection_ortho"), &(camera->projection_matrix_ortho));
 

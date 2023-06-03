@@ -57,6 +57,8 @@ public:
   // btIDebugDraw functions ////////////////////////////////////////////////////////////////////
   void   drawLine(const btVector3& from, const btVector3& to, const btVector3& color);
 
+  void   drawLine(const vec3& from, const vec3& to, const vec3& color);
+
   void   drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color);
 
   void   reportErrorWarning(const char* warningString) {
@@ -73,7 +75,11 @@ public:
 
   void flushLines();
 
-  void   drawLinePersist(const btVector3& from, const btVector3& to, const btVector3& color);
+  void drawLinePersist(const btVector3& from, const btVector3& to, const btVector3& color,
+    uint32_t life_time_ms = GameSettings::ray_debug_draw_lifetime_milliseconds);
+
+  void drawLinePersist(const vec3& from, const vec3& to, const vec3& color,
+    uint32_t life_time_ms = GameSettings::ray_debug_draw_lifetime_milliseconds);
 
   /////////////////////////////////////////////////////////////////////////////////////////////
 

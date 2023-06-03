@@ -143,7 +143,7 @@ private:
 
   //void MapBuffersMesh() {
   //  MapBuffer(command_buffers.blinn_phong);
-  //  MapBuffer(command_buffers.bullet_debug);
+  //  MapBuffer(command_buffers.outline);
   //}
   //void MapBuffersTerrain() {
   //  MapBuffer(command_buffers.terrain);

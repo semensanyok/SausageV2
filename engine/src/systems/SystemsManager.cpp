@@ -25,7 +25,7 @@ void SystemsManager::InitSystems() {
   physics_manager = new PhysicsManager(state_manager, buffer_manager->mesh_data_buffer);
   mesh_data_utils = new MeshDataUtils(draw_call_manager, texture_manager, mesh_manager, buffer_manager, physics_manager);
   if (state_manager->phys_debug_draw) {
-    _CreateDebugDrawer();
+    CreateDebugDrawer();
     bullet_debug_drawer->Activate();
     physics_manager->SetDebugDrawer(bullet_debug_drawer);
   };
@@ -59,7 +59,7 @@ void SystemsManager::ChangeStateUpdate() {
 
 void SystemsManager::_ChangePhysicsDebugDrawer() {
   if (state_manager->phys_debug_draw) {
-    _CreateDebugDrawer();
+    CreateDebugDrawer();
     physics_manager->SetDebugDrawer(bullet_debug_drawer);
   }
   else {
@@ -113,7 +113,7 @@ void SystemsManager::_SubmitAsyncTasks() {
   async_manager->SubmitMiscTask(change_state_update, true);
 }
 
-void SystemsManager::_CreateDebugDrawer() {
+void SystemsManager::CreateDebugDrawer() {
   if (bullet_debug_drawer == nullptr) {
     bullet_debug_drawer = new BulletDebugDrawer(buffer_manager, draw_call_manager, state_manager);
   }

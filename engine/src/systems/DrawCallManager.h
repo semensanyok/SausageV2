@@ -56,49 +56,49 @@ public:
   {
     //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
     //    or place shader with dynamic number of meshes at the end
-    font_ui_dc = _CreateDrawCall(
+    font_ui_dc = CreateDrawCall(
       shader_manager->all_shaders->font_ui,
       GL_TRIANGLES,
       command_buffer_manager->command_buffers.font_ui,
       false
     );
 
-    back_ui_dc = _CreateDrawCall(
+    back_ui_dc = CreateDrawCall(
       shader_manager->all_shaders->back_ui,
       GL_TRIANGLES,
       command_buffer_manager->command_buffers.back_ui,
       false
     );
 
-    //overlay_3d_dc = _CreateDrawCall(
+    //overlay_3d_dc = CreateDrawCall(
       //shader_manager->all_shaders->overlay_3d,
       //GL_TRIANGLES,
       //buffer->CreateCommandBuffer(1),
       //true
     //);
 
-    physics_debug_dc = _CreateDrawCall(
-      shader_manager->all_shaders->bullet_debug,
+    physics_debug_dc = CreateDrawCall(
+      shader_manager->all_shaders->outline,
       GL_LINES,
       command_buffer_manager->command_buffers.outline,
       state_manager->phys_debug_draw
     );
 
-    mesh_dc = _CreateDrawCall(
+    mesh_dc = CreateDrawCall(
       shader_manager->all_shaders->blinn_phong,
       GL_TRIANGLES,
       command_buffer_manager->command_buffers.blinn_phong,
       true
     );
 
-    mesh_static_dc = _CreateDrawCall(
+    mesh_static_dc = CreateDrawCall(
       shader_manager->all_shaders->mesh_static,
       GL_TRIANGLES,
       command_buffer_manager->command_buffers.mesh_static,
       true
     );
 
-    terrain_dc = _CreateDrawCall(
+    terrain_dc = CreateDrawCall(
       shader_manager->all_shaders->terrain,
       GL_TRIANGLES,
       command_buffer_manager->command_buffers.terrain,
@@ -222,6 +222,11 @@ public:
     }
     return is_success_slot_alloc;
   }
+
+  DrawCall* CreateDrawCall(Shader* shader, GLenum mode, CommandBuffer* command_buffer, bool is_enabled)
+  {
+    return new DrawCall(total_draw_calls++, shader, mode, command_buffer, is_enabled);
+  }
 private:
 
   void _SetToCommandWithOffsets(
@@ -240,8 +245,4 @@ private:
     command_buffer_manager->BufferCommand(dc->command_buffer, command, command_offset);
   }
 
-  DrawCall* _CreateDrawCall(Shader* shader, GLenum mode, CommandBuffer* command_buffer, bool is_enabled)
-  {
-    return new DrawCall(total_draw_calls++, shader, mode, command_buffer, is_enabled);
-  }
 };

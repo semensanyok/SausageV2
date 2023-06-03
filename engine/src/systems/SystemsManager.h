@@ -66,9 +66,9 @@ public:
   void PreUpdate();
   void Update();
   void Clear();
+  void CreateDebugDrawer();
 
 private:
   SystemsManager() { };
   void _SubmitAsyncTasks();
-  void _CreateDebugDrawer();
 };

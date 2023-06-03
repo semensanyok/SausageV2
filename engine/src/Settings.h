@@ -12,6 +12,7 @@ namespace GameSettings {
   //int SCR_HEIGHT = 1080;
 
   inline int ray_debug_draw_lifetime_milliseconds = 2000;
+
   inline float physics_step_multiplier = 0.001f;
   inline bool quit = false;
 

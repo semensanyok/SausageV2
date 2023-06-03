@@ -34,6 +34,7 @@ public:
     }
     case SDL_MOUSEBUTTONDOWN:
     {
+      // TODO: octree raytest independent of physics lib
       physics_manager->ClickRayTestClosest(e->button.x, e->button.y, camera->pos, camera->far_plane - camera->near_plane, camera->projection_view_inverse);
       for (ControllerEventProcessor* processor : processors) {
         processor->MouseButtonDown(e->button);
