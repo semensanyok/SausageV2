@@ -8,6 +8,7 @@
 #include "TerrainStruct.h"
 #include "DrawCallManager.h"
 #include "BufferManager.h"
+#include "SpatialManager.h"
 #include "MeshTerrainBufferConsumer.h"
 #include <FastNoise/FastNoise.h>
 #include "Constants.h"
@@ -140,6 +141,7 @@ class TerrainManager
   DrawCallManager* draw_call_manager;
   PhysicsManager* physics_manager;
   TextureManager* texture_manager;
+  SpatialManager* spatial_manager;
 
   unordered_map<BlendTextures, TerrainBlendTextures*> shared_tiles_textures;
 public:
@@ -147,12 +149,14 @@ public:
     MeshManager* mesh_manager,
     DrawCallManager* draw_call_manager,
     PhysicsManager* physics_manager,
-    TextureManager* texture_manager) :
+    TextureManager* texture_manager,
+    SpatialManager* spatial_manager) :
     buffer{ buffer_manager->mesh_terrain_buffer },
     mesh_manager{ mesh_manager },
     draw_call_manager{ draw_call_manager },
     physics_manager{ physics_manager },
-    texture_manager{ texture_manager } {
+    texture_manager{ texture_manager },
+    spatial_manager{ spatial_manager } {
     //FastNoise::SmartNode<FastNoise::Simplex>
     fnSimplex = FastNoise::New<FastNoise::Simplex>();
     FastNoise::SmartNode sm = fnSimplex;
@@ -207,7 +211,6 @@ private:
     int seed
   );
   void ReleaseBuffer(TerrainChunk* chunk);
-  void Deactivate(TerrainChunk* chunk);
   vector<vec3> GenNormals(vector<vec3> vertices);
   ~TerrainManager() {};
 };

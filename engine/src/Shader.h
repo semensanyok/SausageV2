@@ -9,8 +9,6 @@ using namespace std;
 class Shader
 {
   friend class ShaderManager;
-  string vertex_path;
-  string fragment_path;
   GLuint vs = 0, fs = 0;
   GLuint vs_in_use = 0, fs_in_use = 0;
   bool is_vs_updated = false;
@@ -19,6 +17,8 @@ class Shader
   unordered_map<string, vec3*> vec3_uniforms;
   inline static unsigned int total_shaders = 0;
 public:
+  string vertex_path;
+  string fragment_path;
   const unsigned int shader_id;
   GLuint	id = 0;
 

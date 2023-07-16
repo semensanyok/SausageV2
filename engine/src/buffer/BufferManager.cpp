@@ -2,8 +2,8 @@
 
 void BufferManager::Init() {
   buffer_storage->Init();
-  command_buffer_manager = new CommandBuffersManager();
-  command_buffer_manager->InitBuffers();
+  //command_buffer_manager = new CommandBuffersManager();
+  //command_buffer_manager->InitBuffers();
   vertex_attributes = new GLVertexAttributes();
   vertex_attributes->InitVAO();
 

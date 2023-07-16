@@ -4,16 +4,18 @@
 #include "BufferConsumer.h"
 #include "BufferStorage.h"
 #include "Logging.h"
-#include "MeshManager.h"
 #include "OpenGLHelpers.h"
 #include "Settings.h"
 #include "Structures.h"
 #include "BufferSettings.h"
+#include "MeshDataTypes.h"
 
 using namespace std;
 using namespace glm;
 
-class OverlayBufferConsumer3D : public BufferConsumer<unsigned int, MeshDataOverlay3D, mat4, VertexStatic> {
+class MeshManager;
+
+class OverlayBufferConsumer3D : public MeshDataOverlay3DConsumerT {
 
 public:
   OverlayBufferConsumer3D(
@@ -32,8 +34,4 @@ public:
                       Texture* font_data);
   void Init();
   void Reset() { Init(); }
-  void ReleaseSlots(MeshDataBase* mesh) {
-    buffer->ReleaseInstanceSlot<MeshDataOverlay3D>(mesh->slots);
-    vertex_attributes->ReleaseStorage<VertexStatic>(mesh->slots);
-  }
 };

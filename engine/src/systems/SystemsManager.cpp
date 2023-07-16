@@ -3,20 +3,19 @@
 
 void SystemsManager::InitSystems() {
   main_thread_id = this_thread::get_id();
-  mesh_manager = new MeshManager();
   file_watcher = new FileWatcher();
   camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
   renderer_context_manager = new RendererContextManager();
   renderer_context_manager->InitContext();
-  buffer_manager = new BufferManager(mesh_manager, texture_manager);
-  buffer_manager->Init();
-  renderer = new Renderer(renderer_context_manager, buffer_manager);
   shader_manager = new ShaderManager(file_watcher, renderer, camera);
   shader_manager->SetupShaders();
-  state_manager = new StateManager(buffer_manager);
-  draw_call_manager = new DrawCallManager(shader_manager, renderer,
-    buffer_manager->command_buffer_manager,
-    mesh_manager, state_manager);
+  state_manager = new StateManager();
+  draw_call_manager = new DrawCallManager(shader_manager, state_manager);
+  mesh_manager = new MeshManager(draw_call_manager);
+  buffer_manager = new BufferManager(mesh_manager, texture_manager);
+  buffer_manager->Init();
+  spatial_manager = new SpatialManager(draw_call_manager, buffer_manager);
+  renderer = new Renderer(renderer_context_manager, buffer_manager, spatial_manager);
   samplers = new Samplers();
   samplers->Init();
   texture_manager = new TextureManager(samplers);
@@ -42,10 +41,12 @@ void SystemsManager::InitSystems() {
   controller = new Controller(camera, state_manager, physics_manager);
   controller->AddProcessor(controller_event_processor);
 
-  terrain_manager = new TerrainManager(buffer_manager, mesh_manager, draw_call_manager, physics_manager, texture_manager);
+  terrain_manager = new TerrainManager(buffer_manager, mesh_manager, draw_call_manager, physics_manager, texture_manager, spatial_manager);
 
   async_manager = new AsyncTaskManager();
   _SubmitAsyncTasks();
+
+  AddDraws();
 }
 
 void SystemsManager::ChangeStateUpdate() {
@@ -111,6 +112,17 @@ void SystemsManager::_SubmitAsyncTasks() {
   async_manager->SubmitAnimTask(play_anim, true);
   function<void()> change_state_update = bind(&SystemsManager::ChangeStateUpdate, this);
   async_manager->SubmitMiscTask(change_state_update, true);
+}
+
+void SystemsManager::AddDraws()
+{
+  renderer->AddDraw(draw_call_manager->font_ui_dc, DrawOrder::UI_TEXT);
+  //renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
+  renderer->AddDraw(draw_call_manager->back_ui_dc, DrawOrder::UI_BACK);
+  renderer->AddDraw(draw_call_manager->mesh_dc, DrawOrder::MESH);
+  renderer->AddDraw(draw_call_manager->terrain_dc, DrawOrder::TERRAIN);
+  renderer->AddDraw(draw_call_manager->mesh_static_dc, DrawOrder::MESH_STATIC);
+  renderer->AddDraw(draw_call_manager->physics_debug_dc, DrawOrder::OUTLINE);
 }
 
 void SystemsManager::CreateDebugDrawer() {

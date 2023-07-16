@@ -9,6 +9,7 @@
 #include "TextureStruct.h"
 #include "BufferSettings.h"
 #include "Arena.h"
+#include "BoundingVolume.h"
 
 using namespace std;
 using namespace glm;
@@ -16,10 +17,12 @@ using namespace glm;
 class   Texture;
 class   Armature;
 class   PhysicsData;
+class   DrawCall;
 
 struct MeshLoadDataBase {
   Armature* armature = nullptr;
   PhysicsData* physics_data = nullptr;
+  BoundingBox* bv = nullptr;
   string name;
   mat4 transform;
 };
@@ -30,34 +33,38 @@ struct MeshLoadData : public MeshLoadDataBase {
   vector<unsigned int> indices;
 };
 
-// TODO: move parameters, accessed infrequently, to pointer structure. keep only instances slot as not pointer?
-//       (to be more cpu cache friendly during processing many meshes)
 class MeshDataSlots {
 public:
   // - count == 1 for single mesh. multiple for instanced meshes
   // - used as offset to arrays: transform, texture, ...?
   // - can be reallocated when num of instanced meshes exceeds
   // Buffer offsets /////////////////////
-  MemorySlot instances_slot;
   MemorySlot vertex_slot;
   MemorySlot index_slot;
   // in glsl == gl_BaseInstanceARB
-  long buffer_id;
-  MeshDataSlots() : instances_slot{ MemorySlots::NULL_SLOT },
+  long buffer_id = -1;
+  int num_instances = 0;
+  MeshDataSlots() :
     vertex_slot { MemorySlots::NULL_SLOT },
     index_slot{ MemorySlots::NULL_SLOT },
     buffer_id{ -1 } {}
   inline bool IsBufferIdAllocated() {
     return buffer_id >= 0;
   }
+  inline void UnsetBufferIdAndInstances() {
+    buffer_id = -1;
+    num_instances = 0;
+  }
+  unsigned int IncNumInstancesGetInstanceId() {
+    return num_instances++;
+  }
 };
 
-class MeshDataBase : public BufferInstanceOffset
+class MeshDataBase
 {
   friend class MeshDataManager;
   friend class MeshManager;
   friend class MeshData;
-  friend class MeshDataInstance;
   friend class MeshDataUI;
   friend class MeshDataOverlay3D;
   friend class MeshDataStatic;
@@ -66,15 +73,10 @@ class MeshDataBase : public BufferInstanceOffset
 
 public:
   MeshDataSlots slots;
-  // used for engine references. not used as index to gl buffers.
+  // used for engine references. not used as index to GPU buffers.
   const unsigned long id;
   string name;
-  inline unsigned long GetInstanceOffset() override {
-    return slots.instances_slot.offset;
-  }
-  inline bool IsInstanceOffsetAllocated() override {
-    return slots.instances_slot != MemorySlots::NULL_SLOT;
-  }
+  DrawCall* dc;
 private:
   MeshDataBase(unsigned long id, string name)
     : slots{ MeshDataSlots() }, id{ id }, name{ name.empty() ? to_string(id) : name}
@@ -88,33 +90,22 @@ private:
 class MeshData : public MeshDataBase, public SausageUserPointer {
   friend class MeshManager;
 public:
-
-  mat4 transform;
   bool is_transparent;
-
-  BlendTextures textures;
-  // _t_odo make reusable
   Armature* armature;
-  // _t_odo make reusable
-  PhysicsData* physics_data;
+  //stored in MeshDataInstance
+  //PhysicsData* physics_data;
 
 private:
   MeshData(unsigned long id, string name = "")
     : MeshDataBase(id, name),
-    textures{ {0, {}} },
-    physics_data{ nullptr },
-    is_transparent{ false },
-    transform{ mat4(1.0) } {};
+    is_transparent{ false } {};
   MeshData(unsigned long id, MeshLoadDataBase* load_data, string name = "")
-    : MeshDataBase(id, name), textures{ {0, {}} },
-    physics_data{ load_data->physics_data },
+    : MeshDataBase(id, name),
     armature{ load_data->armature },
-    transform{ load_data->transform },
     is_transparent{ false } {};
   ~MeshData() {
   };
 };
-
 
 /**
  * mesh with VertexStatic format, which doesnt contain armature bones (not animated).
@@ -125,130 +116,19 @@ class MeshDataStatic : public MeshDataBase, public SausageUserPointer {
   friend class MeshManager;
 public:
 
-  mat4 transform;
   bool is_transparent;
 
-  BlendTextures textures;
-  // _t_odo make reusable
-  PhysicsData* physics_data;
+  //stored in MeshDataInstance
+  //PhysicsData* physics_data;
 
 private:
   MeshDataStatic(unsigned long id, string name = "")
     : MeshDataStatic(id, nullptr, name) {};
   MeshDataStatic(unsigned long id, MeshLoadDataBase* load_data, string name = "")
-    : MeshDataBase(id, name), textures{ {0, {}} },
-    physics_data{ load_data == nullptr ? nullptr : load_data->physics_data },
-    transform{ load_data == nullptr ? mat4(1) : load_data->transform},
+    : MeshDataBase(id, name),
     is_transparent{ false } {};
   ~MeshDataStatic() {
   };
-};
-
-/**
- * mesh with VertexStatic format, which doesnt contain armature bones (not animated).
- * cite from bullet documentation for btHeightfieldTerrainShape:
- *    
- *    The caller is responsible for maintaining the heightfield array; this
- *    class does not make a copy.
- *    
- *    The heightfield can be dynamic so long as the min/max height values
- *    capture the extremes (heights must always be in that range).
- *    
- *    The local origin of the heightfield is assumed to be the exact
- *    center (as determined by width and length and height, with each
- *    axis multiplied by the localScaling).
- *    
- *    \b NOTE: be careful with coordinates.  If you have a heightfield with a local
- *    min height of -100m, and a max height of +500m, you may be tempted to place it
- *    at the origin (0,0) and expect the heights in world coordinates to be
- *    -100 to +500 meters.
- *    Actually, the heights will be -300 to +300m, because bullet will re-center
- *    the heightfield based on its AABB (which is determined by the min/max
- *    heights).  So keep in mind that once you create a btHeightfieldTerrainShape
- *    object, the heights will be adjusted relative to the center of the AABB.  This
- *    is different to the behavior of many rendering engines, but is useful for
- *    physics engines.
-*/
-class MeshDataTerrain : public MeshDataBase, public SausageUserPointer {
-  friend class MeshManager;
-public:
-  mat4 transform;
-
-private:
-  MeshDataTerrain(unsigned long id, mat4 transform = mat4(1), string name = "") : MeshDataBase(id, name),
-    transform{ transform } {};
-  ~MeshDataTerrain() {};
-};
-
-/**
- * instance of MeshData
- * (same vertices + textures)
-*/
-class MeshDataInstance : public BufferInstanceOffset, public SausageUserPointer {
-  friend class MeshManager;
-public:
-  string name;
-  mat4 transform;
-  const long instance_id;
-  // 1. base mesh can reallocate its command slot
-  //    hence, updating all instances absolute offsets is cumbersome
-  //    so we keep only relative instance_id, and dynamically get instance_offset
-  //
-  // 2. decided to have base pointer here. when need to reference to armature/physics/etc. - cast it to MeshData*
-  const MeshDataBase* base_mesh;
-  inline unsigned long GetInstanceOffset() override {
-    return base_mesh->slots.instances_slot.offset + instance_id;
-  }
-  inline bool IsInstanceOffsetAllocated() override {
-    return base_mesh->slots.instances_slot != MemorySlots::NULL_SLOT;
-  }
-private:
-  MeshDataInstance(mat4 transform, long instance_id, MeshDataBase* base_mesh) :
-    transform{ transform }, instance_id{ instance_id }, base_mesh{ base_mesh },
-    name{ format("{}_{}", base_mesh->name, to_string(instance_id))} {
-}
-  ~MeshDataInstance() {};
-};
-
-class MeshDataUI : public MeshDataBase {
-  friend class MeshManager;
-public:
-  vec2 transform;
-  Texture* texture;
-private:
-  MeshDataUI(unsigned long id, string name = "") :
-    MeshDataUI(id, { 0, 0 }, nullptr, name) {};
-  MeshDataUI(unsigned long id, vec2 transform, Texture* texture, string name = "") :
-    MeshDataBase(id, name),
-    transform{ transform },
-    texture{ texture } {};
-  ~MeshDataUI() {};
-};
-
-class MeshDataOverlay3D : public MeshDataBase {
-  friend class MeshManager;
-public:
-  string text;
-  mat4 transform;
-  Texture* texture;
-private:
-  MeshDataOverlay3D(unsigned long id, mat4 transform, const char* text = nullptr, string name = "") :
-    MeshDataBase(id, name),
-    text{ text },
-    transform{ transform },
-    texture{ nullptr } {};
-  ~MeshDataOverlay3D() {};
-};
-
-
-class MeshDataOutline : public MeshDataBase {
-  friend class MeshManager;
-public:
-  //vec2 transform;
-private:
-  MeshDataOutline(unsigned long id, string name = "") :
-    MeshDataBase(id, name) {};
-  ~MeshDataOutline() {};
 };
 
 class MeshDataClickable : public SausageUserPointer {
@@ -258,12 +138,4 @@ public:
   void Call() {
     cout << "RayHit from mesh " << message << endl;
   }
-};
-
-/*
-this shader doesnt need instance slot
-and only uses vertex/index arrays (doesnt use uniforms)
-*/
-class MeshDataPhysDebugDrawer {
-
 };

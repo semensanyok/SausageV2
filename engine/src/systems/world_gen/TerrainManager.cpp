@@ -1,4 +1,7 @@
 #include "TerrainManager.h"
+#include "MeshDataTerrain.h"
+#include "MeshDataInstance.h"
+#include "InstanceSlot.h"
 
 void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
   int noise_scale, float spacing)
@@ -21,8 +24,7 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
 
   vector<vec3> normals = GenNormals(vertices);
 
-  buffer->AllocateStorage(chunk->mesh->slots, vertices.size(), indices.size());
-  draw_call_manager->AddNewCommandToDrawCall<MeshDataTerrain>(chunk->mesh, draw_call_manager->terrain_dc, 1);
+  buffer->AllocateStorage(chunk->mesh->base_mesh->slots, vertices.size(), indices.size());
 
   // R texture
   auto tex = GenConstColorTex(0xffff0000, size_x, size_y, "1");
@@ -36,13 +38,15 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
   blend_tex.textures[0] = { 0.5, tex->id };
   blend_tex.textures[1] = { 0.5, tex2->id };
 
+  buffer->AllocateUniformOffset(chunk->mesh);
   SetTilesData(uniform_id, size_x, size_y, uvs, chunk, blend_tex);
-  buffer->BufferMeshData(chunk->mesh, vertices, indices, uvs, normals, uniform_id);
+  buffer->BufferMeshData(chunk->mesh->base_mesh, vertices, indices, uvs, normals, uniform_id);
 
   string name = "Terrain";
 
   physics_manager->AddTerrainRigidBody(chunk->heightmap, chunk->size_x, chunk->size_y, chunk->spacing,
-    new MeshDataClickable(name), chunk->mesh->transform, name, -noise_scale, noise_scale);
+    new MeshDataClickable(name), chunk->mesh->ReadTransform(), name, -noise_scale, noise_scale);
+  spatial_manager->InsertToOctree(chunk->mesh);
 }
 
 Texture* TerrainManager::GenConstColorTex(unsigned int color,
@@ -95,7 +99,7 @@ void TerrainManager::SetTilesData(
         ter_tex = buffer->GetTexturesSlot();
         ter_tex->textures = blend_tex;
         shared_tiles_textures[blend_tex] = ter_tex;
-        buffer->BufferTexture(ter_tex, blend_tex);
+        buffer->BufferTexture(chunk->mesh, blend_tex);
       }
       else {
         ter_tex = shared_tiles_textures[blend_tex];
@@ -124,8 +128,14 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   int seed)
 {
   TerrainChunk* chunk = new TerrainChunk(size_x, size_y, 1, pos);
-  chunk->mesh = mesh_manager->CreateMeshData<MeshDataTerrain>();
-  chunk->mesh->transform = translate(mat4(1), pos);
+  mat4 t = translate(mat4(1), pos);
+  // TODO: draw AABB to test
+  vec3 min_AABB = vec3(pos.x - size_x, pos.y, pos.z - size_y);
+  vec3 max_AABB = vec3(pos.x + size_x, pos.y, pos.z + size_y);
+
+  chunk->mesh = new MeshDataInstanceTerrainT(t,
+    mesh_manager->CreateMeshData<MeshDataTerrain>(),
+    new BoundingBox(t, min_AABB, max_AABB));
   fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, frequency, seed);
   transform(chunk->heightmap.begin(), chunk->heightmap.end(), chunk->heightmap.begin(),
     [&noise_scale](float i) {return i * noise_scale;});
@@ -187,12 +197,7 @@ vector<vec3> TerrainManager::GenNormals(vector<vec3> vertices) {
   assert(normals.size() == vertices.size());
   return normals;
 }
-
 void TerrainManager::ReleaseBuffer(TerrainChunk* chunk) {
-  buffer->ReleaseSlots(chunk->mesh);
-}
 
-void TerrainManager::Deactivate(TerrainChunk* chunk)
-{
-  draw_call_manager->DisableCommand<MeshDataStatic>(chunk->mesh);
+  buffer->ReleaseSlots(chunk->mesh);
 }

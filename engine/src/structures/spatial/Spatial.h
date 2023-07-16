@@ -2,20 +2,18 @@
 
 #include "sausage.h"
 #include "BoundingVolume.h"
+#include "Interfaces.h"
 
 using namespace std;
 
 // hierarchical bounding volume
 // used in broad phase culling
-class Spatial {
+class Spatial : SausageUserPointer {
+private:
   Spatial* parent;
   // if parent == null && assigned to Octree node (box), it is id for octree children map.
   unsigned int parent_idx;
   //int children_ids;
-
-  // flag occurred change of BV (trans, scale),
-  // that this node must be reinserted in Octree
-  bool is_dirty;
 public:
   // children meshes
   // make ThreadSafeArray???
@@ -25,10 +23,18 @@ public:
   Spatial(BoundingBox* bv) :
     bv{ bv },
     parent{ nullptr },
-    parent_idx{ 0 },
-    is_dirty{ is_dirty } {
+    parent_idx{ 0 }{
 
   }
+  /**
+   * new transformed BoundingBox
+  */
+  Spatial(BoundingBox* base, mat4& transform) :
+    bv{ new BoundingBox(transform, base->half_extents, base->is_cull_by_distance) },
+    parent{ nullptr },
+    parent_idx{ 0 } {
+  }
+
   //Spatial* AddChild(BoundingBox* node) {
   //  Spatial* child = new Spatial(node, this, children_ids++);
   //  children[child->parent_idx] = child;
@@ -54,8 +60,7 @@ private:
   Spatial(BoundingBox* bv, Spatial* parent, unsigned int parent_idx) :
     bv{ bv },
     parent{ parent },
-    parent_idx{ parent_idx },
-    is_dirty{ false } {
+    parent_idx{ parent_idx } {
 
   }
 };

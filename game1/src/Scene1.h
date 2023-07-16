@@ -25,10 +25,10 @@ public:
 
   // custom draws per shader
   vector<MeshData*> all_meshes;
-  vector<MeshDataInstance*> all_meshes_instances;
+  vector<MeshDataInstance<MeshData, UniformDataMesh>*> all_meshes_instances;
 
   vector<MeshDataStatic*> all_static_meshes;
-  vector<MeshDataInstance*> all_static_meshes_instances;
+  vector<MeshDataInstance<MeshDataStatic, UniformDataMeshStatic>*> all_static_meshes_instances;
 
   vector<Light*> all_lights;
   vector<Light*> draw_lights;
@@ -86,10 +86,12 @@ private:
     _LoadGui();
     _LoadMeshes(scene_path);
 
-    for (auto mesh : all_meshes)
+    for (auto mesh : all_meshes_instances)
     {
       if (clickable_meshes_names.contains(mesh->name)) {
-        mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh, new MeshDataClickable(mesh->name));
+        mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh
+          //, new MeshDataClickable(mesh->name)
+        );
       }
       else {
         mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh);
@@ -98,17 +100,22 @@ private:
     for (auto mesh : all_meshes_instances)
     {
       if (clickable_meshes_names.contains(mesh->name)) {
-        mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh, new MeshDataClickable(mesh->name));
+        mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh
+          //, new MeshDataClickable(mesh->name)
+        );
       }
       else {
         mesh_data_utils->AddRigidBody<MeshData, Vertex>(mesh);
       }
     }
 
-    for (auto mesh : all_static_meshes)
+    for (auto mesh : all_static_meshes_instances)
     {
       if (clickable_meshes_names.contains(mesh->name)) {
-        mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh, new MeshDataClickable(mesh->name));
+        mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh
+          // TODO: support second callback for MeshDataCickable
+          //, new MeshDataClickable(mesh->name)
+        );
       }
       else {
         mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh);
@@ -117,7 +124,10 @@ private:
     for (auto mesh : all_static_meshes_instances)
     {
       if (clickable_meshes_names.contains(mesh->name)) {
-        mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh, new MeshDataClickable(mesh->name));
+        mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh
+          // TODO: support second callback for MeshDataCickable
+          //, new MeshDataClickable(mesh->name)
+        );
       }
       else {
         mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh);
@@ -138,21 +148,26 @@ private:
       mesh_load_data_animated, mesh_load_data_static,
       tex_names_list_animated, tex_names_list_static,
       true, true, true);
+    unordered_map<size_t, Texture*> base_meshes_tex;
 
     systems_manager->terrain_manager->CreateTerrain(100, 100, vec3(0, 0, 0), 1);
     // SetBaseMeshForInstancedCommand
-    SetupInstancedMesh(mesh_load_data_animated, tex_names_list_animated);
-    SetupInstancedMeshStatic(mesh_load_data_static, tex_names_list_static);
+    SetupInstancedMesh(mesh_load_data_animated, tex_names_list_animated, base_meshes_tex);
+    SetupInstancedMeshStatic(mesh_load_data_static, tex_names_list_static, base_meshes_tex);
     // LIGHTS SETUP
     draw_lights.insert(draw_lights.end(), all_lights.begin(), all_lights.end());
   }
 
   void SetupInstancedMeshStatic(std::vector<std::shared_ptr<MeshLoadData<VertexStatic>>>& mesh_load_data_animated,
-    std::vector<MaterialTexNames>& tex_names_list_animated)
+    std::vector<MaterialTexNames>& tex_names_list,
+    unordered_map<size_t, Texture*>& base_meshes_tex)
   {
-    auto res = mesh_data_utils->SetupInstancedMesh<MeshDataStatic, VertexStatic, BlendTextures>(
+
+    auto res = mesh_data_utils->SetupInstancedMesh<MeshDataStatic, VertexStatic, BlendTextures, UniformDataMeshStatic>(
       draw_call_manager->mesh_static_dc,
-      mesh_load_data_animated, tex_names_list_animated);
+      mesh_load_data_animated,
+      tex_names_list,
+      base_meshes_tex);
     for (auto r : res) {
       all_static_meshes.push_back(r.mesh);
       for (auto i : r.instances) {
@@ -162,7 +177,8 @@ private:
   }
 
   void SetupInstancedMesh(std::vector<std::shared_ptr<MeshLoadData<Vertex>>>& mesh_load_data_animated,
-    std::vector<MaterialTexNames>& tex_names_list_animated)
+    std::vector<MaterialTexNames>& tex_names_list,
+    unordered_map<size_t, Texture*>& base_meshes_tex)
   {
     // animation stress test
     //for (int i = 0; i < 1000; i++) {
@@ -180,7 +196,9 @@ private:
 
     auto res = mesh_data_utils->SetupInstancedMeshWithAnim(
       draw_call_manager->mesh_dc,
-      mesh_load_data_animated, tex_names_list_animated);
+      mesh_load_data_animated,
+      tex_names_list,
+      base_meshes_tex);
     for (auto r : res) {
       all_meshes.push_back(r.mesh);
       for (auto i : r.instances) {

@@ -27,12 +27,16 @@ void Renderer::Render(Camera* camera) {
         vertex_attributes->BindVAO(GetVertexTypeByDrawOrder(order_shader.first));
         //DEBUG_EXPR(CheckGLError());
         for (auto draw : order_shader.second) {
-          if (draw->is_enabled && draw->GetCommandCount() > 0) {
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer->ptr->buffer_id);
+          unsigned int command_count = draw->GetCommandCount();
+          if (draw->is_enabled && command_count > 0) {
+            // 1
+            //glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer->ptr->buffer_id);
             glUseProgram(draw->shader->id);
             draw->shader->SetUniforms();
-            unsigned int command_count = draw->GetCommandCount();
-            glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
+            glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT,
+                                        draw->commands.data(),
+              // 1
+              //nullptr,
                                         command_count, 0);
             DEBUG_EXPR(CheckGLError());
           }
@@ -41,6 +45,7 @@ void Renderer::Render(Camera* camera) {
       DEBUG_EXPR(CheckGLError());
     }
     buffer_manager->PostDraw();
+    spatial_manager->PostDraw();
     GPUSynchronizer::GetInstance()->PostDraw();
   }
   IF_PROFILE_ENABLED(auto proft3 = chrono::steady_clock::now(););

@@ -31,10 +31,26 @@ struct MemorySlot {
   //  }
   //  return res;
   //}
+
+  inline bool IsSlotAllocated();
+  inline void Reset();
 };
 
 namespace MemorySlots {
-  inline MemorySlot NULL_SLOT = { 0, 0, 0 };
+  inline const MemorySlot NULL_SLOT = { 0, 0, 0 };
+}
+
+inline bool MemorySlot::IsSlotAllocated() {
+  return !(
+    this->offset == 0 &&
+    this->count == 0 &&
+    this->used == 0);
+}
+
+inline void MemorySlot::Reset() {
+  this->offset = 0;
+  this->count = 0;
+  this->used = 0;
 }
 
 // hash function for unordered map

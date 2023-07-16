@@ -25,25 +25,25 @@ public:
     center{ center },
     is_cull_by_distance{ is_cull_by_distance } {}
 
-  virtual bool IsCulled(Frustrum* frustrum) = 0;
+  virtual bool IsCulled(const Frustrum* frustrum) = 0;
 
-  bool IsCulledByDistance(vec3& pos, int draw_distance = GameSettings::MAX_DRAW_DISTANCE) {
+  bool IsCulledByDistance(const vec3& pos, int draw_distance = GameSettings::MAX_DRAW_DISTANCE) {
     return is_cull_by_distance || distance(pos, center) > draw_distance;
   };
 
-  virtual void Transform(mat4& transform) = 0;
+  virtual void Transform(const mat4& transform) = 0;
   /**
    * @return if inside this BV
   */
-  virtual bool IsInside(vec3& pos) = 0;
+  virtual bool IsInside(const vec3& pos) = 0;
   /**
    * @return if inside this BV
   */
-  virtual bool IsInside(BoundingBox* other) = 0;
+  virtual bool IsInside(const BoundingBox* other) = 0;
   /**
    * @return if inside this BV
   */
-  virtual bool Intersects(BoundingBox* other) = 0;
+  virtual bool Intersects(const BoundingBox* other) = 0;
 };
 
 class BoundingBox : public BoundingVolume {
@@ -66,6 +66,14 @@ public:
 
     TransformExtents(transform);
   }
+  BoundingBox(mat4& transform,
+    vec3& half_extents,
+    bool is_cull_by_distance = false) :
+    BoundingVolume(transform, is_cull_by_distance),
+    min_AABB{ center - half_extents },
+    max_AABB{ center + half_extents },
+    half_extents{ half_extents } {
+  }
 
   BoundingBox(vec3& center, vec3& half_extents,
     bool is_cull_by_distance = false) :
@@ -75,17 +83,17 @@ public:
     half_extents{ half_extents } {
   }
 
-  void Transform(mat4& transform) override {
+  void Transform(const mat4& transform) override {
     center = transform[3];
     TransformExtents(transform);
   }
 
-  void TransformExtents(glm::mat4& transform)
+  void TransformExtents(const mat4& transform)
   {
     // local unit directions vectors
-    auto right = glm::vec3(transform[0][0], transform[1][0], transform[2][0]) * half_extents.x;
-    auto up = glm::vec3(transform[0][1], transform[1][1], transform[2][1]) * half_extents.y;
-    auto forward = glm::vec3(transform[0][2], transform[1][2], transform[2][2]) * half_extents.z;
+    auto right = vec3(transform[0][0], transform[1][0], transform[2][0]) * half_extents.x;
+    auto up = vec3(transform[0][1], transform[1][1], transform[2][1]) * half_extents.y;
+    auto forward = vec3(transform[0][2], transform[1][2], transform[2][2]) * half_extents.z;
     // projection of rotated/scaled extents of direction vectors onto world axis
     half_extents.x = 
       abs(dot(right, GameSettings::world_right)) +
@@ -141,7 +149,7 @@ public:
   //      if 'd' is positive, it lies on plane positive side.
   //      if 'd' is negative - exit.
   // 
-  bool IsCulled(Frustrum* frustrum) override {
+  bool IsCulled(const Frustrum* frustrum) override {
     // optimal order. first check sides, then depth, since sides cuts off most space
     return IsOnNormalSide(frustrum->left)
       && IsOnNormalSide(frustrum->right)
@@ -151,7 +159,7 @@ public:
       && IsOnNormalSide(frustrum->far);
   };
 
-  bool IsOnNormalSide(Plane& plane) {
+  bool IsOnNormalSide(const Plane& plane) {
     // because rotation of normal doesnt change length of AABB diagonal projection
     float r = dot(half_extents, abs(plane.normal));
 
@@ -163,7 +171,7 @@ public:
     return distance_center_to_plane >= -r;
   }
 
-  bool IsInside(vec3& pos) override {
+  bool IsInside(const vec3& pos) override {
     return pos.x <= max_AABB.x
       && pos.y <= max_AABB.y
       && pos.z <= max_AABB.z
@@ -175,7 +183,7 @@ public:
   /**
    * if inside this BV
   */
-  bool IsInside(BoundingBox* other) override {
+  bool IsInside(const BoundingBox* other) override {
     return other->max_AABB.x <= max_AABB.x
       && other->max_AABB.y <= max_AABB.y
       && other->max_AABB.z <= max_AABB.z
@@ -184,7 +192,7 @@ public:
       && other->min_AABB.z >= min_AABB.z;
   }
 
-  bool Intersects(BoundingBox* other) override {
+  bool Intersects(const BoundingBox* other) override {
     return other->min_AABB.x <= max_AABB.x
       && other->max_AABB.x >= min_AABB.x
       && other->min_AABB.y <= max_AABB.y
@@ -197,5 +205,3 @@ public:
 //public:
 //  virtual bool IsCulled(frustrum) = 0;
 //};
-
-

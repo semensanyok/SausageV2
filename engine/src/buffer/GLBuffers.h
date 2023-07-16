@@ -10,10 +10,18 @@
 #include "ThreadSafeNumberPool.h"
 #include "GLBuffersCommon.h"
 #include "GPUSynchronizer.h"
+#include "InstanceSlot.h"
 
 using namespace std;
 using namespace UniformsLocations;
 using namespace BufferSizes;
+
+
+class MeshData;
+class MeshDataStatic;
+class MeshDataTerrain;
+class MeshDataUI;
+class MeshDataOverlay3D;
 
 class GLBuffers {
     
@@ -22,14 +30,14 @@ class GLBuffers {
 
 public:
   
-  BufferSlots<LightsUniform>* light_ptr;
+  BufferNumberPool<LightsUniform>* light_ptr;
   BufferNumberPool<GLuint64>* texture_handle_by_texture_id_ptr;
-  BufferSlots<UniformDataMesh>* mesh_uniform_ptr;
-  BufferSlots<UniformDataOverlay3D>* uniforms_3d_overlay_ptr;
-  BufferSlots<UniformDataUI>* uniforms_ui_ptr;
-  BufferSlots<ControllerUniformData>* uniforms_controller_ptr;
-  BufferSlots<UniformDataMeshStatic>* mesh_static_uniform_ptr;
-  BufferSlots<UniformDataMeshTerrain>* mesh_terrain_uniform_ptr;
+  BufferNumberPool<UniformDataMesh>* mesh_uniform_ptr;
+  BufferNumberPool<UniformDataMeshStatic>* mesh_static_uniform_ptr;
+  BufferNumberPool<UniformDataMeshTerrain>* mesh_terrain_uniform_ptr;
+  BufferNumberPool<UniformDataOverlay3D>* uniforms_3d_overlay_ptr;
+  BufferNumberPool<UniformDataUI>* uniforms_ui_ptr;
+  BufferNumberPool<ControllerUniformData>* uniforms_controller_ptr;
 
   // terrain specific
   Arena* terrain_texture_instance_slots;
@@ -51,7 +59,7 @@ public:
     mesh_terrain_uniform_ptr->Reset();
   };
 
-  ///////////////GetBufferSlots template//////////////////////////////////
+  ///////////////GetUniformSlots template//////////////////////////////////
   /**
    * per shader list of buffer_id->transform/texture array offset
    * thus, have to get pointer to structure for each shader separately
@@ -60,96 +68,65 @@ public:
    *
   */
   template<typename UNIFORM_DATA_TYPE, typename MESH_TYPE>
-  BufferSlots<UNIFORM_DATA_TYPE>* GetBufferSlots() {
+  BufferNumberPool<UNIFORM_DATA_TYPE>* GetUniformSlots() {
     throw runtime_error("Not implemented");
   };
   template<>
-  inline BufferSlots<UniformDataMesh>* GetBufferSlots<UniformDataMesh, MeshData>()
+  inline BufferNumberPool<UniformDataMesh>* GetUniformSlots<UniformDataMesh, MeshData>()
   {
     return mesh_uniform_ptr;
   }
   template<>
-  inline BufferSlots<UniformDataMeshStatic>* GetBufferSlots<UniformDataMeshStatic, MeshDataStatic>()
+  inline BufferNumberPool<UniformDataMeshStatic>* GetUniformSlots<UniformDataMeshStatic, MeshDataStatic>()
   {
     return mesh_static_uniform_ptr;
   }
   template<>
-  inline BufferSlots<UniformDataMeshTerrain>* GetBufferSlots<UniformDataMeshTerrain, MeshDataTerrain>()
+  inline BufferNumberPool<UniformDataMeshTerrain>* GetUniformSlots<UniformDataMeshTerrain, MeshDataTerrain>()
   {
     return mesh_terrain_uniform_ptr;
   }
   template<>
-  inline BufferSlots<UniformDataUI>* GetBufferSlots<UniformDataUI, MeshDataUI>()
+  inline BufferNumberPool<UniformDataUI>* GetUniformSlots<UniformDataUI, MeshDataUI>()
   {
     return uniforms_ui_ptr;
   }
   template<>
-  inline BufferSlots<UniformDataOverlay3D>* GetBufferSlots<UniformDataOverlay3D, MeshDataOverlay3D>()
+  inline BufferNumberPool<UniformDataOverlay3D>* GetUniformSlots<UniformDataOverlay3D, MeshDataOverlay3D>()
   {
     return uniforms_3d_overlay_ptr;
   }
   /////////////////////////////////////////////////
 
   template<typename MESH_TYPE>
-  unsigned int* GetBufferSlotsBaseInstanceOffset() {
+  unsigned int* GetUniformOffsetByInstanceId() {
     throw runtime_error("Not implemented");
   };
   template<>
-  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshData>()
+  inline unsigned int* GetUniformOffsetByInstanceId<MeshData>()
   {
-    return mesh_uniform_ptr->buffer_ptr->base_instance_offset;
+    return mesh_uniform_ptr->buffer_ptr->uniform_offset;
   };
   template<>
-  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataStatic>()
+  inline unsigned int* GetUniformOffsetByInstanceId<MeshDataStatic>()
   {
-    return mesh_static_uniform_ptr->buffer_ptr->base_instance_offset;
+    return mesh_static_uniform_ptr->buffer_ptr->uniform_offset;
   };
   template<>
-  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataTerrain>()
+  inline unsigned int* GetUniformOffsetByInstanceId<MeshDataTerrain>()
   {
-    return mesh_terrain_uniform_ptr->buffer_ptr->base_instance_offset;
+    return mesh_terrain_uniform_ptr->buffer_ptr->uniform_offset;
   };
   template<>
-  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataUI>()
+  inline unsigned int* GetUniformOffsetByInstanceId<MeshDataUI>()
   {
-    return uniforms_ui_ptr->buffer_ptr->base_instance_offset;
+    return uniforms_ui_ptr->buffer_ptr->uniform_offset;
   };
   template<>
-  inline unsigned int* GetBufferSlotsBaseInstanceOffset<MeshDataOverlay3D>()
+  inline unsigned int* GetUniformOffsetByInstanceId<MeshDataOverlay3D>()
   {
-    return uniforms_3d_overlay_ptr->buffer_ptr->base_instance_offset;
+    return uniforms_3d_overlay_ptr->buffer_ptr->uniform_offset;
   };
-  /////////////////////////////////////////////////
-  template<typename MESH_TYPE>
-  InstancesSlots& GetInstancesSlot() {
-    throw runtime_error("Not implemented");
-  };
-  template<>
-  inline InstancesSlots& GetInstancesSlot<MeshData>()
-  {
-    return mesh_uniform_ptr->instances_slots;
-  }
-  template<>
-  inline InstancesSlots& GetInstancesSlot<MeshDataStatic>()
-  {
-    return mesh_static_uniform_ptr->instances_slots;
-  }
-  template<>
-  inline InstancesSlots& GetInstancesSlot<MeshDataTerrain>()
-  {
-    return mesh_terrain_uniform_ptr->instances_slots;
-  }
-  template<>
-  inline InstancesSlots& GetInstancesSlot<MeshDataUI>()
-  {
-    return uniforms_ui_ptr->instances_slots;
-  }
-  template<>
-  inline InstancesSlots& GetInstancesSlot<MeshDataOverlay3D>()
-  {
-    return uniforms_3d_overlay_ptr->instances_slots;
-  }
-  /////////////////////////////////////////////////
 
   template<typename TEXTURE_TYPE>
   TEXTURE_TYPE* GetTexturesSlot() {
@@ -198,37 +175,6 @@ public:
   }
   /////////////////////////////////////////////////
 
-  //////////////GetNumCommands template///////////
-  template<typename MESH_TYPE>
-  inline unsigned int GetNumCommands();
-
-  template<>
-  inline unsigned int GetNumCommands<MeshData>()
-  {
-    return mesh_uniform_ptr->instances_slots.instances_slots.GetUsed();
-  }
-  template<>
-  inline unsigned int GetNumCommands<MeshDataStatic>()
-  {
-    return mesh_static_uniform_ptr->instances_slots.instances_slots.GetUsed();
-  }
-  template<>
-  inline unsigned int GetNumCommands<MeshDataTerrain>()
-  {
-    return mesh_terrain_uniform_ptr->instances_slots.instances_slots.GetUsed();
-  }
-  template<>
-  inline unsigned int GetNumCommands<MeshDataOverlay3D>()
-  {
-    return uniforms_3d_overlay_ptr->instances_slots.instances_slots.GetUsed();
-  }
-  template<>
-  inline unsigned int GetNumCommands<MeshDataUI>()
-  {
-    return uniforms_ui_ptr->instances_slots.instances_slots.GetUsed();
-  }
-  /////////////////////////////////////////////////
-
   //////////////BufferBlendTextures template///////////
   template<typename MESH_TYPE, typename TEXTURE_ARRAY_TYPE>
   void BufferTexture(BufferInstanceOffset* mesh, TEXTURE_ARRAY_TYPE& texture) {
@@ -236,25 +182,25 @@ public:
   }
   template<>
   inline void BufferTexture<MeshData, BlendTextures>(BufferInstanceOffset* mesh, BlendTextures& textures) {
-    auto offset = mesh->GetInstanceOffset();
+    auto offset = mesh->GetUniformOffset();
     mesh_uniform_ptr->buffer_ptr->blend_textures[offset]
       = textures;
   };
   template<>
   inline void BufferTexture<MeshDataStatic, BlendTextures>(BufferInstanceOffset* mesh, BlendTextures& textures) {
-    auto offset = mesh->GetInstanceOffset();
+    auto offset = mesh->GetUniformOffset();
     mesh_static_uniform_ptr->buffer_ptr->blend_textures[offset]
       = textures;
   };
   template<>
   inline void BufferTexture<MeshDataTerrain, BlendTextures>(BufferInstanceOffset* mesh, BlendTextures& textures) {
-    auto offset = mesh->GetInstanceOffset();
+    auto offset = mesh->GetUniformOffset();
     mesh_terrain_uniform_ptr->buffer_ptr->blend_textures[offset]
       = textures;
   };
   template<>
   inline void BufferTexture<MeshDataUI, unsigned int>(BufferInstanceOffset* mesh, unsigned int& texture_id) {
-    auto offset = mesh->GetInstanceOffset();
+    auto offset = mesh->GetUniformOffset();
     uniforms_ui_ptr->buffer_ptr->texture_id_by_instance_id[offset]
       = texture_id;
   };

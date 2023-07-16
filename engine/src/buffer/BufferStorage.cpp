@@ -59,12 +59,11 @@ void BufferStorage::ReleaseTexture(Texture* texture) {
   texture->Dispose();
 };
 
-void BufferStorage::BufferUniformDataUISize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y) {
-  assert(mesh->slots.buffer_id > 0);
-  assert(mesh->slots.instances_slot != MemorySlots::NULL_SLOT);
+void BufferStorage::BufferUniformDataUISize(BufferInstanceOffset* mesh, int min_x, int max_x, int min_y, int max_y) {
+  assert(mesh->IsUniformOffsetAllocated());
   gl_buffers->
     uniforms_ui_ptr->buffer_ptr->
-      min_max_x_y[mesh->GetInstanceOffset()] = {min_x, max_x, min_y, max_y};
+      min_max_x_y[mesh->GetUniformOffset()] = {min_x, max_x, min_y, max_y};
   GPUSynchronizer::GetInstance()->SetSyncBarrier();
 }
 

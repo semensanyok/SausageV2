@@ -6,7 +6,7 @@
 #include "ThreadSafeQueue.h"
 #include "Macros.h"
 #include "Structures.h"
-#include "DrawCallStruct.h"
+#include "DrawCall.h"
 #include "Logging.h"
 #include "Camera.h"
 #include "BufferStorage.h"
@@ -17,6 +17,7 @@
 #include "GLCommandBuffers.h"
 #include "GLVertexAttributes.h"
 #include "BufferManager.h"
+#include "SpatialManager.h"
 
 using namespace std;
 /**
@@ -28,6 +29,7 @@ private:
   RendererContextManager* context_manager;
   BufferManager* buffer_manager;
   GLVertexAttributes* vertex_attributes;
+  SpatialManager* spatial_manager;
 
   ThreadSafeQueue<pair<function<void()>, bool>> gl_commands;
 
@@ -35,10 +37,12 @@ private:
 public:
   Renderer(
     RendererContextManager* context_manager,
-    BufferManager* buffer_manager
+    BufferManager* buffer_manager,
+    SpatialManager* spatial_manager
   ) :
     context_manager{ context_manager },
     buffer_manager{ buffer_manager },
+    spatial_manager{ spatial_manager },
     vertex_attributes{ buffer_manager->vertex_attributes } {};
   ~Renderer() {};
   void Render(Camera* camera);

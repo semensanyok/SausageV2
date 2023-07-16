@@ -23,6 +23,7 @@
 #include "TerrainManager.h"
 #include "DrawCallManager.h"
 #include "MeshDataUtils.h"
+#include "SpatialManager.h"
 
 class SystemsManager
 {
@@ -49,6 +50,7 @@ public:
   TerrainManager* terrain_manager = nullptr;
   DrawCallManager* draw_call_manager = nullptr;
   MeshDataUtils* mesh_data_utils = nullptr;
+  SpatialManager* spatial_manager = nullptr;
 
   static SystemsManager* GetInstance() {
     static SystemsManager* instance = new SystemsManager();
@@ -71,4 +73,5 @@ public:
 private:
   SystemsManager() { };
   void _SubmitAsyncTasks();
+  void AddDraws();
 };

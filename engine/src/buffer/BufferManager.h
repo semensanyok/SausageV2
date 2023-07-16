@@ -3,9 +3,9 @@
 #include "sausage.h"
 #include "Structures.h"
 #include "Interfaces.h"
-#include "GLCommandBuffers.h"
 #include "GLVertexAttributes.h"
 #include "BufferStorage.h"
+#include "BufferConsumer.h"
 #include "MeshDataBufferConsumerShared.h"	
 #include "MeshDataBufferConsumer.h"	
 #include "MeshStaticBufferConsumer.h"
@@ -15,7 +15,8 @@
 #include "MeshTerrainBufferConsumer.h"
 #include "MeshManager.h"
 #include "TextureManager.h"
-;
+#include "Vertex.h"
+
 class BufferManager : public SausageSystem {
   inline static BufferManager* instance;
 
@@ -28,7 +29,6 @@ public:
     return instance;
   };
   // initialized via this class
-  CommandBuffersManager* command_buffer_manager = nullptr;
   GLVertexAttributes* vertex_attributes = nullptr;
   MeshDataBufferConsumer* mesh_data_buffer = nullptr;
   UIBufferConsumer* ui_buffer = nullptr;
@@ -55,22 +55,39 @@ public:
 
   void PreDraw() {
     buffer_storage->BindBuffers();
-    command_buffer_manager->PreDraw();
   }
 
   void PostDraw() {
-    command_buffer_manager->PostDraw();
   }
 
-  template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
-  inline MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* GetBuffer();
+  template<typename MESH_TYPE, typename VERTEX_TYPE, typename UNIFORM_DATA_TYPE>
+  inline MeshDataBufferConsumerShared<BlendTextures, MESH_TYPE, VERTEX_TYPE, UNIFORM_DATA_TYPE>* GetMeshDataBufferConsumer();
   template<>
-  inline MeshDataBufferConsumerShared<BlendTextures, MeshData, Vertex>* GetBuffer() {
+  inline MeshDataBufferConsumerSharedT* GetMeshDataBufferConsumer() {
     return mesh_data_buffer;
   };
   template<>
-  inline MeshDataBufferConsumerShared<BlendTextures, MeshDataStatic, VertexStatic>* GetBuffer() {
+  inline MeshStaticBufferConsumerSharedT* GetMeshDataBufferConsumer() {
     return mesh_static_buffer;
+  };
+  template<>
+  inline MeshTerrainBufferConsumerSharedT* GetMeshDataBufferConsumer() {
+    return mesh_terrain_buffer;
+  };
+
+  template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename TRANSFORM_TYPE, typename VERTEX_TYPE, typename UNIFORM_DATA_TYPE>
+  inline BufferConsumer<TEXTURE_ARRAY_TYPE, MESH_TYPE, TRANSFORM_TYPE, VERTEX_TYPE, UNIFORM_DATA_TYPE>* GetBufferConsumer();
+  template<>
+  inline MeshDataBufferConsumerT* GetBufferConsumer() {
+    return mesh_data_buffer;
+  };
+  template<>
+  inline MeshStaticBufferConsumerT* GetBufferConsumer() {
+    return mesh_static_buffer;
+  };
+  template<>
+  inline MeshTerrainBufferConsumerT* GetBufferConsumer() {
+    return mesh_terrain_buffer;
   };
 
 };

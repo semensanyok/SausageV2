@@ -59,7 +59,7 @@ BufferSlots<T>* CreateBufferSlots(unsigned long storage_size,
 }
 
 template<typename T>
-BufferNumberPool<T>* CreateBufferStorageNumberPool(unsigned long storage_size,
+BufferNumberPool<T>* CreateBufferNumberPool(unsigned long storage_size,
   unsigned long max_number,
   GLuint array_type) {
   GLuint buffer_id;

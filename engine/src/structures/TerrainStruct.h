@@ -3,6 +3,7 @@
 #include "sausage.h"
 #include "Settings.h"
 #include "MeshDataStruct.h"
+#include "MeshDataTypes.h"
 
 using namespace glm;
 
@@ -19,19 +20,12 @@ inherits BufferInstanceOffset to buffer texture per TerrainChunk.
 
 */
 
-struct TerrainBlendTextures : public BufferInstanceOffset {
+struct TerrainBlendTextures {
 public:
   // index into blend information array.
-  long uniform_id;
+  int uniform_id;
   BlendTextures textures;
   TerrainBlendTextures(long uniform_id) : uniform_id{ uniform_id } {};
-
-  unsigned long GetInstanceOffset() override {
-    return uniform_id;
-  }
-  bool IsInstanceOffsetAllocated() override {
-    return uniform_id >= 0;
-  }
 };
 
 struct TileVerticesIndices {
@@ -43,7 +37,7 @@ struct TileVerticesIndices {
 
 class TerrainChunk {
   public:
-  MeshDataTerrain* mesh;
+  MeshDataInstanceTerrainT* mesh;
   // maybe no need to store it for mesh with non changing height.
   // however, altering it in runtime could be a boon to gameplay
   vector<float> heightmap;

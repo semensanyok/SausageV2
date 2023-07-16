@@ -10,42 +10,9 @@
 #include "MeshDataBufferConsumerShared.h"
 #include "PhysicsStruct.h"
 #include "Physics.h"
+#include "MeshDataInstance.h"
 
 using namespace std;
-
-template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
-class PhysicsTransformUpdateMesh : public PhysicsTransformUpdate {
-  MESH_TYPE* mesh;
-  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* buffer;
-public:
-  PhysicsTransformUpdateMesh(MESH_TYPE* mesh) :
-    mesh{ mesh },
-    buffer{ buffer } {};
-  mat4& GetOutMatrix() override {
-    return mesh->transform;
-  };
-  void OnTransformUpdate() override {
-    BufferManager::GetInstance()->
-      GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>()->BufferTransform(mesh, mesh->transform);
-  };
-};
-
-template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
-class PhysicsTransformUpdateMeshInstance : public PhysicsTransformUpdate {
-  MeshDataInstance* mesh;
-  MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>* buffer;
-public:
-  PhysicsTransformUpdateMeshInstance(MeshDataInstance* mesh) :
-    mesh{ mesh },
-    buffer{ buffer } {};
-  mat4& GetOutMatrix() override {
-    return mesh->transform;
-  };
-  void OnTransformUpdate() override {
-    BufferManager::GetInstance()->
-      GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>()->BufferTransform(mesh, mesh->transform);
-  };
-};
 
 class MeshDataUtils {
 
@@ -67,91 +34,90 @@ public:
     buffer_manager{ buffer_manager },
     physics_manager{ physics_manager } {};
 
-  template<typename MESH_TYPE, typename VERTEX_TYPE>
+  template<typename MESH_TYPE, typename VERTEX_TYPE, typename UNIFORM_DATA_TYPE>
   struct SetupInstancedMeshRes {
     shared_ptr<MeshLoadData<VERTEX_TYPE>> load_data;
     MESH_TYPE* mesh;
-    vector<MeshDataInstance*> instances;
+    vector<MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>*> instances;
   };
 
   /**
    * @return mesh data with instance_count
   */
-  template<typename MESH_TYPE, typename VERTEX_TYPE, typename TEXTURE_ARRAY_TYPE>
-  vector<SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE>> SetupInstancedMesh(
+  template<typename MESH_TYPE, typename VERTEX_TYPE, typename TEXTURE_ARRAY_TYPE, typename UNIFORM_DATA_TYPE>
+  vector<SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE, UNIFORM_DATA_TYPE>> SetupInstancedMesh(
     DrawCall* dc,
     std::vector<std::shared_ptr<MeshLoadData<VERTEX_TYPE>>>& mesh_load,
-    std::vector<MaterialTexNames>& tex_names_list_animated)
-  {
-    vector<SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE>> res;
-    unordered_map<size_t, pair<MaterialTexNames, vector<shared_ptr<MeshLoadData<VERTEX_TYPE>>>>> base_meshes;
+    std::vector<MaterialTexNames>& tex_names_list,
+    unordered_map<size_t, Texture*>& out_base_meshes_tex) {
+    vector<SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE, UNIFORM_DATA_TYPE>> res;
+    unordered_map<size_t, vector<shared_ptr<MeshLoadData<VERTEX_TYPE>>>> base_meshes;
+
+    MeshDataBufferConsumerShared<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE, UNIFORM_DATA_TYPE>* buffer =
+      buffer_manager->GetMeshDataBufferConsumer<MESH_TYPE, VERTEX_TYPE, UNIFORM_DATA_TYPE>();
+
     hash<MaterialTexNames> tex_hash;
+
     for (int i = 0; i < mesh_load.size(); i++) {
       auto load_data_sptr = mesh_load[i];
       auto load_data = load_data_sptr.get();
-      auto tex_names = tex_names_list_animated[i];
+      auto& tex_names = tex_names_list[i];
       auto key =
         tex_hash(tex_names)
         + load_data->vertices.size()
         + load_data->indices.size();
 
+      // TEXTURE SETUP
+      Texture* texture = texture_manager->LoadTextureArray(tex_names);
+      if (texture != nullptr) {
+        texture->MakeResident();
+      }
+
       if (!base_meshes.contains(key)) {
-        base_meshes[key] = { tex_names ,{ load_data_sptr } };
+        base_meshes[key] = { { load_data_sptr } };
+        out_base_meshes_tex[key] = { texture };
       }
       else {
-        base_meshes[key].second.push_back(load_data_sptr);
+        base_meshes[key].push_back(load_data_sptr);
       }
     }
     for (auto& mesh_instances : base_meshes) {
-      auto& tex_names = mesh_instances.second.first;
-      auto& instances = mesh_instances.second.second;
+      auto& tex = out_base_meshes_tex[mesh_instances.first];
+      auto& instances = mesh_instances.second;
 
       shared_ptr<MeshLoadData<VERTEX_TYPE>>& base_ptr = instances[0];
       auto base = base_ptr.get();
       // BASE MESH SETUP
       MESH_TYPE* mesh = mesh_manager->CreateMeshData<VERTEX_TYPE, MESH_TYPE>(base_ptr);
       res.push_back({ base_ptr, mesh, {} });
-      SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE>& mesh_res = res[res.size() - 1];
-      // TEXTURE SETUP
-      {
-        Texture* texture = texture_manager->LoadTextureArray(tex_names);
-        if (texture != nullptr) {
-          mesh->textures = { { 1.0, texture->id }, 1 };
-          texture->MakeResident();
-        }
-      }
-      auto mesh_data_buffer_consumer = buffer_manager->GetBuffer<TEXTURE_ARRAY_TYPE, MESH_TYPE, VERTEX_TYPE>();
-      if (!mesh_data_buffer_consumer->AllocateStorage(mesh->slots, base_ptr->vertices.size(), base_ptr->indices.size())) {
+      SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE, UNIFORM_DATA_TYPE>& mesh_res = res[res.size() - 1];
+
+      if (!buffer->AllocateStorage(mesh->slots, base_ptr->vertices.size(), base_ptr->indices.size())) {
         // logged in vertex_attributes AllocateStorage
         continue;
       };
-      draw_call_manager->AddNewCommandToDrawCall<MESH_TYPE>(mesh, dc, instances.size());
-      mesh_data_buffer_consumer->BufferMeshData(mesh, base_ptr);
-      if (mesh->textures.num_textures > 0) {
-        mesh_data_buffer_consumer->BufferTexture(mesh, mesh->textures);
-      }
-
-      // PHYSICS SETUP
-      {
-        mesh->physics_data = base->physics_data;
-        if (base->name != "Terrain") {
-          mesh->physics_data->mass = 10.0;
-        }
-        else {
-          mesh->physics_data->mass = 0.0;
-        }
-        mesh->physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
-        mesh->physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
-      }
+      buffer->BufferMeshData(mesh, base_ptr);
 
       // INSTANCES SETUP
       for (int i = 1; i < instances.size(); i++) {
         shared_ptr<MeshLoadData<VERTEX_TYPE>>& idata = instances[i];
         // already have set correct instance_count, no need to update (via AddNewCommandToDrawCall<MESH_TYPE>(mesh, dc, instances.size()))
-        MeshDataInstance* mesh_instance = draw_call_manager->AddNewInstance<MESH_TYPE>(mesh, idata->transform);
-        mesh_data_buffer_consumer->BufferMeshDataInstance(mesh_instance, mesh->textures);
-        if (mesh->textures.num_textures > 0) {
-          mesh_data_buffer_consumer->BufferTexture(mesh_instance, mesh->textures);
+        MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>* mesh_instance = new MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>(idata->transform, mesh,
+          idata->bv);
+        buffer->AllocateUniformOffset(mesh_instance);
+        // TEXTURE SETUP
+        BlendTextures btex = { { 1.0, tex->id }, 1 };
+        buffer->BufferMeshDataInstance(mesh_instance, btex);
+        // PHYSICS SETUP
+        { 
+          if (base->name != "Terrain") {
+            base->physics_data->mass = 10.0;
+          }
+          else {
+            base->physics_data->mass = 0.0;
+          }
+          base->physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
+          base->physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
         }
         mesh_res.instances.push_back(mesh_instance);
       }
@@ -159,14 +125,15 @@ public:
     return res;
   }
 
-  vector<SetupInstancedMeshRes<MeshData, Vertex>> SetupInstancedMeshWithAnim(
+  vector<SetupInstancedMeshRes<MeshData, Vertex, UniformDataMesh>> SetupInstancedMeshWithAnim(
     DrawCall* dc,
     std::vector<std::shared_ptr<MeshLoadData<Vertex>>>& mesh_load_data_animated,
-    std::vector<MaterialTexNames>& tex_names_list_animated)
+    std::vector<MaterialTexNames>& tex_names_list,
+    unordered_map<size_t, Texture*>& base_meshes_tex)
   {
-    auto res = SetupInstancedMesh<MeshData, Vertex, BlendTextures>(dc, mesh_load_data_animated, tex_names_list_animated);
+    auto res = SetupInstancedMesh<MeshData, Vertex, BlendTextures, UniformDataMesh>(dc, mesh_load_data_animated, tex_names_list, base_meshes_tex);
 
-    for (auto mesh_res : res) {
+    for (auto& mesh_res : res) {
       auto armature = mesh_res.load_data->armature;
       mesh_res.mesh->armature = armature;
     }
@@ -179,44 +146,16 @@ public:
    * @param new_meshes
    * @param custom_up custom user pointer for physics subsystem. i.e. MeshDataClickable
   */
-  template<typename MESH_TYPE, typename VERTEX_TYPE>
-  void AddRigidBody(MESH_TYPE* mesh, SausageUserPointer* custom_up = nullptr) {
-    SausageUserPointer* up;
-    if (custom_up == nullptr) {
-      up = mesh;
-    }
-    else {
-      up = custom_up;
-    }
-
-    physics_manager->AddBoxRigidBody(
-      mesh->physics_data,
-      new PhysicsTransformUpdateMesh<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
-      mesh->transform,
-      mesh->name.c_str()
-    );
-  }
-
-  /**
-   * @tparam MESH_TYPE
-   * @tparam VERTEX_TYPE
-   * @param new_meshes
-   * @param custom_up custom user pointer for physics subsystem. i.e. MeshDataClickable
-  */
-  template<typename MESH_TYPE, typename VERTEX_TYPE>
-  void AddRigidBody(MeshDataInstance* mesh, SausageUserPointer* custom_up = nullptr) {
-    SausageUserPointer* up;
-    if (custom_up == nullptr) {
-      up = mesh;
-    }
-    else {
-      up = custom_up;
-    }
-    auto base_mesh_physics_data = ((MESH_TYPE*)mesh->base_mesh)->physics_data;
+  template<typename MESH_TYPE, typename VERTEX_TYPE, typename UNIFORM_DATA_TYPE>
+  void AddRigidBody(MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>* mesh
+    // TODO: support second callback for MeshDataCickable
+    //,SausageUserPointer* custom_up = nullptr
+  ) {
+    auto base_mesh_physics_data = mesh->physics_data;
     physics_manager->AddBoxRigidBody(
       base_mesh_physics_data,
-      new PhysicsTransformUpdateMeshInstance<BlendTextures, MESH_TYPE, VERTEX_TYPE>(mesh),
-      mesh->transform,
+      mesh->bv,
+      mesh,
       mesh->name.c_str()
     );
   }

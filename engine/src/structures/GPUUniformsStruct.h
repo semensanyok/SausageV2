@@ -30,20 +30,6 @@ namespace UniformsLocations {
   const int MESH_TERRAIN_UNIFORMS_LOC = 8;
 };
 
-class BufferInstanceOffset {
-
-public:
-  // used as offset to array, containing offset to buffer uniform arrays: transform, texture, ...
-  // to not rebuffer data for instanced meshes (transform matrices) each time slot is reallocated.
-  //    e.g. when we have 2 buffered instanced meshes, but then increased instances to 4.
-  //    so we must buffer 4 subsequent data, which identifies given instance.
-  //    we cannot rebuffer all buffered data to the end of each array.
-  //    so, we rebuffer only subsequent indices to intance data arrays.
-  virtual unsigned long GetInstanceOffset() = 0;
-
-  virtual bool IsInstanceOffsetAllocated() = 0;
-};
-
 #define BLEND_TEXTURES_ALIGNED_TO_16_BYTES(CAPACITY) BlendTextures blend_textures[CAPACITY];\
 float pad[3];
 
@@ -52,28 +38,28 @@ struct UniformDataMesh {
   mat4 bones_transforms[MAX_BONES]; // aligned to vec4 == 16 bytes
   mat4 transforms[MAX_MESHES_INSTANCES]; // aligned to vec4 == 16 bytes
   BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_MESHES_INSTANCES);
-  unsigned int base_instance_offset[MAX_BASE_MESHES]; // alignment 4 bytes
+  unsigned int uniform_offset[MAX_MESHES_INSTANCES]; // alignment 4 bytes
   // no padding needed, topmost structure
 };
 
 struct UniformDataMeshStatic {
   mat4 transforms[MAX_MESHES_STATIC_INSTANCES]; // aligned to vec4 == 16 bytes
   BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_MESHES_STATIC_INSTANCES);
-  unsigned int base_instance_offset[MAX_BASE_MESHES_STATIC]; // alignment 4 bytes
+  unsigned int uniform_offset[MAX_MESHES_STATIC_INSTANCES]; // alignment 4 bytes
   // no padding needed, topmost structure
 };
 
 struct UniformDataMeshTerrain {
   mat4 transforms[MAX_MESHES_TERRAIN]; // aligned to vec4 == 16 bytes
   BLEND_TEXTURES_ALIGNED_TO_16_BYTES(TERRAIN_MAX_TEXTURES);
-  unsigned int base_instance_offset[MAX_MESHES_TERRAIN]; // alignment 4 bytes
+  unsigned int uniform_offset[MAX_MESHES_TERRAIN]; // alignment 4 bytes
   // no padding needed, topmost structure
 };
 
 struct UniformDataOverlay3D {
   mat4 transforms[MAX_3D_OVERLAY_INSTANCES];
   BLEND_TEXTURES_ALIGNED_TO_16_BYTES(MAX_3D_OVERLAY_INSTANCES);
-  unsigned int base_instance_offset[MAX_3D_OVERLAY_COMMANDS];
+  unsigned int uniform_offset[MAX_3D_OVERLAY_COMMANDS];
 };
 
 // TODO: figure eout correct offsets
@@ -84,7 +70,7 @@ struct UniformDataUI {
   float pad1[2];
   unsigned int texture_id_by_instance_id[MAX_UI_INSTANCES]; // alignment 4 bytes
   float pad2[3];
-  unsigned int base_instance_offset[MAX_UI_COMMANDS];
+  unsigned int uniform_offset[MAX_UI_INSTANCES];
   // no padding needed, topmost structure
 };
 

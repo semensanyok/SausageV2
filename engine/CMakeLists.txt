@@ -163,7 +163,8 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
 "${ENGINE_SRC_DIR}/buffer/consumers/" 
 "${ENGINE_SRC_DIR}/systems/world_gen/" 
 "${ENGINE_SRC_DIR}/structures/" 
-"${ENGINE_SRC_DIR}/structures/spatial/" 
+"${ENGINE_SRC_DIR}/structures/spatial/"
+"${ENGINE_SRC_DIR}/systems/spatial/" 
 ${IMGUI_HEADERS} 
 ${DEPENDENCIES_INCLUDE_DIRS})
 
@@ -190,8 +191,8 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "${ENGINE_SRC_DIR}/utils/GLMHelpers.cpp" 
 "${ENGINE_SRC_DIR}/utils/OpenGLHelpers.cpp" 
 "${ENGINE_SRC_DIR}/utils/ThreadSafeNumberPool.cpp"
- 
 "${ENGINE_SRC_DIR}/utils/ThreadSafeSet.cpp" 
+ 
 "${ENGINE_SRC_DIR}/FileWatcher.cpp" 
 "${ENGINE_SRC_DIR}/Logging.cpp" 
 "${ENGINE_SRC_DIR}/Shader.cpp" 
@@ -206,6 +207,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
  
 "${ENGINE_SRC_DIR}/buffer/consumers/OverlayBufferConsumer3D.cpp" 
 "${ENGINE_SRC_DIR}/buffer/consumers/UIBufferConsumer.cpp" 
+"${ENGINE_SRC_DIR}/buffer/consumers/MeshDataBufferConsumerShared.cpp"
 "${ENGINE_SRC_DIR}/systems/Animation.cpp" 
 "${ENGINE_SRC_DIR}/systems/AsyncTaskManager.cpp" 
 "${ENGINE_SRC_DIR}/systems/Camera.cpp" 
@@ -215,11 +217,17 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "${ENGINE_SRC_DIR}/systems/ShaderManager.cpp"
 "${ENGINE_SRC_DIR}/systems/SystemsManager.cpp" 
 "${ENGINE_SRC_DIR}/systems/TextureManager.cpp" 
+"${ENGINE_SRC_DIR}/systems/DrawCallManager.cpp"
 "${ENGINE_SRC_DIR}/systems/controller/MouseKeyboardEventProcessor.cpp" 
 "${ENGINE_SRC_DIR}/systems/physics/BulletDebugDrawer.cpp" 
 "${ENGINE_SRC_DIR}/systems/gui/ScreenOverlayManager.cpp"
 "${ENGINE_SRC_DIR}/systems/world_gen/TerrainManager.cpp"
-${source})
+"${ENGINE_SRC_DIR}/structures/MeshDataUI.cpp"
+"${ENGINE_SRC_DIR}/structures/MeshDataTerrain.cpp"
+"${ENGINE_SRC_DIR}/structures/MeshDataInstance.cpp"
+"${ENGINE_SRC_DIR}/structures/MeshDataTypes.h"
+${source}
+)
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})
 

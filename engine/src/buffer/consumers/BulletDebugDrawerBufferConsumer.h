@@ -7,9 +7,10 @@
 #include "BufferStorage.h"
 #include "BufferConsumer.h"
 #include "BufferSettings.h"
+#include "MeshDataTypes.h"
 
 // transform type mat4 not used. change to vec2 when needed.
-class BulletDebugDrawerBufferConsumer : public BufferConsumer<unsigned int, MeshDataOutline, vec2, VertexOutline> {
+class BulletDebugDrawerBufferConsumer : public MeshDataOutlineBufferConsumerT {
   unsigned long vertices_size = 1000;
   unsigned long indices_size = 1000;
   bool is_data_inited = false;
@@ -29,7 +30,4 @@ public:
       vector<vec3>& colors);
   void Init();
   void Reset();
-  void ReleaseSlots(MeshDataBase* mesh) {
-    vertex_attributes->ReleaseStorage<VertexOutline>(mesh->slots);
-  }
 };

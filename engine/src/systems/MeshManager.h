@@ -4,13 +4,18 @@
 #include "Structures.h"
 #include "Constants.h"
 #include "ThreadSafeNumberPool.h"
-#include "MeshDataStruct.h"
 #include "AnimationStruct.h"
 #include "PhysicsStruct.h"
 #include "LightStruct.h"
 #include "Interfaces.h"
 #include "Texture.h"
 #include "AssimpHelper.h"
+#include "MeshDataStruct.h"
+#include "MeshDataInstance.h"
+#include "MeshDataOverlay3D.h"
+#include "MeshDataOutline.h"
+#include "MeshDataUI.h"
+#include "DrawCallManager.h"
 
 #define AI_MAX_BONE_WEIGHTS 4
 using namespace std;
@@ -30,21 +35,22 @@ vec4 FromAi(aiColor3D& aivec);
 Light* FromAi(aiLight* light);
 
 class MeshManager : public SausageSystem {
+  DrawCallManager* draw_call_manager;
+
   ThreadSafeNumberPool* mesh_id_pool;
   ThreadSafeNumberPool* bone_id_pool;
   unordered_map<unsigned long, MeshDataBase*> all_meshes;
-  // base_mesh_id -> instance_id -> mesh
-  unordered_map<unsigned long,
-  unordered_map<unsigned long, vector<MeshDataInstance*>>> instances_by_base_mesh_id;
   vector<Armature*> all_armatures;
   vector<Light*> all_lights;
 public:
-  MeshManager();
+  MeshManager(DrawCallManager* draw_call_manager) : draw_call_manager{ draw_call_manager } {
+    mesh_id_pool = new ThreadSafeNumberPool(MAX_BASE_MESHES);
+    bone_id_pool = new ThreadSafeNumberPool(MAX_BONES);
+  };
   ~MeshManager();
 
 
   void DeleteMeshData(MeshDataBase* mesh);
-  void DeleteMeshDataInstance(MeshDataInstance* mesh);
 
   void Reset();
 
@@ -63,13 +69,30 @@ public:
   MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr);
   MeshDataOutline* CreateMeshDataOutline();
 
+
+  template <typename MESH_TYPE>
+  DrawCall* GetDrawCall() {
+    return nullptr;
+  };
+  template <>
+  DrawCall* GetDrawCall<MeshData>() {
+    return draw_call_manager->mesh_dc;
+  };
+  template <>
+  DrawCall* GetDrawCall<MeshDataStatic>() {
+    return draw_call_manager->mesh_static_dc;
+  };
+  template <>
+  DrawCall* GetDrawCall<MeshDataTerrain>() {
+    return draw_call_manager->terrain_dc;
+  };
   template<typename MESH_TYPE>
   MESH_TYPE* CreateMeshData() {
     auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber());
+    mesh->dc = GetDrawCall<MESH_TYPE>();
     all_meshes[mesh->id] = mesh;
     return mesh;
   }
-
   template<typename VERTEX_TYPE, typename MESH_TYPE>
   MESH_TYPE* CreateMeshData(shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
     auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber(), load_data.get(), load_data->name.c_str());
@@ -77,15 +100,25 @@ public:
     return mesh;
   };
 
-  MeshDataInstance* CreateInstancedMesh(MeshDataBase * base_mesh, const unsigned long instance_id);
-  MeshDataInstance* CreateInstancedMesh(MeshDataBase* base_mesh, const unsigned long instance_id, mat4& transform);
+  template <typename MESH_TYPE, typename UNIFORM_DATA_TYPE>
+  MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>* CreateInstancedMesh(MESH_TYPE* base_mesh) {
+    auto transform = mat4(1);
+    return CreateInstancedMesh<MESH_TYPE, UNIFORM_DATA_TYPE>(base_mesh, transform);
+  };
+  template <typename MESH_TYPE, typename UNIFORM_DATA_TYPE>
+  MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>* CreateInstancedMesh(MESH_TYPE* base_mesh,
+    mat4& transform) {
+    // instance_id = 0, because it will be set after frustum cull
+    auto* mesh = new MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>(transform, base_mesh);
+    return mesh;
+  };
 
   template<typename VERTEX_TYPE>
   shared_ptr<MeshLoadData<VERTEX_TYPE>> CreateLoadDataFromVertices(vector<VERTEX_TYPE>& vertices,
                                       vector<unsigned int>& indices,
                                       Armature* armature = nullptr) {
     auto mld_ptr =
-      new MeshLoadData<VERTEX_TYPE>{ armature, (PhysicsData*)nullptr, string(), mat4(1), vertices, indices };
+      new MeshLoadData<VERTEX_TYPE>{ armature, (PhysicsData*)nullptr,(BoundingBox*)nullptr, string(), mat4(1), vertices, indices };
     return shared_ptr<MeshLoadData<VERTEX_TYPE>>(mld_ptr);
   };
 

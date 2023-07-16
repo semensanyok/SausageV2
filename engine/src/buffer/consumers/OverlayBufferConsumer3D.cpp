@@ -1,4 +1,5 @@
 #include "OverlayBufferConsumer3D.h"
+#include "MeshManager.h"
 
 void OverlayBufferConsumer3D::BufferMeshData(
   MeshDataOverlay3D* mesh,

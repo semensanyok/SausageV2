@@ -5,11 +5,8 @@
 #include "Octree.h"
 
 class Scene {
-  Octree* scene_tree;
 public:
   Scene(vec3 world_extents, unsigned int octree_num_levels) {
-    auto center = vec3(0, 0, 0);
-    scene_tree = new Octree(new BoundingBox(center, world_extents, false), octree_num_levels);
   }
   virtual void Init() {};
   virtual void PrepareFrameDraws() {};
@@ -18,11 +15,11 @@ public:
     //vector<unsigned int> out_ind;
     //vector<vec3> out_colors;
     {
-      SystemsManager::GetInstance()->CreateDebugDrawer();
-      auto drawer = SystemsManager::GetInstance()->bullet_debug_drawer;
+      auto sm = SystemsManager::GetInstance();
+      sm->CreateDebugDrawer();
       AddVertices(
-        drawer,
-        scene_tree
+        sm->bullet_debug_drawer,
+        sm->spatial_manager->scene_tree
         //,
         //out_vert,
         //out_ind,

@@ -1,17 +1,13 @@
 #pragma once
 
 #include "sausage.h"
-#include "ShaderStruct.h"
-#include "Arena.h"
 #include "GPUStructs.h"
-#include "MeshDataStruct.h"
-#include "ThreadSafeNumberPool.h"
 #include "Macros.h"
-#include "GLBuffers.h"
 #include "Vertex.h"
-#include "GLCommandBuffers.h"
+#include "MeshDataStruct.h"
 
 using namespace std;
+class Shader;
 
 /**
  * make sure to group VertexType in contigious series of draws
@@ -30,14 +26,10 @@ enum class DrawOrder {
   OUTLINE
 };
 
-// TODO: MESH DRAW HAS BOTH - STATIC AND ANIMATED (VertexType::MESH and VertexType::STATIC)
-//       HANDLE IT SOMEHOW
 inline VertexType GetVertexTypeByDrawOrder(DrawOrder draw_order) {
   switch (draw_order)
   {
   case DrawOrder::MESH:
-    // TODO: MESH DRAW HAS BOTH - STATIC AND ANIMATED (VertexType::MESH and VertexType::STATIC)
-//       HANDLE IT SOMEHOW
     return VertexType::MESH;
     break;
   case DrawOrder::OVERLAY_3D:
@@ -58,14 +50,19 @@ inline VertexType GetVertexTypeByDrawOrder(DrawOrder draw_order) {
 };
 
 // MeshDataClass is used to determine which buffer to use to allocate instance_id for shader
-// (referenced from base_instance_offset[buffer_id] -> instance_id to fetch textures/transforms)
+// (referenced from uniform_offset[buffer_id] -> instance_id to fetch textures/transforms)
 // commented out because now it is used only in template function
 //template<typename MeshDataClass>
 class DrawCall {
   friend class DrawCallManager;
+  friend class SpatialManager;
+  friend class Renderer;
 public:
-  CommandBuffer* command_buffer;
   bool is_enabled;
+private:
+  vector<DrawElementsIndirectCommand> commands;
+
+public:
   /**
    * @param is_reserve_command_count_in_buffer
    *            set this flag when expect
@@ -77,12 +74,10 @@ public:
   DrawCall(unsigned int id,
     Shader* shader,
     GLenum mode,
-    CommandBuffer* command_buffer,
     bool is_enabled) :
     id{ id },
     shader{ shader },
     mode{ mode },
-    command_buffer{ command_buffer },
     is_enabled{ is_enabled } {
   }
   const unsigned int id;
@@ -92,21 +87,25 @@ public:
   Shader* shader;
 
   unsigned int GetCommandCount() {
-    return command_buffer->ptr->instances_slots.instances_slots.GetUsed();
-  }
-  unsigned int GetBaseOffset() {
-    return command_buffer->ptr->instances_slots.instances_slots.GetBaseOffset();
+    return commands.size();
   }
 
-private:
-  // allocates slot for single DrawElementsIndirectCommand
-  void Allocate(MeshDataSlots& out_slots) {
-    MemorySlot command_buffer_slot = command_buffer->ptr->instances_slots.Allocate(1);
-    out_slots.buffer_id = command_buffer_slot.offset;
-    assert(out_slots.IsBufferIdAllocated());
+  void AddCommand(MeshDataSlots& mesh_slots) {
+    assert(mesh_slots.num_instances > 0);
+    assert(!mesh_slots.IsBufferIdAllocated());
+    assert(mesh_slots.index_slot.IsSlotAllocated());
+    assert(mesh_slots.vertex_slot.IsSlotAllocated());
+    DrawElementsIndirectCommand command;
+    mesh_slots.buffer_id = commands.size();
+    command.instanceCount = mesh_slots.num_instances;
+    command.count = mesh_slots.index_slot.used;
+    command.firstIndex = mesh_slots.index_slot.offset;
+    command.baseVertex = mesh_slots.vertex_slot.offset;
+    command.baseInstance = mesh_slots.buffer_id;
+
+    commands.push_back(command);
   }
-  void Release(MeshDataSlots& out_slots) {
-    MemorySlot to_release = { out_slots.buffer_id, 1 };
-    command_buffer->ptr->instances_slots.Release(to_release);
+  inline void Reset() {
+    commands.clear();
   }
 };
