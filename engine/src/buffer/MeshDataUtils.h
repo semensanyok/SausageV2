@@ -14,6 +14,15 @@
 
 using namespace std;
 
+template<typename MESH_TYPE, typename VERTEX_TYPE, typename UNIFORM_DATA_TYPE>
+struct SetupInstancedMeshRes {
+  shared_ptr<MeshLoadData<VERTEX_TYPE>> load_data;
+  MESH_TYPE* mesh;
+  vector<MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>*> instances;
+};
+using SetupInstancedMeshResT = SetupInstancedMeshRes<MeshData, Vertex, UniformDataMesh>;
+using SetupInstancedMeshResStaticT = SetupInstancedMeshRes<MeshDataStatic, VertexStatic, UniformDataMeshStatic>;
+
 class MeshDataUtils {
 
   DrawCallManager* draw_call_manager;
@@ -34,13 +43,6 @@ public:
     buffer_manager{ buffer_manager },
     physics_manager{ physics_manager } {};
 
-  template<typename MESH_TYPE, typename VERTEX_TYPE, typename UNIFORM_DATA_TYPE>
-  struct SetupInstancedMeshRes {
-    shared_ptr<MeshLoadData<VERTEX_TYPE>> load_data;
-    MESH_TYPE* mesh;
-    vector<MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>*> instances;
-  };
-
   /**
    * @return mesh data with instance_count
   */
@@ -57,6 +59,12 @@ public:
       buffer_manager->GetMeshDataBufferConsumer<MESH_TYPE, VERTEX_TYPE, UNIFORM_DATA_TYPE>();
 
     hash<MaterialTexNames> tex_hash;
+    unordered_map<size_t, Texture*> tex_by_hash;
+
+    PhysicsData* common_physics_data = new PhysicsData();
+    common_physics_data->mass = 10.0;
+    common_physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
+    common_physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
 
     for (int i = 0; i < mesh_load.size(); i++) {
       auto load_data_sptr = mesh_load[i];
@@ -67,28 +75,31 @@ public:
         + load_data->vertices.size()
         + load_data->indices.size();
 
-      // TEXTURE SETUP
-      Texture* texture = texture_manager->LoadTextureArray(tex_names);
-      if (texture != nullptr) {
-        texture->MakeResident();
-      }
+
 
       if (!base_meshes.contains(key)) {
         base_meshes[key] = { { load_data_sptr } };
-        out_base_meshes_tex[key] = { texture };
+        Texture* texture = texture_manager->LoadTextureArray(tex_names);
+        // TEXTURE SETUP
+        if (texture != nullptr) {
+          texture->MakeResident();
+        }
+        tex_by_hash[key] = texture;
       }
       else {
         base_meshes[key].push_back(load_data_sptr);
       }
     }
     for (auto& mesh_instances : base_meshes) {
-      auto& tex = out_base_meshes_tex[mesh_instances.first];
+      size_t key = mesh_instances.first;
+      auto& tex = tex_by_hash[key];
       auto& instances = mesh_instances.second;
 
       shared_ptr<MeshLoadData<VERTEX_TYPE>>& base_ptr = instances[0];
       auto base = base_ptr.get();
       // BASE MESH SETUP
       MESH_TYPE* mesh = mesh_manager->CreateMeshData<VERTEX_TYPE, MESH_TYPE>(base_ptr);
+      out_base_meshes_tex[mesh->id] = tex;
       res.push_back({ base_ptr, mesh, {} });
       SetupInstancedMeshRes<MESH_TYPE, VERTEX_TYPE, UNIFORM_DATA_TYPE>& mesh_res = res[res.size() - 1];
 
@@ -99,7 +110,7 @@ public:
       buffer->BufferMeshData(mesh, base_ptr);
 
       // INSTANCES SETUP
-      for (int i = 1; i < instances.size(); i++) {
+      for (int i = 0; i < instances.size(); i++) {
         shared_ptr<MeshLoadData<VERTEX_TYPE>>& idata = instances[i];
         // already have set correct instance_count, no need to update (via AddNewCommandToDrawCall<MESH_TYPE>(mesh, dc, instances.size()))
         MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>* mesh_instance = new MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>(idata->transform, mesh,
@@ -109,16 +120,7 @@ public:
         BlendTextures btex = { { 1.0, tex->id }, 1 };
         buffer->BufferMeshDataInstance(mesh_instance, btex);
         // PHYSICS SETUP
-        { 
-          if (base->name != "Terrain") {
-            base->physics_data->mass = 10.0;
-          }
-          else {
-            base->physics_data->mass = 0.0;
-          }
-          base->physics_data->collision_group = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
-          base->physics_data->collides_with_groups = SausageCollisionMasks::MESH_GROUP_0 | SausageCollisionMasks::CLICKABLE_GROUP_0;
-        }
+        mesh_instance->physics_data = common_physics_data;
         mesh_res.instances.push_back(mesh_instance);
       }
     }

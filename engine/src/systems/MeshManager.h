@@ -118,7 +118,7 @@ public:
                                       vector<unsigned int>& indices,
                                       Armature* armature = nullptr) {
     auto mld_ptr =
-      new MeshLoadData<VERTEX_TYPE>{ armature, (PhysicsData*)nullptr,(BoundingBox*)nullptr, string(), mat4(1), vertices, indices };
+      new MeshLoadData<VERTEX_TYPE>{ armature, (BoundingBox*)nullptr, string(), mat4(1), vertices, indices };
     return shared_ptr<MeshLoadData<VERTEX_TYPE>>(mld_ptr);
   };
 

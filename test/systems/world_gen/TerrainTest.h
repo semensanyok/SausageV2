@@ -4,7 +4,7 @@
 #include <LightStruct.h>
 #include <BufferManager.h>
 #include <BoundingVolume.h>
-
+#include <MeshDataUtils.h>
 
 class TerrainTest : public Scene {
   vector<MeshData*> all_meshes;
@@ -25,12 +25,15 @@ public:
   void Init() {
     sm = SystemsManager::GetInstance();
     auto tm = sm->terrain_manager;
-    auto size = 256;  
+    auto size = 256;
     // center to world origin
     tm->CreateTerrain(size, size, vec3(0, 0, 0), 1);
 
     unordered_map<size_t, Texture*> base_meshes_tex;
-    _LoadMeshes(scene_path, base_meshes_tex);
+    vector<shared_ptr<MeshLoadData<Vertex>>> mesh_load_data_animated;
+    vector<shared_ptr<MeshLoadData<VertexStatic>>> mesh_load_data_static;
+
+    _LoadMeshes(scene_path, mesh_load_data_animated, mesh_load_data_static, base_meshes_tex);
     // multiply instances
     auto mesh_static_buffer = sm->buffer_manager->GetMeshDataBufferConsumer<MeshDataStatic, VertexStatic, UniformDataMeshStatic>();
     auto mesh = all_static_meshes_instances[0];
@@ -44,6 +47,7 @@ public:
         t1,
         mesh->base_mesh,
         new BoundingBox(t1, mesh->bv->min_AABB, mesh->bv->max_AABB));
+      inst->physics_data = mesh->physics_data;
       inst->AllocateUniformOffset();
       inst->IncNumInstancesSetInstanceId();
       // TODO: texture slot to instance or separate class
@@ -71,8 +75,8 @@ public:
       base_meshes_tex);
   }
   void _LoadMeshes(string& path,
-    vector<shared_ptr<MeshLoadData<Vertex>>> mesh_load_data_animated,
-    vector<shared_ptr<MeshLoadData<VertexStatic>>> mesh_load_data_static,
+    vector<shared_ptr<MeshLoadData<Vertex>>>& mesh_load_data_animated,
+    vector<shared_ptr<MeshLoadData<VertexStatic>>>& mesh_load_data_static,
     unordered_map<size_t, Texture*>& base_meshes_tex
     ) {
 
@@ -119,7 +123,7 @@ public:
     std::vector<MaterialTexNames>& tex_names_list,
     unordered_map<size_t, Texture*>& base_meshes_tex)
   {
-    auto res = sm->mesh_data_utils->SetupInstancedMesh<MeshDataStatic, VertexStatic, BlendTextures, UniformDataMeshStatic>(
+    vector<SetupInstancedMeshResStaticT> res = sm->mesh_data_utils->SetupInstancedMesh<MeshDataStatic, VertexStatic, BlendTextures, UniformDataMeshStatic>(
       sm->draw_call_manager->mesh_static_dc,
       mesh_load_data_animated,
       tex_names_list,

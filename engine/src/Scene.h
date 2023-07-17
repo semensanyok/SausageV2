@@ -5,8 +5,12 @@
 #include "Octree.h"
 
 class Scene {
+  vec3 world_extents;
+  unsigned int octree_num_levels;
 public:
   Scene(vec3 world_extents, unsigned int octree_num_levels) {
+    auto sm = SystemsManager::GetInstance();
+    sm->spatial_manager->Init(world_extents, octree_num_levels);
   }
   virtual void Init() {};
   virtual void PrepareFrameDraws() {};

@@ -21,7 +21,6 @@ class   DrawCall;
 
 struct MeshLoadDataBase {
   Armature* armature = nullptr;
-  PhysicsData* physics_data = nullptr;
   BoundingBox* bv = nullptr;
   string name;
   mat4 transform;
