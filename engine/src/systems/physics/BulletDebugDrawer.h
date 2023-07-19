@@ -84,12 +84,12 @@ public:
   /////////////////////////////////////////////////////////////////////////////////////////////
 
   void Activate() {
-    draw_call_manager->physics_debug_dc->is_enabled = true;
+    draw_call_manager->outline_dc->is_enabled = true;
   }
   void Deactivate() {
     clearPersist();
     clear();
-    draw_call_manager->physics_debug_dc->is_enabled = false;
+    draw_call_manager->outline_dc->is_enabled = false;
   }
 private:
   void clearPersist() {

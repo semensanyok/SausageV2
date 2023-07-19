@@ -33,7 +33,7 @@
 				},
 				{
 					"name": "SAUSAGE_DEBUG_DRAW_PHYSICS",
-					"value": "False",
+					"value": "True",
 					"type": "BOOL"
 				},
 				{

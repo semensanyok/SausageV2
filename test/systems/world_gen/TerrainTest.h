@@ -20,8 +20,8 @@ class TerrainTest : public Scene {
 
   SystemsManager* sm;
 public:
-  TerrainTest(vec3 world_extents, unsigned int octree_num_levels) :
-    Scene(world_extents, octree_num_levels), sm { SystemsManager::GetInstance() } {}
+  TerrainTest() :
+    Scene(vec3(100, 100, 100), 2), sm{SystemsManager::GetInstance()} {}
   void Init() {
     sm = SystemsManager::GetInstance();
     auto tm = sm->terrain_manager;
@@ -58,8 +58,8 @@ public:
     for (auto mesh : all_static_meshes_instances)
     {
       sm->mesh_data_utils->AddRigidBody<MeshDataStatic, VertexStatic>(mesh);
+      sm->spatial_manager->InsertToOctree(mesh);
     }
-
     auto pos = vec3(all_static_meshes_instances[0]->ReadTransform()[3] + vec4(0, 15, 15, 0));
     sm->camera->SetPosition(pos);
     DebugDrawOctree();

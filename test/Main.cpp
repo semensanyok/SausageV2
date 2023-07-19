@@ -25,7 +25,7 @@ int main()
 
   auto extents = vec3(10, 10, 10);
   SausageGameLoop::Init();
-  SausageGameLoop::run(new TerrainTest(extents, 2));
+  SausageGameLoop::run(new TerrainTest());
 
   //GLHelpersTest().run();
   return 0;

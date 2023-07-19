@@ -59,8 +59,9 @@ class DrawCall {
   friend class Renderer;
 public:
   bool is_enabled;
+  mutex mtx;
 private:
-  vector<DrawElementsIndirectCommand> commands;
+  vector<DrawElementsIndirectCommand> commands = {};
 
 public:
   /**
@@ -82,7 +83,6 @@ public:
   }
   const unsigned int id;
   // caller must aquire it on write
-  mutex mtx;
   GLenum mode;  // GL_TRIANGLES GL_LINES
   Shader* shader;
 
@@ -91,6 +91,8 @@ public:
   }
 
   void AddCommand(MeshDataSlots& mesh_slots) {
+    lock_guard l(mtx);
+
     assert(mesh_slots.num_instances > 0);
     assert(!mesh_slots.IsBufferIdAllocated());
     assert(mesh_slots.index_slot.IsSlotAllocated());
@@ -106,6 +108,8 @@ public:
     commands.push_back(command);
   }
   inline void Reset() {
+    lock_guard l(mtx);
+
     commands.clear();
   }
 };

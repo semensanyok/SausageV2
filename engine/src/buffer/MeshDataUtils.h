@@ -153,9 +153,8 @@ public:
     // TODO: support second callback for MeshDataCickable
     //,SausageUserPointer* custom_up = nullptr
   ) {
-    auto base_mesh_physics_data = mesh->physics_data;
     physics_manager->AddBoxRigidBody(
-      base_mesh_physics_data,
+      mesh->physics_data,
       mesh->bv,
       mesh,
       mesh->name.c_str()

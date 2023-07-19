@@ -180,11 +180,6 @@ MeshDataUI* MeshManager::CreateMeshDataFontUI(vec2 transform, Texture* texture) 
   all_meshes[mesh->id] = mesh;
   return mesh;
 }
-MeshDataOutline* MeshManager::CreateMeshDataOutline() {
-  auto mesh = new MeshDataOutline(mesh_id_pool->ObtainNumber());
-  all_meshes[mesh->id] = mesh;
-  return mesh;
-}
 
 MeshManager::~MeshManager() {
   _ClearInstances();

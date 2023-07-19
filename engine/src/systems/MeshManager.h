@@ -67,35 +67,18 @@ public:
   Bone CreateBone(string bone_name, mat4& offset, mat4& trans);
   MeshDataOverlay3D* CreateMeshDataFont3D(const char* text, mat4& transform);
   MeshDataUI* CreateMeshDataFontUI(vec2 transform, Texture* texture = nullptr);
-  MeshDataOutline* CreateMeshDataOutline();
 
-
-  template <typename MESH_TYPE>
-  DrawCall* GetDrawCall() {
-    return nullptr;
-  };
-  template <>
-  DrawCall* GetDrawCall<MeshData>() {
-    return draw_call_manager->mesh_dc;
-  };
-  template <>
-  DrawCall* GetDrawCall<MeshDataStatic>() {
-    return draw_call_manager->mesh_static_dc;
-  };
-  template <>
-  DrawCall* GetDrawCall<MeshDataTerrain>() {
-    return draw_call_manager->terrain_dc;
-  };
   template<typename MESH_TYPE>
   MESH_TYPE* CreateMeshData() {
     auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber());
-    mesh->dc = GetDrawCall<MESH_TYPE>();
+    mesh->dc = draw_call_manager->GetDrawCall<MESH_TYPE>();
     all_meshes[mesh->id] = mesh;
     return mesh;
   }
   template<typename VERTEX_TYPE, typename MESH_TYPE>
   MESH_TYPE* CreateMeshData(shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
     auto mesh = new MESH_TYPE(mesh_id_pool->ObtainNumber(), load_data.get(), load_data->name.c_str());
+    mesh->dc = draw_call_manager->GetDrawCall<MESH_TYPE>();
     all_meshes[mesh->id] = mesh;
     return mesh;
   };

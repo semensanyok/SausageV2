@@ -6,7 +6,7 @@
 using namespace std;
 using namespace glm;
 
-class MeshDataOutline : public MeshDataBase {
+class MeshDataOutline : public MeshDataBase, public SausageUserPointer {
   friend class MeshManager;
 public:
   //vec2 transform;

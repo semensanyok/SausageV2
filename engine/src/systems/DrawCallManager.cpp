@@ -25,7 +25,7 @@ DrawCallManager::DrawCallManager(
     //true
     //);
 
-    physics_debug_dc = CreateDrawCall(
+    outline_dc = CreateDrawCall(
         shader_manager->all_shaders->outline,
         GL_LINES,
         state_manager->phys_debug_draw
@@ -54,7 +54,7 @@ void DrawCallManager::ResetFrameCommands() {
   mesh_dc->Reset();
   mesh_static_dc->Reset();
   terrain_dc->Reset();
-  physics_debug_dc->Reset();
+  outline_dc->Reset();
 }
 
 DrawCall* DrawCallManager::CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled)

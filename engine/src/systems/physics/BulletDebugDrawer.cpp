@@ -13,7 +13,7 @@ void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, con
 }
 void BulletDebugDrawer::drawLine(const vec3& from, const vec3& to, const vec3& color)
 {
-  //lock_guard<mutex> data_lock(spatial_manager->physics_debug_dc->command_buffer->buffer_lock->data_mutex);
+  //lock_guard<mutex> data_lock(spatial_manager->outline_dc->command_buffer->buffer_lock->data_mutex);
 
   long index_from = -1;
   long index_to = -1;
@@ -47,7 +47,7 @@ void BulletDebugDrawer::drawLinePersist(const btVector3& from, const btVector3& 
 void BulletDebugDrawer::drawLinePersist(const vec3& from, const vec3& to, const vec3& color,
   uint32_t life_time_ms)
 {
-  //lock_guard<mutex> data_lock(spatial_manager->physics_debug_dc->command_buffer->buffer_lock->data_mutex);
+  //lock_guard<mutex> data_lock(spatial_manager->outline_dc->command_buffer->buffer_lock->data_mutex);
 
   persist_draws.push_back({ life_time_ms == UINT32_MAX ?
     life_time_ms : state_manager->milliseconds_since_start + life_time_ms, {from, to}, color });

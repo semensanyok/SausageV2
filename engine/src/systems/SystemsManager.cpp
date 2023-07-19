@@ -122,7 +122,7 @@ void SystemsManager::AddDraws()
   renderer->AddDraw(draw_call_manager->mesh_dc, DrawOrder::MESH);
   renderer->AddDraw(draw_call_manager->terrain_dc, DrawOrder::TERRAIN);
   renderer->AddDraw(draw_call_manager->mesh_static_dc, DrawOrder::MESH_STATIC);
-  renderer->AddDraw(draw_call_manager->physics_debug_dc, DrawOrder::OUTLINE);
+  renderer->AddDraw(draw_call_manager->outline_dc, DrawOrder::OUTLINE);
 }
 
 void SystemsManager::CreateDebugDrawer() {

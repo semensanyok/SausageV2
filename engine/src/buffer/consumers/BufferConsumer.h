@@ -69,6 +69,10 @@ public:
   void ReleaseUniformOffset(MeshDataSlots& out_slots) {
     buffer->ReleaseUniformOffset<MESH_TYPE>(out_slots);
   }
+  MESH_TYPE* CreateMeshData() {
+    return mesh_manager->CreateMeshData<MESH_TYPE>();
+  }
+
   void Init()
   {
     buffer->AddUsedBuffers(used_buffers);
