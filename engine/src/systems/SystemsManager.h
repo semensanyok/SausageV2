@@ -51,6 +51,7 @@ public:
   DrawCallManager* draw_call_manager = nullptr;
   MeshDataUtils* mesh_data_utils = nullptr;
   SpatialManager* spatial_manager = nullptr;
+  CommandBuffersManager* command_buffers_manager = nullptr;
 
   static SystemsManager* GetInstance() {
     static SystemsManager* instance = new SystemsManager();

@@ -11,8 +11,8 @@
 
 // transform type mat4 not used. change to vec2 when needed.
 class BulletDebugDrawerBufferConsumer : public MeshDataOutlineBufferConsumerT {
-  unsigned long vertices_size = 1000;
-  unsigned long indices_size = 1000;
+  unsigned long vertices_size = 1000000;
+  unsigned long indices_size = 1000000;
   bool is_data_inited = false;
 public:
   MeshDataOutline* mesh = nullptr;

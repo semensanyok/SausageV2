@@ -12,23 +12,60 @@ void Camera::_UpdateMatrices() {
       inverse(view_matrix) * inverse(projection_matrix);
 }
 void Camera::_UpdateFrustum() {
-  const float half_back_width = far_plane * tanf(this->FOV_rad * .5f);
-  const float half_back_height = half_back_width * aspect;
+  const float half_far_width = far_plane * tanf(this->FOV_rad * .5f);
+  const float half_far_height = half_far_width * aspect;
   const glm::vec3 far_center = far_plane * this->direction;
 
+  const float half_near_width = near_plane * tanf(this->FOV_rad * .5f);
+  const float half_near_height = half_near_width * aspect;
+  const glm::vec3 near_center = near_plane * this->direction;
+
   auto cam_dist_from_origin = glm::length(this->pos);
-  this->frustum.near = { glm::length(this->pos + near_plane * this->direction),
+
+  this->frustum->near = { glm::length(this->pos + near_plane * this->direction),
     this->direction };
-  this->frustum.far = { glm::length(this->pos + far_center),
+  this->frustum->far = { glm::length(this->pos + far_center),
     -this->direction };
-  this->frustum.right = { cam_dist_from_origin,
-      normalize(glm::cross(far_center - this->right * half_back_height, this->up)) };
-  this->frustum.left = { cam_dist_from_origin,
-      normalize(glm::cross(this->up,far_center + this->right * half_back_height)) };
-  this->frustum.up = { cam_dist_from_origin,
-      normalize(glm::cross(this->right, far_center - this->up * half_back_width)) };
-  this->frustum.down = { cam_dist_from_origin,
-      normalize(glm::cross(far_center + this->up * half_back_width, this->right)) };
+
+  {
+    vec3 pl1 = near_center, pl2 = near_center, pl3 = far_center;
+    pl1 += pl1 - this->right * half_near_width;
+    pl2 += pl1 + this->up * half_near_height;
+    pl3 += pl3 - this->right * half_far_width;
+    vec3 v1 = pl1 - pl2, v2 = pl1 - pl3;
+    this->frustum->left = { cam_dist_from_origin,
+      normalize(cross(v1, v2)) };
+  }
+
+  {
+    vec3 pl1 = near_center, pl2 = near_center, pl3 = far_center;
+    pl1 += pl1 + this->right * half_near_width;
+    pl2 += pl1 + this->up * half_near_height;
+    pl3 += pl3 + this->right * half_far_width;
+    vec3 v1 = pl1 - pl2, v2 = pl1 - pl3;
+    this->frustum->right = { cam_dist_from_origin,
+      normalize(cross(v1, v2)) };
+  }
+
+  {
+    vec3 pl1 = near_center, pl2 = near_center, pl3 = far_center;
+    pl1 += pl1 + this->up * half_near_height;
+    pl2 += pl1 + this->right * half_near_width;
+    pl3 += pl3 + this->up * half_far_height;
+    vec3 v1 = pl1 - pl2, v2 = pl1 - pl3;
+    this->frustum->up = { cam_dist_from_origin,
+      normalize(cross(v2, v1)) };
+  }
+
+  {
+    vec3 pl1 = near_center, pl2 = near_center, pl3 = far_center;
+    pl1 += pl1 - this->up * half_near_height;
+    pl2 += pl1 + this->right * half_near_width;
+    pl3 += pl3 - this->up * half_far_height;
+    vec3 v1 = pl1 - pl2, v2 = pl1 - pl3;
+    this->frustum->down = { cam_dist_from_origin,
+      normalize(cross(v1, v2)) };
+  }
 }
 void Camera::UpdateCamera() {
   vec3 target = vec3(sin(radians(yaw_angle)) * cos(radians(pitch_angle)),

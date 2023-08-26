@@ -49,7 +49,7 @@ private:
 
   float aspect;
 public:
-  Frustrum frustum;
+  Frustrum* frustum;
   vec3 pos;
   vec3 direction;
   vec3 right;
@@ -81,6 +81,7 @@ public:
     this->aspect = (float)this->width / (float)this->height;
     this->projection_matrix = perspective(this->FOV_rad, this->aspect, this->near_plane, this->far_plane);
     this->projection_matrix_ortho = ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
+    this->frustum = new Frustrum();
     UpdateCamera();
   };
   ~Camera() {};

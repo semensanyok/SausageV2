@@ -5,6 +5,7 @@
 #include <BufferManager.h>
 #include <BoundingVolume.h>
 #include <MeshDataUtils.h>
+#include <SceneManager.h>
 
 class TerrainTest : public Scene {
   vector<MeshData*> all_meshes;
@@ -21,8 +22,9 @@ class TerrainTest : public Scene {
   SystemsManager* sm;
 public:
   TerrainTest() :
-    Scene(vec3(100, 100, 100), 2), sm{SystemsManager::GetInstance()} {}
+    Scene(vec3(1000, 1000, 1000), 2), sm{SystemsManager::GetInstance()} {}
   void Init() {
+    SceneManager::GetInstance()->AddScene(this);
     sm = SystemsManager::GetInstance();
     auto tm = sm->terrain_manager;
     auto size = 256;
@@ -50,7 +52,6 @@ public:
       inst->physics_data = mesh->physics_data;
       inst->AllocateUniformOffset();
       inst->IncNumInstancesSetInstanceId();
-      // TODO: texture slot to instance or separate class
       mesh_static_buffer->BufferMeshDataInstance(inst, tex);
       all_static_meshes_instances.push_back(inst);
     }
@@ -63,8 +64,11 @@ public:
     auto pos = vec3(all_static_meshes_instances[0]->ReadTransform()[3] + vec4(0, 15, 15, 0));
     sm->camera->SetPosition(pos);
     DebugDrawOctree();
+    DebugDrawFrustum();
   };
+
   void PrepareDraws() {
+    
   };
 
   void _LoadMeshes(string& path,
@@ -128,7 +132,7 @@ public:
       mesh_load_data_animated,
       tex_names_list,
       base_meshes_tex);
-    for (auto r : res) {
+    for (auto& r : res) {
       all_static_meshes.push_back(r.mesh);
       for (auto i : r.instances) {
         all_static_meshes_instances.push_back(i);

@@ -1,22 +1,10 @@
 #pragma once
 
-#include "sausage.h"
-#include "Macros.h"
-#include "Settings.h"
-#include "Arena.h"
-#include "ThreadSafeNumberPool.h"
-#include "OpenGLHelpers.h"
-#include "Logging.h"
-#include "GPUUniformsStruct.h"
 #include "AnimationStruct.h"
 #include "LightStruct.h"
 #include "GLBuffers.h"
-#include "TextureStruct.h"
 #include "Texture.h"
-#include "MeshDataStruct.h"
 #include "InstanceSlot.h"
-#include "OverlayStruct.h"
-#include "Vertex.h"
 #include "GPUSynchronizer.h"
 
 /**

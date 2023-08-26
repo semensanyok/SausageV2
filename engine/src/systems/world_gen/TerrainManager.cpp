@@ -39,6 +39,7 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
   blend_tex.textures[1] = { 0.5, tex2->id };
 
   buffer->AllocateUniformOffset(chunk->mesh);
+
   SetTilesData(uniform_id, size_x, size_y, uvs, chunk, blend_tex);
   buffer->BufferMeshData(chunk->mesh->base_mesh, vertices, indices, uvs, normals, uniform_id);
 
@@ -136,6 +137,7 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
   chunk->mesh = new MeshDataInstanceTerrainT(t,
     mesh_manager->CreateMeshData<MeshDataTerrain>(),
     new BoundingBox(t, min_AABB, max_AABB));
+  //chunk->mesh->IncNumInstancesSetInstanceId();
   fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, frequency, seed);
   transform(chunk->heightmap.begin(), chunk->heightmap.end(), chunk->heightmap.begin(),
     [&noise_scale](float i) {return i * noise_scale;});

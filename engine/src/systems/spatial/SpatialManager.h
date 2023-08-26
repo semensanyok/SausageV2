@@ -35,7 +35,6 @@ public:
 
     // transform mustf be buffered after buffer_id and instance_id was set per instance
     vector<InstanceSlotUpdate*> isntance_slot_updates;
-    vector<MeshDataInstanceT*> out_inside_frustum_mesh_static;
     vector<Transform<mat4>*> transform_updates;
 
     scene_tree->FrustrumCull(frustum, camera_pos, out_inside_frustum);
@@ -77,7 +76,6 @@ public:
       upd->UnsetFrameOffsets();
     }
 
-    dc_manager->ResetFrameCommands();
   }
 
   //template<typename MESH_TYPE>
@@ -92,9 +90,6 @@ public:
     if (!scene_tree->Insert(mesh)) {
       LOG(format("Failed to scene_tree->Insert(mesh) for %s", mesh->name));
     }
-  }
-
-  void PreDraw() {
   }
 
   void PostDraw() {

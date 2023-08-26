@@ -76,6 +76,8 @@ public:
   const unsigned long id;
   string name;
   DrawCall* dc;
+
+  void FinalizeCommandWithBuffer();
 private:
   MeshDataBase(unsigned long id, string name)
     : slots{ MeshDataSlots() }, id{ id }, name{ name.empty() ? to_string(id) : name}

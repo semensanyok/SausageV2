@@ -98,9 +98,10 @@ public:
     if (node->bv->IsCulledByDistance(camera_pos)) {
       return;
     }
-    if (node->bv->IsCulled(frustum)) {
-      return;
-    }
+    // TODO: fix culling
+    //if (node->bv->IsCulled(frustum)) {
+    //  return;
+    //}
     // TODO: maybe narrower phase, frustum per object.
     out_inside_frustum.insert(out_inside_frustum.end(),
       objects.begin(), objects.end());

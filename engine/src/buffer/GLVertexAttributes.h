@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sausage.h"
-#include "GPUStructs.h"
 #include "Vertex.h"
 #include "GLBuffersCommon.h"
 #include "GPUSynchronizer.h"

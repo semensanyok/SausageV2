@@ -1,21 +1,29 @@
 #include "SystemsManager.h"
 #include "Macros.h"
+#include "Scene.h"
 
 void SystemsManager::InitSystems() {
   main_thread_id = this_thread::get_id();
+
   file_watcher = new FileWatcher();
   camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
+  // NOTE: context must be initialized before any GL command (glGenBuffers, etc.)
+  //       otherwise generates mysterious "access violation"
   renderer_context_manager = new RendererContextManager();
   renderer_context_manager->InitContext();
+
+  command_buffers_manager = CommandBuffersManager::GetInstance();
+  command_buffers_manager->InitBuffers();
+
   shader_manager = new ShaderManager(file_watcher, renderer, camera);
   shader_manager->SetupShaders();
   state_manager = new StateManager();
-  draw_call_manager = new DrawCallManager(shader_manager, state_manager);
+  draw_call_manager = new DrawCallManager(shader_manager, state_manager, command_buffers_manager);
   mesh_manager = new MeshManager(draw_call_manager);
   buffer_manager = new BufferManager(mesh_manager, texture_manager);
   buffer_manager->Init();
   spatial_manager = new SpatialManager(draw_call_manager, buffer_manager);
-  renderer = new Renderer(renderer_context_manager, buffer_manager, spatial_manager);
+  renderer = new Renderer(renderer_context_manager, buffer_manager, spatial_manager, draw_call_manager, command_buffers_manager);
   samplers = new Samplers();
   samplers->Init();
   texture_manager = new TextureManager(samplers);

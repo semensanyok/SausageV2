@@ -5,6 +5,9 @@
 #include "Logging.h"
 #include "OverlayStruct.h"
 #include "MeshDataStruct.h"
+#include "MeshDataTerrain.h"
+#include "MeshDataOutline.h"
+
 
 using namespace std;
 
@@ -12,6 +15,8 @@ class StateManager;
 class ShaderManager;
 class Shader;
 class DrawCall;
+class CommandBuffer;
+class CommandBuffersManager;
 
 class DrawCallManager {
 public:
@@ -31,7 +36,8 @@ public:
 
   DrawCallManager(
     ShaderManager* shader_manager,
-    StateManager* state_manager
+    StateManager* state_manager,
+    CommandBuffersManager* cbm
   );
 
   void ResetFrameCommands();
@@ -58,5 +64,5 @@ public:
     return outline_dc;
   };
 private:
-  DrawCall* CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled);
+  DrawCall* CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled, CommandBuffer* command_buffer);
 };

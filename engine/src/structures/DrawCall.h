@@ -5,6 +5,7 @@
 #include "Macros.h"
 #include "Vertex.h"
 #include "MeshDataStruct.h"
+#include "GLCommandBuffers.h"
 
 using namespace std;
 class Shader;
@@ -58,10 +59,12 @@ class DrawCall {
   friend class SpatialManager;
   friend class Renderer;
 public:
+  bool is_dirty = false;
   bool is_enabled;
   mutex mtx;
+  CommandBuffer* command_buffer;
 private:
-  vector<DrawElementsIndirectCommand> commands = {};
+  vector<DrawElementsIndirectCommand> commands;
 
 public:
   /**
@@ -75,11 +78,13 @@ public:
   DrawCall(unsigned int id,
     Shader* shader,
     GLenum mode,
+    CommandBuffer* command_buffer,
     bool is_enabled) :
     id{ id },
     shader{ shader },
     mode{ mode },
-    is_enabled{ is_enabled } {
+    is_enabled{ is_enabled },
+    command_buffer{ command_buffer } {
   }
   const unsigned int id;
   // caller must aquire it on write
@@ -94,7 +99,7 @@ public:
     lock_guard l(mtx);
 
     assert(mesh_slots.num_instances > 0);
-    assert(!mesh_slots.IsBufferIdAllocated());
+    //assert(!mesh_slots.IsBufferIdAllocated());
     assert(mesh_slots.index_slot.IsSlotAllocated());
     assert(mesh_slots.vertex_slot.IsSlotAllocated());
     DrawElementsIndirectCommand command;
@@ -106,10 +111,26 @@ public:
     command.baseInstance = mesh_slots.buffer_id;
 
     commands.push_back(command);
+    is_dirty = true;
+  }
+
+  void PreDraw() {
+    if (is_dirty) {
+      BufferFrameCommands();
+    }
+  }
+  void PostDraw() {
+    Reset();
+  }
+private:
+  inline void BufferFrameCommands() {
+    if (is_dirty) {
+      // TODO: instance count 101 ????
+      CommandBuffersManager::GetInstance()->BufferCommands(command_buffer, commands, 0);
+      is_dirty = false;
+    }
   }
   inline void Reset() {
-    lock_guard l(mtx);
-
     commands.clear();
   }
 };

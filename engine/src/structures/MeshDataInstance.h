@@ -47,24 +47,27 @@ public:
 
   MESH_TYPE* base_mesh;
 
-  unsigned int GetUniformOffset() override {
+  inline unsigned int GetUniformOffset() override {
     return this->uniform_offset;
   }
 
-  unsigned int GetInstanceOffset() override {
+  inline unsigned int GetInstanceOffset() override {
     return this->base_mesh->slots.buffer_id + instance_id;
   }
 
-  bool IsUniformOffsetAllocated() override {
+  inline bool IsUniformOffsetAllocated() override {
     return this->uniform_offset > -1;
   }
 
-  bool IsInstanceOffsetAllocated() override {
+  inline bool IsInstanceOffsetAllocated() override {
     return base_mesh->slots.IsBufferIdAllocated()
       && instance_id > -1;
   }
   
   void IncNumInstancesSetInstanceId() override {
+    if (IsInstanceOffsetAllocated()) {
+      return;
+    }
     instance_id = this->base_mesh->slots.IncNumInstancesGetInstanceId();
   }
   void UnsetFrameOffsets() override {
@@ -72,13 +75,13 @@ public:
     instance_id = -1;
   }
 
-  /**
-  * call once per frame for base mesh
-  */
   void FinalizeCommandWithBuffer() {
-    DrawCall* dc = this->base_mesh->dc;
-    dc->AddCommand(this->base_mesh->slots);
-    BufferStorage::GetInstance()->BufferUniformOffset<MESH_TYPE>(this);
+    if (uniform_offset > 0) {
+      // base_mesh responsible for adding draw command once per frame, skipping subsequent calls. ugly.
+      base_mesh->FinalizeCommandWithBuffer();
+      DrawCall* dc = this->base_mesh->dc;
+      BufferStorage::GetInstance()->BufferUniformOffset<MESH_TYPE>(this);
+    }
   }
 
   /**

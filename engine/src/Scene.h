@@ -3,6 +3,8 @@
 #include "sausage.h"
 #include "BoundingVolume.h"
 #include "Octree.h"
+#include "SystemsManager.h"
+
 
 class Scene {
   vec3 world_extents;
@@ -13,7 +15,10 @@ public:
     sm->spatial_manager->Init(world_extents, octree_num_levels);
   }
   virtual void Init() {};
-  virtual void PrepareFrameDraws() {};
+  virtual void PrepareFrameDraws() {
+    auto sm = SystemsManager::GetInstance();
+    sm->spatial_manager->CullPrepareDraws(sm->camera->frustum, sm->camera->pos);
+  };
   void DebugDrawOctree() {
     //vector<vec3> out_vert;
     //vector<unsigned int> out_ind;
@@ -94,9 +99,37 @@ public:
       //out_ind.push_back(i);
 
       for (auto child : node->children) {
-      AddVertices(drawer, child
-        //, out_vert, out_ind, out_colors
-      );
+        AddVertices(drawer, child
+          //, out_vert, out_ind, out_colors
+        );
+    }
+  }
+
+  void DebugDrawFrustum() {
+    auto sm = SystemsManager::GetInstance();
+    sm->CreateDebugDrawer();
+    auto fr = sm->camera->frustum;
+    vector<vec3> box_verts = {
+      fr->near.normal + sm->camera->pos,
+      fr->far.normal + sm->camera->pos,
+      fr->left.normal + sm->camera->pos,
+      fr->right.normal + sm->camera->pos,
+      fr->up.normal + sm->camera->pos,
+      fr->down.normal + sm->camera->pos,
+    };
+    auto color = vec3(255, 0, 0);
+
+    vector<pair<int, int>> edges = {
+      {0, 1},
+      {1, 2},
+      {2, 3},
+      {3, 4},
+      {4, 5}
+    };
+
+    for (auto& edge : edges) {
+      sm->bullet_debug_drawer->drawLinePersist(box_verts[edge.first], box_verts[edge.second], color,
+        UINT32_MAX);
     }
   }
 };

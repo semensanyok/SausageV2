@@ -52,10 +52,20 @@ BufferSlots<T>* CreateBufferSlots(unsigned long storage_size,
   glGenBuffers(1, &buffer_id);
   glBindBuffer(array_type, buffer_id);
   glBufferStorage(array_type, storage_size, NULL, flags);
-  T* buffer_ptr = (T*)glMapBufferRange(array_type, 0,
-    storage_size, flags);
-  // TODO: test correctness and adjust if necessary
+  //T* buffer_ptr = (T*)glMapBufferRange(array_type, 0,
+    //storage_size, flags);
+  T* buffer_ptr = MapGetBuferSlotsPtr<T>(buffer_id,
+    storage_size, array_type);
   return new BufferSlots<T>{ {Arena({ 0, max_arena_slots, 0}, slot_size)}, buffer_id , buffer_ptr };
+}
+
+template<typename T>
+T* MapGetBuferSlotsPtr(GLuint buffer_id,
+  unsigned long storage_size,
+  GLuint array_type) {
+  glBindBuffer(array_type, buffer_id);
+  return (T*)glMapBufferRange(array_type, 0,
+    storage_size, flags);
 }
 
 template<typename T>
