@@ -9,17 +9,19 @@ DrawCallManager::DrawCallManager(
   CommandBuffersManager* cbm
 ) {
   font_ui_dc = CreateDrawCall(
-        shader_manager->all_shaders->font_ui,
-        GL_TRIANGLES,
-        false,
-        cbm->command_buffers.font_ui
+    shader_manager->all_shaders->font_ui,
+    GL_TRIANGLES,
+    false,
+    cbm->command_buffers.font_ui,
+    false
   );
 
   back_ui_dc = CreateDrawCall(
-      shader_manager->all_shaders->back_ui,
-      GL_TRIANGLES,
-      false,
-        cbm->command_buffers.back_ui
+    shader_manager->all_shaders->back_ui,
+    GL_TRIANGLES,
+    false,
+    cbm->command_buffers.back_ui,
+    false
   );
 
   //overlay_3d_dc = CreateDrawCall(
@@ -29,31 +31,35 @@ DrawCallManager::DrawCallManager(
   //);
 
   outline_dc = CreateDrawCall(
-      shader_manager->all_shaders->outline,
-      GL_LINES,
-      state_manager->phys_debug_draw,
-        cbm->command_buffers.outline
+    shader_manager->all_shaders->outline,
+    GL_LINES,
+    state_manager->phys_debug_draw,
+    cbm->command_buffers.outline,
+    true
   );
 
   mesh_dc = CreateDrawCall(
-      shader_manager->all_shaders->blinn_phong,
-      GL_TRIANGLES,
-      true,
-        cbm->command_buffers.blinn_phong
+    shader_manager->all_shaders->blinn_phong,
+    GL_TRIANGLES,
+    true,
+    cbm->command_buffers.blinn_phong,
+    false
   );
 
   mesh_static_dc = CreateDrawCall(
-      shader_manager->all_shaders->mesh_static,
-      GL_TRIANGLES,
-      true,
-        cbm->command_buffers.mesh_static
+    shader_manager->all_shaders->mesh_static,
+    GL_TRIANGLES,
+    true,
+    cbm->command_buffers.mesh_static,
+    false
   );
 
   terrain_dc = CreateDrawCall(
-      shader_manager->all_shaders->terrain,
-      GL_TRIANGLES,
-      true,
-        cbm->command_buffers.terrain
+    shader_manager->all_shaders->terrain,
+    GL_TRIANGLES,
+    true,
+    cbm->command_buffers.terrain,
+    false
   );
 }
 
@@ -64,7 +70,8 @@ void DrawCallManager::ResetFrameCommands() {
   outline_dc->Reset();
 }
 
-DrawCall* DrawCallManager::CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled, CommandBuffer* command_buffer)
+DrawCall* DrawCallManager::CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled, CommandBuffer* command_buffer,
+  bool is_fixed)
 {
-  return new DrawCall(total_draw_calls++, shader, mode, command_buffer, is_enabled);
+  return new DrawCall(total_draw_calls++, shader, mode, command_buffer, is_enabled, is_fixed);
 }

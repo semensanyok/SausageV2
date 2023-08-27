@@ -64,5 +64,6 @@ public:
     return outline_dc;
   };
 private:
-  DrawCall* CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled, CommandBuffer* command_buffer);
+  DrawCall* CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled, CommandBuffer* command_buffer,
+    bool is_fixed);
 };

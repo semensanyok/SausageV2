@@ -103,16 +103,16 @@ public:
 
   void BufferCommands(
     CommandBuffer* command_ptr,
-    vector<DrawElementsIndirectCommand>& active_commands,
+    vector<DrawElementsIndirectCommand>& commands,
     int command_offset) {
     unique_lock<mutex> data_lock(command_ptr->buffer_lock->data_mutex);
     if (!command_ptr->buffer_lock->is_mapped) {
       command_ptr->buffer_lock->Wait(data_lock);
     }
-    memcpy(&(command_ptr->ptr[command_offset]),
-           active_commands.data(),
-           active_commands.size() * sizeof(DrawElementsIndirectCommand));
-    GPUSynchronizer::GetInstance()->SyncGPU();
+    memcpy(&(command_ptr->ptr->buffer_ptr[command_offset]),
+           commands.data(),
+           commands.size() * sizeof(DrawElementsIndirectCommand));
+    GPUSynchronizer::GetInstance()->SetSyncBarrier();
   }
   void BufferCommand(CommandBuffer* command_ptr,
     DrawElementsIndirectCommand& command, int command_offset) {
@@ -121,7 +121,7 @@ public:
       command_ptr->buffer_lock->Wait(data_lock);
     }
     command_ptr->ptr->buffer_ptr[command_offset] = command;
-    GPUSynchronizer::GetInstance()->SyncGPU();
+    GPUSynchronizer::GetInstance()->SetSyncBarrier();
   }
 
   //void PreDraw() {

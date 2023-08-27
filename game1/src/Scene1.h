@@ -11,6 +11,7 @@
 #include <systems/TextureManager.h>
 #include <Scene.h>
 #include <MeshDataUtils.h>
+#include <SceneManager.h>
 
 using namespace std;
 
@@ -56,6 +57,7 @@ public:
   }
   ~Scene1() {};
   void Init() override {
+    SceneManager::GetInstance()->AddScene(this);
     vec3 cam_pos = { 0,15,15 };
     systems_manager->camera->SetPosition(cam_pos);
 
@@ -75,7 +77,7 @@ public:
   void PrepareFrameDraws() override {
     // need to implement order independent transparency to not touch command buffer each frame
     //_SortByDistance();
-
+    Scene::PrepareFrameDraws();
     BufferStorage::GetInstance()->BufferLights(draw_lights);
     CheckGLError();
   }

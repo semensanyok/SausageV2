@@ -61,6 +61,7 @@ class DrawCall {
 public:
   bool is_dirty = false;
   bool is_enabled;
+  bool is_fixed;
   mutex mtx;
   CommandBuffer* command_buffer;
 private:
@@ -79,12 +80,17 @@ public:
     Shader* shader,
     GLenum mode,
     CommandBuffer* command_buffer,
-    bool is_enabled) :
+    bool is_enabled,
+    int fixed_size = -1) :
     id{ id },
     shader{ shader },
     mode{ mode },
     is_enabled{ is_enabled },
-    command_buffer{ command_buffer } {
+    command_buffer{ command_buffer },
+    is_fixed{ fixed_size > 0 } {
+    if (fixed_size > 0) {
+      commands.resize(fixed_size);
+    }
   }
   const unsigned int id;
   // caller must aquire it on write
@@ -98,19 +104,17 @@ public:
   void AddCommand(MeshDataSlots& mesh_slots) {
     lock_guard l(mtx);
 
-    assert(mesh_slots.num_instances > 0);
-    //assert(!mesh_slots.IsBufferIdAllocated());
-    assert(mesh_slots.index_slot.IsSlotAllocated());
-    assert(mesh_slots.vertex_slot.IsSlotAllocated());
-    DrawElementsIndirectCommand command;
-    mesh_slots.buffer_id = commands.size();
-    command.instanceCount = mesh_slots.num_instances;
-    command.count = mesh_slots.index_slot.used;
-    command.firstIndex = mesh_slots.index_slot.offset;
-    command.baseVertex = mesh_slots.vertex_slot.offset;
-    command.baseInstance = mesh_slots.buffer_id;
-
+    auto command = CreateCommand(mesh_slots);
     commands.push_back(command);
+    is_dirty = true;
+  }
+
+  void PutCommand(MeshDataSlots& mesh_slots, unsigned int index) {
+    assert(is_fixed);
+    lock_guard l(mtx);
+
+    auto command = CreateCommand(mesh_slots);
+    commands[index] = command;
     is_dirty = true;
   }
 
@@ -123,14 +127,29 @@ public:
     Reset();
   }
 private:
+  inline DrawElementsIndirectCommand CreateCommand(MeshDataSlots& mesh_slots) {
+    assert(mesh_slots.num_instances > 0);
+    //assert(!mesh_slots.IsBufferIdAllocated());
+    assert(mesh_slots.index_slot.IsSlotAllocated());
+    assert(mesh_slots.vertex_slot.IsSlotAllocated());
+    DrawElementsIndirectCommand command;
+    mesh_slots.buffer_id = commands.size();
+    command.instanceCount = mesh_slots.num_instances;
+    command.count = mesh_slots.index_slot.used;
+    command.firstIndex = mesh_slots.index_slot.offset;
+    command.baseVertex = mesh_slots.vertex_slot.offset;
+    command.baseInstance = mesh_slots.buffer_id;
+    return command;
+  }
   inline void BufferFrameCommands() {
     if (is_dirty) {
-      // TODO: instance count 101 ????
       CommandBuffersManager::GetInstance()->BufferCommands(command_buffer, commands, 0);
       is_dirty = false;
     }
   }
   inline void Reset() {
-    commands.clear();
+    if (!is_fixed) {
+      commands.clear();
+    }
   }
 };

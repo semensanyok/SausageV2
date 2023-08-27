@@ -52,7 +52,7 @@ void Renderer::Render(Camera* camera) {
             DEBUG_EXPR(CheckGLError());
             draw->PostDraw();
             command_buffers_manager->MapBuffer(draw->command_buffer);
-            //DEBUG_EXPR(CheckGLError());
+            DEBUG_EXPR(CheckGLError());
           }
         }
       }

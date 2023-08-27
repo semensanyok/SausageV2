@@ -136,7 +136,7 @@ void MeshManager::LoadMeshes(
       }
       if (is_load_aabb) {
         auto aabb_min = vec3(FromAi(mesh->mAABB.mMin));
-        auto aabb_max = vec3(FromAi(mesh->mAABB.mMin));
+        auto aabb_max = vec3(FromAi(mesh->mAABB.mMax));
         data->bv = new BoundingBox(transform, aabb_min, aabb_max);
       }
       data->name = string(mesh->mName.C_Str());

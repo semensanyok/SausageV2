@@ -84,7 +84,7 @@ void BulletDebugDrawer::flushLines() {
     }
     persist_draws = keep_persist;
     buffer->BufferMeshData(vertices, indices, colors);
-    buffer->mesh->dc->AddCommand(buffer->mesh->slots);
+    buffer->mesh->dc->PutCommand(buffer->mesh->slots, 0);
     clear();
   }
   else {
