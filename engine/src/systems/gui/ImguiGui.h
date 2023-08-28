@@ -123,6 +123,11 @@ public:
 				ImGui::Checkbox("Debug Draw Physics", &StateManager::GetInstance()->phys_debug_draw);
 				ImGui::TreePop();
 			}
+      if (ImGui::TreeNode("Cam Controls"))
+      {
+        ImGui::InputFloat("physics step multiplier", &GameSettings::physics_step_multiplier, 0.001f, 1.0f, "%.6f");
+        ImGui::TreePop();
+      }
 			for (auto& button : buttons_callbacks) {
 				if (ImGui::Button(button.label)) {
 					button.callback();

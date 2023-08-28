@@ -39,7 +39,7 @@ public:
   };
 
   void FrustrumCull(
-    Frustrum* frustum,
+    Frustum* frustum,
     vec3& camera_pos,
     vector<Spatial*>& out_inside_frustum
   ) {
@@ -90,7 +90,7 @@ public:
     return true;
   }
 
-  void ProcessNode(Frustrum* frustum,
+  void ProcessNode(Frustum* frustum,
     vec3& camera_pos,
     Octree* node,
     vector<Spatial*>& out_inside_frustum
@@ -98,10 +98,10 @@ public:
     if (node->bv->IsCulledByDistance(camera_pos)) {
       return;
     }
-    // TODO: fix culling
-    //if (node->bv->IsCulled(frustum)) {
-    //  return;
-    //}
+    bool is_culled = !node->bv->IsCrossFrustum(frustum);
+    if (is_culled) {
+      return;
+    }
     // TODO: maybe narrower phase, frustum per object.
     out_inside_frustum.insert(out_inside_frustum.end(),
       objects.begin(), objects.end());

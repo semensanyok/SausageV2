@@ -22,7 +22,7 @@ void Camera::_UpdateFrustum() {
 
   auto cam_dist_from_origin = glm::length(this->pos);
 
-  this->frustum->near = { glm::length(this->pos + near_plane * this->direction),
+  this->frustum->near = { glm::length(this->pos + near_center),
     this->direction };
   this->frustum->far = { glm::length(this->pos + far_center),
     -this->direction };

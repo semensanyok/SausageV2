@@ -30,7 +30,7 @@ public:
     scene_tree = new Octree(new BoundingBox(center, world_extents, false), octree_num_levels);
   };
 
-  void CullPrepareDraws(Frustrum* frustum, vec3& camera_pos) {
+  void CullPrepareDraws(Frustum* frustum, vec3& camera_pos) {
     vector<Spatial*> out_inside_frustum;
 
     // transform mustf be buffered after buffer_id and instance_id was set per instance

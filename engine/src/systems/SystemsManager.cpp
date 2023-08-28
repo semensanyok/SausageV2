@@ -6,7 +6,8 @@ void SystemsManager::InitSystems() {
   main_thread_id = this_thread::get_id();
 
   file_watcher = new FileWatcher();
-  camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, 1000.0f, vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
+  camera = new Camera(60.0f, GameSettings::SCR_WIDTH, GameSettings::SCR_HEIGHT, 0.1f, GameSettings::MAX_DRAW_DISTANCE,
+    vec3(0.0f, 3.0f, 3.0f), 0.0f, -45.0f);
   // NOTE: context must be initialized before any GL command (glGenBuffers, etc.)
   //       otherwise generates mysterious "access violation"
   renderer_context_manager = new RendererContextManager();

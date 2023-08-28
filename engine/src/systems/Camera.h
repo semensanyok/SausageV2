@@ -30,16 +30,9 @@ private:
   mat4 projection_matrix_ortho;
   mat4 projection_view;
   mat4 projection_view_inverse;
-  vec3 up;
   vec3 world_up;
   float yaw_angle;
   float pitch_angle;
-
-  float FOV_rad;
-  float width;
-  float height;
-  float near_plane;
-  float far_plane;
 
   int screen_border = 20;
 
@@ -47,12 +40,19 @@ private:
   float velocity;
   float delta_time;
 
-  float aspect;
 public:
-  Frustrum* frustum;
+  float aspect;
+  float near_plane;
+  float far_plane;
+  float FOV_rad;
+  float width;
+  float height;
+
+  Frustum* frustum;
   vec3 pos;
   vec3 direction;
   vec3 right;
+  vec3 up;
 
   bool is_update_need = false;
   CameraMode camera_mode = CameraMode::RTS;
@@ -81,7 +81,7 @@ public:
     this->aspect = (float)this->width / (float)this->height;
     this->projection_matrix = perspective(this->FOV_rad, this->aspect, this->near_plane, this->far_plane);
     this->projection_matrix_ortho = ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
-    this->frustum = new Frustrum();
+    this->frustum = new Frustum();
     UpdateCamera();
   };
   ~Camera() {};

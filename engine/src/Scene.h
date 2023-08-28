@@ -4,12 +4,15 @@
 #include "BoundingVolume.h"
 #include "Octree.h"
 #include "SystemsManager.h"
-
+#include "MeshDataTypes.h"
 
 class Scene {
   vec3 world_extents;
   unsigned int octree_num_levels;
 public:
+  // TODO: unset test Frustum
+  Frustum* test_frustum = SausageDebug::GetCentered45DownFrustum();
+
   Scene(vec3 world_extents, unsigned int octree_num_levels) {
     auto sm = SystemsManager::GetInstance();
     sm->spatial_manager->Init(world_extents, octree_num_levels);
@@ -17,7 +20,10 @@ public:
   virtual void Init() {};
   virtual void PrepareFrameDraws() {
     auto sm = SystemsManager::GetInstance();
-    sm->spatial_manager->CullPrepareDraws(sm->camera->frustum, sm->camera->pos);
+    sm->spatial_manager->CullPrepareDraws(
+      // TODO: unset test Frustum
+      // sm->camera->frustum
+      test_frustum, sm->camera->pos);
   };
   void DebugDrawOctree() {
     //vector<vec3> out_vert;
@@ -105,31 +111,59 @@ public:
     }
   }
 
-  void DebugDrawFrustum() {
+  void DebugDrawFrustum(Frustum* fr) {
+    auto c = SystemsManager::GetInstance()->camera;
+    // other than 1 for demonstration
+    //const float scale = 1.0;
+    const float scale = 0.1;
+    const float half_far_width = c->far_plane * scale * tanf(c->FOV_rad * .5f);
+    const float half_far_height = half_far_width * scale * c->aspect;
+    const glm::vec3 far_center = c->far_plane * scale * c->direction;
+
+    const float half_near_width = c->near_plane * scale * tanf(c->FOV_rad * .5f);
+    const float half_near_height = half_near_width * scale * c->aspect;
+    const glm::vec3 near_center = c->near_plane * scale * c->direction;
+
     auto sm = SystemsManager::GetInstance();
     sm->CreateDebugDrawer();
-    auto fr = sm->camera->frustum;
     vector<vec3> box_verts = {
-      fr->near.normal + sm->camera->pos,
-      fr->far.normal + sm->camera->pos,
-      fr->left.normal + sm->camera->pos,
-      fr->right.normal + sm->camera->pos,
-      fr->up.normal + sm->camera->pos,
-      fr->down.normal + sm->camera->pos,
+      near_center - c->right * half_near_width + c->up * half_near_height,
+      near_center + c->right * half_near_width + c->up * half_near_height,
+      near_center - c->right * half_near_width - c->up * half_near_height,
+      near_center + c->right * half_near_width - c->up * half_near_height,
+
+      far_center - c->right * half_far_width + c->up * half_far_height,
+      far_center + c->right * half_far_width + c->up * half_far_height,
+      far_center - c->right * half_far_width - c->up * half_far_height,
+      far_center + c->right * half_far_width - c->up * half_far_height,
     };
     auto color = vec3(255, 0, 0);
 
-    vector<pair<int, int>> edges = {
-      {0, 1},
-      {1, 2},
-      {2, 3},
-      {3, 4},
-      {4, 5}
+    // GL_LINES: Vertices 0 and 1 are considered a line. Vertices 2 and 3 are considered a line. And so on. If the user specifies a non-even number of vertices, then the extra vertex is ignored.
+    vector<unsigned int> indices = {
+      0, 1,
+      1, 3,
+      3, 2,
+      2, 0,
+
+      0, 4,
+      1, 5,
+      2, 6,
+      3, 7,
+
+      4, 5,
+      5, 7,
+      7, 6,
+      6, 4
     };
 
-    for (auto& edge : edges) {
-      sm->bullet_debug_drawer->drawLinePersist(box_verts[edge.first], box_verts[edge.second], color,
-        UINT32_MAX);
-    }
+    auto load_data = sm->mesh_manager->CreateLoadData<VertexOutline>(box_verts, indices);
+    auto buf = sm->buffer_manager->mesh_outline_buffer;
+    auto mesh = sm->mesh_manager->CreateMeshData<MeshDataOutline>();
+    assert(buf->AllocateStorage(mesh->slots, load_data));
+    mesh->slots.IncNumInstancesGetInstanceId();
+    buf->BufferVertices(mesh->slots, load_data);
+    
+    sm->draw_call_manager->outline_dc->AddCommand(mesh->slots);
   }
 };

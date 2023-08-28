@@ -17,6 +17,8 @@ void BufferManager::Init() {
   ui_buffer->Init();
   overlay_3d_buffer = new OverlayBufferConsumer3D(vertex_attributes, mesh_manager);
   overlay_3d_buffer->Init();
+  mesh_outline_buffer = new MeshDataOutlineBufferConsumer(vertex_attributes, mesh_manager);
+  mesh_outline_buffer->Init();
 }
 void BufferManager::Reset() {
   buffer_storage->Reset();

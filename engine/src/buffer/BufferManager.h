@@ -16,6 +16,7 @@
 #include "MeshManager.h"
 #include "TextureManager.h"
 #include "Vertex.h"
+#include "MeshDataOutlineBufferConsumer.h"
 
 class BufferManager : public SausageSystem {
   inline static BufferManager* instance;
@@ -35,6 +36,7 @@ public:
   OverlayBufferConsumer3D* overlay_3d_buffer = nullptr;
   MeshStaticBufferConsumer* mesh_static_buffer = nullptr;
   MeshTerrainBufferConsumer* mesh_terrain_buffer = nullptr;
+  MeshDataOutlineBufferConsumer* mesh_outline_buffer = nullptr;
   BufferStorage* buffer_storage = nullptr;
 
   BufferManager(MeshManager* mesh_manager,

@@ -64,7 +64,7 @@ public:
     auto pos = vec3(all_static_meshes_instances[0]->ReadTransform()[3] + vec4(0, 15, 15, 0));
     sm->camera->SetPosition(pos);
     DebugDrawOctree();
-    DebugDrawFrustum();
+    DebugDrawFrustum(Scene::test_frustum);
   };
 
   void PrepareDraws() {

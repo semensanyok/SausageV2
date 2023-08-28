@@ -86,7 +86,7 @@ public:
   void InitBuffers() {
     command_buffers.font_ui = CreateCommandBuffer(GetNumDrawCommandsForFontDrawCall());
     command_buffers.back_ui = CreateCommandBuffer(GetNumDrawCommandsForBackDrawCall());
-    command_buffers.outline = CreateCommandBuffer(1);
+    command_buffers.outline = CreateCommandBuffer(2);
     command_buffers.blinn_phong = CreateCommandBuffer(MAX_BASE_MESHES);
     command_buffers.mesh_static = CreateCommandBuffer(MAX_BASE_MESHES_STATIC);
     command_buffers.terrain = CreateCommandBuffer(MAX_MESHES_TERRAIN);

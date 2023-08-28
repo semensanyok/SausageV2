@@ -25,7 +25,7 @@ public:
     center{ center },
     is_cull_by_distance{ is_cull_by_distance } {}
 
-  virtual bool IsCulled(const Frustrum* frustrum) = 0;
+  virtual bool IsCrossFrustum(const Frustum* frustum) = 0;
 
   bool IsCulledByDistance(const vec3& pos, int draw_distance = GameSettings::MAX_DRAW_DISTANCE) {
     return is_cull_by_distance || distance(pos, center) > draw_distance;
@@ -149,14 +149,14 @@ public:
   //      if 'd' is positive, it lies on plane positive side.
   //      if 'd' is negative - exit.
   // 
-  bool IsCulled(const Frustrum* frustrum) override {
+  bool IsCrossFrustum(const Frustum* frustum) override {
     // optimal order. first check sides, then depth, since sides cuts off most space
-    return IsOnNormalSide(frustrum->left)
-      && IsOnNormalSide(frustrum->right)
-      && IsOnNormalSide(frustrum->up)
-      && IsOnNormalSide(frustrum->down)
-      && IsOnNormalSide(frustrum->near)
-      && IsOnNormalSide(frustrum->far);
+    return IsOnNormalSide(frustum->left)
+      && IsOnNormalSide(frustum->right)
+      && IsOnNormalSide(frustum->up)
+      && IsOnNormalSide(frustum->down)
+      && IsOnNormalSide(frustum->near)
+      && IsOnNormalSide(frustum->far);
   };
 
   bool IsOnNormalSide(const Plane& plane) {
@@ -203,5 +203,5 @@ public:
 };
 //class BoundingSphere {
 //public:
-//  virtual bool IsCulled(frustrum) = 0;
+//  virtual bool IsCulled(frustum) = 0;
 //};
