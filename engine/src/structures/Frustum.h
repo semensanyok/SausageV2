@@ -22,6 +22,7 @@ struct Frustum {
 
 namespace SausageDebug {
   inline Frustum* GetCentered45DownFrustum() {
+
     return new Frustum{
         {56.7659798, {0 , -0.707107, -0.707107} },
         {977.861145, {-0 , 0.707107, 0.707107} },
@@ -31,4 +32,12 @@ namespace SausageDebug {
         {56.8072853, {-0.866025, -0.482963, 0.129409} }
     };
   }
+  // for debug draw
+  struct FrustumVertices {
+    vector<vec3> vertices;
+    vector<unsigned int> indices;
+  };
+  void GetScaledCameraFrustum(Frustum* out_frustum,
+    float scale,
+    FrustumVertices& out_verts);
 }

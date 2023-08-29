@@ -226,6 +226,7 @@ add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
 "${ENGINE_SRC_DIR}/structures/MeshDataTerrain.cpp"
 "${ENGINE_SRC_DIR}/structures/MeshDataInstance.cpp"
 "${ENGINE_SRC_DIR}/structures/MeshDataStruct.cpp"
+"${ENGINE_SRC_DIR}/structures/Frustum.cpp"
 ${source})
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${PGK_CONF_FOUND_LIBS_LIBRARY_DIRS})

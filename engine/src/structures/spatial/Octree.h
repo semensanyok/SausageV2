@@ -46,20 +46,8 @@ public:
     ProcessNode(frustum, camera_pos, this, out_inside_frustum);
   }
 
-  // TODO: iterate until smallest fitting AABB found
-  //       insert once into corresponding Octree level, not in parent one
-  //
-  // how to handle intersection?
-  //  1.
-  //   asign to both
-  //   have flag  is_culled to Spatial
-  //   allow double tenance
-  //  or
-  //  2.
-  //   count number of containers
-  //   if > 2 - just assign to parrent
-  //   - start from topmost
-  //   - if FULLY inside: check all children. until PARTIALLY inside.
+  // TODO: dont insert parent largest frustum somehow
+  // if frustum includes intersection - insert parent node objects.
   bool Insert(vector<Spatial*>& in_objects) {
     for (auto object : in_objects) {
       Insert(object);

@@ -10,8 +10,9 @@ class Scene {
   vec3 world_extents;
   unsigned int octree_num_levels;
 public:
-  // TODO: unset test Frustum
-  Frustum* test_frustum = SausageDebug::GetCentered45DownFrustum();
+  //Frustum* test_frustum = SausageDebug::GetCentered45DownFrustum();
+  Frustum* test_frustum = new Frustum();
+  SausageDebug::FrustumVertices test_frustum_verts;
 
   Scene(vec3 world_extents, unsigned int octree_num_levels) {
     auto sm = SystemsManager::GetInstance();
@@ -23,7 +24,8 @@ public:
     sm->spatial_manager->CullPrepareDraws(
       // TODO: unset test Frustum
       // sm->camera->frustum
-      test_frustum, sm->camera->pos);
+      test_frustum,
+      sm->camera->pos);
   };
   void DebugDrawOctree() {
     //vector<vec3> out_vert;
@@ -111,53 +113,15 @@ public:
     }
   }
 
-  void DebugDrawFrustum(Frustum* fr) {
-    auto c = SystemsManager::GetInstance()->camera;
-    // other than 1 for demonstration
-    //const float scale = 1.0;
-    const float scale = 0.1;
-    const float half_far_width = c->far_plane * scale * tanf(c->FOV_rad * .5f);
-    const float half_far_height = half_far_width * scale * c->aspect;
-    const glm::vec3 far_center = c->far_plane * scale * c->direction;
-
-    const float half_near_width = c->near_plane * scale * tanf(c->FOV_rad * .5f);
-    const float half_near_height = half_near_width * scale * c->aspect;
-    const glm::vec3 near_center = c->near_plane * scale * c->direction;
+  void DebugDrawFrustum() {
+    SausageDebug::GetScaledCameraFrustum(test_frustum,
+      0.1,
+      test_frustum_verts);
 
     auto sm = SystemsManager::GetInstance();
-    sm->CreateDebugDrawer();
-    vector<vec3> box_verts = {
-      near_center - c->right * half_near_width + c->up * half_near_height,
-      near_center + c->right * half_near_width + c->up * half_near_height,
-      near_center - c->right * half_near_width - c->up * half_near_height,
-      near_center + c->right * half_near_width - c->up * half_near_height,
-
-      far_center - c->right * half_far_width + c->up * half_far_height,
-      far_center + c->right * half_far_width + c->up * half_far_height,
-      far_center - c->right * half_far_width - c->up * half_far_height,
-      far_center + c->right * half_far_width - c->up * half_far_height,
-    };
-    auto color = vec3(255, 0, 0);
-
-    // GL_LINES: Vertices 0 and 1 are considered a line. Vertices 2 and 3 are considered a line. And so on. If the user specifies a non-even number of vertices, then the extra vertex is ignored.
-    vector<unsigned int> indices = {
-      0, 1,
-      1, 3,
-      3, 2,
-      2, 0,
-
-      0, 4,
-      1, 5,
-      2, 6,
-      3, 7,
-
-      4, 5,
-      5, 7,
-      7, 6,
-      6, 4
-    };
-
-    auto load_data = sm->mesh_manager->CreateLoadData<VertexOutline>(box_verts, indices);
+    auto load_data = sm->mesh_manager->CreateLoadData<VertexOutline>(
+      test_frustum_verts.vertices,
+      test_frustum_verts.indices);
     auto buf = sm->buffer_manager->mesh_outline_buffer;
     auto mesh = sm->mesh_manager->CreateMeshData<MeshDataOutline>();
     assert(buf->AllocateStorage(mesh->slots, load_data));

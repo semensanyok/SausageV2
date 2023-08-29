@@ -22,7 +22,10 @@ class TerrainTest : public Scene {
   SystemsManager* sm;
 public:
   TerrainTest() :
-    Scene(vec3(1000, 1000, 1000), 2), sm{SystemsManager::GetInstance()} {}
+    Scene(vec3(100, 100, 100),
+      //2
+      3
+    ), sm{SystemsManager::GetInstance()} {}
   void Init() {
     SceneManager::GetInstance()->AddScene(this);
     sm = SystemsManager::GetInstance();
@@ -49,7 +52,7 @@ public:
         t1,
         mesh->base_mesh,
         new BoundingBox(t1, mesh->bv->min_AABB, mesh->bv->max_AABB));
-      inst->physics_data = mesh->physics_data;
+      //inst->physics_data = mesh->physics_data;
       inst->AllocateUniformOffset();
       inst->IncNumInstancesSetInstanceId();
       mesh_static_buffer->BufferMeshDataInstance(inst, tex);
@@ -64,7 +67,7 @@ public:
     auto pos = vec3(all_static_meshes_instances[0]->ReadTransform()[3] + vec4(0, 15, 15, 0));
     sm->camera->SetPosition(pos);
     DebugDrawOctree();
-    DebugDrawFrustum(Scene::test_frustum);
+    DebugDrawFrustum();
   };
 
   void PrepareDraws() {
