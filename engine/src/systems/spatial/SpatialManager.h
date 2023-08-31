@@ -88,7 +88,7 @@ public:
   template<typename MESH_TYPE, typename UNIFORM_TYPE>
   void InsertToOctree(MeshDataInstance<MESH_TYPE, UNIFORM_TYPE>* mesh) {
     if (!scene_tree->Insert(mesh)) {
-      LOG(format("Failed to scene_tree->Insert(mesh) for %s", mesh->name));
+      LOG(format("Failed to scene_tree->Insert(mesh) for {}", mesh->name));
     }
   }
 

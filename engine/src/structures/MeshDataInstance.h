@@ -76,7 +76,7 @@ public:
   }
 
   void FinalizeCommandWithBuffer() {
-    if (uniform_offset > 0) {
+    if (IsUniformOffsetAllocated()) {
       // base_mesh responsible for adding draw command once per frame, skipping subsequent calls. ugly.
       base_mesh->FinalizeCommandWithBuffer();
       DrawCall* dc = this->base_mesh->dc;

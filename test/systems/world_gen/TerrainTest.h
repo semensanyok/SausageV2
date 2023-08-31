@@ -22,7 +22,9 @@ class TerrainTest : public Scene {
   SystemsManager* sm;
 public:
   TerrainTest() :
-    Scene(vec3(100, 100, 100),
+    Scene(
+      //vec3(1000, 1000, 1000),
+      vec3(150, 150, 150),
       //2
       3
     ), sm{SystemsManager::GetInstance()} {}
@@ -42,17 +44,22 @@ public:
     // multiply instances
     auto mesh_static_buffer = sm->buffer_manager->GetMeshDataBufferConsumer<MeshDataStatic, VertexStatic, UniformDataMeshStatic>();
     auto mesh = all_static_meshes_instances[0];
+    mesh->GetOutTransform()[3] = { 10,100,10,0 };
     BlendTextures tex = { { 1.0, base_meshes_tex[mesh->base_mesh->id]->id },1 };
     for (size_t i = 0; i < 100; i++)
     {
       int spread = 2;
       mat4 t1 = glm::translate(all_static_meshes_instances[0]->ReadTransform(),
-          i % 2 == 0 ? vec3((i % 10) * spread, 100, (i % 10) * spread + 2) : -vec3((i % 10) * spread, -100, (i % 3) * spread + 2));
+        vec3((i % 10) * spread, 25, (i % 10) * spread + 2)
+        //i % 2 == 0 ?
+          //  vec3((i % 10) * spread, 100, (i % 10) * spread + 2) :
+          //  vec3((i % 10) * spread, -100, (i % 3) * spread + 2)
+      );
       auto inst = new MeshDataInstanceStaticT(
         t1,
         mesh->base_mesh,
         new BoundingBox(t1, mesh->bv->min_AABB, mesh->bv->max_AABB));
-      //inst->physics_data = mesh->physics_data;
+      inst->physics_data = mesh->physics_data;
       inst->AllocateUniformOffset();
       inst->IncNumInstancesSetInstanceId();
       mesh_static_buffer->BufferMeshDataInstance(inst, tex);
@@ -67,7 +74,7 @@ public:
     auto pos = vec3(all_static_meshes_instances[0]->ReadTransform()[3] + vec4(0, 15, 15, 0));
     sm->camera->SetPosition(pos);
     DebugDrawOctree();
-    DebugDrawFrustum();
+    DebugSetAndDrawFrustum();
   };
 
   void PrepareDraws() {

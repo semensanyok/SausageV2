@@ -86,7 +86,7 @@ public:
     if (node->bv->IsCulledByDistance(camera_pos)) {
       return;
     }
-    bool is_culled = !node->bv->IsCrossFrustum(frustum);
+    bool is_culled = !node->bv->IsCross(frustum);
     if (is_culled) {
       return;
     }

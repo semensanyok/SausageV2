@@ -5,6 +5,8 @@
 using namespace std;
 using namespace glm;
 
+class Camera;
+
 struct Plane {
   // distance to closest point on the plane
   float distance;
@@ -37,7 +39,9 @@ namespace SausageDebug {
     vector<vec3> vertices;
     vector<unsigned int> indices;
   };
-  void GetScaledCameraFrustum(Frustum* out_frustum,
-    float scale,
-    FrustumVertices& out_verts);
+  void GetScaledCameraFrustum(Camera* c,
+    Frustum* out_frustum,
+    float scale);
+  FrustumVertices GetScaledCameraFrustumVertices(
+    float scale);
 }

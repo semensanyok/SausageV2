@@ -113,10 +113,16 @@ public:
     }
   }
 
-  void DebugDrawFrustum() {
-    SausageDebug::GetScaledCameraFrustum(test_frustum,
-      0.1,
-      test_frustum_verts);
+  void DebugSetAndDrawFrustum() {
+    //auto scale = 1.0;
+    auto scale = 0.1;
+    //auto scale = 0.01;
+
+    SausageDebug::GetScaledCameraFrustum(
+      SystemsManager::GetInstance()->camera,
+      test_frustum,
+      0.1);
+    test_frustum_verts = SausageDebug::GetScaledCameraFrustumVertices(scale);
 
     auto sm = SystemsManager::GetInstance();
     auto load_data = sm->mesh_manager->CreateLoadData<VertexOutline>(

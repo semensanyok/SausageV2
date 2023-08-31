@@ -25,7 +25,7 @@ public:
     center{ center },
     is_cull_by_distance{ is_cull_by_distance } {}
 
-  virtual bool IsCrossFrustum(const Frustum* frustum) = 0;
+  virtual bool IsCross(const Frustum* frustum) = 0;
 
   bool IsCulledByDistance(const vec3& pos, int draw_distance = GameSettings::MAX_DRAW_DISTANCE) {
     return is_cull_by_distance || distance(pos, center) > draw_distance;
@@ -149,17 +149,17 @@ public:
   //      if 'd' is positive, it lies on plane positive side.
   //      if 'd' is negative - exit.
   // 
-  bool IsCrossFrustum(const Frustum* frustum) override {
+  bool IsCross(const Frustum* frustum) override {
     // optimal order. first check sides, then depth, since sides cuts off most space
-    return IsOnNormalSide(frustum->left)
-      && IsOnNormalSide(frustum->right)
-      && IsOnNormalSide(frustum->up)
-      && IsOnNormalSide(frustum->down)
-      && IsOnNormalSide(frustum->near)
-      && IsOnNormalSide(frustum->far);
+    return IsCross(frustum->left)
+      && IsCross(frustum->right)
+      && IsCross(frustum->up)
+      && IsCross(frustum->down)
+      && IsCross(frustum->near)
+      && IsCross(frustum->far);
   };
 
-  bool IsOnNormalSide(const Plane& plane) {
+  bool IsCross(const Plane& plane) {
     // because rotation of normal doesnt change length of AABB diagonal projection
     float r = dot(half_extents, abs(plane.normal));
 
