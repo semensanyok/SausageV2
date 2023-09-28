@@ -1,11 +1,10 @@
 #include "TerrainManager.h"
-#include "MeshDataTerrain.h"
-#include "MeshDataInstance.h"
 #include "InstanceSlot.h"
+#include "MeshDataInstance.h"
+#include "MeshDataTerrain.h"
 
 void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
-  int noise_scale, float spacing)
-{
+                                   int noise_scale, float spacing) {
   vector<vec3> vertices;
   vector<unsigned int> indices;
   vector<vec2> uvs;
@@ -13,18 +12,18 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
 
   int noise_offset_x = 0;
   int noise_offset_y = 0;
-  //float frequency = 0.02f;
+  // float frequency = 0.02f;
   float frequency = 0.2f;
   int seed = 1337;
-  auto chunk = CreateChunk(origin_coord, noise_offset_x, noise_offset_y,
-    size_x, size_y, spacing,
-    // OUT
-    vertices, indices,
-    noise_scale, frequency, seed);
+  auto chunk = CreateChunk(origin_coord, noise_offset_x, noise_offset_y, size_x,
+                           size_y, spacing,
+                           // OUT
+                           vertices, indices, noise_scale, frequency, seed);
 
   vector<vec3> normals = GenNormals(vertices);
 
-  buffer->AllocateStorage(chunk->mesh->base_mesh->slots, vertices.size(), indices.size());
+  buffer->AllocateStorage(chunk->mesh->base_mesh->slots, vertices.size(),
+                          indices.size());
 
   // R texture
   auto tex = GenConstColorTex(0xffff0000, size_x, size_y, "1");
@@ -35,74 +34,69 @@ void TerrainManager::CreateTerrain(int size_x, int size_y, vec3 origin_coord,
 
   BlendTextures blend_tex;
   blend_tex.num_textures = 2;
-  blend_tex.textures[0] = { 0.5, tex->id };
-  blend_tex.textures[1] = { 0.5, tex2->id };
+  blend_tex.textures[0] = {0.5, tex->id};
+  blend_tex.textures[1] = {0.5, tex2->id};
 
   buffer->AllocateUniformOffset(chunk->mesh);
 
   SetTilesData(uniform_id, size_x, size_y, uvs, chunk, blend_tex);
-  buffer->BufferMeshData(chunk->mesh->base_mesh, vertices, indices, uvs, normals, uniform_id);
+  buffer->BufferMeshData(chunk->mesh->base_mesh, vertices, indices, uvs,
+                         normals, uniform_id);
 
   string name = "Terrain";
 
-  physics_manager->AddTerrainRigidBody(chunk->heightmap, chunk->size_x, chunk->size_y, chunk->spacing,
-    new MeshDataClickable(name), chunk->mesh->ReadTransform(), name, -noise_scale, noise_scale);
+  physics_manager->AddTerrainRigidBody(
+      chunk->heightmap, chunk->size_x, chunk->size_y, chunk->spacing,
+      new MeshDataClickable(name), chunk->mesh->ReadTransform(), name,
+      -noise_scale, noise_scale);
   spatial_manager->InsertToOctree(chunk->mesh);
 }
 
-Texture* TerrainManager::GenConstColorTex(unsigned int color,
-  unsigned int size_x,
-  unsigned int size_y,
-  const char* tex_name_suffix) {
-  Texture* tex;
-  //vector<unsigned int> tex_pixels(size_x * size_y);
-  //transform(chunk->heightmap.begin(), chunk->heightmap.end(), tex_pixels.begin(),
+Texture *TerrainManager::GenConstColorTex(unsigned int color,
+                                          unsigned int size_x,
+                                          unsigned int size_y,
+                                          const char *tex_name_suffix) {
+  Texture *tex;
+  // vector<unsigned int> tex_pixels(size_x * size_y);
+  // transform(chunk->heightmap.begin(), chunk->heightmap.end(),
+  // tex_pixels.begin(),
   //  [](float i) {return (int)(fabs(i) * 1000); });
   vector<unsigned int> tex_pixels(size_x * size_y,
-    //0xff0000ff
-    color
-  );
+                                  // 0xff0000ff
+                                  color);
   vector<unsigned int> tex_specular_pixels(size_x * size_y, 0xfffffff);
   vector<unsigned int> tex_normal_pixels(size_x * size_y, 0xfffffff);
 
-  auto tex_name = (ostringstream() <<
-      size_x << size_y << tex_name_suffix).str();
+  auto tex_name =
+      (ostringstream() << size_x << size_y << tex_name_suffix).str();
   auto levels = 8;
   tex = texture_manager->GenTextureArray(
-    tex_pixels.data(), tex_normal_pixels.data(), tex_specular_pixels.data(),
-    size_x, size_y,
-    32, 0,
-    0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff,
-    levels,
-    tex_name, tex_name, tex_name);
+      tex_pixels.data(), tex_normal_pixels.data(), tex_specular_pixels.data(),
+      size_x, size_y, 32, 0, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff,
+      levels, tex_name, tex_name, tex_name);
   return tex;
 }
 
-void TerrainManager::SetTilesData(
-  std::vector<unsigned int>& uniform_id,
-  int size_x,
-  int size_y,
-  std::vector<glm::vec2>& uvs,
-  TerrainChunk* chunk,
-  BlendTextures& blend_tex)
-{
+void TerrainManager::SetTilesData(std::vector<unsigned int> &uniform_id,
+                                  int size_x, int size_y,
+                                  std::vector<glm::vec2> &uvs,
+                                  TerrainChunk *chunk,
+                                  BlendTextures &blend_tex) {
   uniform_id.resize(size_x * size_y);
   uvs.resize(size_x * size_y);
   // setup 4 vert's chunks texture data
-  for (size_t y = 0; y < size_y; y += 2)
-  {
-    for (size_t x = 0; x < size_x; x += 2)
-    {
+  for (size_t y = 0; y < size_y; y += 2) {
+    for (size_t x = 0; x < size_x; x += 2) {
       auto tex_indices = chunk->GetTileIndices(x, y);
       // for test - texture with id == 0 and 1.0 weight.
-      TerrainBlendTextures* ter_tex;
-      if (shared_tiles_textures.find(blend_tex) == shared_tiles_textures.end()) {
+      TerrainBlendTextures *ter_tex;
+      if (shared_tiles_textures.find(blend_tex) ==
+          shared_tiles_textures.end()) {
         ter_tex = buffer->GetTexturesSlot();
         ter_tex->textures = blend_tex;
         shared_tiles_textures[blend_tex] = ter_tex;
         buffer->BufferTexture(chunk->mesh, blend_tex);
-      }
-      else {
+      } else {
         ter_tex = shared_tiles_textures[blend_tex];
       }
       uniform_id[tex_indices.ne] = ter_tex->uniform_id;
@@ -110,60 +104,60 @@ void TerrainManager::SetTilesData(
       uniform_id[tex_indices.se] = ter_tex->uniform_id;
       uniform_id[tex_indices.sw] = ter_tex->uniform_id;
 
-      uvs[tex_indices.ne] = { 0.0, 0.0 };
-      uvs[tex_indices.nw] = { 0.0, 1.0 };
-      uvs[tex_indices.se] = { 1.0, 0.0 };
-      uvs[tex_indices.sw] = { 1.0, 1.0 };
+      uvs[tex_indices.ne] = {0.0, 0.0};
+      uvs[tex_indices.nw] = {0.0, 1.0};
+      uvs[tex_indices.se] = {1.0, 0.0};
+      uvs[tex_indices.sw] = {1.0, 1.0};
     }
   }
 }
 
-TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int noise_offset_y,
-  int size_x, int size_y, float spacing,
-  // OUT
-  vector<vec3>& vertices,
-  // OUT
-  vector<unsigned int>& indices,
-  float noise_scale,
-  float frequency,
-  int seed)
-{
-  TerrainChunk* chunk = new TerrainChunk(size_x, size_y, 1, pos);
+TerrainChunk *TerrainManager::CreateChunk(vec3 pos, int noise_offset_x,
+                                          int noise_offset_y, int size_x,
+                                          int size_y, float spacing,
+                                          // OUT
+                                          vector<vec3> &vertices,
+                                          // OUT
+                                          vector<unsigned int> &indices,
+                                          float noise_scale, float frequency,
+                                          int seed) {
+  TerrainChunk *chunk = new TerrainChunk(size_x, size_y, 1, pos);
   mat4 t = translate(mat4(1), pos);
   // TODO: draw AABB to test
   vec3 min_AABB = vec3(pos.x - size_x, pos.y, pos.z - size_y);
   vec3 max_AABB = vec3(pos.x + size_x, pos.y, pos.z + size_y);
 
-  chunk->mesh = new MeshDataInstanceTerrainT(t,
-    mesh_manager->CreateMeshData<MeshDataTerrain>(),
-    new BoundingBox(t, min_AABB, max_AABB));
-  //chunk->mesh->IncNumInstancesSetInstanceId();
-  fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x, noise_offset_y, size_x, size_y, frequency, seed);
-  transform(chunk->heightmap.begin(), chunk->heightmap.end(), chunk->heightmap.begin(),
-    [&noise_scale](float i) {return i * noise_scale;});
+  chunk->mesh = new MeshDataInstanceTerrainT(
+      t, mesh_manager->CreateMeshData<MeshDataTerrain>(),
+      new BoundingBox(t, min_AABB, max_AABB));
+  // chunk->mesh->IncNumInstancesSetInstanceId();
+  fnSimplex->GenUniformGrid2D(chunk->heightmap.data(), noise_offset_x,
+                              noise_offset_y, size_x, size_y, frequency, seed);
+  transform(chunk->heightmap.begin(), chunk->heightmap.end(),
+            chunk->heightmap.begin(),
+            [&noise_scale](float i) { return i * noise_scale; });
   // create chunk in local space, use transform matrix to apply offsetX/Y
   // each tile has 4 vertices
 
   // 1. fill simple array and adjastent tiles references
   // distance between vertices
-  auto& height_values = chunk->heightmap;
+  auto &height_values = chunk->heightmap;
   // set vertices array
   for (int y = 0; y < size_y; y += 1) {
     for (int x = 0; x < size_x; x += 1) {
       // ORIGIN AT SOUTH WEST
-      //int x0 = x * chunk->spacing;
-      //int y0 = y * chunk->spacing;
+      // int x0 = x * chunk->spacing;
+      // int y0 = y * chunk->spacing;
       // ORIGIN AT CENTER (for bullet heightmap physics)
       int x0 = x * chunk->spacing - (size_x / 2);
       int y0 = y * chunk->spacing - (size_y / 2);
       int current_row_shift = y * size_x;
       int ind = x + current_row_shift;
-      vertices.push_back({ x0, height_values[ind], y0 });
+      vertices.push_back({x0, height_values[ind], y0});
     }
   }
-  // TODO: x+=2 ????
-  for (int y = 0; y < size_y; y ++) {
-    for (int x = 0; x < size_x; x ++) {
+  for (int y = 0; y < size_y; y++) {
+    for (int x = 0; x < size_x; x++) {
       if (x == size_x - 1 || y == size_y - 1) {
         continue;
       }
@@ -191,7 +185,8 @@ TerrainChunk* TerrainManager::CreateChunk(vec3 pos, int noise_offset_x, int nois
 vector<vec3> TerrainManager::GenNormals(vector<vec3> vertices) {
   vector<vec3> normals(vertices.size());
   for (int i = 0; i < vertices.size(); i += 4) {
-    vec3 face_normal = cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
+    vec3 face_normal =
+        cross(vertices[0] - vertices[1], vertices[2] - vertices[3]);
     for (int j = 0; j < 4; j++) {
       normals[i + j] = face_normal;
     }
@@ -199,7 +194,7 @@ vector<vec3> TerrainManager::GenNormals(vector<vec3> vertices) {
   assert(normals.size() == vertices.size());
   return normals;
 }
-void TerrainManager::ReleaseBuffer(TerrainChunk* chunk) {
+void TerrainManager::ReleaseBuffer(TerrainChunk *chunk) {
 
   buffer->ReleaseSlots(chunk->mesh);
 }
