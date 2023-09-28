@@ -1,0 +1,80 @@
+﻿{
+	"version": 3,
+	"configurePresets": [
+		{
+			"name": "windows-base",
+			"description": "Target Windows with the Visual Studio development environment.",
+			"hidden": true,
+			"generator": "Ninja",
+			"binaryDir": "${sourceDir}/out/build/${presetName}",
+			"installDir": "${sourceDir}/out/install/${presetName}",
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "cl.exe",
+				"CMAKE_CXX_COMPILER": "cl.exe",
+				"Bullet3_DIR": "${sourceDir}/dependencies/bullet3",
+				"USE_MSVC_RELEASE_RUNTIME_ALWAYS": "False",
+				"USE_MSVC_RUNTIME_LIBRARY_DLL": "True",
+				"SAUSAGE_PROFILE_ENABLE": "True",
+				"SAUSAGE_DEBUG_DRAW_PHYSICS": "True",
+				"BULLET2_USE_THREAD_LOCKS": "True",
+				"engine_DIR": "${sourceDir}/engine",
+				"Freetype": "${sourceDir}/engine/lib/freetype/lib/freetype.lib",
+				"SDL2_LIBRARY": "${sourceDir}/engine/lib/SDL/SDL2.lib",
+				"FREETYPE_INCLUDE_DIR_freetype2": "${sourceDir}/engine/lib/freetype/include/freetype2",
+				"SDL2_INCLUDE_DIR": "${sourceDir}/engine/lib/SDL/include",
+				"SDL2_IMAGE_LIBRARY": "${sourceDir}/engine/lib/SDL/SDL2_image.lib",
+				"SDL2_IMAGE_INCLUDE_DIR": "${sourceDir}/engine/lib/SDL/include",
+				"SDL2MAIN_LIBRARY": "${sourceDir}/engine/lib/SDL/SDL2main.lib",
+				"SAUSAGE_DEBUG_BUILD": "True",
+				"PKG_CONFIG_EXECUTABLE": "${sourceDir}/pkg-config-win/bin/pkg-config.exe",
+				"ASSIMP_BUILD_ZLIB": "True",
+				"BUILD_SHARED_LIBS": "False",
+				"CMAKE_C_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address",
+				"CMAKE_CXX_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address"
+			},
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Windows"
+			}
+		},
+		{
+			"name": "x64-debug",
+			"displayName": "x64 Debug",
+			"description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
+			"inherits": "windows-base",
+			"architecture": {
+				"value": "x64",
+				"strategy": "external"
+			},
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "x64-release",
+			"displayName": "x64 Release",
+			"description": "Target Windows (64-bit) with the Visual Studio development environment. (RelWithDebInfo)",
+			"inherits": "x64-debug",
+			"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+		},
+		{
+			"name": "x86-debug",
+			"displayName": "x86 Debug",
+			"description": "Target Windows (32-bit) with the Visual Studio development environment. (Debug)",
+			"inherits": "windows-base",
+			"architecture": {
+				"value": "x86",
+				"strategy": "external"
+			},
+			"cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+		},
+		{
+			"name": "x86-release",
+			"displayName": "x86 Release",
+			"description": "Target Windows (32-bit) with the Visual Studio development environment. (RelWithDebInfo)",
+			"inherits": "x86-debug",
+			"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+		}
+	]
+}

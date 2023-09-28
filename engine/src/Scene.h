@@ -121,7 +121,7 @@ public:
     SausageDebug::GetScaledCameraFrustum(
       SystemsManager::GetInstance()->camera,
       test_frustum,
-      0.1);
+      scale);
     test_frustum_verts = SausageDebug::GetScaledCameraFrustumVertices(scale);
 
     auto sm = SystemsManager::GetInstance();

@@ -100,6 +100,16 @@
 					"name": "BUILD_SHARED_LIBS",
 					"value": "False",
 					"type": "BOOL"
+				},
+				{
+					"name": "CMAKE_C_FLAGS_DEBUG",
+					"value": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address",
+					"type": "STRING"
+				},
+				{
+					"name": "CMAKE_CXX_FLAGS_DEBUG",
+					"value": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address",
+					"type": "STRING"
 				}
 			]
 		},

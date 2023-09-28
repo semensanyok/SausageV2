@@ -34,10 +34,6 @@ struct MeshLoadData : public MeshLoadDataBase {
 
 class MeshDataSlots {
 public:
-  // - count == 1 for single mesh. multiple for instanced meshes
-  // - used as offset to arrays: transform, texture, ...?
-  // - can be reallocated when num of instanced meshes exceeds
-  // Buffer offsets /////////////////////
   MemorySlot vertex_slot;
   MemorySlot index_slot;
   // in glsl == gl_BaseInstanceARB

@@ -23,8 +23,8 @@
 	path = engine/dependencies/gtk
 	url = https://gitlab.gnome.org/GNOME/gtk.git
 
-[submodule ".\\engine\\dependencies\\glib"]
-	path = .\\engine\\dependencies\\glib
+[submodule "engine/dependencies/glib"]
+	path = engine/dependencies/glib
 	url = https://github.com/GNOME/glib.git
 [submodule "engine/dependencies/cairo"]
 	path = engine/dependencies/cairo
@@ -35,3 +35,6 @@
 [submodule "engine/dependencies/FastNoise2"]
 	path = engine/dependencies/FastNoise2
 	url = https://github.com/Auburn/FastNoise2.git
+# [submodule "engine/dependencies/libRocket"]
+# 	path = engine/dependencies/libRocket
+# 	url = https://github.com/libRocket/libRocket.git
