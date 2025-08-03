@@ -1,13 +1,6 @@
 #pragma once
 
-#include "sausage.h"
-#include "Vertex.h"
-#include "Structures.h"
-#include "GPUStructs.h"
-#include "GPUUniformsStruct.h"
 #include "Interfaces.h"
-#include "TextureStruct.h"
-#include "BufferSettings.h"
 #include "Arena.h"
 #include "BoundingVolume.h"
 

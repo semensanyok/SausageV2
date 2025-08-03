@@ -17,8 +17,6 @@ using namespace glm;
 
 
 namespace SausageGameLoop {
-  Controller* controller;
-
   void Init() {
     // create systems
     SystemsManager::GetInstance()->InitSystems();

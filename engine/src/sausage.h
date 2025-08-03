@@ -56,7 +56,7 @@
 
 #include <stdio.h>
 
-// disables calls to 
+// disables calls to
 //#define NDEBUG
-//#include <assert.h>
-#include <cassert>
+#include <assert.h>
+// #include <cassert>

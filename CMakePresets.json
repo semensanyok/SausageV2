@@ -4,10 +4,14 @@
 		{
 			"name": "windows-base",
 			"description": "Target Windows with the Visual Studio development environment.",
-			"hidden": true,
 			"generator": "Ninja",
-			"binaryDir": "${sourceDir}/out/build/${presetName}",
-			"installDir": "${sourceDir}/out/install/${presetName}",
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"installDir": "${sourceDir}/install/${presetName}",
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Windows"
+			},
 			"cacheVariables": {
 				"CMAKE_C_COMPILER": "cl.exe",
 				"CMAKE_CXX_COMPILER": "cl.exe",
@@ -30,12 +34,8 @@
 				"ASSIMP_BUILD_ZLIB": "True",
 				"BUILD_SHARED_LIBS": "False",
 				"CMAKE_C_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address",
-				"CMAKE_CXX_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address"
-			},
-			"condition": {
-				"type": "equals",
-				"lhs": "${hostSystemName}",
-				"rhs": "Windows"
+				"CMAKE_CXX_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address",
+				"CMAKE_EXPORT_COMPILE_COMMANDS": "1"
 			}
 		},
 		{
@@ -47,15 +47,13 @@
 				"value": "x64",
 				"strategy": "external"
 			},
-			"cacheVariables": {
-				"CMAKE_BUILD_TYPE": "Debug"
-			}
+			"cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
 		},
 		{
 			"name": "x64-release",
 			"displayName": "x64 Release",
 			"description": "Target Windows (64-bit) with the Visual Studio development environment. (RelWithDebInfo)",
-			"inherits": "x64-debug",
+			"inherits": "windows-base",
 			"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
 		},
 		{
@@ -73,7 +71,7 @@
 			"name": "x86-release",
 			"displayName": "x86 Release",
 			"description": "Target Windows (32-bit) with the Visual Studio development environment. (RelWithDebInfo)",
-			"inherits": "x86-debug",
+			"inherits": "windows-base",
 			"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
 		}
 	]

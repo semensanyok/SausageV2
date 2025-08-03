@@ -172,10 +172,10 @@ public:
                       shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
     auto mesh_data = load_data.get();
     // storage must be allocated at this point (via AllocateStorage)
-    assert("AllocateStorage was not called", slots.index_slot.count > 0);
-    assert("AllocateStorage was not called", slots.vertex_slot.count > 0);
-    assert("AllocateStorage was not called", slots.index_slot.count >= mesh_data->indices.size());
-    assert("AllocateStorage was not called", slots.vertex_slot.count >= mesh_data->vertices.size());
+    assert(slots.index_slot.count > 0);
+    assert(slots.vertex_slot.count > 0);
+    assert(slots.index_slot.count >= mesh_data->indices.size());
+    assert(slots.vertex_slot.count >= mesh_data->vertices.size());
 
     auto& vertices = mesh_data->vertices;
     auto& indices = mesh_data->indices;

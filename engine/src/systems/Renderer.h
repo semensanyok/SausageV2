@@ -1,18 +1,8 @@
 #pragma once
 
-#include "sausage.h"
-#include "Settings.h"
-#include "OpenGLHelpers.h"
 #include "ThreadSafeQueue.h"
-#include "Macros.h"
-#include "Structures.h"
 #include "DrawCall.h"
-#include "Logging.h"
 #include "Camera.h"
-#include "BufferStorage.h"
-#include "Shader.h"
-#include "ImguiGui.h"
-#include "BufferConsumer.h"
 #include "RendererContextManager.h"
 #include "GLCommandBuffers.h"
 #include "GLVertexAttributes.h"

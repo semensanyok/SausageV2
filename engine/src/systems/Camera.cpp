@@ -39,16 +39,11 @@ void Camera::MouseWheelCallback(SDL_MouseWheelEvent &mw_event) {
 
   SetUpdateMatrices();
 }
-void Camera::SetUpdateMatrices()
-{
-  is_update_need = true;
-}
-void Camera::SetPosition(vec3& pos)
-{
+void Camera::SetUpdateMatrices() { is_update_need = true; }
+void Camera::SetPosition(vec3 &pos) {
   this->pos = pos;
   SetUpdateMatrices();
-}
-;
+};
 void Camera::MouseWheelCallbackRTS(SDL_MouseWheelEvent &mw_event) {
   this->pos.y -= (mw_event.y * CameraSettings::scroll_speed);
 
@@ -70,27 +65,25 @@ void Camera::Update() {
   }
 }
 void Camera::KeyCallback(int scan_code) {
-    if (scan_code == KeyboardLayout::ChangeCamera) {
-        if (camera_mode == CameraMode::RTS) {
-            camera_mode = CameraMode::FREE;
-        }
-        else {
-            camera_mode = CameraMode::RTS;
-        }
+  if (scan_code == KeyboardLayout::ChangeCamera) {
+    if (camera_mode == CameraMode::RTS) {
+      camera_mode = CameraMode::FREE;
+    } else {
+      camera_mode = CameraMode::RTS;
     }
-    else {
-        switch (camera_mode) {
-        case RTS:
-            KeyCallbackRTS(scan_code);
-            break;
-        case FREE:
-            KeyCallbackFreeCam(scan_code);
-            break;
-        default:
-            KeyCallbackRTS(scan_code);
-            break;
-        }
+  } else {
+    switch (camera_mode) {
+    case RTS:
+      KeyCallbackRTS(scan_code);
+      break;
+    case FREE:
+      KeyCallbackFreeCam(scan_code);
+      break;
+    default:
+      KeyCallbackRTS(scan_code);
+      break;
     }
+  }
 }
 void Camera::KeyCallbackRTS(int scan_code) {
   bool is_rts = true;
@@ -112,7 +105,8 @@ void Camera::ResizeCallback(int new_width, int new_height) {
   this->projection_matrix =
       perspective(this->FOV_rad, (float)this->width / (float)this->height,
                   this->near_plane, this->far_plane);
-  this->projection_matrix_ortho = ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
+  this->projection_matrix_ortho =
+      ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
 
   SetUpdateMatrices();
 }

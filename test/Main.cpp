@@ -1,13 +1,8 @@
 #include "Test1.h"
-#include "GLMHelpersTest.h"
-#include "AssetUtilsTest.h"
 #include "UIFontManagerTest.h"
 #include "3DFontManagerTest.h"
-#include "RendererContextManagerTest.h"
 #include "GtkGLOverlayTest.h"
-#include "ScreenOverlayManagerTest.h"
 #include "world_gen/TerrainTest.h"
-#include "GLHelpersTest.h"
 
 #undef main
 
