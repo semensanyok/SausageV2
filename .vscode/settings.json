@@ -6,6 +6,9 @@
         "list": "cpp",
         "vector": "cpp",
         "xstring": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "unordered_map": "cpp",
+        "optional": "cpp",
+        "set": "cpp"
     }
 }

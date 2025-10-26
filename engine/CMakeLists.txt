@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required(VERSION 3.10...4.0)
 
 project ("engine")
 
@@ -28,7 +28,8 @@ target_compile_options(assimp PRIVATE /w)
 #)
 
 # GLM
-add_subdirectory("${ENGINE_DEP_DIR}/glm")
+# add_subdirectory("${ENGINE_DEP_DIR}/glm")
+find_package(glm CONFIG REQUIRED)
 
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
@@ -37,7 +38,7 @@ add_subdirectory("${ENGINE_LIB_DIR}/glad")
 add_subdirectory("${ENGINE_DEP_DIR}/FastNoise2")
 
 # BULLET
-# multithread support. something about defining BT_THREADSAFE 
+# multithread support. something about defining BT_THREADSAFE
 # option(BULLET2_USE_THREAD_LOCKS ON)
 
 option(BUILD_BULLET2_DEMOS OFF)
@@ -112,7 +113,7 @@ set(PGK_CONF_FOUND_LIBS_LIBRARY_DIRS ${harfbuzz_LIBRARY_DIRS})
 
 
 MY_PRINT_ALL_VARIABLES()
-set(DEPENDENCIES_INCLUDE_DIRS 
+set(DEPENDENCIES_INCLUDE_DIRS
                     "${ENGINE_DEP_DIR}/assimp/include/"
                     "${ENGINE_LIB_DIR}/assimp/include/"
                     "${ENGINE_DEP_DIR}/bullet3/src/"
@@ -125,7 +126,8 @@ set(DEPENDENCIES_INCLUDE_DIRS
                     "${ENGINE_DEP_DIR}/cairo/src"
                     # "${ENGINE_DEP_DIR}/cairo/build/src"
                     "${ENGINE_LIB_DIR}/harfbuzz/include/harfbuzz"
-                    "${PGK_CONF_FOUND_LIBS_INCLUDE_DIRS}")
+                    "${PGK_CONF_FOUND_LIBS_INCLUDE_DIRS}" 
+                    "${ENGINE_DEP_DIR}/bullet3/src/")
 ############### DEPS END ############################################
 
 ####### IMGUI ##################
@@ -145,81 +147,80 @@ set(IMGUI_HEADERS
     "${ENGINE_DEP_DIR}/imgui/imstb_rectpack.h"
     "${ENGINE_DEP_DIR}/imgui/imstb_textedit.h"
     "${ENGINE_DEP_DIR}/imgui/imstb_truetype.h"
-    "${ENGINE_DEP_DIR}/imgui/backends/imgui_impl_opengl3.h"
-    "${ENGINE_DEP_DIR}/imgui/backends/imgui_impl_sdl.h"
+    "${ENGINE_DEP_DIR}/imgui/"
+    "${ENGINE_DEP_DIR}/imgui/backends/"
 )
 ####### IMGUI END ##################
 
 include_directories("${DEPENDENCIES_INCLUDE_DIRS}")
 
-set(${PROJECT_NAME}_INCLUDE_DIRS 
-"${ENGINE_SRC_DIR}/" 
-"${ENGINE_SRC_DIR}/systems/" 
-"${ENGINE_SRC_DIR}/systems/controller/" 
-"${ENGINE_SRC_DIR}/systems/physics/" 
+set(${PROJECT_NAME}_INCLUDE_DIRS
+"${ENGINE_SRC_DIR}/"
+"${ENGINE_SRC_DIR}/systems/"
+"${ENGINE_SRC_DIR}/systems/controller/"
+"${ENGINE_SRC_DIR}/systems/physics/"
 "${ENGINE_SRC_DIR}/systems/gui/"
-"${ENGINE_SRC_DIR}/utils/" 
-"${ENGINE_SRC_DIR}/buffer/" 
-"${ENGINE_SRC_DIR}/buffer/consumers/" 
-"${ENGINE_SRC_DIR}/systems/world_gen/" 
-"${ENGINE_SRC_DIR}/structures/" 
+"${ENGINE_SRC_DIR}/utils/"
+"${ENGINE_SRC_DIR}/buffer/"
+"${ENGINE_SRC_DIR}/buffer/consumers/"
+"${ENGINE_SRC_DIR}/systems/world_gen/"
+"${ENGINE_SRC_DIR}/structures/"
 "${ENGINE_SRC_DIR}/structures/spatial/"
-"${ENGINE_SRC_DIR}/systems/spatial/" 
-${IMGUI_HEADERS} 
+"${ENGINE_SRC_DIR}/systems/spatial/"
+${IMGUI_HEADERS}
 ${DEPENDENCIES_INCLUDE_DIRS})
 
-set(SAUSAGE_LIBS 
-assimp 
-glad 
-glm 
+set(SAUSAGE_LIBS
+assimp
+glad
+glm::glm
 FastNoise
-SDL2::Main 
-Bullet3Common 
-BulletCollision 
-BulletDynamics 
-Bullet3Geometry 
-Bullet3Collision 
-Bullet3Dynamics 
+SDL2::Main
+Bullet3Common
+BulletCollision
+BulletDynamics
+Bullet3Geometry
+Bullet3Collision
+Bullet3Dynamics
 LinearMath
-${SDL2_IMAGE_LIBRARIES} 
-${Freetype} 
-${PGK_CONF_FOUND_LIBS} 
+${SDL2_IMAGE_LIBRARIES}
+${Freetype}
+${PGK_CONF_FOUND_LIBS}
 CACHE INTERNAL "${PROJECT_NAME} libraries" FORCE)
 
-add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES} 
-"${ENGINE_SRC_DIR}/utils/AnimHelpers.cpp" 
-"${ENGINE_SRC_DIR}/utils/GLMHelpers.cpp" 
-"${ENGINE_SRC_DIR}/utils/OpenGLHelpers.cpp" 
+add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCES}
+"${ENGINE_SRC_DIR}/utils/AnimHelpers.cpp"
+"${ENGINE_SRC_DIR}/utils/GLMHelpers.cpp"
+"${ENGINE_SRC_DIR}/utils/OpenGLHelpers.cpp"
 "${ENGINE_SRC_DIR}/utils/ThreadSafeNumberPool.cpp"
-"${ENGINE_SRC_DIR}/utils/ThreadSafeSet.cpp" 
- 
-"${ENGINE_SRC_DIR}/FileWatcher.cpp" 
-"${ENGINE_SRC_DIR}/Logging.cpp" 
-"${ENGINE_SRC_DIR}/Shader.cpp" 
-"${ENGINE_SRC_DIR}/Texture.cpp" 
+
+"${ENGINE_SRC_DIR}/FileWatcher.cpp"
+"${ENGINE_SRC_DIR}/Logging.cpp"
+"${ENGINE_SRC_DIR}/Shader.cpp"
+"${ENGINE_SRC_DIR}/Texture.cpp"
 "${ENGINE_SRC_DIR}/Settings.cpp"
 "${ENGINE_SRC_DIR}/buffer/Arena.cpp"
-"${ENGINE_SRC_DIR}/buffer/BufferManager.cpp" 
-"${ENGINE_SRC_DIR}/buffer/BufferStorage.cpp" 
+"${ENGINE_SRC_DIR}/buffer/BufferManager.cpp"
+"${ENGINE_SRC_DIR}/buffer/BufferStorage.cpp"
 "${ENGINE_SRC_DIR}/buffer/GLBuffers.cpp"
-"${ENGINE_SRC_DIR}/buffer/consumers/BufferConsumer.cpp"  
-"${ENGINE_SRC_DIR}/buffer/consumers/BulletDebugDrawerBufferConsumer.cpp" 
- 
-"${ENGINE_SRC_DIR}/buffer/consumers/OverlayBufferConsumer3D.cpp" 
-"${ENGINE_SRC_DIR}/buffer/consumers/UIBufferConsumer.cpp" 
+"${ENGINE_SRC_DIR}/buffer/consumers/BufferConsumer.cpp"
+"${ENGINE_SRC_DIR}/buffer/consumers/BulletDebugDrawerBufferConsumer.cpp"
+
+"${ENGINE_SRC_DIR}/buffer/consumers/OverlayBufferConsumer3D.cpp"
+"${ENGINE_SRC_DIR}/buffer/consumers/UIBufferConsumer.cpp"
 "${ENGINE_SRC_DIR}/buffer/consumers/MeshDataBufferConsumerShared.cpp"
-"${ENGINE_SRC_DIR}/systems/Animation.cpp" 
-"${ENGINE_SRC_DIR}/systems/AsyncTaskManager.cpp" 
-"${ENGINE_SRC_DIR}/systems/Camera.cpp" 
-"${ENGINE_SRC_DIR}/systems/MeshManager.cpp" 
-"${ENGINE_SRC_DIR}/systems/Renderer.cpp" 
-"${ENGINE_SRC_DIR}/systems/RendererContextManager.cpp" 
+"${ENGINE_SRC_DIR}/systems/Animation.cpp"
+"${ENGINE_SRC_DIR}/systems/AsyncTaskManager.cpp"
+"${ENGINE_SRC_DIR}/systems/Camera.cpp"
+"${ENGINE_SRC_DIR}/systems/MeshManager.cpp"
+"${ENGINE_SRC_DIR}/systems/Renderer.cpp"
+"${ENGINE_SRC_DIR}/systems/RendererContextManager.cpp"
 "${ENGINE_SRC_DIR}/systems/ShaderManager.cpp"
-"${ENGINE_SRC_DIR}/systems/SystemsManager.cpp" 
-"${ENGINE_SRC_DIR}/systems/TextureManager.cpp" 
+"${ENGINE_SRC_DIR}/systems/SystemsManager.cpp"
+"${ENGINE_SRC_DIR}/systems/TextureManager.cpp"
 "${ENGINE_SRC_DIR}/systems/DrawCallManager.cpp"
-"${ENGINE_SRC_DIR}/systems/controller/MouseKeyboardEventProcessor.cpp" 
-"${ENGINE_SRC_DIR}/systems/physics/BulletDebugDrawer.cpp" 
+"${ENGINE_SRC_DIR}/systems/controller/MouseKeyboardEventProcessor.cpp"
+"${ENGINE_SRC_DIR}/systems/physics/BulletDebugDrawer.cpp"
 "${ENGINE_SRC_DIR}/systems/gui/ScreenOverlayManager.cpp"
 "${ENGINE_SRC_DIR}/systems/world_gen/TerrainManager.cpp"
 "${ENGINE_SRC_DIR}/structures/MeshDataUI.cpp"
@@ -252,17 +253,17 @@ endif()
 ###### ENGINE OPTIONS END ####################
 
 function(POSTPROCESS_SHADERS)
-    file(GLOB shaders_files "src/shaders/*")
-    list(FILTER shaders_files EXCLUDE REGEX "__\.py")
-    foreach(file ${shaders_files})
-        get_filename_component(filename ${file} NAME)
-        list(APPEND out_shaders_files ${CMAKE_BINARY_DIR}/shaders/${filename})
-    endforeach()
-    add_custom_target(
+  file(GLOB shaders_files "src/shaders/*")
+  list(FILTER shaders_files EXCLUDE REGEX "__\.py")
+  foreach(file ${shaders_files})
+    get_filename_component(filename ${file} NAME)
+    list(APPEND out_shaders_files ${CMAKE_BINARY_DIR}/shaders/${filename})
+  endforeach()
+  add_custom_target(
         dummy_target_generate_shaders ALL
         DEPENDS ${out_shaders_files}
     )
-    add_custom_command(
+  add_custom_command(
         OUTPUT ${out_shaders_files}
         COMMENT "GENERATE SHADERS"
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/scripts
@@ -282,9 +283,9 @@ POSTPROCESS_SHADERS()
 FILE(COPY "dlls/" DESTINATION "${CMAKE_BINARY_DIR}")
 
 IF ( CMAKE_EXPORT_COMPILE_COMMANDS )
-	execute_process(
-	   COMMAND ${CMAKE_COMMAND} -E create_symlink
-	       ${CMAKE_BINARY_DIR}/compile_commands.json
-	       ${CMAKE_CURRENT_SOURCE_DIR}/../compile_commands.json
-	)
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+        ${CMAKE_BINARY_DIR}/compile_commands.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/../compile_commands.json
+ )
 endif()

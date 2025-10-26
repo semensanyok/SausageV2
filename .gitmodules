@@ -1,15 +1,20 @@
+# [submodule "engine/dependencies/assimp"]
+# 	path = engine/dependencies/assimp
+# 	url = https://github.com/assimp/assimp.git
+# fix for conflict name of NodeArray between assimp and bullet3.
 [submodule "engine/dependencies/assimp"]
 	path = engine/dependencies/assimp
-	url = https://github.com/assimp/assimp.git
+	url = https://github.com/luca-della-vedova/assimp.git
+	branch = luca-della-vedova/luca/revert_6266
 [submodule "engine/dependencies/bullet3"]
 	path = engine/dependencies/bullet3
 	url = https://github.com/bulletphysics/bullet3.git
 [submodule "engine/dependencies/glad"]
 	path = engine/dependencies/glad
 	url = https://github.com/Dav1dde/glad.git
-[submodule "engine/dependencies/glm"]
-	path = engine/dependencies/glm
-	url = https://github.com/g-truc/glm.git
+# [submodule "engine/dependencies/glm"]
+# 	path = engine/dependencies/glm
+# 	url = https://github.com/g-truc/glm.git
 [submodule "engine/dependencies/stb"]
 	path = engine/dependencies/stb
 	url = https://github.com/nothings/stb.git
@@ -19,9 +24,9 @@
 [submodule "engine/dependencies/imgui"]
 	path = engine/dependencies/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "engine/dependencies/gtk"]
-	path = engine/dependencies/gtk
-	url = https://gitlab.gnome.org/GNOME/gtk.git
+# [submodule "engine/dependencies/gtk"]
+# 	path = engine/dependencies/gtk
+# 	url = https://gitlab.gnome.org/GNOME/gtk.git
 
 [submodule "engine/dependencies/glib"]
 	path = engine/dependencies/glib

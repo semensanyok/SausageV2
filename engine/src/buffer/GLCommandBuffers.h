@@ -38,9 +38,10 @@ OK only for compatibility profile
 #include "OpenGLHelpers.h"
 #include "BufferSettings.h"
 #include "GLBuffersCommon.h"
-#include "GPUSynchronizer.h";
+#include "GPUSynchronizer.h"
 
 using namespace std;
+using namespace BufferSettings;
 
 struct BufferLock {
   mutex data_mutex;

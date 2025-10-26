@@ -9,6 +9,11 @@
 #include "LightStruct.h"
 #include "Interfaces.h"
 #include "Texture.h"
+
+#include <assimp/scene.h>
+#include <assimp/Importer.hpp>
+#include <assimp/mesh.h>
+#include <assimp/postprocess.h>
 #include "AssimpHelper.h"
 #include "MeshDataStruct.h"
 #include "MeshDataInstance.h"
@@ -20,6 +25,11 @@
 #define AI_MAX_BONE_WEIGHTS 4
 using namespace std;
 using namespace glm;
+using namespace BufferSettings;
+
+
+#define ConfiguredAssmipImporter Assimp::Importer assimp_importer;\
+//assimp_importer.SetPropertyBool(AI_CONFIG_IMPORT_COLLADA_IGNORE_UP_DIRECTION, true);
 
 inline ostream& operator<<(ostream& in, const aiString& aistring) {
   in << string(aistring.C_Str());

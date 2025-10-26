@@ -22,6 +22,7 @@
 				"SAUSAGE_DEBUG_DRAW_PHYSICS": "True",
 				"BULLET2_USE_THREAD_LOCKS": "True",
 				"engine_DIR": "${sourceDir}/engine",
+				"glm_DIR": "D:/__OpenSource/vcpkg/packages/glm_x64-windows/share/glm",
 				"Freetype": "${sourceDir}/engine/lib/freetype/lib/freetype.lib",
 				"SDL2_LIBRARY": "${sourceDir}/engine/lib/SDL/SDL2.lib",
 				"FREETYPE_INCLUDE_DIR_freetype2": "${sourceDir}/engine/lib/freetype/include/freetype2",
