@@ -42,6 +42,8 @@ public:
    * @return if inside this BV
    */
   virtual bool Intersects(const BoundingBox *other) = 0;
+  // return true if this bounding volume is fully inside the provided frustum
+  virtual bool IsInside(const Frustum *frustum) = 0;
 };
 
 class BoundingBox : public BoundingVolume {
@@ -172,7 +174,19 @@ public:
            other->max_AABB.z <= max_AABB.z && other->min_AABB.x >= min_AABB.x &&
            other->min_AABB.y >= min_AABB.y && other->min_AABB.z >= min_AABB.z;
   }
+  // return true if this AABB is fully inside the frustum
+  bool IsInside(const Frustum *frustum) override {
+    auto insidePlane = [&](const Plane &plane)->bool {
+      float r = dot(half_extents, abs(plane.normal));
+      float distance_center_to_plane = dot(center, plane.normal) - plane.distance;
+      // center distance must be at least +r so the whole box is on the positive side
+      return distance_center_to_plane >= r;
+    };
 
+    return insidePlane(frustum->left) && insidePlane(frustum->right) &&
+           insidePlane(frustum->up) && insidePlane(frustum->down) &&
+           insidePlane(frustum->near) && insidePlane(frustum->far);
+  }
   bool Intersects(const BoundingBox *other) override {
     return other->min_AABB.x <= max_AABB.x && other->max_AABB.x >= min_AABB.x &&
            other->min_AABB.y <= max_AABB.y && other->max_AABB.y >= min_AABB.y &&

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TEXTURESTRUCT_H
+#define TEXTURESTRUCT_H
 
 #include "sausage.h"
 #include "Interfaces.h"
@@ -118,3 +119,5 @@ inline bool operator<(const BlendTextures& lhs, const BlendTextures& rhs) {
   }
   return false;
 }
+
+#endif // TEXTURESTRUCT_H

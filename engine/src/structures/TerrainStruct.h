@@ -4,6 +4,7 @@
 #include "Settings.h"
 #include "MeshDataStruct.h"
 #include "MeshDataTypes.h"
+#include "TextureStruct.h"
 
 using namespace glm;
 

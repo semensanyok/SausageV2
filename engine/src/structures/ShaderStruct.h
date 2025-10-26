@@ -1,6 +1,7 @@
 #pragma once
 
-class Shader;
+#include "Shader.h"
+//class Shader;
 
 enum ShaderType { BlinnPhong, BRDF };
 
