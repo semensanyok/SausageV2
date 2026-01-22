@@ -17,8 +17,6 @@ using namespace glm;
 
 
 namespace SausageGameLoop {
-  Controller* controller;
-
   void Init() {
     // create systems
     SystemsManager::GetInstance()->InitSystems();
@@ -35,7 +33,6 @@ namespace SausageGameLoop {
       systems_manager->PreUpdate();
 
       IF_PROFILE_ENABLED(auto proft1 = chrono::steady_clock::now(););
-      scene->PrepareFrameDraws();
       IF_PROFILE_ENABLED(ProfTime::prepare_draws_ns = chrono::steady_clock::now() - proft1;);
       SDL_Event e;
       while (SDL_PollEvent(&e)) {

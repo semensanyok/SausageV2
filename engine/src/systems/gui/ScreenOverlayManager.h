@@ -7,6 +7,8 @@
 #include "UIBufferConsumer.h"
 #include "FontManager.h"
 #include "DrawCallManager.h"
+#include "MeshDataTypes.h"
+#include "MeshDataUI.h"
 
 /*
 Screen splitted to equaly sized cells;
@@ -90,8 +92,6 @@ private:
   MeshManager* mesh_manager;
   FontManager* font_manager;
   DrawCallManager* draw_call_manager;
-  CommandBuffer* command_buffer_font;
-  CommandBuffer* command_buffer_back;
 
   const unsigned int COMMAND_BUFFER_SIZE = 100;
   int total_draw_commands_text = 0;
@@ -226,20 +226,22 @@ private:
     MeshDataUI* mesh
   ) {
     buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size());
-    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, draw_call_manager->font_ui_dc, 1);
     buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
-    buffer->BufferTransform(mesh, mesh->transform);
+
+    mesh->AllocateUniformOffset();
+    mesh->IncNumInstancesSetInstanceId();
+    mesh->FinalizeCommandWithBuffer();
+    mesh->OnTransformUpdate();
     buffer->BufferSize(mesh, batch->x_min, batch->x_max, batch->y_min, batch->y_max);
 
-    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, draw_call_manager->font_ui_dc, 1);
     drawn_ui_elements.push_back(mesh);
   }
   void _SubmitDrawBack(
     BatchDataUI* batch,
     MeshDataUI* mesh
   ) {
+    mesh->IncNumInstancesSetInstanceId();
     buffer->AllocateStorage(mesh->slots, batch->vertices.size(), batch->indices.size());
-    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, draw_call_manager->back_ui_dc, 1);
     buffer->BufferMeshData(mesh, batch->vertices, batch->indices, batch->colors, batch->uvs);
     buffer->BufferTransform(mesh, mesh->transform);
     auto min = mesh->transform;
@@ -250,7 +252,7 @@ private:
     max.y += batch->y_max;
     buffer->BufferSize(mesh, min.x, max.x, min.y, max.y);
 
-    draw_call_manager->AddNewCommandToDrawCall<MeshDataUI>(mesh, draw_call_manager->back_ui_dc, 1);
+    mesh->FinalizeCommandWithBuffer();
     drawn_ui_elements.push_back(mesh);
   }
   pair<unique_ptr<BatchDataUI>, MeshDataUI*> _GetTextMesh(

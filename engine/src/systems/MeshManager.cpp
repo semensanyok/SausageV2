@@ -135,8 +135,9 @@ void MeshManager::LoadMeshes(
         data->transform = transform;
       }
       if (is_load_aabb) {
-        data->physics_data =
-          new PhysicsData(transform, FromAi(mesh->mAABB.mMin), FromAi(mesh->mAABB.mMax));
+        auto aabb_min = vec3(FromAi(mesh->mAABB.mMin));
+        auto aabb_max = vec3(FromAi(mesh->mAABB.mMax));
+        data->bv = new BoundingBox(transform, aabb_min, aabb_max);
       }
       data->name = string(mesh->mName.C_Str());
 
@@ -179,30 +180,6 @@ MeshDataUI* MeshManager::CreateMeshDataFontUI(vec2 transform, Texture* texture) 
   all_meshes[mesh->id] = mesh;
   return mesh;
 }
-MeshDataOutline* MeshManager::CreateMeshDataOutline() {
-  auto mesh = new MeshDataOutline(mesh_id_pool->ObtainNumber());
-  all_meshes[mesh->id] = mesh;
-  return mesh;
-}
-
-MeshDataInstance* MeshManager::CreateInstancedMesh(MeshDataBase* base_mesh, const unsigned long instance_id) {
-  auto transform = mat4(1);
-  return CreateInstancedMesh(base_mesh, instance_id, transform);
-}
-
-MeshDataInstance* MeshManager::CreateInstancedMesh(MeshDataBase* base_mesh,
-  const unsigned long instance_id,
-  mat4& transform) {
-  auto* mesh = new MeshDataInstance(transform, instance_id, base_mesh);
-  auto instances_by_id = instances_by_base_mesh_id[base_mesh->id];
-  instances_by_id[mesh->instance_id].push_back(mesh);
-  return mesh;
-}
-
-MeshManager::MeshManager() {
-  mesh_id_pool = new ThreadSafeNumberPool(MAX_BASE_MESHES);
-  bone_id_pool = new ThreadSafeNumberPool(MAX_BONES);
-}
 
 MeshManager::~MeshManager() {
   _ClearInstances();
@@ -219,14 +196,6 @@ void MeshManager::DeleteMeshData(MeshDataBase* mesh) {
   //  }
   //  delete armature;
   //}
-  if (instances_by_base_mesh_id.contains(mesh->id)) {
-    for (auto instances_by_id : instances_by_base_mesh_id[mesh->id]) {
-      for (auto instance_by_id : instances_by_id.second) {
-        delete instance_by_id;
-      }
-    }
-    instances_by_base_mesh_id.erase(mesh->id);
-  }
   all_meshes.erase(mesh->id);
   delete mesh;
 }
@@ -246,13 +215,6 @@ void MeshManager::_ClearInstances() {
   all_meshes.clear();
   all_armatures.clear();
   all_lights.clear();
-}
-
-void MeshManager::DeleteMeshDataInstance(MeshDataInstance* mesh) {
-  if (instances_by_base_mesh_id.contains(mesh->base_mesh->id)) {
-    instances_by_base_mesh_id[mesh->base_mesh->id].erase(mesh->instance_id);
-  }
-  delete mesh;
 }
 
 string MeshManager::GetBoneName(const char* bone,

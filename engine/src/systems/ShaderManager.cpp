@@ -1,4 +1,5 @@
 #include "ShaderManager.h"
+#include "Renderer.h"
 
 void ShaderManager::SetupShaders() {
 
@@ -46,7 +47,7 @@ Shader* ShaderManager::_RegisterShader(const char* vs_name, const char* fs_name)
 }
 
 Shader* ShaderManager::_CreateShader(const char* vs_name, const char* fs_name) {
-  for (auto shader : initialized_shaders) {
+  for (auto& shader : initialized_shaders) {
     if (shader.second->vertex_path.ends_with(vs_name) ||
       shader.second->fragment_path.ends_with(fs_name)) {
       LOG((ostringstream() << "Shader with vs_name=" << string(vs_name)

@@ -5,14 +5,14 @@ void GLBuffers::AddUsedBuffers(BufferType::BufferTypeFlag used_buffers) {
 }
 
 void GLBuffers::InitBuffers() {
-  mesh_uniform_ptr = CreateBufferSlots<UniformDataMesh>(MESH_UNIFORMS_STORAGE_SIZE, MAX_MESHES_INSTANCES, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
-  mesh_static_uniform_ptr = CreateBufferSlots<UniformDataMeshStatic>(MESH_STATIC_UNIFORMS_STORAGE_SIZE, MAX_MESHES_STATIC_INSTANCES, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
-  mesh_terrain_uniform_ptr = CreateBufferSlots<UniformDataMeshTerrain>(MESH_TERRAIN_UNIFORMS_STORAGE_SIZE, MAX_MESHES_TERRAIN, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
-  texture_handle_by_texture_id_ptr = CreateBufferStorageNumberPool<GLuint64>(TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE, MAX_TEXTURE, GL_SHADER_STORAGE_BUFFER);
-  light_ptr = CreateBufferSlots<LightsUniform>(LIGHT_STORAGE_SIZE, MAX_LIGHTS, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
-  uniforms_3d_overlay_ptr = CreateBufferSlots<UniformDataOverlay3D>(UNIFORM_OVERLAY_3D_STORAGE_SIZE, MAX_3D_OVERLAY_INSTANCES, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
-  uniforms_ui_ptr = CreateBufferSlots<UniformDataUI>(UNIFORM_UI_STORAGE_SIZE, MAX_UI_INSTANCES, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
-  uniforms_controller_ptr = CreateBufferSlots<ControllerUniformData>(UNIFORM_CONTROLLER_SIZE, 1, GL_SHADER_STORAGE_BUFFER, ArenaSlotSize::ONE);
+  mesh_uniform_ptr = CreateBufferNumberPool<UniformDataMesh>(MESH_UNIFORMS_STORAGE_SIZE, MAX_MESHES_INSTANCES, GL_SHADER_STORAGE_BUFFER);
+  mesh_static_uniform_ptr = CreateBufferNumberPool<UniformDataMeshStatic>(MESH_STATIC_UNIFORMS_STORAGE_SIZE, MAX_MESHES_STATIC_INSTANCES, GL_SHADER_STORAGE_BUFFER);
+  mesh_terrain_uniform_ptr = CreateBufferNumberPool<UniformDataMeshTerrain>(MESH_TERRAIN_UNIFORMS_STORAGE_SIZE, MAX_MESHES_TERRAIN, GL_SHADER_STORAGE_BUFFER);
+  texture_handle_by_texture_id_ptr = CreateBufferNumberPool<GLuint64>(TEXTURE_HANDLE_BY_TEXTURE_ID_STORAGE_SIZE, MAX_TEXTURE, GL_SHADER_STORAGE_BUFFER);
+  light_ptr = CreateBufferNumberPool<LightsUniform>(LIGHT_STORAGE_SIZE, MAX_LIGHTS, GL_SHADER_STORAGE_BUFFER);
+  uniforms_3d_overlay_ptr = CreateBufferNumberPool<UniformDataOverlay3D>(UNIFORM_OVERLAY_3D_STORAGE_SIZE, MAX_3D_OVERLAY_INSTANCES, GL_SHADER_STORAGE_BUFFER);
+  uniforms_ui_ptr = CreateBufferNumberPool<UniformDataUI>(UNIFORM_UI_STORAGE_SIZE, MAX_UI_INSTANCES, GL_SHADER_STORAGE_BUFFER);
+  uniforms_controller_ptr = CreateBufferNumberPool<ControllerUniformData>(UNIFORM_CONTROLLER_SIZE, 1, GL_SHADER_STORAGE_BUFFER);
 
   terrain_texture_instance_slots = new Arena({0,TERRAIN_MAX_TEXTURES,0});
 }

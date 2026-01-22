@@ -9,6 +9,7 @@
 #include "AssetUtils.h"
 #include "StateManager.h"
 #include "Macros.h"
+#include "Transform.h"
 
 using namespace std;
 
@@ -94,35 +95,38 @@ public:
   }
   void UpdateTransforms() {
     IF_PROFILE_ENABLED(auto proft4 = chrono::steady_clock::now());
-    auto nonStatic = dynamicsWorld->getNonStaticRigidBodies();
+    auto& nonStatic = dynamicsWorld->getNonStaticRigidBodies();
     btTransform btTrans;
     for (size_t i = 0; i < nonStatic.size(); i++)
     {
       auto rigidBody = nonStatic[i];
       rigidBody->getMotionState()->getWorldTransform(btTrans);
       // perhaps dynamic_cast will be required because of MeshDataClickable raytest
-      PhysicsTransformUpdate* sausage_up = ((PhysicsTransformUpdate*)rigidBody->getUserPointer());
+      Transform<mat4>* sausage_up = ((Transform<mat4>*)rigidBody->getUserPointer());
       
       //auto& update = state_manager->GetPhysicsUpdate(mesh_data);
       //update.first = mesh_data;
       //btTrans.getOpenGLMatrix(&mesh_data->transform[0][0]);
 
-      btTrans.getOpenGLMatrix(&sausage_up->GetOutMatrix()[0][0]);
-      sausage_up->OnTransformUpdate();
+      btTrans.getOpenGLMatrix(&sausage_up->GetOutTransform()[0][0]);
+      //called after frustum cull to buffer only for visible meshes
+      //sausage_up->OnTransformUpdate();
     }
     IF_PROFILE_ENABLED(ProfTime::physics_buf_trans_ns = chrono::steady_clock::now() - proft4);
   }
-  void AddBoxRigidBody(PhysicsData* physics_data,
-    PhysicsTransformUpdate* user_pointer,
-    mat4& model_transform,
+  void AddBoxRigidBody(
+    PhysicsData* physics_data,
+    BoundingBox* bv,
+    Transform<mat4>* user_pointer,
     const char* name_for_log) {
 
     btBoxShape* shape = new btBoxShape(btVector3(
-      physics_data->bounding_box->half_extents.x,
-      physics_data->bounding_box->half_extents.y,
-      physics_data->bounding_box->half_extents.z));
+      bv->half_extents.x,
+      bv->half_extents.y,
+      bv->half_extents.z));
     collisionShapes.push_back(shape);
     auto transform = btTransform();
+    auto& model_transform = user_pointer->ReadTransform();
     if (model_transform[0].x > 1 || model_transform[1].y > 1 || model_transform[2].z > 1) {
       LOG((ostringstream()
         << "model scale must be 1 for bullet rigidbody. "
@@ -168,7 +172,7 @@ public:
     int height,
     btScalar spacing,
     SausageUserPointer* user_pointer,
-    mat4& model_transform,
+    const mat4& model_transform,
     string& name_for_log,
     btScalar minHeight,
     btScalar maxHeight

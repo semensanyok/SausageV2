@@ -3,7 +3,10 @@
 #include "sausage.h"
 #include "ShaderStruct.h"
 #include "FileWatcher.h"
-#include "Renderer.h"
+
+class Camera;
+class Renderer;
+class FileWatcher;
 
 class ShaderManager : public SausageSystem {
   friend class SystemsManager;

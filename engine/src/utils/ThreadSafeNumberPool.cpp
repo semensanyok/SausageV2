@@ -3,6 +3,7 @@
 unsigned int ThreadSafeNumberPool::ObtainNumber()
 {
   lock_guard l(mtx);
+  // TODO: return -1 if failed?
   assert(allocated < max_number);
   if (!released_slots.empty()) {
     auto res = released_slots.top();

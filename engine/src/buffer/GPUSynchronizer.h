@@ -15,12 +15,14 @@ public:
   }
   // call after SSBO write (GL_SHADER_STORAGE_BUFFER).
   void SetSyncBarrier() {
+    if (!is_need_barrier) {
+      glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+    }
     is_need_barrier = true;
   }
   void SyncGPU() {
-    WaitGPU();
     if (is_need_barrier) {
-      glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+      WaitGPU();
       is_need_barrier = false;
     }
   }

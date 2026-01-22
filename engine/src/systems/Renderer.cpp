@@ -1,4 +1,6 @@
 #include "Renderer.h"
+#include "SceneManager.h"
+#include "DrawCallManager.h"
 
 using namespace std;
 
@@ -13,8 +15,9 @@ void Renderer::Render(Camera* camera) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   GPUSynchronizer::GetInstance()->SyncGPU();
   {
+    SceneManager::GetInstance()->PreDraw();
     buffer_manager->PreDraw();
-
+    //command_buffers_manager->PreDraw();
     for (auto order_shader : draw_calls) {
       //if (order_shader.first != DrawOrder::MESH_STATIC) {
       //  continue;
@@ -27,13 +30,28 @@ void Renderer::Render(Camera* camera) {
         vertex_attributes->BindVAO(GetVertexTypeByDrawOrder(order_shader.first));
         //DEBUG_EXPR(CheckGLError());
         for (auto draw : order_shader.second) {
-          if (draw->is_enabled && draw->GetCommandCount() > 0) {
+          lock_guard l(draw->mtx);
+          // NOTE: currently draw->PreDraw() cleans command array
+          unsigned int command_count = draw->GetCommandCount();
+          if (draw->is_enabled && command_count > 0) {
+            draw->PreDraw();
+            command_buffers_manager->UnmapBuffer(draw->command_buffer);
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw->command_buffer->ptr->buffer_id);
             glUseProgram(draw->shader->id);
+            //DEBUG_EXPR(CheckGLError());
             draw->shader->SetUniforms();
-            unsigned int command_count = draw->GetCommandCount();
-            glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT, nullptr,
+            //DEBUG_EXPR(CheckGLError());
+            // with core profile cannot issue call without DRAW_INDIRECT_BUFFER
+            // must enable compatibility profile
+            // otherwise RAM command array doesnt work
+            // but what if dummy buffer is bound ???
+            glMultiDrawElementsIndirect(draw->mode, GL_UNSIGNED_INT,
+                                        //draw->commands.data(),
+                                        nullptr,
                                         command_count, 0);
+            DEBUG_EXPR(CheckGLError());
+            draw->PostDraw();
+            command_buffers_manager->MapBuffer(draw->command_buffer);
             DEBUG_EXPR(CheckGLError());
           }
         }
@@ -41,6 +59,9 @@ void Renderer::Render(Camera* camera) {
       DEBUG_EXPR(CheckGLError());
     }
     buffer_manager->PostDraw();
+    //command_buffers_manager->PostDraw();
+    spatial_manager->PostDraw();
+    dc_manager->ResetFrameCommands();
     GPUSynchronizer::GetInstance()->PostDraw();
   }
   IF_PROFILE_ENABLED(auto proft3 = chrono::steady_clock::now(););

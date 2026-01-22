@@ -1,0 +1,5 @@
+"cacheVariables": {
+...........
+				"CMAKE_C_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address",
+				"CMAKE_CXX_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address"
+			},

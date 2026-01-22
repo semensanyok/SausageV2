@@ -2,14 +2,15 @@
 
 #include "sausage.h"
 #include "BufferConsumer.h"
+#include "TextureStruct.h"
 #include "TextureManager.h"
 #include "GLVertexAttributes.h"
 #include "GLBuffersCommon.h"
 #include "MeshManager.h"
-#include "MeshDataStruct.h"
+#include "Transform.h"
 
-template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE>
-class MeshDataBufferConsumerShared : public BufferConsumer<TEXTURE_ARRAY_TYPE, MESH_TYPE, mat4, VERTEX_TYPE> {
+template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename VERTEX_TYPE, typename UNIFORM_DATA_TYPE>
+class MeshDataBufferConsumerShared : public BufferConsumer<TEXTURE_ARRAY_TYPE, MESH_TYPE, mat4, VERTEX_TYPE, UNIFORM_DATA_TYPE> {
   TextureManager* texture_manager;
   MeshManager* mesh_manager;
   GLVertexAttributes* vertex_attributes;
@@ -20,16 +21,18 @@ public:
     TextureManager* texture_manager,
     BufferType::BufferTypeFlag buffer_type
   )
-    : BufferConsumer<TEXTURE_ARRAY_TYPE, MESH_TYPE, mat4, VERTEX_TYPE>(vertex_attributes, mesh_manager, buffer_type),
+    : BufferConsumer<TEXTURE_ARRAY_TYPE, MESH_TYPE, mat4, VERTEX_TYPE, UNIFORM_DATA_TYPE>(vertex_attributes, mesh_manager, buffer_type),
     texture_manager{ texture_manager },
     mesh_manager{ mesh_manager },
     vertex_attributes{ vertex_attributes } {
   };
   ~MeshDataBufferConsumerShared() {
   };
-  void ReleaseSlots(MeshDataBase* mesh) {
-    BufferStorage::GetInstance()->ReleaseInstanceSlot<MESH_TYPE>(mesh->slots);
+  void ReleaseVertexStorage(MESH_TYPE* mesh) {
     vertex_attributes->ReleaseStorage<VERTEX_TYPE>(mesh->slots);
+  }
+  void ReleaseSlots(MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>* mesh) {
+    BufferStorage::GetInstance()->ReleaseUniformOffset<UNIFORM_DATA_TYPE, MESH_TYPE>(mesh);
   }
   void BufferMeshData(MESH_TYPE* mesh,
     vector<vec3>& vertices,
@@ -50,16 +53,13 @@ public:
   }
   void BufferMeshData(MESH_TYPE* mesh,
     shared_ptr<MeshLoadData<VERTEX_TYPE>>& load_data) {
-    //allocated in DrawCallManager->SetToCommandWithOffsets (via buffer->TryReallocateInstanceSlot)
-    //this->AllocateInstanceSlot(mesh->slots, num_instances);
     this->BufferVertices(mesh->slots, load_data);
-    this->BufferTransform(mesh, mesh->transform);
   }
-  void BufferMeshDataInstance(MeshDataInstance* mesh,
+  void BufferMeshDataInstance(MeshDataInstance<MESH_TYPE, UNIFORM_DATA_TYPE>* mesh,
     BlendTextures& textures) {
     if (textures.num_textures > 0) {
       this->BufferTexture(mesh, textures);
     }
-    this->BufferTransform(mesh, mesh->transform);
+    mesh->OnTransformUpdate();
   }
 };

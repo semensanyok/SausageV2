@@ -18,11 +18,7 @@ struct InstancesSlots {
   };
   inline void Release(MemorySlot& slot) {
     instances_slots.Release(slot);
-    slot = MemorySlots::NULL_SLOT;
-  };
-  inline void Release(MeshDataSlots& slot) {
-    instances_slots.Release(slot.instances_slot);
-    slot.instances_slot = MemorySlots::NULL_SLOT;
+    slot.Reset();
   };
   inline void Reset() {
     instances_slots.Reset();

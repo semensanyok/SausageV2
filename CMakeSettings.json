@@ -1,15 +1,7 @@
 ﻿{
 	"configurations": [
 		{
-			"name": "x64-Debug",
-			"generator": "Ninja",
-			"configurationType": "Debug",
-			"inheritEnvironments": [ "msvc_x64_x64" ],
-			"buildRoot": "${projectDir}\\out\\build\\${name}",
-			"installRoot": "${projectDir}\\out\\install\\${name}",
-			"cmakeCommandArgs": "",
-			"buildCommandArgs": "",
-			"ctestCommandArgs": "",
+			"name": "base",
 			"variables": [
 				{
 					"name": "Bullet3_DIR",
@@ -33,7 +25,7 @@
 				},
 				{
 					"name": "SAUSAGE_DEBUG_DRAW_PHYSICS",
-					"value": "False",
+					"value": "True",
 					"type": "BOOL"
 				},
 				{
@@ -100,75 +92,66 @@
 					"name": "BUILD_SHARED_LIBS",
 					"value": "False",
 					"type": "BOOL"
+				},
+				{
+					"name": "CMAKE_C_FLAGS_DEBUG",
+					"value": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address",
+					"type": "STRING"
+				},
+				{
+					"name": "CMAKE_CXX_FLAGS_DEBUG",
+					"value": "/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address",
+					"type": "STRING"
 				}
 			]
+		},
+		{
+			"name": "x64-Debug",
+			"generator": "Ninja",
+			"configurationType": "Debug",
+			"inheritEnvironments": [ "msvc_x64_x64" ],
+			"buildRoot": "${projectDir}\\build\\${name}",
+			"installRoot": "${projectDir}\\install\\${name}",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": "",
+			"ctestCommandArgs": "",
+			"inherits": "base"
 		},
 		{
 			"name": "x64-Release",
 			"generator": "Ninja",
 			"configurationType": "RelWithDebInfo",
-			"buildRoot": "${projectDir}\\out\\build\\${name}",
-			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"buildRoot": "${projectDir}\\build\\${name}",
+			"installRoot": "${projectDir}\\install\\${name}",
 			"cmakeCommandArgs": "",
 			"buildCommandArgs": "-v",
 			"ctestCommandArgs": "",
 			"inheritEnvironments": [ "msvc_x64_x64" ],
-			"variables": [
-				{
-					"name": "SDL2_LIBRARY",
-					"value": "C:/MyProjects/SausageV2/engine/lib/SDL/SDL2.lib",
-					"type": "FILEPATH"
-				},
-				{
-					"name": "SDL2_PATH",
-					"value": "C:/MyProjects/SausageV2/engine/lib/SDL",
-					"type": "STRING"
-				},
-				{
-					"name": "SDL2_IMAGE_INCLUDE_DIR",
-					"value": "C:/MyProjects/SausageV2/engine/lib/SDL/include",
-					"type": "PATH"
-				},
-				{
-					"name": "SDL2_IMAGE_LIBRARY",
-					"value": "C:/MyProjects/SausageV2/engine/lib/SDL/SDL2_image.lib",
-					"type": "FILEPATH"
-				}
-			]
+			"inherits": "base"
 		},
 		{
 			"name": "x86-Debug",
 			"generator": "Ninja",
 			"configurationType": "Debug",
-			"buildRoot": "${projectDir}\\out\\build\\${name}",
-			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"buildRoot": "${projectDir}\\build\\${name}",
+			"installRoot": "${projectDir}\\install\\${name}",
 			"cmakeCommandArgs": "",
 			"buildCommandArgs": "-v",
 			"ctestCommandArgs": "",
-			"inheritEnvironments": [ "msvc_x86" ]
+			"inheritEnvironments": [ "msvc_x86" ],
+			"inherits": "base"
 		},
 		{
 			"name": "x86-Release",
 			"generator": "Ninja",
 			"configurationType": "RelWithDebInfo",
-			"buildRoot": "${projectDir}\\out\\build\\${name}",
-			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"buildRoot": "${projectDir}\\build\\${name}",
+			"installRoot": "${projectDir}\\install\\${name}",
 			"cmakeCommandArgs": "",
 			"buildCommandArgs": "-v",
 			"ctestCommandArgs": "",
 			"inheritEnvironments": [ "msvc_x86" ],
-			"variables": [
-				{
-					"name": "SDL2_PATH",
-					"value": "C:\\MyProjects\\SausageV2\\engine\\lib\\SDL",
-					"type": "STRING"
-				},
-				{
-					"name": "SDL2_IMAGE_LIBRARY",
-					"value": "C:/MyProjects/SausageV2/engine/lib/SDL/SDL2_image.lib",
-					"type": "FILEPATH"
-				}
-			]
+			"inherits": "base"
 		}
 	]
 }

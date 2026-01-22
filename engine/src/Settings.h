@@ -14,9 +14,12 @@ namespace GameSettings {
   inline int ray_debug_draw_lifetime_milliseconds = 2000;
 
   inline float physics_step_multiplier = 0.001f;
+  //inline float physics_step_multiplier = 0.01f;
+
+  inline float cam_speed = 1.0f;
   inline bool quit = false;
 
-  inline int MAX_DRAW_DISTANCE = 1000;
+  inline float MAX_DRAW_DISTANCE = 1000.0;
 
   inline const vec3 world_right = { 1,0,0 };
   inline const vec3 world_up = { 0,1,0 };
@@ -66,7 +69,7 @@ namespace KeyboardEvents {
 	inline std::set<int> keys_pressed;
 };
 
-#define SAUSAGE_DEBUG_BUILD
+// #define SAUSAGE_DEBUG_BUILD
 
 #ifdef SAUSAGE_DEBUG_BUILD
 #include <assert.h>

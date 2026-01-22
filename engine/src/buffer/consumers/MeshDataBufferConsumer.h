@@ -13,11 +13,11 @@
 #include "MeshManager.h"
 #include "TextureStruct.h"
 #include "TextureManager.h"
-#include "MeshDataBufferConsumerShared.h"
+#include "MeshDataTypes.h"
 
 using namespace std;
 
-class MeshDataBufferConsumer : public MeshDataBufferConsumerShared<BlendTextures, MeshData, Vertex> {
+class MeshDataBufferConsumer : public MeshDataBufferConsumerSharedT {
 public:
   MeshDataBufferConsumer(
     GLVertexAttributes* vertex_attributes,

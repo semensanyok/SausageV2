@@ -2,21 +2,23 @@
 
 #include "sausage.h"
 #include "BufferConsumer.h"
-#include "BufferStorage.h"
+#include "MeshDataTypes.h"
 #include "BufferSettings.h"
 #include "Logging.h"
-#include "MeshManager.h"
 #include "OpenGLHelpers.h"
 #include "Settings.h"
 #include "Structures.h"
 #include "GPUStructs.h"
-#include "MeshDataStruct.h"
-#include "Vertex.h"
 
 using namespace std;
 using namespace glm;
 
-class UIBufferConsumer : public BufferConsumer<unsigned int, MeshDataUI, vec2, VertexUI> {
+class MeshManager;
+class GLVertexAttributes;
+class MeshDataUI;
+class BufferInstanceOffset;
+
+class UIBufferConsumer : public MeshDataUIConsumerT {
   MeshManager* mesh_manager;
 
  public:
@@ -33,7 +35,7 @@ class UIBufferConsumer : public BufferConsumer<unsigned int, MeshDataUI, vec2, V
                       vector<vec3>& colors, vector<vec2>& uvs);
   // implemented in template
   //void BufferTransform(MeshDataUI* mesh);
-  void BufferSize(MeshDataUI* mesh, int min_x, int max_x, int min_y, int max_y);
+  void BufferSize(BufferInstanceOffset* mesh, int min_x, int max_x, int min_y, int max_y);
   void Init();
   void Reset();
 };

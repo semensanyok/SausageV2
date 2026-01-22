@@ -7,7 +7,7 @@
 #include "GLVertexAttributes.h"
 #include "MeshDataBufferConsumerShared.h"
 
-class MeshStaticBufferConsumer : public MeshDataBufferConsumerShared<BlendTextures, MeshDataStatic, VertexStatic> {
+class MeshStaticBufferConsumer : public MeshStaticBufferConsumerSharedT {
 
 public:
 

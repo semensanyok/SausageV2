@@ -1,17 +1,14 @@
 #pragma once
 
 #include "sausage.h"
-#include "Settings.h"
-#include "Structures.h"
 #include "MeshManager.h"
-#include "BufferStorage.h"
+#include "MeshDataTypes.h"
+#include "GLVertexAttributes.h"
 #include "BufferConsumer.h"
-#include "BufferSettings.h"
 
-// transform type mat4 not used. change to vec2 when needed.
-class BulletDebugDrawerBufferConsumer : public BufferConsumer<unsigned int, MeshDataOutline, vec2, VertexOutline> {
-  unsigned long vertices_size = 1000;
-  unsigned long indices_size = 1000;
+class BulletDebugDrawerBufferConsumer : public MeshDataOutlineBufferConsumerT {
+  unsigned long vertices_size = 1000000;
+  unsigned long indices_size = 1000000;
   bool is_data_inited = false;
 public:
   MeshDataOutline* mesh = nullptr;
@@ -29,7 +26,4 @@ public:
       vector<vec3>& colors);
   void Init();
   void Reset();
-  void ReleaseSlots(MeshDataBase* mesh) {
-    vertex_attributes->ReleaseStorage<VertexOutline>(mesh->slots);
-  }
 };

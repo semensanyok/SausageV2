@@ -84,16 +84,12 @@ public:
   /////////////////////////////////////////////////////////////////////////////////////////////
 
   void Activate() {
-    if (!is_called_AddNewCommandToDrawCall) {
-      draw_call_manager->AddNewCommandToDrawCall<MeshDataPhysDebugDrawer>(buffer->mesh,
-        draw_call_manager->physics_debug_dc, 1, false);
-      is_called_AddNewCommandToDrawCall = true;
-    }
+    draw_call_manager->outline_dc->is_enabled = true;
   }
   void Deactivate() {
     clearPersist();
     clear();
-    draw_call_manager->physics_debug_dc->is_enabled = false;
+    draw_call_manager->outline_dc->is_enabled = false;
   }
 private:
   void clearPersist() {

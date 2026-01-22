@@ -12,23 +12,7 @@ void Camera::_UpdateMatrices() {
       inverse(view_matrix) * inverse(projection_matrix);
 }
 void Camera::_UpdateFrustum() {
-  const float half_back_width = far_plane * tanf(this->FOV_rad * .5f);
-  const float half_back_height = half_back_width * aspect;
-  const glm::vec3 far_center = far_plane * this->direction;
-
-  auto cam_dist_from_origin = glm::length(this->pos);
-  this->frustum.near = { glm::length(this->pos + near_plane * this->direction),
-    this->direction };
-  this->frustum.far = { glm::length(this->pos + far_center),
-    -this->direction };
-  this->frustum.right = { cam_dist_from_origin,
-      normalize(glm::cross(far_center - this->right * half_back_height, this->up)) };
-  this->frustum.left = { cam_dist_from_origin,
-      normalize(glm::cross(this->up,far_center + this->right * half_back_height)) };
-  this->frustum.up = { cam_dist_from_origin,
-      normalize(glm::cross(this->right, far_center - this->up * half_back_width)) };
-  this->frustum.down = { cam_dist_from_origin,
-      normalize(glm::cross(far_center + this->up * half_back_width, this->right)) };
+  SausageDebug::GetScaledCameraFrustum(this, this->frustum, 1.0);
 }
 void Camera::UpdateCamera() {
   vec3 target = vec3(sin(radians(yaw_angle)) * cos(radians(pitch_angle)),
@@ -55,16 +39,11 @@ void Camera::MouseWheelCallback(SDL_MouseWheelEvent &mw_event) {
 
   SetUpdateMatrices();
 }
-void Camera::SetUpdateMatrices()
-{
-  is_update_need = true;
-}
-void Camera::SetPosition(vec3& pos)
-{
+void Camera::SetUpdateMatrices() { is_update_need = true; }
+void Camera::SetPosition(vec3 &pos) {
   this->pos = pos;
   SetUpdateMatrices();
-}
-;
+};
 void Camera::MouseWheelCallbackRTS(SDL_MouseWheelEvent &mw_event) {
   this->pos.y -= (mw_event.y * CameraSettings::scroll_speed);
 
@@ -86,27 +65,25 @@ void Camera::Update() {
   }
 }
 void Camera::KeyCallback(int scan_code) {
-    if (scan_code == KeyboardLayout::ChangeCamera) {
-        if (camera_mode == CameraMode::RTS) {
-            camera_mode = CameraMode::FREE;
-        }
-        else {
-            camera_mode = CameraMode::RTS;
-        }
+  if (scan_code == KeyboardLayout::ChangeCamera) {
+    if (camera_mode == CameraMode::RTS) {
+      camera_mode = CameraMode::FREE;
+    } else {
+      camera_mode = CameraMode::RTS;
     }
-    else {
-        switch (camera_mode) {
-        case RTS:
-            KeyCallbackRTS(scan_code);
-            break;
-        case FREE:
-            KeyCallbackFreeCam(scan_code);
-            break;
-        default:
-            KeyCallbackRTS(scan_code);
-            break;
-        }
+  } else {
+    switch (camera_mode) {
+    case RTS:
+      KeyCallbackRTS(scan_code);
+      break;
+    case FREE:
+      KeyCallbackFreeCam(scan_code);
+      break;
+    default:
+      KeyCallbackRTS(scan_code);
+      break;
     }
+  }
 }
 void Camera::KeyCallbackRTS(int scan_code) {
   bool is_rts = true;
@@ -128,7 +105,8 @@ void Camera::ResizeCallback(int new_width, int new_height) {
   this->projection_matrix =
       perspective(this->FOV_rad, (float)this->width / (float)this->height,
                   this->near_plane, this->far_plane);
-  this->projection_matrix_ortho = ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
+  this->projection_matrix_ortho =
+      ortho(0.0f, (float)this->width, 0.0f, (float)this->height);
 
   SetUpdateMatrices();
 }

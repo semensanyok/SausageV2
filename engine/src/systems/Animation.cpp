@@ -54,7 +54,9 @@ void AnimationManager::SetTransformForHierarchy(
   anim_trans = parent_transform * anim_trans;
   bool is_anim = is_bone_anim || is_parent_anim;
   if (is_anim) {
-    final_transforms[bone->id] = armature->transform * anim_trans * bone->offset;
+    final_transforms[bone->id] =
+      armature->transform *
+      anim_trans * bone->offset;
   }
   for (auto child_of_child : bone->children) {
     SetTransformForHierarchy(armature, child_of_child, blend_anims, anim_trans, final_transforms, is_anim);

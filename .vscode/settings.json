@@ -1,0 +1,14 @@
+{
+    "cmake.configureOnOpen": true,
+    "files.associations": {
+        "deque": "cpp",
+        "format": "cpp",
+        "list": "cpp",
+        "vector": "cpp",
+        "xstring": "cpp",
+        "regex": "cpp",
+        "unordered_map": "cpp",
+        "optional": "cpp",
+        "set": "cpp"
+    }
+}

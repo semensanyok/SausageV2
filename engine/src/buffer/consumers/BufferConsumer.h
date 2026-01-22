@@ -7,13 +7,17 @@
 #include "GLVertexAttributes.h"
 #include "MeshManager.h"
 
+
+using namespace glm;
+using namespace std;
+
 /**
  * @brief Adapter/Interface to Uniforms/vertex arrays
  * @tparam TEXTURE_ARRAY_TYPE 
  * @tparam MESH_TYPE 
  * @tparam TRANSFORM_TYPE 
 */
-template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename TRANSFORM_TYPE, typename VERTEX_TYPE>
+template<typename TEXTURE_ARRAY_TYPE, typename MESH_TYPE, typename TRANSFORM_TYPE, typename VERTEX_TYPE, typename UNIFORM_DATA_TYPE>
 class BufferConsumer {
 public:
   BufferStorage* buffer;
@@ -49,22 +53,26 @@ public:
       load_data->vertices.size(),
       load_data->indices.size());
   };
-  bool AllocateInstanceSlot(
-    MeshDataSlots& out_slots,
-    unsigned long num_instances) {
-    return buffer->AllocateInstanceSlot<MESH_TYPE>(out_slots, num_instances);
+  bool AllocateUniformOffset(
+    InstanceSlotUpdate* out_slots) {
+    return buffer->AllocateUniformOffset<UNIFORM_DATA_TYPE, MESH_TYPE>(out_slots);
   }
-  void BufferTransform(BufferInstanceOffset* offset, TRANSFORM_TYPE& transform) {
+  void BufferUniformOffset(BufferInstanceOffset* offset) {
+    buffer->BufferUniformOffset<MESH_TYPE>(offset);
+  }
+  void BufferTransform(BufferInstanceOffset* offset, const TRANSFORM_TYPE& transform) {
     buffer->BufferTransform<TRANSFORM_TYPE, MESH_TYPE>(offset, transform);
   }
   void BufferTexture(BufferInstanceOffset* mesh, TEXTURE_ARRAY_TYPE& texture) {
     buffer->BufferTexture<MESH_TYPE, TEXTURE_ARRAY_TYPE>(mesh, texture);
   }
-  void ReleaseSlots(MeshDataBase* mesh) {
-    // child override to not try/catch or check nptr
-    //buffer->ReleaseInstanceSlot<MESH_TYPE>(mesh->slots);
-    //vertex_attributes->ReleaseStorage(mesh->slots);
+  void ReleaseUniformOffset(MeshDataSlots& out_slots) {
+    buffer->ReleaseUniformOffset<MESH_TYPE>(out_slots);
   }
+  MESH_TYPE* CreateMeshData() {
+    return mesh_manager->CreateMeshData<MESH_TYPE>();
+  }
+
   void Init()
   {
     buffer->AddUsedBuffers(used_buffers);

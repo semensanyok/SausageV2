@@ -2,21 +2,23 @@
 
 #include "sausage.h"
 #include "Macros.h"
-#include "ShaderManager.h"
-#include "BufferStorage.h"
 #include "Logging.h"
-#include "DrawCallStruct.h"
-#include "Renderer.h"
-#include "MeshDataStruct.h"
-#include "MeshManager.h"
 #include "OverlayStruct.h"
-#include "GLCommandBuffers.h"
-#include "StateManager.h"
+#include "MeshDataStruct.h"
+#include "MeshDataTerrain.h"
+#include "MeshDataOutline.h"
+
 
 using namespace std;
 
+class StateManager;
+class ShaderManager;
+class Shader;
+class DrawCall;
+class CommandBuffer;
+class CommandBuffersManager;
+
 class DrawCallManager {
-  Renderer* renderer;
 public:
 
   DrawCall* mesh_dc;
@@ -28,221 +30,40 @@ public:
 
   //DrawCall* overlay_3d_dc;
 
-  DrawCall* physics_debug_dc;
-
-  BufferStorage* buffer;
-
-  CommandBuffersManager* command_buffer_manager;
-
-  MeshManager* mesh_manager;
-
-  // can add ablitily for each mesh to participate in multiple commands (to use in multiple shaders)
-  // for simlicity - keep 1 command for now
-  unordered_map<unsigned int, DrawElementsIndirectCommand> command_by_mesh_id;
-  unordered_map<unsigned int, DrawCall*> dc_by_mesh_id;
+  DrawCall* outline_dc;
 
   int total_draw_calls = 0;
 
   DrawCallManager(
     ShaderManager* shader_manager,
-    Renderer* renderer,
-    CommandBuffersManager* command_buffer_manager,
-    MeshManager* mesh_manager,
-    StateManager* state_manager
-  ) : renderer{ renderer },
-    buffer{ BufferStorage::GetInstance() },
-    mesh_manager{ mesh_manager },
-    command_buffer_manager{ command_buffer_manager }
-  {
-    //  - each drawcall uses contigious range of commands. Need to allocate in advance for shader.
-    //    or place shader with dynamic number of meshes at the end
-    font_ui_dc = CreateDrawCall(
-      shader_manager->all_shaders->font_ui,
-      GL_TRIANGLES,
-      command_buffer_manager->command_buffers.font_ui,
-      false
-    );
+    StateManager* state_manager,
+    CommandBuffersManager* cbm
+  );
 
-    back_ui_dc = CreateDrawCall(
-      shader_manager->all_shaders->back_ui,
-      GL_TRIANGLES,
-      command_buffer_manager->command_buffers.back_ui,
-      false
-    );
+  void ResetFrameCommands();
 
-    //overlay_3d_dc = CreateDrawCall(
-      //shader_manager->all_shaders->overlay_3d,
-      //GL_TRIANGLES,
-      //buffer->CreateCommandBuffer(1),
-      //true
-    //);
-
-    physics_debug_dc = CreateDrawCall(
-      shader_manager->all_shaders->outline,
-      GL_LINES,
-      command_buffer_manager->command_buffers.outline,
-      state_manager->phys_debug_draw
-    );
-
-    mesh_dc = CreateDrawCall(
-      shader_manager->all_shaders->blinn_phong,
-      GL_TRIANGLES,
-      command_buffer_manager->command_buffers.blinn_phong,
-      true
-    );
-
-    mesh_static_dc = CreateDrawCall(
-      shader_manager->all_shaders->mesh_static,
-      GL_TRIANGLES,
-      command_buffer_manager->command_buffers.mesh_static,
-      true
-    );
-
-    terrain_dc = CreateDrawCall(
-      shader_manager->all_shaders->terrain,
-      GL_TRIANGLES,
-      command_buffer_manager->command_buffers.terrain,
-      true
-    );
-
-    renderer->AddDraw(font_ui_dc, DrawOrder::UI_TEXT);
-    //renderer->AddDraw(overlay_3d_dc, DrawOrder::OVERLAY_3D);
-    renderer->AddDraw(back_ui_dc, DrawOrder::UI_BACK);
-    renderer->AddDraw(mesh_dc, DrawOrder::MESH);
-    renderer->AddDraw(terrain_dc, DrawOrder::TERRAIN);
-    renderer->AddDraw(mesh_static_dc, DrawOrder::MESH_STATIC);
-    renderer->AddDraw(physics_debug_dc, DrawOrder::OUTLINE);
-  }
-
-  /**
-   * make sure to pre allocate expected number of instances
-   * for instanced call,
-   * to avoid frequent command rebuffer and Arena#aquire/release with each AddNewInstance
-   * 
-   * @param mesh mesh with command/index/vertex slots and buffer_id
-   *        allocated via BufferStorage#AllocateStorage
-   * @param dc draw call to assign mesh to
-  */
-  template<typename MESH_TYPE>
-  void AddNewCommandToDrawCall(
-    MeshDataBase* mesh,
-    DrawCall* dc,
-    GLuint instance_count,
-    // bullet debug drawer doesnt use instance slot in any ssbo, only vertex-index
-    bool is_alloc_instance_slot = true
-  ) {
-    lock_guard l(dc->mtx);
-    assert(!dc_by_mesh_id.contains(mesh->id));
-    assert(!command_by_mesh_id.contains(mesh->id));
-    DrawElementsIndirectCommand& command = command_by_mesh_id[mesh->id];
-    dc->Allocate(mesh->slots);
-    dc_by_mesh_id[mesh->id] = dc;
-    SetToCommandWithOffsets<MESH_TYPE>(mesh, 1, is_alloc_instance_slot, instance_count);
-  }
-
-  template<typename MESH_TYPE>
-  MeshDataInstance* AddNewInstance(MeshDataBase* mesh,
-    mat4& transform,
-    bool is_alloc_instance_slot = true) {
-    assert(command_by_mesh_id.contains(mesh->id));
-    auto& command = command_by_mesh_id[mesh->id];
-    //auto instance_id = command.instanceCount - 1;
-    // start with 1 because 0 is reserved for base mesh
-    auto instance_id = command.instanceCount;
-    auto instance_count = command.instanceCount + 1;
-
-    if (SetToCommandWithOffsets<MESH_TYPE>(mesh, instance_count, is_alloc_instance_slot)) {
-      // mesh instance_id = 0 when instanceCount == 1. Thus, postincrement.
-      auto instance = mesh_manager->CreateInstancedMesh(mesh, instance_id, transform);
-      return instance;
-    }
-    else {
-      LOG(format("unable to allocate contigious instance slot in buffer for mesh {} instance count {}",mesh->name, command.instanceCount));
-      return nullptr;
-    }
-  } 
-
-  template<typename MESH_TYPE>
-  MeshDataInstance* AddNewInstance(MeshDataBase* mesh,
-    bool is_alloc_instance_slot = true) {
-    auto transform = mat4(1);
-    return AddNewInstance<MESH_TYPE>(mesh, transform, is_alloc_instance_slot);
-  }
-
-  template<typename MESH_TYPE>
-  void DisableCommand(MeshDataBase* mesh) {
-    auto draw_call = dc_by_mesh_id.find(mesh->id);
-    if (draw_call == dc_by_mesh_id.end()) {
-      LOG(format("WARN: DisableCommand: Not found DrawCall for mesh_id={}", mesh->id));
-    } else {
-      dc_by_mesh_id.erase(draw_call);
-    }
-    auto command = command_by_mesh_id.find(mesh->id);
-    if (command == command_by_mesh_id.end()) {
-      LOG(format("WARN: DisableCommand: Not found DrawArraysIndirectCommand for mesh_id={}", mesh->id));
-    }
-    else {
-      SetToCommandWithOffsets<MESH_TYPE>(mesh, 0);
-      command_by_mesh_id.erase(command);
-    };
-  }
-
-  /**
-   * @brief set/update mesh offsets to existing mesh draw command
-   *        use it:
-   *        - for update command vertex/index/offset/new_instance_count/..
-   *        - if command was created via AddNewCommandToDrawCall
-   *          prior to mesh data allocation
-   *          and offset setup via BufferStorage#AllocateStorage
-   *          (command was created initially with 0 offsets and instance count)
-   * @brief sets instance count to base mesh draw command.
-   *        this command doesnt modify mesh.instance_id
-   *        (to set instance_id automatically use AddNewInstance)
-   *        note that mesh.instance_id (gl_InstanceID) is in range [0,new_instance_count-1]
-  */
-  template<typename MESH_TYPE>
-  bool SetToCommandWithOffsets(MeshDataBase* mesh,
-    GLuint instance_count,
-    bool is_alloc_instance_slot = true,
-    GLuint pre_allocate_buffer_instance_count = 0) {
-    assert(command_by_mesh_id.contains(mesh->id));
-    assert(dc_by_mesh_id.contains(mesh->id));
-    auto& command = command_by_mesh_id[mesh->id];
-    auto dc = dc_by_mesh_id[mesh->id];
-    pre_allocate_buffer_instance_count = std::max(instance_count, pre_allocate_buffer_instance_count);
-    bool is_success_slot_alloc = is_alloc_instance_slot ?
-      buffer->TryReallocateInstanceSlot<MESH_TYPE>(mesh->slots, pre_allocate_buffer_instance_count) : true;
-    if (is_success_slot_alloc) {
-      //// to avoid weird situation when count = 0 and used = 1.
-      //// even that is not used and doesnt affect anything, avoid it
-      //if (is_alloc_instance_slot) {
-      //  mesh->slots.instances_slot.used = instance_count;
-      //}
-      _SetToCommandWithOffsets(command, mesh->slots, dc, instance_count);
-    }
-    return is_success_slot_alloc;
-  }
-
-  DrawCall* CreateDrawCall(Shader* shader, GLenum mode, CommandBuffer* command_buffer, bool is_enabled)
-  {
-    return new DrawCall(total_draw_calls++, shader, mode, command_buffer, is_enabled);
-  }
+  template <typename MESH_TYPE>
+  DrawCall* GetDrawCall() {
+    //return nullptr;
+    throw runtime_error("Not implemented");
+  };
+  template <>
+  DrawCall* GetDrawCall<MeshData>() {
+    return mesh_dc;
+  };
+  template <>
+  DrawCall* GetDrawCall<MeshDataStatic>() {
+    return mesh_static_dc;
+  };
+  template <>
+  DrawCall* GetDrawCall<MeshDataTerrain>() {
+    return terrain_dc;
+  };
+  template <>
+  DrawCall* GetDrawCall<MeshDataOutline>() {
+    return outline_dc;
+  };
 private:
-
-  void _SetToCommandWithOffsets(
-    DrawElementsIndirectCommand& command,
-    MeshDataSlots& mesh_slots,
-    DrawCall* dc,
-    unsigned int instance_count
-  ) {
-    unsigned int command_offset = mesh_slots.buffer_id;
-    command.instanceCount = instance_count;
-    command.count = mesh_slots.index_slot.used;
-    command.firstIndex = mesh_slots.index_slot.offset;
-    command.baseVertex = mesh_slots.vertex_slot.offset;
-    command.baseInstance = mesh_slots.buffer_id;
-
-    command_buffer_manager->BufferCommand(dc->command_buffer, command, command_offset);
-  }
-
+  DrawCall* CreateDrawCall(Shader* shader, GLenum mode, bool is_enabled, CommandBuffer* command_buffer,
+    bool is_fixed);
 };
